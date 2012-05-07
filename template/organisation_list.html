@@ -1,0 +1,38 @@
+<%inherit file="base.html"/>
+
+<%def name="title()">Organisations</%def>
+
+<%def name="page()">
+
+<h1>Organisations</h1>
+
+<ul id="all_organisations">
+  % for organisation in organisation_list:
+  <li><a href="${organisation.url}">${organisation.name}</a></li>
+  %if current_user:
+  <form action="${organisation.url}" method="post">
+    <input name="_xsrf" type="hidden" value="${xsrf}">
+    <input name="_method" type="hidden" value="delete">
+    <input type="submit" value="delete">
+  </form>
+  %endif
+  % endfor
+</ul>
+
+%if current_user:
+Add organisation
+<form action="${uri}" method="post">
+  <input name="_xsrf" type="hidden" value="${xsrf}">
+  <label>
+    <span>Name</span>
+    <input name="name">
+  </label>
+  <input type="submit">
+</form>
+%endif
+
+</%def>
+
+</body>
+
+</html>

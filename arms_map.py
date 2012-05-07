@@ -24,7 +24,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy import create_engine
 
 
-from model import Auth, User, Session
+from model import Auth, User, Session, Organisation
 
 
 
@@ -60,11 +60,16 @@ class Application(tornado.web.Application):
             login_url="/auth/login",
             )
 
+        re_id = "([1-9][0-9]*)"
+
         self.handler_list = [
             (r"/", HomeHandler),
 
             (r"/user", UserListHandler),
-            (r"/user/([1-9][0-9]*)", UserHandler),
+            (r"/user/%s" % re_id , UserHandler),
+
+            (r"/organisation", OrganisationListHandler),
+            (r"/organisation/%s" % re_id, OrganisationHandler),
 
             (r"/auth/login", AuthLoginHandler),
             (r"/auth/login/google", AuthLoginGoogleHandler),
@@ -103,6 +108,13 @@ class Application(tornado.web.Application):
     
         
 class BaseHandler(tornado.web.RequestHandler):
+
+    def _execute(self, transforms, *args, **kwargs):
+        method = self.get_argument("_method", None)
+        if method and self.request.method.lower() == "post":
+            self.request.method = method.upper()
+        tornado.web.RequestHandler._execute(self, transforms, *args, **kwargs)
+
     @property
     def orm(self):
         return self.application.orm
@@ -147,7 +159,13 @@ class BaseHandler(tornado.web.RequestHandler):
     def error(self, status_code, message):
         self.status_code = status_code
         self.render('error.html', current_user=self.current_user, uri=self.request.uri, status_code=self.status_code, message=message)
-        
+
+
+
+def authenticated(f):
+    decorated = tornado.web.authenticated(f)
+    decorated.authenticated = True;
+    return decorated
 
 
 
@@ -157,15 +175,50 @@ class HomeHandler(BaseHandler):
 
 
 
-# Admin pages
+class OrganisationListHandler(BaseHandler):
+    def get(self):
+        organisation_list = self.orm.query(Organisation).all()
+        self.render('organisation_list.html', current_user=self.current_user, uri=self.request.uri, organisation_list=organisation_list, xsrf=self.xsrf_token)
 
+    @authenticated
+    def post(self):
+        name = self.get_argument("name")
+        organisation = Organisation(name)
+        self.orm.add(organisation)
+        self.orm.commit()
+        self.redirect(organisation.url)
 
+class OrganisationHandler(BaseHandler):
+    def get(self, organisation_id_string):
+        organisation_id = int(organisation_id_string)
+        try:
+            organisation = self.orm.query(Organisation).filter_by(organisation_id=organisation_id).one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            return self.error(404, "%d: No such organisation" % organisation_id)
+        self.render('organisation.html', current_user=self.current_user, uri=self.request.uri, xsrf=self.xsrf_token, organisation=organisation)
 
-def authenticated(f):
-    decorated = tornado.web.authenticated(f)
-    decorated.authenticated = True;
-    return decorated
-
+    @authenticated
+    def delete(self, organisation_id_string):
+        organisation_id = int(organisation_id_string)
+        try:
+            organisation = self.orm.query(Organisation).filter_by(organisation_id=organisation_id).one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            return self.error(404, "%d: No such organisation" % organisation_id)
+        self.orm.delete(organisation)
+        self.redirect("/organisation")
+        
+    @authenticated
+    def put(self, organisation_id_string):
+        organisation_id = int(organisation_id_string)
+        try:
+            organisation = self.orm.query(Organisation).filter_by(organisation_id=organisation_id).one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            return self.error(404, "%d: No such organisation" % organisation_id)
+        name = self.get_argument("name")
+        organisation.name = name
+        self.orm.commit()
+        self.redirect(organisation.url)
+        
 
 
 class UserListHandler(BaseHandler):
@@ -213,12 +266,18 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
         auth_user dict is either empty or contains 'locale', 'first_name', 'last_name', 'name' and 'email'.
         """
 
+        print "on auth"
+
         if not auth_user:
             raise tornado.web.HTTPError(500, "Google auth failed")
 
         auth_name = auth_user["email"]
 
+        print auth_name
+
         user = User.get_from_auth(self.orm, self.openid_url, auth_name)
+
+        print user
 
         if not user:
             return self.error(404, "%s %s: No account found" % (self.openid_url, auth_name))

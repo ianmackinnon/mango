@@ -150,6 +150,23 @@ class Session(Base):
 
 
 
+class Organisation(Base):
+    __tablename__ = 'organisation'
+    __table_args__ = {'sqlite_autoincrement':True}
+
+    organisation_id = Column(Integer, primary_key=True)
+
+    name = Column(Unicode, nullable=False)
+
+    def __init__(self, name):
+        self.name = name
+
+    @property
+    def url(self):
+        return "/organisation/%d" % self.organisation_id
+
+
+
 if __name__ == '__main__':
     log.addHandler(logging.StreamHandler())
     log.setLevel(logging.WARNING)
