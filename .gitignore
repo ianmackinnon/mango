@@ -1,0 +1,4 @@
+.xsrf
+*.pyc
+*.db
+log/

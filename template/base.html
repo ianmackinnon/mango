@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset=utf-8 />
+  <title>${self.title()}</title>
+  <link href="data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQEAYAAABPYyMiAAAABmJLR0T///////8JWPfcAAAACXBIWXMAAABIAAAASABGyWs+AAAAF0lEQVRIx2NgGAWjYBSMglEwCkbBSAcACBAAAeaR9cIAAAAASUVORK5CYII=" rel="icon" type="image/x-icon" />
+  <link rel="stylesheet" type="text/css" href="/static/style.css" />
+
+</head>
+
+<body>
+
+  <nav>
+    <a href="/">Home</a>
+    %if current_user:
+    <a href="/user">Users</a>
+    %endif
+  </nav>
+    
+  <div id="account">
+    %if current_user:
+    <span id="current_user"><a href="/user/${current_user.user_id}">${current_user.name}</a></span>
+    <span id="logout"><a href="/auth/logout?next=${uri}">logout</a></span>
+    %else:
+    <span id="login"><a href="/auth/login?next=${uri}">login</a></span>
+    %endif
+  </div>
+
+  <div id="page">
+    ${self.page()}
+  </div>
+
+</div>
+
+${self.scripts()}
+
+</body>
+
+</html>
+
+<%def name="scripts()"></%def>

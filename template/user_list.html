@@ -1,0 +1,23 @@
+<%inherit file="base.html"/>
+
+<%def name="title()">Users</%def>
+
+<%def name="page()">
+
+<ul id="all_users">
+  % if current_user:
+  <li><a href="/user/${current_user.user_id}">${current_user.name}</a> (you)</li>
+  % endif
+  % for user in user_list:
+  % if current_user and current_user == user:
+  <% continue %>
+  % endif
+  <li><a href="/user/${user.user_id}">${user.name}</a></li>
+  % endfor
+</ul>
+
+</%def>
+
+</body>
+
+</html>
