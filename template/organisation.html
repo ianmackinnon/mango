@@ -4,7 +4,7 @@
 
 <%def name="page()">
 
-<h1><a href="/organisation/${organisation.organisation_id}">${organisation.name}</a></h1>
+<h1><a href="${organisation.url}">${organisation.name}</a></h1>
 
 %if current_user:
 ${organisation.visible and "Visible" or "Deleted"}
