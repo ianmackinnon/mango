@@ -21,7 +21,7 @@ from tornado.options import define, options
 
 import sqlalchemy.orm.exc
 from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func, and_
 
 
 from model import Auth, User, Session, Organisation
@@ -34,7 +34,7 @@ define("port", default=8802, help="run on the given port", type=int)
 
 class Application(tornado.web.Application):
 
-    session_cookie_name = "arms-data"
+    session_cookie_name = "s"
 
     def load_cookie_secret(self):
         try:
@@ -61,6 +61,7 @@ class Application(tornado.web.Application):
             )
 
         re_id = "([1-9][0-9]*)"
+        re_e_id = "([1-9][0-9]*)(?:,([1-9][0-9]*))?"
 
         self.handler_list = [
             (r"/", HomeHandler),
@@ -69,15 +70,14 @@ class Application(tornado.web.Application):
             (r"/user/%s" % re_id , UserHandler),
 
             (r"/organisation", OrganisationListHandler),
-            (r"/organisation/%s" % re_id, OrganisationHandler),
+            (r"/organisation/%s" % re_e_id, OrganisationHandler),
 
             (r"/auth/login", AuthLoginHandler),
             (r"/auth/login/google", AuthLoginGoogleHandler),
             (r"/auth/logout", AuthLogoutHandler),
             ]
 
-        
-        connection_url = 'sqlite:///arms-map.db'
+        connection_url = 'sqlite:///mango.db'
     
         engine = create_engine(connection_url)
 
@@ -177,47 +177,82 @@ class HomeHandler(BaseHandler):
 
 class OrganisationListHandler(BaseHandler):
     def get(self):
-        organisation_list = self.orm.query(Organisation).all()
+
+        organisation_list = Organisation.query_latest(self.orm).filter(Organisation.visible==True).all()
+
         self.render('organisation_list.html', current_user=self.current_user, uri=self.request.uri, organisation_list=organisation_list, xsrf=self.xsrf_token)
 
-    @authenticated
     def post(self):
         name = self.get_argument("name")
-        organisation = Organisation(name)
+
+        organisation = Organisation(name, moderation_user=self.current_user)
         self.orm.add(organisation)
         self.orm.commit()
+        self.orm.refresh(organisation)  # Setting organisation_e in a trigger, so we have to update manually.
         self.redirect(organisation.url)
 
+
 class OrganisationHandler(BaseHandler):
-    def get(self, organisation_id_string):
-        organisation_id = int(organisation_id_string)
+    def get(self, organisation_e_string, organisation_id_string):
+        organisation_e = int(organisation_e_string)
+        organisation_id = organisation_id_string and int(organisation_id_string) or None
+        
+        if organisation_id:
+            if not self.current_user:
+                return self.error(404, "Not found")
+            query = self.orm.query(Organisation).filter_by(organisation_e=organisation_e).filter_by(organisation_id=organisation_id)
+            error = "%d, %d: No such organisation, version" % (organisation_e, organisation_id)
+        else:
+            query = Organisation.query_latest(self.orm).filter_by(organisation_e=organisation_e)
+            if not self.current_user:
+                query = query.filter(Organisation.visible==True)
+            error = "%d: No such organisation" % organisation_e
+
         try:
-            organisation = self.orm.query(Organisation).filter_by(organisation_id=organisation_id).one()
+            organisation = query.one()
         except sqlalchemy.orm.exc.NoResultFound:
-            return self.error(404, "%d: No such organisation" % organisation_id)
+            return self.error(404, error)
         self.render('organisation.html', current_user=self.current_user, uri=self.request.uri, xsrf=self.xsrf_token, organisation=organisation)
 
     @authenticated
-    def delete(self, organisation_id_string):
-        organisation_id = int(organisation_id_string)
+    def delete(self, organisation_e_string, organisation_id_string):
+        if organisation_id_string:
+            return self.error(405, "Cannot delete revisions.")
+
+        organisation_e = int(organisation_e_string)
+        
+        query = Organisation.query_latest(self.orm).filter_by(organisation_e=organisation_e).filter(Organisation.visible==True)
+
         try:
-            organisation = self.orm.query(Organisation).filter_by(organisation_id=organisation_id).one()
+            organisation = query.one()
         except sqlalchemy.orm.exc.NoResultFound:
-            return self.error(404, "%d: No such organisation" % organisation_id)
-        self.orm.delete(organisation)
+            return self.error(404, "%d: No such organisation" % organisation_e)
+
+        new_organisation = organisation.copy(moderation_user=self.current_user, visible=False)
+        self.orm.add(new_organisation)
+        self.orm.commit()
         self.redirect("/organisation")
         
     @authenticated
-    def put(self, organisation_id_string):
-        organisation_id = int(organisation_id_string)
+    def put(self, organisation_e_string, organisation_id_string):
+        if organisation_id_string:
+            return self.error(405, "Cannot edit revisions.")
+
+        organisation_e = int(organisation_e_string)
+
+        query = Organisation.query_latest(self.orm).filter_by(organisation_e=organisation_e)
+
         try:
-            organisation = self.orm.query(Organisation).filter_by(organisation_id=organisation_id).one()
+            organisation = query.one()
         except sqlalchemy.orm.exc.NoResultFound:
-            return self.error(404, "%d: No such organisation" % organisation_id)
+            return self.error(404, "%d: No such organisation" % organisation_e)
+
         name = self.get_argument("name")
-        organisation.name = name
+
+        new_organisation = organisation.copy(moderation_user=self.current_user, visible=True)
+        new_organisation.name = name
         self.orm.commit()
-        self.redirect(organisation.url)
+        self.redirect(new_organisation.url)
         
 
 
@@ -266,18 +301,12 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
         auth_user dict is either empty or contains 'locale', 'first_name', 'last_name', 'name' and 'email'.
         """
 
-        print "on auth"
-
         if not auth_user:
             raise tornado.web.HTTPError(500, "Google auth failed")
 
         auth_name = auth_user["email"]
 
-        print auth_name
-
         user = User.get_from_auth(self.orm, self.openid_url, auth_name)
-
-        print user
 
         if not user:
             return self.error(404, "%s %s: No account found" % (self.openid_url, auth_name))

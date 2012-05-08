@@ -85,7 +85,7 @@ class User(Base):
     user_id = Column(Integer, primary_key=True)
     auth_id = Column(Integer, ForeignKey(Auth.auth_id), nullable=False)
     
-    UniqueConstraint(auth_id)
+    PrimaryKeyConstraint(auth_id)
 
     name = Column(Unicode, nullable=False)
 
@@ -155,15 +155,48 @@ class Organisation(Base):
     __table_args__ = {'sqlite_autoincrement':True}
 
     organisation_id = Column(Integer, primary_key=True)
+    organisation_e = Column(Integer)
+
+    moderation_user_id = Column(Integer, ForeignKey(User.user_id))
+    a_time = Column(Float, nullable=False)
+    visible = Column(Boolean, nullable=False, default=True)
 
     name = Column(Unicode, nullable=False)
 
-    def __init__(self, name):
+    moderation_user = relationship(User, backref='moderation_organisation_list')
+    
+    def __init__(self, name, moderation_user=None, visible=True):
         self.name = name
+        self.moderation_user = moderation_user
+        self.a_time = time.time()
+        self.visible = visible
 
+    def __repr__(self):
+        return "<Org-%d,%d '%s' %d>" % (self.organisation_e, self.organisation_id, self.name, self.visible)
+
+    def copy(self, moderation_user=None, visible=True):
+        assert self.organisation_e
+        organisation = Organisation(self.name, moderation_user, visible)
+        organisation.organisation_e = self.organisation_e
+        return organisation
+        
     @property
     def url(self):
-        return "/organisation/%d" % self.organisation_id
+        return "/organisation/%d" % self.organisation_e
+
+    @property
+    def revision_url(self):
+        return "/organisation/%d,%d" % (self.organisation_e, self.organisation_id)
+
+    @staticmethod
+    def query_latest(orm):
+        latest = orm.query(Organisation.organisation_e, func.max(Organisation.organisation_id)\
+                             .label("organisation_id")).group_by("organisation_e").subquery()
+
+        return orm.query(Organisation).join((latest, and_(
+            latest.c.organisation_e == Organisation.organisation_e,
+            latest.c.organisation_id == Organisation.organisation_id,
+            )))
 
 
 

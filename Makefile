@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .PHONY : all clean
 
-all : arms-map.db .xsrf
+all : mango.db .xsrf
 
 
 
@@ -11,13 +11,13 @@ all : arms-map.db .xsrf
 
 
 
-arms-map.db : model.py build.sqlite.sql
-	rm -rf arms-map.db
-	./model.py arms-map.db
-	sqlite3 arms-map.db < build.sqlite.sql
+mango.db : model.py build.sqlite.sql
+	rm -rf mango.db
+	./model.py mango.db
+	sqlite3 mango.db < build.sqlite.sql
 
 
 clean :
-	rm -rf arms-map.db
+	rm -rf mango.db
 	rm -rf .xsrf
 
