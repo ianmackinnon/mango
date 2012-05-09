@@ -1,0 +1,48 @@
+<%inherit file="base.html"/>
+
+<%def name="title()">Addresses</%def>
+
+<%def name="page()">
+
+<h1>Addresses</h1>
+
+<ul id="all_addresss">
+  % for address in address_list:
+  <li><a href="${address.url}">${address.postal}</a></li>
+  %if current_user:
+  <form action="${address.url}" method="post">
+    <input name="_xsrf" type="hidden" value="${xsrf}">
+    <input name="_method" type="hidden" value="delete">
+    <input type="submit" value="delete">
+  </form>
+  %endif
+  % endfor
+</ul>
+
+Add address
+<form action="${uri}" method="post">
+  <input name="_xsrf" type="hidden" value="${xsrf}">
+  <label>
+    <span>Postal</span>
+    <textarea name="postal"></textarea>
+  </label>
+  <label>
+    <span>Lookup</span>
+    <textarea name="lookup"></textarea>
+  </label>
+  <label>
+    <span>Longitude</span>
+    <input name="longitude" value="">
+  </label>
+  <label>
+    <span>Latitude</span>
+    <input name="latitude" value="">
+  </label>
+  <input type="submit">
+</form>
+
+</%def>
+
+</body>
+
+</html>

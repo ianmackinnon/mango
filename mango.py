@@ -24,7 +24,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy import create_engine, func, and_
 
 
-from model import Auth, User, Session, Organisation
+from model import Auth, User, Session, Organisation, Address
 
 
 
@@ -72,6 +72,9 @@ class Application(tornado.web.Application):
             (r"/organisation", OrganisationListHandler),
             (r"/organisation/%s" % re_e_id, OrganisationHandler),
 
+            (r"/address", AddressListHandler),
+            (r"/address/%s" % re_e_id, AddressHandler),
+
             (r"/auth/login", AuthLoginHandler),
             (r"/auth/login/google", AuthLoginGoogleHandler),
             (r"/auth/logout", AuthLogoutHandler),
@@ -105,8 +108,8 @@ class Application(tornado.web.Application):
         
         tornado.web.Application.__init__(self, self.handler_list, **settings)
 
-    
-        
+
+
 class BaseHandler(tornado.web.RequestHandler):
 
     def _execute(self, transforms, *args, **kwargs):
@@ -159,6 +162,19 @@ class BaseHandler(tornado.web.RequestHandler):
     def error(self, status_code, message):
         self.status_code = status_code
         self.render('error.html', current_user=self.current_user, uri=self.request.uri, status_code=self.status_code, message=message)
+
+    _ARG_DEFAULT_2 = []
+    def get_argument_float(self, name, default=_ARG_DEFAULT_2, strip=True):
+        value = self.get_argument(name, default, strip)
+        if value == default:
+            if default is self._ARG_DEFAULT_2:
+                raise HTTPError(400, "Missing argument %s" % name)
+            return value
+
+        try:
+            return float(value)
+        except ValueError as e:
+            raise tornado.web.HTTPError(400, "Cannot convert argument %s to a floating point number." % name)
 
 
 
@@ -253,6 +269,101 @@ class OrganisationHandler(BaseHandler):
         new_organisation.name = name
         self.orm.commit()
         self.redirect(new_organisation.url)
+        
+
+
+class AddressListHandler(BaseHandler):
+    def get(self):
+
+        address_list = Address.query_latest(self.orm).filter(Address.visible==True).all()
+
+        self.render('address_list.html', current_user=self.current_user, uri=self.request.uri, address_list=address_list, xsrf=self.xsrf_token)
+
+    def post(self):
+        postal = self.get_argument("postal")
+        print postal
+        lookup = self.get_argument("lookup", None)
+        manual_longitude = self.get_argument_float("manual_longitude", None)
+        manual_latitude = self.get_argument_float("manual_latitude", None)
+
+        address = Address(postal, lookup,
+                          manual_longitude=manual_longitude,
+                          manual_latitude=manual_latitude,
+                          moderation_user=self.current_user)
+        self.orm.add(address)
+        self.orm.commit()
+        self.orm.refresh(address)  # Setting address_e in a trigger, so we have to update manually.
+        self.redirect(address.url)
+
+
+
+class AddressHandler(BaseHandler):
+    def get(self, address_e_string, address_id_string):
+        address_e = int(address_e_string)
+        address_id = address_id_string and int(address_id_string) or None
+        
+        if address_id:
+            if not self.current_user:
+                return self.error(404, "Not found")
+            query = self.orm.query(Address).filter_by(address_e=address_e).filter_by(address_id=address_id)
+            error = "%d, %d: No such address, version" % (address_e, address_id)
+        else:
+            query = Address.query_latest(self.orm).filter_by(address_e=address_e)
+            if not self.current_user:
+                query = query.filter(Address.visible==True)
+            error = "%d: No such address" % address_e
+
+        try:
+            address = query.one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            return self.error(404, error)
+        self.render('address.html', current_user=self.current_user, uri=self.request.uri, xsrf=self.xsrf_token, address=address)
+
+    @authenticated
+    def delete(self, address_e_string, address_id_string):
+        if address_id_string:
+            return self.error(405, "Cannot delete revisions.")
+
+        address_e = int(address_e_string)
+        
+        query = Address.query_latest(self.orm).filter_by(address_e=address_e).filter(Address.visible==True)
+
+        try:
+            address = query.one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            return self.error(404, "%d: No such address" % address_e)
+
+        new_address = address.copy(moderation_user=self.current_user, visible=False)
+        self.orm.add(new_address)
+        self.orm.commit()
+        self.redirect("/address")
+        
+    @authenticated
+    def put(self, address_e_string, address_id_string):
+        if address_id_string:
+            return self.error(405, "Cannot edit revisions.")
+
+        address_e = int(address_e_string)
+
+        query = Address.query_latest(self.orm).filter_by(address_e=address_e)
+
+        try:
+            address = query.one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            return self.error(404, "%d: No such address" % address_e)
+
+        postal = self.get_argument("postal")
+        lookup = self.get_argument("lookup", None)
+        manual_longitude = self.get_argument_float("manual_longitude", None)
+        manual_latitude = self.get_argument_float("manual_latitude", None)
+
+        new_address = address.copy(moderation_user=self.current_user, visible=True)
+        new_address.postal = postal
+        new_address.lookup = lookup
+        new_address.manual_longitude = manual_longitude
+        new_address.manual_latitude = manual_latitude
+        self.orm.commit()
+        self.redirect(new_address.url)
         
 
 

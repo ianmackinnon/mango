@@ -172,7 +172,7 @@ class Organisation(Base):
         self.visible = visible
 
     def __repr__(self):
-        return "<Org-%d,%d '%s' %d>" % (self.organisation_e, self.organisation_id, self.name, self.visible)
+        return "<Org-%d,%d(%d) '%s'>" % (self.organisation_e, self.organisation_id, self.visible, self.name)
 
     def copy(self, moderation_user=None, visible=True):
         assert self.organisation_e
@@ -196,6 +196,74 @@ class Organisation(Base):
         return orm.query(Organisation).join((latest, and_(
             latest.c.organisation_e == Organisation.organisation_e,
             latest.c.organisation_id == Organisation.organisation_id,
+            )))
+
+
+
+class Address(Base):
+    __tablename__ = 'address'
+    __table_args__ = {'sqlite_autoincrement':True}
+
+    address_id = Column(Integer, primary_key=True)
+    address_e = Column(Integer)
+
+    moderation_user_id = Column(Integer, ForeignKey(User.user_id))
+    a_time = Column(Float, nullable=False)
+    visible = Column(Boolean, nullable=False, default=True)
+
+    postal = Column(Unicode, nullable=False)
+    lookup = Column(Unicode)
+    manual_longitude = Column(Float)
+    manual_latitude = Column(Float)
+    longitude = Column(Float)
+    latitude = Column(Float)
+
+    moderation_user = relationship(User, backref='moderation_address_list')
+    
+    def __init__(self, postal=None, lookup=None, manual_longitude=None, manual_latitude=None, longitude=None, latitude=None, moderation_user=None, visible=True):
+        self.moderation_user = moderation_user
+        self.a_time = time.time()
+        self.visible = visible
+
+        self.postal = postal
+        self.lookup = lookup
+        self.manual_longitude = manual_longitude
+        self.manual_latitude = manual_latitude
+        self.longitude = longitude
+        self.latitude = latitude
+
+    def __repr__(self):
+        return "<Add-%d,%d(%d) '%s' '%s' %.1f,%.1f %.1f,%.1f>" % (self.address_e, self.address_id, self.visible,
+                                                   self.postal[:10],
+                                                   self.lookup[:10],
+                                                   self.manual_longitude,
+                                                   self.manual_latitude,
+                                                   self.longitude,
+                                                   self.latitude,
+                                                   )
+
+    def copy(self, moderation_user=None, visible=True):
+        assert self.address_e
+        address = Address(self.postal, self.lookup, self.manual_longitude, self.manual_latitude, self.longitude, self.latitude, moderation_user, visible)
+        address.address_e = self.address_e
+        return address
+        
+    @property
+    def url(self):
+        return "/address/%d" % self.address_e
+
+    @property
+    def revision_url(self):
+        return "/address/%d,%d" % (self.address_e, self.address_id)
+
+    @staticmethod
+    def query_latest(orm):
+        latest = orm.query(Address.address_e, func.max(Address.address_id)\
+                             .label("address_id")).group_by("address_e").subquery()
+
+        return orm.query(Address).join((latest, and_(
+            latest.c.address_e == Address.address_e,
+            latest.c.address_id == Address.address_id,
             )))
 
 

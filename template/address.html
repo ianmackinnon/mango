@@ -1,0 +1,63 @@
+<%inherit file="base.html"/>
+
+<%def name="title()">Address ${address.address_e}</%def>
+
+<%def name="page()">
+
+<h1><a href="${address.url}">Address ${address.address_e}</a></h1>
+
+%if current_user:
+${address.visible and "Visible" or "Deleted"}
+<form action="${address.url}" method="post">
+  <input name="_xsrf" type="hidden" value="${xsrf}">
+  <input name="_method" type="hidden" value="put">
+  <label>
+    <span>Postal</span>
+    <textarea name="postal">${address.postal}</textarea>
+  </label>
+  <label>
+    <span>Lookup</span>
+    <textarea name="lookup">${address.lookup or ""}</textarea>
+  </label>
+  <label>
+    <span>Manual Longitude</span>
+    <input name="manual_longitude" value="${address.manual_longitude or ""}">
+  </label>
+  <label>
+    <span>Manual Latitude</span>
+    <input name="manual_latitude" value="${address.manual_latitude or ""}">
+  </label>
+  <input type="submit">
+</form>
+%else:
+<table>
+  <tbody>
+    <tr>
+      <td>Postal</td>
+      <td>${address.postal}</td>
+    </tr>
+    <tr>
+      <td>Lookup</td>
+      <td>${address.lookup or ""}</td>
+    </tr>
+    <tr>
+      <td>Manual Coordinates</td>
+      <td>${address.manual_longitude or ""} ${address.manual_latitude or ""}</td>
+    </tr>
+  </tbody>
+</table>
+%endif
+
+%if current_user:
+<form action="${address.url}" method="post">
+  <input name="_xsrf" type="hidden" value="${xsrf}">
+  <input name="_method" type="hidden" value="delete">
+  <input type="submit" value="delete">
+</form>
+%endif
+
+</%def>
+
+</body>
+
+</html>
