@@ -30,6 +30,18 @@ ${organisation.visible and "Visible" or "Deleted"}
 </form>
 %endif
 
+<h3>Tags</h3>
+<table>
+  <tbody>
+    %for tag in organisation.organisation_tag_list():
+    <tr><td>
+    ${tag.name}
+    </td></tr>
+    %endfor
+  </tbody>
+</table>
+
+
 <h3>Addresses</h3>
 <table>
   <tbody>

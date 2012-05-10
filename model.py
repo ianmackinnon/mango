@@ -160,6 +160,14 @@ organisation_address = Table(
 
 
 
+organisation_organisation_tag = Table(
+    'organisation_organisation_tag', Base.metadata,
+    Column('organisation_id', Integer, ForeignKey('organisation.organisation_id'), primary_key=True),
+    Column('organisation_tag_e', Integer, ForeignKey('organisation_tag.organisation_tag_e'), primary_key=True)
+    )
+
+
+
 class Organisation(Base):
     __tablename__ = 'organisation'
     __table_args__ = {'sqlite_autoincrement':True}
@@ -175,7 +183,14 @@ class Organisation(Base):
 
     moderation_user = relationship(User, backref='moderation_organisation_list')
     
-    address_entity_list = relationship("Address", secondary=organisation_address, backref='organisation_list')
+    address_entity_list = relationship("Address",
+                                       secondary=organisation_address,
+                                       backref='organisation_list'
+                                       )
+    organisation_tag_entity_list = relationship("OrganisationTag",
+                                                secondary=organisation_organisation_tag,
+                                                backref='organisation_list'
+                                                )
     
     def __init__(self, name, moderation_user=None, visible=True):
         self.name = name
@@ -188,18 +203,17 @@ class Organisation(Base):
 
     def copy(self, moderation_user=None, visible=True):
         assert self.organisation_e
-        organisation = Organisation(self.name, moderation_user, visible)
-        organisation.organisation_e = self.organisation_e
-        return organisation
+        new = Organisation(self.name, moderation_user, visible)
+        new.organisation_e = self.organisation_e
+
+        for address in self.address_list():
+            new.address_entity_list.append(address)
+
+        for tag in self.organisation_tag_list():
+            new.organisation_tag_entity_list.append(tag)
+
+        return new
         
-    @property
-    def url(self):
-        return "/organisation/%d" % self.organisation_e
-
-    @property
-    def revision_url(self):
-        return "/organisation/%d,%d" % (self.organisation_e, self.organisation_id)
-
     def address_list(self):
         orm = object_session(self)
         
@@ -210,6 +224,25 @@ class Organisation(Base):
             latest_address.c.address_e == Address.address_e,
             latest_address.c.address_id == Address.address_id,
             ))).join(organisation_address).filter_by(organisation_id=self.organisation_id).all()
+
+    def organisation_tag_list(self):
+        orm = object_session(self)
+        
+        latest_organisation_tag = orm.query(OrganisationTag.organisation_tag_e, func.max(OrganisationTag.organisation_tag_id)\
+                             .label("organisation_tag_id")).group_by("organisation_tag_e").subquery()
+
+        return orm.query(OrganisationTag).join((latest_organisation_tag, and_(
+            latest_organisation_tag.c.organisation_tag_e == OrganisationTag.organisation_tag_e,
+            latest_organisation_tag.c.organisation_tag_id == OrganisationTag.organisation_tag_id,
+            ))).join(organisation_organisation_tag).filter_by(organisation_id=self.organisation_id).all()
+
+    @property
+    def url(self):
+        return "/organisation/%d" % self.organisation_e
+
+    @property
+    def revision_url(self):
+        return "/organisation/%d,%d" % (self.organisation_e, self.organisation_id)
 
     @staticmethod
     def query_latest(orm):

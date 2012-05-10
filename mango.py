@@ -285,6 +285,7 @@ class OrganisationHandler(BaseHandler):
         new_organisation = organisation.copy(moderation_user=self.current_user, visible=True)
         self.orm.add(new_organisation)
         new_organisation.name = name
+        del new_organisation.address_entity_list[:]
         for address in organisation.address_list():
             if address.address_e in address_e_list:
                 new_organisation.address_entity_list.append(address)
