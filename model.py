@@ -6,6 +6,8 @@ import sys
 import time
 import logging
 
+import geopy
+
 from hashlib import sha1
 from optparse import OptionParser
 
@@ -240,6 +242,8 @@ class Address(Base):
 
     moderation_user = relationship(User, backref='moderation_address_list')
     
+    geocoder = geopy.geocoders.Google()
+
     def __init__(self, postal=None, lookup=None,
                  manual_longitude=None, manual_latitude=None,
                  longitude=None, latitude=None,
@@ -272,7 +276,28 @@ class Address(Base):
             moderation_user)
         address.address_e = self.address_e
         return address
+
+    def _geocode(self, address):
+        address, (latitude, longitude) = self.geocoder.geocode(address.encode("utf-8"))
+        return (latitude, longitude)
+
+    def geocode(self):
+        if self.manual_longitude and self.manual_latitude:
+            self.longitude, self.latitude = self.manual_longitude, self.manual_latitude
+            return
         
+        if self.lookup:
+            try:
+                (self.latitude, self.longitude) = self._geocode(self.lookup)
+            except geopy.geocoders.google.GQueryError as e:
+                pass
+            return
+
+        try:
+            (self.latitude, self.longitude) = self._geocode(self.postal)
+        except geopy.geocoders.google.GQueryError as e:
+            pass
+
     @property
     def url(self):
         return "/address/%d" % self.address_e
@@ -284,7 +309,10 @@ class Address(Base):
     @staticmethod
     def repr_coordinates(longitude, latitude):
         if longitude and latitude:
-            return "%0.1f, %0.1f" % (longitude, latitude)
+            return u"%0.2f°%s %0.2f°%s" % (
+                abs(latitude), ("S", "", "N")[cmp(latitude, 0.0) + 1],
+                abs(longitude), ("W", "", "E")[cmp(longitude, 0.0) + 1],
+                )
         return ""
 
     @staticmethod

@@ -6,11 +6,16 @@
 
 <h1>Addresses</h1>
 
-<ul id="all_addresss">
-  % for address in address_list:
-  <li><a href="${address.url}">${address.postal | n, h, unicode, newline}</a></li>
-  % endfor
-</ul>
+<table>
+  <tbody>
+    % for address in address_list:
+    <tr>
+      <td><a href="${address.url}">${address.postal | n, h, unicode, newline}</a></td>
+      <td>${address.repr_coordinates(address.longitude, address.latitude)}</a></td>
+    </tr>
+    % endfor
+  </tbody>
+</table>
 
 Add address
 <form action="${uri}" method="post">

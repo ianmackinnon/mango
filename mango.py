@@ -315,6 +315,7 @@ class OrganisationAddressListHandler(BaseHandler):
                           manual_latitude=manual_latitude,
                           moderation_user=self.current_user)
         self.orm.add(new_address)
+        new_address.geocode()
         self.orm.flush()
         self.orm.refresh(new_address)  # Setting address_e in a trigger, so we have to update manually.
 
@@ -348,6 +349,7 @@ class AddressListHandler(BaseHandler):
                           manual_latitude=manual_latitude,
                           moderation_user=self.current_user)
         self.orm.add(address)
+        address.geocode()
         self.orm.commit()
         self.orm.refresh(address)  # Setting address_e in a trigger, so we have to update manually.
         self.redirect(address.url)
@@ -398,6 +400,7 @@ class AddressHandler(BaseHandler):
         new_address.lookup = lookup
         new_address.manual_longitude = manual_longitude
         new_address.manual_latitude = manual_latitude
+        new_address.geocode()
         self.orm.commit()
         self.redirect(new_address.url)
         
