@@ -1,0 +1,34 @@
+<%inherit file="base.html"/>
+
+<%def name="title()">Organisation Tag ${organisation_tag.organisation_tag_e}</%def>
+
+<%def name="page()">
+
+<h1><a href="${organisation_tag.url}">Organisation Tag ${organisation_tag.organisation_tag_e}</a></h1>
+
+%if current_user:
+<form action="${organisation_tag.url}" method="post">
+  <input name="_xsrf" type="hidden" value="${xsrf}">
+  <input name="_method" type="hidden" value="put">
+  <label>
+    <span>Name</span>
+    <input name="name" value="${organisation_tag.name}">
+  </label>
+  <input type="submit">
+</form>
+%else:
+<table>
+  <tbody>
+    <tr>
+      <td>Name</td>
+      <td><a href="${organisation_tag.url}">${organisation_tag.name}</a></td>
+    </tr>
+  </tbody>
+</table>
+%endif
+
+</%def>
+
+</body>
+
+</html>

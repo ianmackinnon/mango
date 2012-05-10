@@ -327,6 +327,60 @@ class Address(Base):
 
 
 
+class OrganisationTag(Base):
+    __tablename__ = 'organisation_tag'
+    __table_args__ = {'sqlite_autoincrement':True}
+
+    organisation_tag_id = Column(Integer, primary_key=True)
+    organisation_tag_e = Column(Integer)
+
+    moderation_user_id = Column(Integer, ForeignKey(User.user_id))
+    a_time = Column(Float, nullable=False)
+
+    name = Column(Unicode, nullable=False)
+
+    moderation_user = relationship(User, backref='moderation_organisation_tag_list')
+
+    def __init__(self, name, moderation_user=None):
+        self.moderation_user = moderation_user
+        self.a_time = time.time()
+
+        self.name = name
+
+    def __repr__(self):
+        return "<OrgTag-%d,%d '%s'>" % (
+            self.organisation_tag_e, self.organisation_tag_id,
+            self.name,
+            )
+
+    def copy(self, moderation_user=None):
+        assert self.organisation_tag_e
+        organisation_tag = OrganisationTag(
+            self.name,
+            moderation_user)
+        organisation_tag.organisation_tag_e = self.organisation_tag_e
+        return organisation_tag
+
+    @property
+    def url(self):
+        return "/organisation-tag/%d" % self.organisation_tag_e
+
+    @property
+    def revision_url(self):
+        return "/organisation-tag/%d,%d" % (self.organisation_tag_e, self.organisation_tag_id)
+
+    @staticmethod
+    def query_latest(orm):
+        latest = orm.query(OrganisationTag.organisation_tag_e, func.max(OrganisationTag.organisation_tag_id)\
+                             .label("organisation_tag_id")).group_by("organisation_tag_e").subquery()
+
+        return orm.query(OrganisationTag).join((latest, and_(
+            latest.c.organisation_tag_e == OrganisationTag.organisation_tag_e,
+            latest.c.organisation_tag_id == OrganisationTag.organisation_tag_id,
+            )))
+
+
+
 if __name__ == '__main__':
     log.addHandler(logging.StreamHandler())
     log.setLevel(logging.WARNING)

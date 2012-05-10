@@ -24,7 +24,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy import create_engine, func, and_
 
 
-from model import Auth, User, Session, Organisation, Address
+from model import Auth, User, Session, Organisation, Address, OrganisationTag
 
 
 
@@ -75,6 +75,9 @@ class Application(tornado.web.Application):
 
             (r"/address", AddressListHandler),
             (r"/address/%s" % re_e_id, AddressHandler),
+
+            (r"/organisation-tag", OrganisationTagListHandler),
+            (r"/organisation-tag/%s" % re_e_id, OrganisationTagHandler),
 
             (r"/auth/login", AuthLoginHandler),
             (r"/auth/login/google", AuthLoginGoogleHandler),
@@ -404,6 +407,67 @@ class AddressHandler(BaseHandler):
         self.orm.commit()
         self.redirect(new_address.url)
         
+
+
+class OrganisationTagListHandler(BaseHandler):
+    def get(self):
+
+        organisation_tag_list = OrganisationTag.query_latest(self.orm).all()
+
+        self.render('organisation_tag_list.html', current_user=self.current_user, uri=self.request.uri, organisation_tag_list=organisation_tag_list, xsrf=self.xsrf_token)
+
+    def post(self):
+        name = self.get_argument("name")
+
+        organisation_tag = OrganisationTag(name, moderation_user=self.current_user)
+        self.orm.add(organisation_tag)
+        self.orm.commit()
+        self.orm.refresh(organisation_tag)  # Setting organisation_tag_e in a trigger, so we have to update manually.
+        self.redirect(organisation_tag.url)
+
+
+
+class OrganisationTagHandler(BaseHandler):
+    def get(self, organisation_tag_e_string, organisation_tag_id_string):
+        organisation_tag_e = int(organisation_tag_e_string)
+        organisation_tag_id = organisation_tag_id_string and int(organisation_tag_id_string) or None
+        
+        if organisation_tag_id:
+            if not self.current_user:
+                return self.error(404, "Not found")
+            query = self.orm.query(OrganisationTag).filter_by(organisation_tag_e=organisation_tag_e).filter_by(organisation_tag_id=organisation_tag_id)
+            error = "%d, %d: No such organisation_tag, version" % (organisation_tag_e, organisation_tag_id)
+        else:
+            query = OrganisationTag.query_latest(self.orm).filter_by(organisation_tag_e=organisation_tag_e)
+            error = "%d: No such organisation_tag" % organisation_tag_e
+
+        try:
+            organisation_tag = query.one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            return self.error(404, error)
+        self.render('organisation_tag.html', current_user=self.current_user, uri=self.request.uri, xsrf=self.xsrf_token, organisation_tag=organisation_tag)
+
+    @authenticated
+    def put(self, organisation_tag_e_string, organisation_tag_id_string):
+        if organisation_tag_id_string:
+            return self.error(405, "Cannot edit revisions.")
+
+        organisation_tag_e = int(organisation_tag_e_string)
+
+        query = OrganisationTag.query_latest(self.orm).filter_by(organisation_tag_e=organisation_tag_e)
+
+        try:
+            organisation_tag = query.one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            return self.error(404, "%d: No such organisation_tag" % organisation_tag_e)
+
+        name = self.get_argument("name")
+
+        new_organisation_tag = organisation_tag.copy(moderation_user=self.current_user)
+        new_organisation_tag.name = name
+        self.orm.commit()
+        self.redirect(new_organisation_tag.url)
+
 
 
 class UserListHandler(BaseHandler):
