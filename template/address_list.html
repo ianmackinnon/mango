@@ -8,7 +8,7 @@
 
 <ul id="all_addresss">
   % for address in address_list:
-  <li><a href="${address.url}">${address.postal}</a></li>
+  <li><a href="${address.url}">${address.postal | n, h, unicode, newline}</a></li>
   % endfor
 </ul>
 

@@ -30,12 +30,19 @@ ${organisation.visible and "Visible" or "Deleted"}
 </form>
 %endif
 
-%for address in organisation.address_list():
-${address.postal}
-%endfor
+<h3>Addresses</h3>
+<table>
+  <tbody>
+    %for address in organisation.address_list():
+    <tr><td>
+    ${address.postal | n, h, unicode, newline}
+    </td></tr>
+    %endfor
+  </tbody>
+</table>
 
 
-Add address
+<h4>Add address</h4>
 <form action="${organisation.url}/address" method="post">
   <input name="_xsrf" type="hidden" value="${xsrf}">
   <label>

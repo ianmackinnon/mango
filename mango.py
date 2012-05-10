@@ -111,6 +111,11 @@ class Application(tornado.web.Application):
 
 
 
+def newline(text):
+    return text.replace("\n", "<br />")
+
+
+
 class BaseHandler(tornado.web.RequestHandler):
 
     def _execute(self, transforms, *args, **kwargs):
@@ -134,6 +139,7 @@ class BaseHandler(tornado.web.RequestHandler):
 
     def render(self, template_name, **kwargs):
         template = self.application.lookup.get_template(template_name)
+        kwargs["newline"] = newline
         try:
             self.write(template.render(**kwargs))
         except:
