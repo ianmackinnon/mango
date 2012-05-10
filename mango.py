@@ -71,6 +71,7 @@ class Application(tornado.web.Application):
 
             (r"/organisation", OrganisationListHandler),
             (r"/organisation/%s" % re_e_id, OrganisationHandler),
+            (r"/organisation/%s/address" % re_e_id, OrganisationAddressListHandler),
 
             (r"/address", AddressListHandler),
             (r"/address/%s" % re_e_id, AddressHandler),
@@ -84,7 +85,7 @@ class Application(tornado.web.Application):
     
         engine = create_engine(connection_url)
 
-        self.orm = scoped_session(sessionmaker(bind=engine))
+        self.orm = scoped_session(sessionmaker(bind=engine, autocommit=False))
 
         self.lookup = TemplateLookup(directories=['template'],
                                      input_encoding='utf-8',
@@ -228,6 +229,7 @@ class OrganisationHandler(BaseHandler):
             organisation = query.one()
         except sqlalchemy.orm.exc.NoResultFound:
             return self.error(404, error)
+
         self.render('organisation.html', current_user=self.current_user, uri=self.request.uri, xsrf=self.xsrf_token, organisation=organisation)
 
     @authenticated
@@ -265,23 +267,72 @@ class OrganisationHandler(BaseHandler):
 
         name = self.get_argument("name")
 
+        address_e_list = [int(e) for e in self.get_arguments("address_e")]
+
+        if organisation.name == name and set(address_e_list) == set([address.address_e for address in organisation.address_list()]):
+            self.redirect(organisation.url)
+            return
+            
         new_organisation = organisation.copy(moderation_user=self.current_user, visible=True)
+        self.orm.add(new_organisation)
         new_organisation.name = name
+        for address in organisation.address_list():
+            if address.address_e in address_e_list:
+                new_organisation.address_entity_list.append(address)
         self.orm.commit()
         self.redirect(new_organisation.url)
         
 
 
+class OrganisationAddressListHandler(BaseHandler):
+    @authenticated
+    def post(self, organisation_e_string, organisation_id_string):
+        if organisation_id_string:
+            return self.error(405, "Cannot edit revisions.")
+
+        organisation_e = int(organisation_e_string)
+
+        query = Organisation.query_latest(self.orm).filter_by(organisation_e=organisation_e)
+
+        try:
+            organisation = query.one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            return self.error(404, "%d: No such organisation" % organisation_e)
+
+        postal = self.get_argument("postal")
+        lookup = self.get_argument("lookup", None)
+        manual_longitude = self.get_argument_float("manual_longitude", None)
+        manual_latitude = self.get_argument_float("manual_latitude", None)
+
+        new_address = Address(postal, lookup,
+                          manual_longitude=manual_longitude,
+                          manual_latitude=manual_latitude,
+                          moderation_user=self.current_user)
+        self.orm.add(new_address)
+        self.orm.flush()
+        self.orm.refresh(new_address)  # Setting address_e in a trigger, so we have to update manually.
+
+        assert new_address.address_e
+
+        new_organisation = organisation.copy(moderation_user=self.current_user, visible=True)
+        self.orm.add(new_organisation)
+        for address in organisation.address_list():
+            new_organisation.address_entity_list.append(address)
+        new_organisation.address_entity_list.append(new_address)
+
+        self.orm.commit()
+        self.redirect(new_organisation.url)
+
+
 class AddressListHandler(BaseHandler):
     def get(self):
 
-        address_list = Address.query_latest(self.orm).filter(Address.visible==True).all()
+        address_list = Address.query_latest(self.orm).all()
 
         self.render('address_list.html', current_user=self.current_user, uri=self.request.uri, address_list=address_list, xsrf=self.xsrf_token)
 
     def post(self):
         postal = self.get_argument("postal")
-        print postal
         lookup = self.get_argument("lookup", None)
         manual_longitude = self.get_argument_float("manual_longitude", None)
         manual_latitude = self.get_argument_float("manual_latitude", None)
@@ -309,8 +360,6 @@ class AddressHandler(BaseHandler):
             error = "%d, %d: No such address, version" % (address_e, address_id)
         else:
             query = Address.query_latest(self.orm).filter_by(address_e=address_e)
-            if not self.current_user:
-                query = query.filter(Address.visible==True)
             error = "%d: No such address" % address_e
 
         try:
@@ -319,25 +368,6 @@ class AddressHandler(BaseHandler):
             return self.error(404, error)
         self.render('address.html', current_user=self.current_user, uri=self.request.uri, xsrf=self.xsrf_token, address=address)
 
-    @authenticated
-    def delete(self, address_e_string, address_id_string):
-        if address_id_string:
-            return self.error(405, "Cannot delete revisions.")
-
-        address_e = int(address_e_string)
-        
-        query = Address.query_latest(self.orm).filter_by(address_e=address_e).filter(Address.visible==True)
-
-        try:
-            address = query.one()
-        except sqlalchemy.orm.exc.NoResultFound:
-            return self.error(404, "%d: No such address" % address_e)
-
-        new_address = address.copy(moderation_user=self.current_user, visible=False)
-        self.orm.add(new_address)
-        self.orm.commit()
-        self.redirect("/address")
-        
     @authenticated
     def put(self, address_e_string, address_id_string):
         if address_id_string:
@@ -357,7 +387,7 @@ class AddressHandler(BaseHandler):
         manual_longitude = self.get_argument_float("manual_longitude", None)
         manual_latitude = self.get_argument_float("manual_latitude", None)
 
-        new_address = address.copy(moderation_user=self.current_user, visible=True)
+        new_address = address.copy(moderation_user=self.current_user)
         new_address.postal = postal
         new_address.lookup = lookup
         new_address.manual_longitude = manual_longitude

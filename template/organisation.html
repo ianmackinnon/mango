@@ -15,6 +15,11 @@ ${organisation.visible and "Visible" or "Deleted"}
     <span>Name</span>
     <input name="name" value="${organisation.name}">
   </label>
+
+  %for address in organisation.address_list():
+  <input name="address_e" type="text" value="${address.address_e}">
+  %endfor
+
   <input type="submit">
 </form>
 
@@ -24,6 +29,33 @@ ${organisation.visible and "Visible" or "Deleted"}
   <input type="submit" value="delete">
 </form>
 %endif
+
+%for address in organisation.address_list():
+${address.postal}
+%endfor
+
+
+Add address
+<form action="${organisation.url}/address" method="post">
+  <input name="_xsrf" type="hidden" value="${xsrf}">
+  <label>
+    <span>Postal</span>
+    <textarea name="postal"></textarea>
+  </label>
+  <label>
+    <span>Lookup</span>
+    <textarea name="lookup"></textarea>
+  </label>
+  <label>
+    <span>Longitude</span>
+    <input name="longitude" value="">
+  </label>
+  <label>
+    <span>Latitude</span>
+    <input name="latitude" value="">
+  </label>
+  <input type="submit">
+</form>
 
 </%def>
 

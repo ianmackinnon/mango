@@ -150,6 +150,14 @@ class Session(Base):
 
 
 
+organisation_address = Table(
+    'organisation_address', Base.metadata,
+    Column('organisation_id', Integer, ForeignKey('organisation.organisation_id'), primary_key=True),
+    Column('address_e', Integer, ForeignKey('address.address_e'), primary_key=True)
+    )
+
+
+
 class Organisation(Base):
     __tablename__ = 'organisation'
     __table_args__ = {'sqlite_autoincrement':True}
@@ -164,6 +172,8 @@ class Organisation(Base):
     name = Column(Unicode, nullable=False)
 
     moderation_user = relationship(User, backref='moderation_organisation_list')
+    
+    address_entity_list = relationship("Address", secondary=organisation_address, backref='organisation_list')
     
     def __init__(self, name, moderation_user=None, visible=True):
         self.name = name
@@ -188,6 +198,17 @@ class Organisation(Base):
     def revision_url(self):
         return "/organisation/%d,%d" % (self.organisation_e, self.organisation_id)
 
+    def address_list(self):
+        orm = object_session(self)
+        
+        latest_address = orm.query(Address.address_e, func.max(Address.address_id)\
+                             .label("address_id")).group_by("address_e").subquery()
+
+        return orm.query(Address).join((latest_address, and_(
+            latest_address.c.address_e == Address.address_e,
+            latest_address.c.address_id == Address.address_id,
+            ))).join(organisation_address).filter_by(organisation_id=self.organisation_id).all()
+
     @staticmethod
     def query_latest(orm):
         latest = orm.query(Organisation.organisation_e, func.max(Organisation.organisation_id)\
@@ -209,7 +230,6 @@ class Address(Base):
 
     moderation_user_id = Column(Integer, ForeignKey(User.user_id))
     a_time = Column(Float, nullable=False)
-    visible = Column(Boolean, nullable=False, default=True)
 
     postal = Column(Unicode, nullable=False)
     lookup = Column(Unicode)
@@ -220,10 +240,12 @@ class Address(Base):
 
     moderation_user = relationship(User, backref='moderation_address_list')
     
-    def __init__(self, postal=None, lookup=None, manual_longitude=None, manual_latitude=None, longitude=None, latitude=None, moderation_user=None, visible=True):
+    def __init__(self, postal=None, lookup=None,
+                 manual_longitude=None, manual_latitude=None,
+                 longitude=None, latitude=None,
+                 moderation_user=None):
         self.moderation_user = moderation_user
         self.a_time = time.time()
-        self.visible = visible
 
         self.postal = postal
         self.lookup = lookup
@@ -233,18 +255,21 @@ class Address(Base):
         self.latitude = latitude
 
     def __repr__(self):
-        return "<Add-%d,%d(%d) '%s' '%s' %.1f,%.1f %.1f,%.1f>" % (self.address_e, self.address_id, self.visible,
-                                                   self.postal[:10],
-                                                   self.lookup[:10],
-                                                   self.manual_longitude,
-                                                   self.manual_latitude,
-                                                   self.longitude,
-                                                   self.latitude,
-                                                   )
+        return "<Addr-%d,%d '%s' '%s' %s %s>" % (
+            self.address_e, self.address_id,
+            self.postal[:10],
+            (self.lookup or "")[:10],
+            self.repr_coordinates(self.manual_longitude, self.manual_latitude),
+            self.repr_coordinates(self.longitude, self.latitude),
+            )
 
-    def copy(self, moderation_user=None, visible=True):
+    def copy(self, moderation_user=None):
         assert self.address_e
-        address = Address(self.postal, self.lookup, self.manual_longitude, self.manual_latitude, self.longitude, self.latitude, moderation_user, visible)
+        address = Address(
+            self.postal, self.lookup,
+            self.manual_longitude, self.manual_latitude,
+            self.longitude, self.latitude,
+            moderation_user)
         address.address_e = self.address_e
         return address
         
@@ -255,6 +280,12 @@ class Address(Base):
     @property
     def revision_url(self):
         return "/address/%d,%d" % (self.address_e, self.address_id)
+
+    @staticmethod
+    def repr_coordinates(longitude, latitude):
+        if longitude and latitude:
+            return "%0.1f, %0.1f" % (longitude, latitude)
+        return ""
 
     @staticmethod
     def query_latest(orm):

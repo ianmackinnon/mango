@@ -7,7 +7,6 @@
 <h1><a href="${address.url}">Address ${address.address_e}</a></h1>
 
 %if current_user:
-${address.visible and "Visible" or "Deleted"}
 <form action="${address.url}" method="post">
   <input name="_xsrf" type="hidden" value="${xsrf}">
   <input name="_method" type="hidden" value="put">
@@ -46,14 +45,6 @@ ${address.visible and "Visible" or "Deleted"}
     </tr>
   </tbody>
 </table>
-%endif
-
-%if current_user:
-<form action="${address.url}" method="post">
-  <input name="_xsrf" type="hidden" value="${xsrf}">
-  <input name="_method" type="hidden" value="delete">
-  <input type="submit" value="delete">
-</form>
 %endif
 
 </%def>
