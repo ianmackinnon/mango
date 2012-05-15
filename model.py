@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
+import re
 import sys
 import time
 import logging
@@ -25,6 +25,21 @@ from sqlalchemy.orm.exc import NoResultFound
 log = logging.getLogger('model')
 
 Base = declarative_base()
+
+
+
+def short_name(name):
+    short = name.lower()
+    r = re.compile(u"[-_]", re.U)
+    short = r.sub(" ", short)
+    r = re.compile(u"[^\w\s]", re.U)
+    short = r.sub("", short)
+    r = re.compile(u"[\s]+", re.U)
+    short = r.sub(" ", short)
+    short = short.strip()
+    r = re.compile(u"[\s]", re.U)
+    short = r.sub("-", short)
+    return short
 
 
 
@@ -198,6 +213,7 @@ class Organisation(Base):
     
     def __init__(self, name, moderation_user=None, visible=True):
         self.name = name
+
         self.moderation_user = moderation_user
         self.a_time = time.time()
         self.visible = visible
@@ -395,6 +411,7 @@ class OrganisationTag(Base):
     a_time = Column(Float, nullable=False)
 
     name = Column(Unicode, nullable=False)
+    short = Column(Unicode, nullable=False)
 
     moderation_user = relationship(User, backref='moderation_organisation_tag_list')
 
@@ -403,10 +420,12 @@ class OrganisationTag(Base):
         self.a_time = time.time()
 
         self.name = name
+        self.short = short_name(name)
 
     def __repr__(self):
         return "<OrgTag-%d,%d '%s'>" % (
-            self.organisation_tag_e, self.organisation_tag_id,
+            self.organisation_tag_e,
+            self.organisation_tag_id,
             self.name,
             )
 
@@ -422,6 +441,7 @@ class OrganisationTag(Base):
         return {
             "id": self.organisation_tag_e,
             "name": self.name,
+            "short": self.short,
             "url": self.url,
             }
 

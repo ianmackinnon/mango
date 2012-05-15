@@ -1,10 +1,10 @@
 <%inherit file="base.html"/>
 
-<%def name="title()">Organisation Tag ${organisation_tag.organisation_tag_e}</%def>
+<%def name="title()">${organisation_tag.name}</%def>
 
 <%def name="page()">
 
-<h1><a href="${organisation_tag.url}">Organisation Tag ${organisation_tag.organisation_tag_e}</a></h1>
+<h1><a href="${organisation_tag.url}">${organisation_tag.name}</a></h1>
 
 %if current_user:
 <form action="${organisation_tag.url}" method="post">
@@ -14,6 +14,7 @@
     <span>Name</span>
     <input name="name" value="${organisation_tag.name}">
   </label>
+  <span>${organisation_tag.short}</span>
   <input type="submit">
 </form>
 %else:
@@ -22,6 +23,7 @@
     <tr>
       <td>Name</td>
       <td><a href="${organisation_tag.url}">${organisation_tag.name}</a></td>
+      <td>${organisation_tag.short}</td>
     </tr>
   </tbody>
 </table>

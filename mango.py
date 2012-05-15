@@ -194,8 +194,10 @@ class BaseHandler(tornado.web.RequestHandler):
             session = self.orm.query(Session).\
                 filter_by(session_id=session_id).one()
         except sqlalchemy.orm.exc.NoResultFound:
+            self.end_session()
             return None
         if session.d_time is not None:
+            self.end_session()
             return None
         session.touch_commit()
         return session
@@ -418,7 +420,7 @@ class OrganisationHandler(BaseHandler):
                 .all()
             for tag in tag_list:
                 new_organisation.organisation_tag_entity_list.append(tag)
-            
+        
         self.orm.commit()
         self.redirect(new_organisation.url)
         
