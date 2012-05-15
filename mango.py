@@ -25,7 +25,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy import create_engine, func, and_
 
 
-from model import Auth, User, Session, Organisation, Address, OrganisationTag
+from model import Auth, User, Session, Organisation, Address, OrganisationTag, organisation_organisation_tag
 
 
 
@@ -251,22 +251,25 @@ class HomeHandler(BaseHandler):
 
 class OrganisationListHandler(BaseHandler):
     def get(self):
-        name = None
-        if self.content_type("application/x-www-form-urlencoded"):
-            name = self.get_argument("name", None)
-        elif self.content_type("application/json"):
-            try:
-                data = json.loads(self.request.body)
-            except ValueError as e:
-                raise tornado.web.HTTPError(400, "Could not decode JSON data.")
-            if "name" in data:
-                name = data["name"]
+        name = self.get_argument("name", None)
+        tag = self.get_argument("tag", None)
 
         organisation_list = Organisation.query_latest(self.orm)\
             .filter(Organisation.visible==True)
 
         if name:
             organisation_list = organisation_list.filter_by(name=name)
+
+        if tag:
+            tag_list = OrganisationTag.query_latest(self.orm)\
+                .filter_by(short=tag).subquery()
+
+            organisation_list = organisation_list.join(
+                (organisation_organisation_tag, organisation_organisation_tag.c.organisation_id == Organisation.organisation_id)
+                ).join(
+                (tag_list, organisation_organisation_tag.c.organisation_tag_e == tag_list.c.organisation_tag_e)
+                )
+
 
         organisation_list = organisation_list.all()
 
@@ -544,21 +547,16 @@ class AddressHandler(BaseHandler):
 
 class OrganisationTagListHandler(BaseHandler):
     def get(self):
-        name = None
-        if self.content_type("application/x-www-form-urlencoded"):
-            name = self.get_argument("name", None)
-        elif self.content_type("application/json"):
-            try:
-                data = json.loads(self.request.body)
-            except ValueError as e:
-                raise tornado.web.HTTPError(400, "Could not decode JSON data.")
-            if "name" in data:
-                name = data["name"]
+        name = self.get_argument("name", None)
+        short = self.get_argument("short", None)
 
         tag_list = OrganisationTag.query_latest(self.orm)
 
         if name:
             tag_list = tag_list.filter_by(name=name)
+
+        if short:
+            tag_list = tag_list.filter_by(short=short)
 
         tag_list = tag_list.all()
 
