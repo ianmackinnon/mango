@@ -17,7 +17,11 @@ ${organisation.visible and "Visible" or "Deleted"}
   </label>
 
   %for address in organisation.address_list():
-  <input name="address_e" type="text" value="${address.address_e}">
+  <input name="address_id" type="hidden" value="${address.address_e}">
+  %endfor
+
+  %for tag in organisation.tag_list():
+  <input name="tag_id" type="hidden" value="${tag.organisation_tag_e}">
   %endfor
 
   <input type="submit">
@@ -33,10 +37,31 @@ ${organisation.visible and "Visible" or "Deleted"}
 <h3>Tags</h3>
 <table>
   <tbody>
-    %for tag in organisation.organisation_tag_list():
-    <tr><td>
-    ${tag.name}
-    </td></tr>
+    %for tag in organisation.tag_list():
+    <tr>
+      <td>
+	${tag.name}
+      </td>
+      %if current_user:
+      <td>
+	<form action="${organisation.url}" method="post">
+	  <input name="_xsrf" type="hidden" value="${xsrf}">
+	  <input name="_method" type="hidden" value="put">
+	  <input name="name" type="hidden" value="${organisation.name}">
+	  %for address in organisation.address_list():
+	  <input name="address_id" type="hidden" value="${address.address_e}">
+	  %endfor
+	  %for tag_2 in organisation.tag_list():
+	  %if tag_2.organisation_tag_e == tag.organisation_tag_e:
+	  <% continue %>
+	  %endif
+	  <input name="tag_id" type="hidden" value="${tag_2.organisation_tag_e}">
+	  %endfor
+	  <input type="submit" value="delete">
+	</form>
+      </td>
+      %endif
+    </tr>
     %endfor
   </tbody>
 </table>
@@ -46,9 +71,30 @@ ${organisation.visible and "Visible" or "Deleted"}
 <table>
   <tbody>
     %for address in organisation.address_list():
-    <tr><td>
-    ${address.postal | n, h, unicode, newline}
-    </td></tr>
+    <tr>
+      <td>
+	${address.postal | n, h, unicode, newline}
+      </td>
+      %if current_user:
+      <td>
+	<form action="${organisation.url}" method="post">
+	  <input name="_xsrf" type="hidden" value="${xsrf}">
+	  <input name="_method" type="hidden" value="put">
+	  <input name="name" type="hidden" value="${organisation.name}">
+	  %for address_2 in organisation.address_list():
+	  %if address_2.address_e == address.address_e:
+	  <% continue %>
+	  %endif
+	  <input name="address_id" type="hidden" value="${address_2.address_e}">
+	  %endfor
+	  %for tag in organisation.tag_list():
+	  <input name="tag_id" type="hidden" value="${tag.organisation_tag_e}">
+	  %endfor
+	  <input type="submit" value="delete">
+	</form>
+      </td>
+      %endif
+    </tr>
     %endfor
   </tbody>
 </table>

@@ -7,6 +7,7 @@ import time
 import logging
 
 import geopy
+from urllib2 import URLError
 
 from hashlib import sha1
 from optparse import OptionParser
@@ -69,7 +70,7 @@ class Auth(Base):
     name_hash = Column(String, nullable=False)
     
     UniqueConstraint(url, name_hash)
-     
+    
     def __init__(self, url, name):
         """
         "name" must be a unique value for the specified provider url,
@@ -104,7 +105,10 @@ class User(Base):
     def get_from_auth(session, auth_url, auth_name):
         auth_name_hash = generate_hash(auth_name)
         try:
-            user = session.query(User).join(Auth).filter_by(url=auth_url).filter_by(name_hash=auth_name_hash).one()
+            user = session.query(User).join(Auth).\
+                filter_by(url=auth_url).\
+                filter_by(name_hash=auth_name_hash).\
+                one()
         except NoResultFound as e:
             user = None;
         return user
@@ -209,10 +213,20 @@ class Organisation(Base):
         for address in self.address_list():
             new.address_entity_list.append(address)
 
-        for tag in self.organisation_tag_list():
+        for tag in self.tag_list():
             new.organisation_tag_entity_list.append(tag)
 
         return new
+
+    def obj(self):
+        return {
+            "id": self.organisation_e,
+            "name": self.name,
+            "address_id": [address.address_e for address in self.address_list()],
+            "tag_id": [tag.organisation_tag_e for tag in self.tag_list()],
+            "url": self.url,
+            }
+            
         
     def address_list(self):
         orm = object_session(self)
@@ -225,7 +239,7 @@ class Organisation(Base):
             latest_address.c.address_id == Address.address_id,
             ))).join(organisation_address).filter_by(organisation_id=self.organisation_id).all()
 
-    def organisation_tag_list(self):
+    def tag_list(self):
         orm = object_session(self)
         
         latest_organisation_tag = orm.query(OrganisationTag.organisation_tag_e, func.max(OrganisationTag.organisation_tag_id)\
@@ -246,13 +260,14 @@ class Organisation(Base):
 
     @staticmethod
     def query_latest(orm):
-        latest = orm.query(Organisation.organisation_e, func.max(Organisation.organisation_id)\
-                             .label("organisation_id")).group_by("organisation_e").subquery()
-
-        return orm.query(Organisation).join((latest, and_(
-            latest.c.organisation_e == Organisation.organisation_e,
-            latest.c.organisation_id == Organisation.organisation_id,
-            )))
+        latest = orm.query(
+            func.max(Organisation.organisation_id)\
+                .label("organisation_id")
+            )\
+            .group_by(Organisation.organisation_e)
+            
+        return orm.query(Organisation)\
+            .filter(Organisation.organisation_id.in_(latest))
 
 
 
@@ -316,7 +331,8 @@ class Address(Base):
 
     def geocode(self):
         if self.manual_longitude and self.manual_latitude:
-            self.longitude, self.latitude = self.manual_longitude, self.manual_latitude
+            self.longitude = self.manual_longitude
+            self.latitude = self.manual_latitude
             return
         
         if self.lookup:
@@ -324,11 +340,19 @@ class Address(Base):
                 (self.latitude, self.longitude) = self._geocode(self.lookup)
             except geopy.geocoders.google.GQueryError as e:
                 pass
+            except URLError as e:
+                pass
+            except ValueError as e:
+                pass
             return
 
         try:
             (self.latitude, self.longitude) = self._geocode(self.postal)
         except geopy.geocoders.google.GQueryError as e:
+            pass
+        except URLError as e:
+            pass
+        except ValueError as e:
             pass
 
     @property
@@ -394,23 +418,34 @@ class OrganisationTag(Base):
         organisation_tag.organisation_tag_e = self.organisation_tag_e
         return organisation_tag
 
+    def obj(self):
+        return {
+            "id": self.organisation_tag_e,
+            "name": self.name,
+            "url": self.url,
+            }
+
     @property
     def url(self):
         return "/organisation-tag/%d" % self.organisation_tag_e
 
     @property
     def revision_url(self):
-        return "/organisation-tag/%d,%d" % (self.organisation_tag_e, self.organisation_tag_id)
+        return "/organisation-tag/%d,%d" % (
+            self.organisation_tag_e,
+            self.organisation_tag_id,
+            )
 
     @staticmethod
     def query_latest(orm):
-        latest = orm.query(OrganisationTag.organisation_tag_e, func.max(OrganisationTag.organisation_tag_id)\
-                             .label("organisation_tag_id")).group_by("organisation_tag_e").subquery()
+        latest = orm.query(
+            func.max(OrganisationTag.organisation_tag_id)\
+                .label("organisation_tag_id")
+            )\
+            .group_by(OrganisationTag.organisation_tag_e)
 
-        return orm.query(OrganisationTag).join((latest, and_(
-            latest.c.organisation_tag_e == OrganisationTag.organisation_tag_e,
-            latest.c.organisation_tag_id == OrganisationTag.organisation_tag_id,
-            )))
+        return orm.query(OrganisationTag)\
+            .filter(OrganisationTag.organisation_tag_id.in_(latest))
 
 
 

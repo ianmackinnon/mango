@@ -46,3 +46,5 @@ begin
         where organisation_tag_id = new.organisation_tag_id;
 end;
 
+insert into auth (auth_id, url, name_hash) values (-1, "localhost", "d033e22ae348aeb5660fc2140aec35850c4da997");
+insert into user (user_id, auth_id, name) values (-1, -1, "System");

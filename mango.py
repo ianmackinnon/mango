@@ -4,6 +4,7 @@
 import os
 import re
 import sys
+import json
 import errno
 import logging
 
@@ -28,7 +29,7 @@ from model import Auth, User, Session, Organisation, Address, OrganisationTag
 
 
 
-define("port", default=8802, help="run on the given port", type=int)
+define("port", default=8802, help="Run on the given port", type=int)
 
 
 
@@ -40,18 +41,22 @@ class Application(tornado.web.Application):
         try:
             self.cookie_secret = open(".xsrf", "r").read().strip()
         except IOError as e:
-            sys.stderr.write("Could not open XSRF key. Run 'make' to generate one.\n")
+            sys.stderr.write(
+                "Could not open XSRF key. Run 'make' to generate one.\n"
+                )
             sys.exit(1)
 
     def path_is_authenticated(self, path):
         for key, value in self.handler_list:
             if re.match(key, path) and hasattr(value, "get"):
-                if hasattr(value.get, "authenticated") and value.get.authenticated == True:
+                if hasattr(value.get, "authenticated") and \
+                        value.get.authenticated == True:
                     return True
         return False
                 
         
     def __init__(self):
+
         self.load_cookie_secret()
 
         settings = dict(
@@ -81,6 +86,7 @@ class Application(tornado.web.Application):
 
             (r"/auth/login", AuthLoginHandler),
             (r"/auth/login/google", AuthLoginGoogleHandler),
+            (r"/auth/login/local", AuthLoginLocalHandler),
             (r"/auth/logout", AuthLogoutHandler),
             ]
 
@@ -107,8 +113,11 @@ class Application(tornado.web.Application):
             
 
         logger = logging.getLogger()
-        handler = logging.handlers.RotatingFileHandler(log_location, maxBytes=log_max_bytes)
+        handler = logging.handlers.RotatingFileHandler(
+            log_location, maxBytes=log_max_bytes)
         logging.getLogger().addHandler(handler)
+
+        settings["xsrf_cookies"] = False
         
         tornado.web.Application.__init__(self, self.handler_list, **settings)
 
@@ -130,6 +139,34 @@ class BaseHandler(tornado.web.RequestHandler):
     @property
     def orm(self):
         return self.application.orm
+
+    def content_type(self, name):
+        if "Content-Type" in self.request.headers:
+            return self.request.headers["Content-Type"].lower() == name.lower()
+        return False
+
+    def accept_type(self, name):
+        if "Accept" in self.request.headers:
+            return name.lower() in self.request.headers["Accept"].lower()
+        return False
+
+    def is_local(self):
+        if "X-Forwarded-For" in self.request.headers:
+            return False
+        return self.request.remote_ip == "127.0.0.1"
+
+    def get_remote_ip(self):
+        if "X-Forwarded-For" in self.request.headers:
+            return self.request.headers["X-Forwarded-For"]
+        return self.request.remote_ip
+
+    def get_accept_language(self):
+        if "Accept-Language" in self.request.headers:
+            return self.request.headers["Accept-Language"]
+        return u""
+
+    def get_user_agent(self):
+        return self.request.headers["User-Agent"]
 
     def start_session(self, value):
         self.set_secure_cookie(self.application.session_cookie_name, value);
@@ -154,7 +191,8 @@ class BaseHandler(tornado.web.RequestHandler):
     def get_session(self):
         session_id = self.get_secure_cookie(self.application.session_cookie_name)
         try:
-            session = self.orm.query(Session).filter_by(session_id=session_id).one()
+            session = self.orm.query(Session).\
+                filter_by(session_id=session_id).one()
         except sqlalchemy.orm.exc.NoResultFound:
             return None
         if session.d_time is not None:
@@ -171,7 +209,10 @@ class BaseHandler(tornado.web.RequestHandler):
 
     def error(self, status_code, message):
         self.status_code = status_code
-        self.render('error.html', current_user=self.current_user, uri=self.request.uri, status_code=self.status_code, message=message)
+        self.render('error.html',
+                    current_user=self.current_user, uri=self.request.uri,
+                    status_code=self.status_code, message=message,
+                    )
 
     _ARG_DEFAULT_2 = []
     def get_argument_float(self, name, default=_ARG_DEFAULT_2, strip=True):
@@ -184,7 +225,10 @@ class BaseHandler(tornado.web.RequestHandler):
         try:
             return float(value)
         except ValueError as e:
-            raise tornado.web.HTTPError(400, "Cannot convert argument %s to a floating point number." % name)
+            raise tornado.web.HTTPError(
+                400,
+                "Cannot convert argument %s to a floating point number." % name
+                )
 
 
 
@@ -197,39 +241,86 @@ def authenticated(f):
 
 class HomeHandler(BaseHandler):
     def get(self):
-        self.render('home.html', current_user=self.current_user, uri=self.request.uri)
+        self.render('home.html',
+                    current_user=self.current_user, uri=self.request.uri,
+                    )
 
 
 
 class OrganisationListHandler(BaseHandler):
     def get(self):
+        name = None
+        if self.content_type("application/x-www-form-urlencoded"):
+            name = self.get_argument("name", None)
+        elif self.content_type("application/json"):
+            try:
+                data = json.loads(self.request.body)
+            except ValueError as e:
+                raise tornado.web.HTTPError(400, "Could not decode JSON data.")
+            if "name" in data:
+                name = data["name"]
 
-        organisation_list = Organisation.query_latest(self.orm).filter(Organisation.visible==True).all()
+        organisation_list = Organisation.query_latest(self.orm)\
+            .filter(Organisation.visible==True)
 
-        self.render('organisation_list.html', current_user=self.current_user, uri=self.request.uri, organisation_list=organisation_list, xsrf=self.xsrf_token)
+        if name:
+            organisation_list = organisation_list.filter_by(name=name)
+
+        organisation_list = organisation_list.all()
+
+        if self.accept_type("json"):
+            self.write(json.dumps(
+                    [organisation.obj() for organisation in organisation_list]
+                    ))
+        else:
+            self.render('organisation_list.html',
+                        current_user=self.current_user,
+                        uri=self.request.uri,
+                        organisation_list=organisation_list,
+                        xsrf=self.xsrf_token,
+                        )
 
     def post(self):
-        name = self.get_argument("name")
+        if self.content_type("application/x-www-form-urlencoded"):
+            name = self.get_argument("name")
+        elif self.content_type("application/json"):
+            try:
+                data = json.loads(self.request.body)
+            except ValueError as e:
+                raise tornado.web.HTTPError(400, "Could not decode JSON data.")
+            if not "name" in data:
+                raise tornado.web.HTTPError(400, "'name' is required.")
+            name = data["name"]
+        else:
+            raise tornado.web.HTTPError(400, "'content-type' required.")
 
         organisation = Organisation(name, moderation_user=self.current_user)
         self.orm.add(organisation)
         self.orm.commit()
-        self.orm.refresh(organisation)  # Setting organisation_e in a trigger, so we have to update manually.
+
+        # Setting organisation_e in a trigger, so we have to update manually.
+        self.orm.refresh(organisation)
+
         self.redirect(organisation.url)
 
 
 class OrganisationHandler(BaseHandler):
     def get(self, organisation_e_string, organisation_id_string):
         organisation_e = int(organisation_e_string)
-        organisation_id = organisation_id_string and int(organisation_id_string) or None
+        organisation_id = \
+            organisation_id_string and int(organisation_id_string) or None
         
         if organisation_id:
             if not self.current_user:
                 return self.error(404, "Not found")
-            query = self.orm.query(Organisation).filter_by(organisation_e=organisation_e).filter_by(organisation_id=organisation_id)
-            error = "%d, %d: No such organisation, version" % (organisation_e, organisation_id)
+            query = self.orm.query(Organisation).\
+                filter_by(organisation_e=organisation_e).\
+                filter_by(organisation_id=organisation_id)
+            error = "%d, %d: No such organisation, version" % (
+                organisation_e, organisation_id)
         else:
-            query = Organisation.query_latest(self.orm).filter_by(organisation_e=organisation_e)
+            query = Organisation.query_latest(self.orm).\
+                filter_by(organisation_e=organisation_e)
             if not self.current_user:
                 query = query.filter(Organisation.visible==True)
             error = "%d: No such organisation" % organisation_e
@@ -239,7 +330,15 @@ class OrganisationHandler(BaseHandler):
         except sqlalchemy.orm.exc.NoResultFound:
             return self.error(404, error)
 
-        self.render('organisation.html', current_user=self.current_user, uri=self.request.uri, xsrf=self.xsrf_token, organisation=organisation)
+        if self.accept_type("json"):
+            self.write(json.dumps(organisation.obj()))
+        else:
+            self.render('organisation.html',
+                        current_user=self.current_user,
+                        uri=self.request.uri,
+                        xsrf=self.xsrf_token,
+                        organisation=organisation,
+                        )
 
     @authenticated
     def delete(self, organisation_e_string, organisation_id_string):
@@ -274,11 +373,30 @@ class OrganisationHandler(BaseHandler):
         except sqlalchemy.orm.exc.NoResultFound:
             return self.error(404, "%d: No such organisation" % organisation_e)
 
-        name = self.get_argument("name")
+        if self.content_type("application/x-www-form-urlencoded"):
+            name = self.get_argument("name")
+            address_e_list = [
+                int(address_id) for address_id in self.get_arguments("address_id")
+                ]
+            tag_e_list = [
+                int(tag_id) for tag_id in self.get_arguments("tag_id")
+                ]
+        elif self.content_type("application/json"):
+            try:
+                data = json.loads(self.request.body)
+            except ValueError as e:
+                raise tornado.web.HTTPError(400, "Could not decode JSON data.")
+            if not "name" in data:
+                raise tornado.web.HTTPError(400, "'name' is required.")
+            name = data["name"]
+            address_e_list = data.get("address_id", [])
+            tag_e_list = data.get("tag_id", [])
+        else:
+            raise tornado.web.HTTPError(400, "'content-type' required.")
 
-        address_e_list = [int(e) for e in self.get_arguments("address_e")]
-
-        if organisation.name == name and set(address_e_list) == set([address.address_e for address in organisation.address_list()]):
+        if organisation.name == name and \
+                set(address_e_list) == set([address.address_e for address in organisation.address_list()]) and \
+                set(tag_e_list) == set([organisation_tag.organisation_tag_e for organisation_tag in organisation.tag_list()]):
             self.redirect(organisation.url)
             return
             
@@ -286,9 +404,21 @@ class OrganisationHandler(BaseHandler):
         self.orm.add(new_organisation)
         new_organisation.name = name
         del new_organisation.address_entity_list[:]
+        del new_organisation.organisation_tag_entity_list[:]
+
+        # Don't want to be able to share addresses with other organisations
         for address in organisation.address_list():
             if address.address_e in address_e_list:
                 new_organisation.address_entity_list.append(address)
+
+        # Do want to be able to share tags with other organisations
+        if tag_e_list:
+            tag_list = OrganisationTag.query_latest(self.orm)\
+                .filter(OrganisationTag.organisation_tag_e.in_(tag_e_list))\
+                .all()
+            for tag in tag_list:
+                new_organisation.organisation_tag_entity_list.append(tag)
+            
         self.orm.commit()
         self.redirect(new_organisation.url)
         
@@ -412,18 +542,57 @@ class AddressHandler(BaseHandler):
 
 class OrganisationTagListHandler(BaseHandler):
     def get(self):
+        name = None
+        if self.content_type("application/x-www-form-urlencoded"):
+            name = self.get_argument("name", None)
+        elif self.content_type("application/json"):
+            try:
+                data = json.loads(self.request.body)
+            except ValueError as e:
+                raise tornado.web.HTTPError(400, "Could not decode JSON data.")
+            if "name" in data:
+                name = data["name"]
 
-        organisation_tag_list = OrganisationTag.query_latest(self.orm).all()
+        tag_list = OrganisationTag.query_latest(self.orm)
 
-        self.render('organisation_tag_list.html', current_user=self.current_user, uri=self.request.uri, organisation_tag_list=organisation_tag_list, xsrf=self.xsrf_token)
+        if name:
+            tag_list = tag_list.filter_by(name=name)
+
+        tag_list = tag_list.all()
+
+        if self.accept_type("json"):
+            self.write(json.dumps(
+                    [tag.obj() for tag in tag_list]
+                    ))
+        else:
+            self.render('organisation_tag_list.html',
+                        current_user=self.current_user,
+                        uri=self.request.uri,
+                        organisation_tag_list=tag_list,
+                        xsrf=self.xsrf_token
+                        )
 
     def post(self):
-        name = self.get_argument("name")
+        if self.content_type("application/x-www-form-urlencoded"):
+            name = self.get_argument("name")
+        elif self.content_type("application/json"):
+            try:
+                data = json.loads(self.request.body)
+            except ValueError as e:
+                raise tornado.web.HTTPError(400, "Could not decode JSON data.")
+            if not "name" in data:
+                raise tornado.web.HTTPError(400, "'name' is required.")
+            name = data["name"]
+        else:
+            raise tornado.web.HTTPError(400, "'content-type' required.")
 
         organisation_tag = OrganisationTag(name, moderation_user=self.current_user)
         self.orm.add(organisation_tag)
         self.orm.commit()
-        self.orm.refresh(organisation_tag)  # Setting organisation_tag_e in a trigger, so we have to update manually.
+        
+        # Setting organisation_tag_e in a trigger, so we have to update manually.
+        self.orm.refresh(organisation_tag)
+        
         self.redirect(organisation_tag.url)
 
 
@@ -431,22 +600,37 @@ class OrganisationTagListHandler(BaseHandler):
 class OrganisationTagHandler(BaseHandler):
     def get(self, organisation_tag_e_string, organisation_tag_id_string):
         organisation_tag_e = int(organisation_tag_e_string)
-        organisation_tag_id = organisation_tag_id_string and int(organisation_tag_id_string) or None
+        organisation_tag_id = \
+            organisation_tag_id_string and int(organisation_tag_id_string) or None
         
         if organisation_tag_id:
             if not self.current_user:
                 return self.error(404, "Not found")
-            query = self.orm.query(OrganisationTag).filter_by(organisation_tag_e=organisation_tag_e).filter_by(organisation_tag_id=organisation_tag_id)
-            error = "%d, %d: No such organisation_tag, version" % (organisation_tag_e, organisation_tag_id)
+            query = self.orm.query(OrganisationTag).\
+                filter_by(organisation_tag_e=organisation_tag_e).\
+                filter_by(organisation_tag_id=organisation_tag_id)
+            error = "%d, %d: No such organisation_tag, version" % (
+                organisation_tag_e, organisation_tag_id
+                )
         else:
-            query = OrganisationTag.query_latest(self.orm).filter_by(organisation_tag_e=organisation_tag_e)
+            query = OrganisationTag.query_latest(self.orm).\
+                filter_by(organisation_tag_e=organisation_tag_e)
             error = "%d: No such organisation_tag" % organisation_tag_e
 
         try:
             organisation_tag = query.one()
         except sqlalchemy.orm.exc.NoResultFound:
             return self.error(404, error)
-        self.render('organisation_tag.html', current_user=self.current_user, uri=self.request.uri, xsrf=self.xsrf_token, organisation_tag=organisation_tag)
+
+        if self.accept_type("json"):
+            self.write(json.dumps(organisation_tag.obj()))
+        else:
+            self.render('organisation_tag.html',
+                        current_user=self.current_user,
+                        uri=self.request.uri,
+                        xsrf=self.xsrf_token,
+                        organisation_tag=organisation_tag
+                        )
 
     @authenticated
     def put(self, organisation_tag_e_string, organisation_tag_id_string):
@@ -485,7 +669,13 @@ class UserHandler(BaseHandler):
             user = self.orm.query(User).filter_by(user_id=user_id).one()
         except sqlalchemy.orm.exc.NoResultFound:
             return self.error(404, "%d: No such user" % user_id)
-        self.render('user.html', current_user=self.current_user, uri=self.request.uri, xsrf=self.xsrf_token, user=user)
+        self.render(
+            'user.html',
+            current_user=self.current_user,
+            uri=self.request.uri,
+            xsrf=self.xsrf_token,
+            user=user
+            )
 
 
 
@@ -495,7 +685,31 @@ class UserHandler(BaseHandler):
 
 class AuthLoginHandler(BaseHandler):
     def get(self):
-        self.render('login.html', user=self.current_user, uri=self.request.uri, next=self.get_argument("next", "/"))
+        self.render(
+            'login.html',
+            user=self.current_user,
+            uri=self.request.uri,
+            next=self.get_argument("next", "/")
+            )
+
+
+
+class AuthLoginLocalHandler(BaseHandler):
+    def get(self):
+        if not self.is_local():
+            raise tornado.web.HTTPError(500, "Auth failed")
+
+        user = self.orm.query(User).filter_by(user_id=-1).one()
+        session = Session(
+                user,
+                self.get_remote_ip(),
+                self.get_accept_language(),
+                self.get_user_agent(),
+                )
+        self.orm.add(session)
+        self.orm.flush()
+        self.start_session(str(session.session_id))
+        self.redirect(self.get_argument("next", "/"))
 
 
 
@@ -524,13 +738,15 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
         user = User.get_from_auth(self.orm, self.openid_url, auth_name)
 
         if not user:
-            return self.error(404, "%s %s: No account found" % (self.openid_url, auth_name))
+            raise tornado.web.HTTPError(
+                404, "%s %s: No account found" % (self.openid_url, auth_name)
+                )
 
         session = Session(
                 user,
-                self.request.remote_ip,
-                self.request.headers["Accept-Language"],
-                self.request.headers["User-Agent"]
+                self.get_remote_ip(),
+                self.get_accept_language(),
+                self.get_user_agent(),
                 )
         self.orm.add(session)
         self.orm.flush()
