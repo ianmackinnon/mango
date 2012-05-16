@@ -478,10 +478,6 @@ class OrganisationAddressListHandler(BaseHandler):
         else:
             raise tornado.web.HTTPError(400, "'content-type' required.")
 
-
-
-
-
         new_address = Address(postal, lookup,
                           manual_longitude=manual_longitude,
                           manual_latitude=manual_latitude,
@@ -510,22 +506,6 @@ class AddressListHandler(BaseHandler):
 
         self.render('address_list.html', current_user=self.current_user, uri=self.request.uri, address_list=address_list, xsrf=self.xsrf_token)
 
-    def post(self):
-        postal = self.get_argument("postal")
-        lookup = self.get_argument("lookup", None)
-        manual_longitude = self.get_argument_float("manual_longitude", None)
-        manual_latitude = self.get_argument_float("manual_latitude", None)
-
-        address = Address(postal, lookup,
-                          manual_longitude=manual_longitude,
-                          manual_latitude=manual_latitude,
-                          moderation_user=self.current_user)
-        self.orm.add(address)
-        address.geocode()
-        self.orm.commit()
-        self.orm.refresh(address)  # Setting address_e in a trigger, so we have to update manually.
-        self.redirect(address.url)
-
 
 
 class AddressHandler(BaseHandler):
@@ -546,7 +526,20 @@ class AddressHandler(BaseHandler):
             address = query.one()
         except sqlalchemy.orm.exc.NoResultFound:
             return self.error(404, error)
-        self.render('address.html', current_user=self.current_user, uri=self.request.uri, xsrf=self.xsrf_token, address=address)
+
+        if self.accept_type("json"):
+            self.write(json.dumps(
+                    address.obj(),
+                    indent=2,
+                    ))
+        else:
+            self.render(
+                'address.html',
+                current_user=self.current_user,
+                uri=self.request.uri,
+                xsrf=self.xsrf_token,
+                address=address
+                )
 
     @authenticated
     def put(self, address_e_string, address_id_string):
@@ -562,10 +555,35 @@ class AddressHandler(BaseHandler):
         except sqlalchemy.orm.exc.NoResultFound:
             return self.error(404, "%d: No such address" % address_e)
 
-        postal = self.get_argument("postal")
-        lookup = self.get_argument("lookup", None)
-        manual_longitude = self.get_argument_float("manual_longitude", None)
-        manual_latitude = self.get_argument_float("manual_latitude", None)
+        if self.content_type("application/x-www-form-urlencoded"):
+            postal = self.get_argument("postal")
+            lookup = self.get_argument("lookup", None)
+            manual_longitude = self.get_argument_float("manual_longitude", None)
+            manual_latitude = self.get_argument_float("manual_latitude", None)
+        elif self.content_type("application/json"):
+            try:
+                data = json.loads(self.request.body)
+            except ValueError as e:
+                raise tornado.web.HTTPError(400, "Could not decode JSON data.")
+            if not "postal" in data:
+                raise tornado.web.HTTPError(400, "'postal' is required.")
+            postal = data["postal"]
+            lookup = data.get("lookup", None)
+            
+            manual_longitude = data.get("manual_longitude", None)
+            manual_latitude = data.get("manual_latitude", None)
+            if manual_longitude is not None:
+                try:
+                    manual_longitude = float(manual_longitude)
+                except ValueError as e:
+                    raise tornado.web.HTTPError(400, "'manual_longitude' must be a float.")
+            if manual_latitude is not None:
+                try:
+                    manual_latitude = float(manual_latitude)
+                except ValueError as e:
+                    raise tornado.web.HTTPError(400, "'manual_latitude' must be a float.")
+        else:
+            raise tornado.web.HTTPError(400, "'content-type' required.")
 
         new_address = address.copy(moderation_user=self.current_user)
         new_address.postal = postal
@@ -683,7 +701,18 @@ class OrganisationTagHandler(BaseHandler):
         except sqlalchemy.orm.exc.NoResultFound:
             return self.error(404, "%d: No such organisation_tag" % organisation_tag_e)
 
-        name = self.get_argument("name")
+        if self.content_type("application/x-www-form-urlencoded"):
+            name = self.get_argument("name")
+        elif self.content_type("application/json"):
+            try:
+                data = json.loads(self.request.body)
+            except ValueError as e:
+                raise tornado.web.HTTPError(400, "Could not decode JSON data.")
+            if not "name" in data:
+                raise tornado.web.HTTPError(400, "'name' is required.")
+            name = data["name"]
+        else:
+            raise tornado.web.HTTPError(400, "'content-type' required.")
 
         new_organisation_tag = organisation_tag.copy(moderation_user=self.current_user)
         new_organisation_tag.name = name

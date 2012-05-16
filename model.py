@@ -18,6 +18,7 @@ from sqlalchemy import ForeignKey, ForeignKeyConstraint, UniqueConstraint, Check
 from sqlalchemy import Boolean, Integer, Float, Unicode, Numeric, String
 from sqlalchemy.orm import sessionmaker, create_session, relationship, backref, object_session
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm.interfaces import MapperExtension 
 from sqlalchemy.sql import func
 
 from sqlalchemy.orm.exc import NoResultFound
@@ -237,12 +238,12 @@ class Organisation(Base):
     def obj(self):
         return {
             "id": self.organisation_e,
+            "url": self.url,
             "name": self.name,
             "address_id": [address.address_e for address in self.address_list()],
             "address": [address.obj() for address in self.address_list()],
             "tag_id": [tag.organisation_tag_e for tag in self.tag_list()],
             "tag": [tag.obj() for tag in self.tag_list()],
-            "url": self.url,
             }
             
         
@@ -376,6 +377,7 @@ class Address(Base):
     def obj(self):
         return {
             "id": self.address_e,
+            "url": self.url,
             "postal": self.postal,
             "lookup": self.lookup,
             "manual_longitude": self.manual_longitude,
@@ -413,9 +415,19 @@ class Address(Base):
 
 
 
+class OrganisationTagExtension(MapperExtension):
+    def before_insert(self, mapper, connection, instance):
+        instance.short = short_name(instance.name)
+
+    def before_update(self, mapper, connection, instance):
+        instance.short = short_name(instance.name)
+
+
+
 class OrganisationTag(Base):
     __tablename__ = 'organisation_tag'
     __table_args__ = {'sqlite_autoincrement':True}
+    __mapper_args__ = {'extension':OrganisationTagExtension()}
 
     organisation_tag_id = Column(Integer, primary_key=True)
     organisation_tag_e = Column(Integer)
@@ -433,7 +445,6 @@ class OrganisationTag(Base):
         self.a_time = time.time()
 
         self.name = name
-        self.short = short_name(name)
 
     def __repr__(self):
         return "<OrgTag-%d,%d '%s'>" % (
@@ -453,9 +464,9 @@ class OrganisationTag(Base):
     def obj(self):
         return {
             "id": self.organisation_tag_e,
+            "url": self.url,
             "name": self.name,
             "short": self.short,
-            "url": self.url,
             }
 
     @property

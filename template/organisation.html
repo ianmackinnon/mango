@@ -40,7 +40,7 @@ ${organisation.visible and "Visible" or "Deleted"}
     %for tag in organisation.tag_list():
     <tr>
       <td>
-	${tag.name}
+	<a href="${tag.url}">${tag.name}</a>
       </td>
       %if current_user:
       <td>
@@ -76,6 +76,9 @@ ${organisation.visible and "Visible" or "Deleted"}
 	${address.postal | n, h, unicode, newline}
       </td>
       %if current_user:
+      <td>
+	<a href="${address.url}">Edit</a>
+      </td>
       <td>
 	<form action="${organisation.url}" method="post">
 	  <input name="_xsrf" type="hidden" value="${xsrf}">
