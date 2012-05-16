@@ -513,6 +513,9 @@ class OrganisationHandler(BaseHandler):
 
         if self.content_type("application/x-www-form-urlencoded"):
             name = self.get_argument("name")
+            note_e_list = [
+                int(note_id) for note_id in self.get_arguments("note_id")
+                ]
             address_e_list = [
                 int(address_id) for address_id in self.get_arguments("address_id")
                 ]
@@ -521,12 +524,14 @@ class OrganisationHandler(BaseHandler):
                 ]
         elif self.content_type("application/json"):
             name = self.get_json_argument("name")
+            note_e_list = self.get_json_argument("note_id", [])
             address_e_list = self.get_json_argument("address_id", [])
             tag_e_list = self.get_json_argument("tag_id", [])
         else:
             raise tornado.web.HTTPError(400, "'content-type' required.")
 
         if organisation.name == name and \
+                set(note_e_list) == set([note.note_e for note in organisation.note_list()]) and \
                 set(address_e_list) == set([address.address_e for address in organisation.address_list()]) and \
                 set(tag_e_list) == set([organisation_tag.organisation_tag_e for organisation_tag in organisation.tag_list()]):
             self.redirect(organisation.url)
@@ -535,9 +540,18 @@ class OrganisationHandler(BaseHandler):
         new_organisation = organisation.copy(moderation_user=self.current_user, visible=True)
         self.orm.add(new_organisation)
         new_organisation.name = name
+        del new_organisation.note_entity_list[:]
         del new_organisation.address_entity_list[:]
         del new_organisation.organisation_tag_entity_list[:]
 
+        # Do want to be able to share tags with other organisations
+        if note_e_list:
+            note_list = Note.query_latest(self.orm)\
+                .filter(Note.note_e.in_(note_e_list))\
+                .all()
+            for note in note_list:
+                new_organisation.note_entity_list.append(note)
+        
         # Don't want to be able to share addresses with other organisations
         for address in organisation.address_list():
             if address.address_e in address_e_list:

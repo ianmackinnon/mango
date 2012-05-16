@@ -16,6 +16,10 @@ ${organisation.visible and "Visible" or "Deleted"}
     <input name="name" value="${organisation.name}">
   </label>
 
+  %for note in organisation.note_list():
+  <input name="note_id" type="hidden" value="${note.note_e}">
+  %endfor
+
   %for address in organisation.address_list():
   <input name="address_id" type="hidden" value="${address.address_e}">
   %endfor
@@ -48,6 +52,9 @@ ${organisation.visible and "Visible" or "Deleted"}
 	  <input name="_xsrf" type="hidden" value="${xsrf}">
 	  <input name="_method" type="hidden" value="put">
 	  <input name="name" type="hidden" value="${organisation.name}">
+	  %for note in organisation.note_list():
+	  <input name="note_id" type="hidden" value="${note.note_e}">
+	  %endfor
 	  %for address in organisation.address_list():
 	  <input name="address_id" type="hidden" value="${address.address_e}">
 	  %endfor
@@ -84,11 +91,53 @@ ${organisation.visible and "Visible" or "Deleted"}
 	  <input name="_xsrf" type="hidden" value="${xsrf}">
 	  <input name="_method" type="hidden" value="put">
 	  <input name="name" type="hidden" value="${organisation.name}">
+	  %for note in organisation.note_list():
+	  <input name="note_id" type="hidden" value="${note.note_e}">
+	  %endfor
 	  %for address_2 in organisation.address_list():
 	  %if address_2.address_e == address.address_e:
 	  <% continue %>
 	  %endif
 	  <input name="address_id" type="hidden" value="${address_2.address_e}">
+	  %endfor
+	  %for tag in organisation.tag_list():
+	  <input name="tag_id" type="hidden" value="${tag.organisation_tag_e}">
+	  %endfor
+	  <input type="submit" value="delete">
+	</form>
+      </td>
+      %endif
+    </tr>
+    %endfor
+  </tbody>
+</table>
+
+
+<h3>Notes</h3>
+<table>
+  <tbody>
+    %for note in organisation.note_list():
+    <tr>
+      <td>
+	${note.text | n, h, unicode, newline}
+      </td>
+      %if current_user:
+      <td>
+	<a href="${note.url}">Edit</a>
+      </td>
+      <td>
+	<form action="${organisation.url}" method="post">
+	  <input name="_xsrf" type="hidden" value="${xsrf}">
+	  <input name="_method" type="hidden" value="put">
+	  <input name="name" type="hidden" value="${organisation.name}">
+	  %for note_2 in organisation.note_2_list():
+	  %if note_2.note_e == note.note_e:
+	  <% continue %>
+	  %endif
+	  <input name="note_2_id" type="hidden" value="${note_2.note_2_e}">
+	  %endfor
+	  %for address in organisation.address_list():
+	  <input name="address_id" type="hidden" value="${address.address_e}">
 	  %endfor
 	  %for tag in organisation.tag_list():
 	  <input name="tag_id" type="hidden" value="${tag.organisation_tag_e}">

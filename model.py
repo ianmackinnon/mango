@@ -84,6 +84,14 @@ address_note = Table(
 
 
 
+organisation_note = Table(
+    'organisation_note', Base.metadata,
+    Column('organisation_id', Integer, ForeignKey('organisation.organisation_id'), primary_key=True),
+    Column('note_e', Integer, ForeignKey('note.note_e'), primary_key=True)
+    )
+
+
+
 organisation_address = Table(
     'organisation_address', Base.metadata,
     Column('organisation_id', Integer, ForeignKey('organisation.organisation_id'), primary_key=True),
@@ -211,14 +219,21 @@ class Organisation(Base):
 
     moderation_user = relationship(User, backref='moderation_organisation_list')
     
-    address_entity_list = relationship("Address",
-                                       secondary=organisation_address,
-                                       backref='organisation_list'
-                                       )
-    organisation_tag_entity_list = relationship("OrganisationTag",
-                                                secondary=organisation_organisation_tag,
-                                                backref='organisation_list'
-                                                )
+    note_entity_list = relationship(
+        "Note",
+        secondary=organisation_note,
+        backref='organisation_list'
+        )
+    address_entity_list = relationship(
+        "Address",
+        secondary=organisation_address,
+        backref='organisation_list'
+        )
+    organisation_tag_entity_list = relationship(
+        "OrganisationTag",
+        secondary=organisation_organisation_tag,
+        backref='organisation_list'
+        )
     
     def __init__(self, name, moderation_user=None, visible=True):
         self.name = name
@@ -235,6 +250,9 @@ class Organisation(Base):
         new = Organisation(self.name, moderation_user, visible)
         new.organisation_e = self.organisation_e
 
+        for note in self.note_list():
+            new.note_entity_list.append(note)
+
         for address in self.address_list():
             new.address_entity_list.append(address)
 
@@ -248,12 +266,21 @@ class Organisation(Base):
             "id": self.organisation_e,
             "url": self.url,
             "name": self.name,
+            "note_id": [note.note_e for note in self.note_list()],
+            "note": [note.obj() for note in self.note_list()],
             "address_id": [address.address_e for address in self.address_list()],
             "address": [address.obj() for address in self.address_list()],
             "tag_id": [tag.organisation_tag_e for tag in self.tag_list()],
             "tag": [tag.obj() for tag in self.tag_list()],
             }
         
+    def note_list(self):
+        return Note.query_latest(object_session(self)).join((
+                organisation_note,
+                organisation_note.c.note_e == Note.note_e,
+                ))\
+            .filter_by(organisation_id=self.organisation_id).all()
+
     def address_list(self):
         return Address.query_latest(object_session(self)).join((
                 organisation_address,
@@ -347,7 +374,7 @@ class Address(Base):
             moderation_user)
         address.address_e = self.address_e
         for note in self.note_list():
-            new.note_entity_list.append(note)
+            address.note_entity_list.append(note)
 
         return address
 
