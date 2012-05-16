@@ -216,11 +216,11 @@ class BaseHandler(tornado.web.RequestHandler):
                     status_code=self.status_code, message=message,
                     )
 
-    _ARG_DEFAULT_2 = []
-    def get_argument_float(self, name, default=_ARG_DEFAULT_2, strip=True):
+    _ARG_DEFAULT_MANGO = []
+    def get_argument_float(self, name, default=_ARG_DEFAULT_MANGO, strip=True):
         value = self.get_argument(name, default, strip)
         if value == default:
-            if default is self._ARG_DEFAULT_2:
+            if default is self._ARG_DEFAULT_MANGO:
                 raise HTTPError(400, "Missing argument %s" % name)
             return value
 
@@ -232,6 +232,39 @@ class BaseHandler(tornado.web.RequestHandler):
                 "Cannot convert argument %s to a floating point number." % name
                 )
 
+    def get_json_data(self):
+        if hasattr(self, "json_data") and self.json_data:
+            return
+        try:
+            self.json_data = json.loads(self.request.body)
+        except ValueError as e:
+            raise tornado.web.HTTPError(400, "Could not decode JSON data.")
+
+    def get_json_argument(self, name, default=_ARG_DEFAULT_MANGO):
+        self.get_json_data()
+
+        if not name in self.json_data:
+            if default is self._ARG_DEFAULT_MANGO:
+                raise HTTPError(400, "Missing argument %s" % name)
+            return default
+
+        return self.json_data[name]
+
+    def get_json_argument_float(self, name, default=_ARG_DEFAULT_MANGO):
+        value = self.get_json_argument(name, default)
+        if value == default:
+            if default is self._ARG_DEFAULT_MANGO:
+                raise HTTPError(400, "Missing argument %s" % name)
+            return value
+
+        try:
+            return float(value)
+        except ValueError as e:
+            raise tornado.web.HTTPError(
+                400,
+                "Cannot convert argument %s to a floating point number." % name
+                )
+        
 
 
 def authenticated(f):
@@ -290,13 +323,7 @@ class OrganisationListHandler(BaseHandler):
         if self.content_type("application/x-www-form-urlencoded"):
             name = self.get_argument("name")
         elif self.content_type("application/json"):
-            try:
-                data = json.loads(self.request.body)
-            except ValueError as e:
-                raise tornado.web.HTTPError(400, "Could not decode JSON data.")
-            if not "name" in data:
-                raise tornado.web.HTTPError(400, "'name' is required.")
-            name = data["name"]
+            name = self.get_json_argument("name")
         else:
             raise tornado.web.HTTPError(400, "'content-type' required.")
 
@@ -391,15 +418,9 @@ class OrganisationHandler(BaseHandler):
                 int(tag_id) for tag_id in self.get_arguments("tag_id")
                 ]
         elif self.content_type("application/json"):
-            try:
-                data = json.loads(self.request.body)
-            except ValueError as e:
-                raise tornado.web.HTTPError(400, "Could not decode JSON data.")
-            if not "name" in data:
-                raise tornado.web.HTTPError(400, "'name' is required.")
-            name = data["name"]
-            address_e_list = data.get("address_id", [])
-            tag_e_list = data.get("tag_id", [])
+            name = self.get_json_argument("name")
+            address_e_list = self.get_json_argument("address_id", [])
+            tag_e_list = self.get_json_argument("tag_id", [])
         else:
             raise tornado.web.HTTPError(400, "'content-type' required.")
 
@@ -454,27 +475,10 @@ class OrganisationAddressListHandler(BaseHandler):
             manual_longitude = self.get_argument_float("manual_longitude", None)
             manual_latitude = self.get_argument_float("manual_latitude", None)
         elif self.content_type("application/json"):
-            try:
-                data = json.loads(self.request.body)
-            except ValueError as e:
-                raise tornado.web.HTTPError(400, "Could not decode JSON data.")
-            if not "postal" in data:
-                raise tornado.web.HTTPError(400, "'postal' is required.")
-            postal = data["postal"]
-            lookup = data.get("lookup", None)
-            
-            manual_longitude = data.get("manual_longitude", None)
-            manual_latitude = data.get("manual_latitude", None)
-            if manual_longitude is not None:
-                try:
-                    manual_longitude = float(manual_longitude)
-                except ValueError as e:
-                    raise tornado.web.HTTPError(400, "'manual_longitude' must be a float.")
-            if manual_latitude is not None:
-                try:
-                    manual_latitude = float(manual_latitude)
-                except ValueError as e:
-                    raise tornado.web.HTTPError(400, "'manual_latitude' must be a float.")
+            postal = self.get_json_argument("postal")
+            lookup = self.get_json_argument("lookup", None)
+            manual_longitude = self.get_json_argument_float("manual_longitude", None)
+            manual_latitude = self.get_json_argument_float("manual_latitude", None)
         else:
             raise tornado.web.HTTPError(400, "'content-type' required.")
 
@@ -561,27 +565,10 @@ class AddressHandler(BaseHandler):
             manual_longitude = self.get_argument_float("manual_longitude", None)
             manual_latitude = self.get_argument_float("manual_latitude", None)
         elif self.content_type("application/json"):
-            try:
-                data = json.loads(self.request.body)
-            except ValueError as e:
-                raise tornado.web.HTTPError(400, "Could not decode JSON data.")
-            if not "postal" in data:
-                raise tornado.web.HTTPError(400, "'postal' is required.")
-            postal = data["postal"]
-            lookup = data.get("lookup", None)
-            
-            manual_longitude = data.get("manual_longitude", None)
-            manual_latitude = data.get("manual_latitude", None)
-            if manual_longitude is not None:
-                try:
-                    manual_longitude = float(manual_longitude)
-                except ValueError as e:
-                    raise tornado.web.HTTPError(400, "'manual_longitude' must be a float.")
-            if manual_latitude is not None:
-                try:
-                    manual_latitude = float(manual_latitude)
-                except ValueError as e:
-                    raise tornado.web.HTTPError(400, "'manual_latitude' must be a float.")
+            postal = self.get_json_argument("postal")
+            lookup = self.get_json_argument("lookup", None)
+            manual_longitude = self.get_json_argument_float("manual_longitude", None)
+            manual_latitude = self.get_json_argument_float("manual_latitude", None)
         else:
             raise tornado.web.HTTPError(400, "'content-type' required.")
 
@@ -628,13 +615,7 @@ class OrganisationTagListHandler(BaseHandler):
         if self.content_type("application/x-www-form-urlencoded"):
             name = self.get_argument("name")
         elif self.content_type("application/json"):
-            try:
-                data = json.loads(self.request.body)
-            except ValueError as e:
-                raise tornado.web.HTTPError(400, "Could not decode JSON data.")
-            if not "name" in data:
-                raise tornado.web.HTTPError(400, "'name' is required.")
-            name = data["name"]
+            name = self.get_json_argument("name")
         else:
             raise tornado.web.HTTPError(400, "'content-type' required.")
 
@@ -704,13 +685,7 @@ class OrganisationTagHandler(BaseHandler):
         if self.content_type("application/x-www-form-urlencoded"):
             name = self.get_argument("name")
         elif self.content_type("application/json"):
-            try:
-                data = json.loads(self.request.body)
-            except ValueError as e:
-                raise tornado.web.HTTPError(400, "Could not decode JSON data.")
-            if not "name" in data:
-                raise tornado.web.HTTPError(400, "'name' is required.")
-            name = data["name"]
+            name = self.get_json_argument("name")
         else:
             raise tornado.web.HTTPError(400, "'content-type' required.")
 
