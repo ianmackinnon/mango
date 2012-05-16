@@ -1,0 +1,24 @@
+<%inherit file="base.html"/>
+
+<%def name="title()">Notes</%def>
+
+<%def name="page()">
+
+<h1>Notes</h1>
+
+<table>
+  <tbody>
+    % for note in note_list:
+    <tr>
+      <td><a href="${note.url}">${note.text}</a></td>
+      <td>${note.source}</td>
+    </tr>
+    % endfor
+  </tbody>
+</table>
+
+</%def>
+
+</body>
+
+</html>

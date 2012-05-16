@@ -33,6 +33,19 @@ begin
         where address_id = new.address_id;
 end;
 
+create trigger note_insert_after after insert on note
+    when new.note_e is null
+begin
+    update note set note_e =
+        (
+        select max(note_e) + 1 from
+            (
+            select note_e from note union all select 0 as note_e
+            )
+        )
+        where note_id = new.note_id;
+end;
+
 create trigger organisation_tag_insert_after after insert on organisation_tag
     when new.organisation_tag_e is null
 begin

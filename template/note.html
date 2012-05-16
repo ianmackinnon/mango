@@ -1,0 +1,42 @@
+<%inherit file="base.html"/>
+
+<%def name="title()">Note ${note.note_e}</%def>
+
+<%def name="page()">
+
+<h1><a href="${note.url}">Note ${note.note_e}</a></h1>
+
+%if current_user:
+<form action="${note.url}" method="post">
+  <input name="_xsrf" type="hidden" value="${xsrf}">
+  <input name="_method" type="hidden" value="put">
+  <label>
+    <span>Text</span>
+    <textarea name="text">${note.text}</textarea>
+  </label>
+  <label>
+    <span>Source</span>
+    <textarea name="source">${note.source or ""}</textarea>
+  </label>
+  <input type="submit">
+</form>
+%else:
+<table>
+  <tbody>
+    <tr>
+      <td>Text</td>
+      <td>${note.text | n, h, unicode, newline}</a></td>
+    </tr>
+    <tr>
+      <td>Source</td>
+      <td>${note.source | n, h, unicode, newline}</a></td>
+    </tr>
+  </tbody>
+</table>
+%endif
+
+</%def>
+
+</body>
+
+</html>

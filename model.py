@@ -76,6 +76,30 @@ def verify_salted_hash(plaintext, salted_hash):
 
     
 
+address_note = Table(
+    'address_note', Base.metadata,
+    Column('address_id', Integer, ForeignKey('address.address_id'), primary_key=True),
+    Column('note_e', Integer, ForeignKey('note.note_e'), primary_key=True)
+    )
+
+
+
+organisation_address = Table(
+    'organisation_address', Base.metadata,
+    Column('organisation_id', Integer, ForeignKey('organisation.organisation_id'), primary_key=True),
+    Column('address_e', Integer, ForeignKey('address.address_e'), primary_key=True)
+    )
+
+
+
+organisation_organisation_tag = Table(
+    'organisation_organisation_tag', Base.metadata,
+    Column('organisation_id', Integer, ForeignKey('organisation.organisation_id'), primary_key=True),
+    Column('organisation_tag_e', Integer, ForeignKey('organisation_tag.organisation_tag_e'), primary_key=True)
+    )
+
+
+
 class Auth(Base):
     __tablename__ = 'auth'
     __table_args__ = {'sqlite_autoincrement':True}
@@ -172,22 +196,6 @@ class Session(Base):
 
 
 
-organisation_address = Table(
-    'organisation_address', Base.metadata,
-    Column('organisation_id', Integer, ForeignKey('organisation.organisation_id'), primary_key=True),
-    Column('address_e', Integer, ForeignKey('address.address_e'), primary_key=True)
-    )
-
-
-
-organisation_organisation_tag = Table(
-    'organisation_organisation_tag', Base.metadata,
-    Column('organisation_id', Integer, ForeignKey('organisation.organisation_id'), primary_key=True),
-    Column('organisation_tag_e', Integer, ForeignKey('organisation_tag.organisation_tag_e'), primary_key=True)
-    )
-
-
-
 class Organisation(Base):
     __tablename__ = 'organisation'
     __table_args__ = {'sqlite_autoincrement':True}
@@ -245,29 +253,20 @@ class Organisation(Base):
             "tag_id": [tag.organisation_tag_e for tag in self.tag_list()],
             "tag": [tag.obj() for tag in self.tag_list()],
             }
-            
         
     def address_list(self):
-        orm = object_session(self)
-        
-        latest_address = orm.query(Address.address_e, func.max(Address.address_id)\
-                             .label("address_id")).group_by("address_e").subquery()
-
-        return orm.query(Address).join((latest_address, and_(
-            latest_address.c.address_e == Address.address_e,
-            latest_address.c.address_id == Address.address_id,
-            ))).join(organisation_address).filter_by(organisation_id=self.organisation_id).all()
+        return Address.query_latest(object_session(self)).join((
+                organisation_address,
+                organisation_address.c.address_e == Address.address_e,
+                ))\
+            .filter_by(organisation_id=self.organisation_id).all()
 
     def tag_list(self):
-        orm = object_session(self)
-        
-        latest_organisation_tag = orm.query(OrganisationTag.organisation_tag_e, func.max(OrganisationTag.organisation_tag_id)\
-                             .label("organisation_tag_id")).group_by("organisation_tag_e").subquery()
-
-        return orm.query(OrganisationTag).join((latest_organisation_tag, and_(
-            latest_organisation_tag.c.organisation_tag_e == OrganisationTag.organisation_tag_e,
-            latest_organisation_tag.c.organisation_tag_id == OrganisationTag.organisation_tag_id,
-            ))).join(organisation_organisation_tag).filter_by(organisation_id=self.organisation_id).all()
+        return OrganisationTag.query_latest(object_session(self)).join((
+                organisation_organisation_tag,
+                organisation_organisation_tag.c.organisation_tag_e == OrganisationTag.organisation_tag_e,
+                ))\
+            .filter_by(organisation_id=self.organisation_id).all()
 
     @property
     def url(self):
@@ -311,6 +310,11 @@ class Address(Base):
     
     geocoder = geopy.geocoders.Google()
 
+    note_entity_list = relationship("Note",
+                                    secondary=address_note,
+                                    backref='address_list'
+                                    )
+
     def __init__(self, postal=None, lookup=None,
                  manual_longitude=None, manual_latitude=None,
                  longitude=None, latitude=None,
@@ -342,6 +346,9 @@ class Address(Base):
             self.longitude, self.latitude,
             moderation_user)
         address.address_e = self.address_e
+        for note in self.note_list():
+            new.note_entity_list.append(note)
+
         return address
 
     def _geocode(self, address):
@@ -384,7 +391,16 @@ class Address(Base):
             "manual_latitude": self.manual_latitude,
             "longitude": self.longitude,
             "latitude": self.latitude,
+            "note_id": [note.note_e for note in self.note_list()],
+            "note": [note.obj() for note in self.note_list()],
             }
+
+    def note_list(self):
+        return Note.query_latest(object_session(self)).join((
+                address_note,
+                address_note.c.note_e == Note.note_e,
+                ))\
+            .filter_by(address_id=self.address_id).all()
 
     @property
     def url(self):
@@ -405,13 +421,75 @@ class Address(Base):
 
     @staticmethod
     def query_latest(orm):
-        latest = orm.query(Address.address_e, func.max(Address.address_id)\
-                             .label("address_id")).group_by("address_e").subquery()
+        latest = orm.query(func.max(Address.address_id).label("address_id"))\
+            .group_by(Address.address_e)
+        
+        return orm.query(Address)\
+            .filter(Address.address_id.in_(latest))
 
-        return orm.query(Address).join((latest, and_(
-            latest.c.address_e == Address.address_e,
-            latest.c.address_id == Address.address_id,
-            )))
+
+
+class Note(Base):
+    __tablename__ = 'note'
+    __table_args__ = {'sqlite_autoincrement':True}
+
+    note_id = Column(Integer, primary_key=True)
+    note_e = Column(Integer)
+
+    moderation_user_id = Column(Integer, ForeignKey(User.user_id))
+    a_time = Column(Float, nullable=False)
+
+    text = Column(Unicode, nullable=False)
+    source = Column(Unicode, nullable=False)
+
+    moderation_user = relationship(User, backref='moderation_note_list')
+
+    def __init__(self, text=None, source=None,
+                 moderation_user=None):
+        self.moderation_user = moderation_user
+        self.a_time = time.time()
+
+        self.text = text
+        self.source = source
+
+    def __repr__(self):
+        return "<Noner-%d,%d '%s' '%s'>" % (
+            self.note_e, self.note_id,
+            self.text[:10],
+            self.source[:10],
+            )
+
+    def copy(self, moderation_user=None):
+        assert self.note_e
+        note = Note(
+            self.text, self.source,
+            moderation_user)
+        note.note_e = self.note_e
+        return note
+
+    def obj(self):
+        return {
+            "id": self.note_e,
+            "url": self.url,
+            "text": self.text,
+            "source": self.source,
+            }
+
+    @property
+    def url(self):
+        return "/note/%d" % self.note_e
+
+    @property
+    def revision_url(self):
+        return "/note/%d,%d" % (self.note_e, self.note_id)
+
+    @staticmethod
+    def query_latest(orm):
+        latest = orm.query(func.max(Note.note_id).label("note_id"))\
+            .group_by(Note.note_e)
+        
+        return orm.query(Note)\
+            .filter(Note.note_id.in_(latest))
 
 
 
