@@ -239,7 +239,9 @@ class Organisation(Base):
             "id": self.organisation_e,
             "name": self.name,
             "address_id": [address.address_e for address in self.address_list()],
+            "address": [address.obj() for address in self.address_list()],
             "tag_id": [tag.organisation_tag_e for tag in self.tag_list()],
+            "tag": [tag.obj() for tag in self.tag_list()],
             "url": self.url,
             }
             
@@ -370,6 +372,17 @@ class Address(Base):
             pass
         except ValueError as e:
             pass
+
+    def obj(self):
+        return {
+            "id": self.address_e,
+            "postal": self.postal,
+            "lookup": self.lookup,
+            "manual_longitude": self.manual_longitude,
+            "manual_latitude": self.manual_latitude,
+            "longitude": self.longitude,
+            "latitude": self.latitude,
+            }
 
     @property
     def url(self):

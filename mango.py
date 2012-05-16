@@ -275,7 +275,8 @@ class OrganisationListHandler(BaseHandler):
 
         if self.accept_type("json"):
             self.write(json.dumps(
-                    [organisation.obj() for organisation in organisation_list]
+                    [organisation.obj() for organisation in organisation_list],
+                    indent=2,
                     ))
         else:
             self.render('organisation_list.html',
@@ -336,7 +337,10 @@ class OrganisationHandler(BaseHandler):
             return self.error(404, error)
 
         if self.accept_type("json"):
-            self.write(json.dumps(organisation.obj()))
+            self.write(json.dumps(
+                    organisation.obj(),
+                    indent=2,
+                    ))
         else:
             self.render('organisation.html',
                         current_user=self.current_user,
@@ -444,10 +448,39 @@ class OrganisationAddressListHandler(BaseHandler):
         except sqlalchemy.orm.exc.NoResultFound:
             return self.error(404, "%d: No such organisation" % organisation_e)
 
-        postal = self.get_argument("postal")
-        lookup = self.get_argument("lookup", None)
-        manual_longitude = self.get_argument_float("manual_longitude", None)
-        manual_latitude = self.get_argument_float("manual_latitude", None)
+        if self.content_type("application/x-www-form-urlencoded"):
+            postal = self.get_argument("postal")
+            lookup = self.get_argument("lookup", None)
+            manual_longitude = self.get_argument_float("manual_longitude", None)
+            manual_latitude = self.get_argument_float("manual_latitude", None)
+        elif self.content_type("application/json"):
+            try:
+                data = json.loads(self.request.body)
+            except ValueError as e:
+                raise tornado.web.HTTPError(400, "Could not decode JSON data.")
+            if not "postal" in data:
+                raise tornado.web.HTTPError(400, "'postal' is required.")
+            postal = data["postal"]
+            lookup = data.get("lookup", None)
+            
+            manual_longitude = data.get("manual_longitude", None)
+            manual_latitude = data.get("manual_latitude", None)
+            if manual_longitude is not None:
+                try:
+                    manual_longitude = float(manual_longitude)
+                except ValueError as e:
+                    raise tornado.web.HTTPError(400, "'manual_longitude' must be a float.")
+            if manual_latitude is not None:
+                try:
+                    manual_latitude = float(manual_latitude)
+                except ValueError as e:
+                    raise tornado.web.HTTPError(400, "'manual_latitude' must be a float.")
+        else:
+            raise tornado.web.HTTPError(400, "'content-type' required.")
+
+
+
+
 
         new_address = Address(postal, lookup,
                           manual_longitude=manual_longitude,
@@ -562,7 +595,8 @@ class OrganisationTagListHandler(BaseHandler):
 
         if self.accept_type("json"):
             self.write(json.dumps(
-                    [tag.obj() for tag in tag_list]
+                    [tag.obj() for tag in tag_list],
+                    indent=2,
                     ))
         else:
             self.render('organisation_tag_list.html',
@@ -623,7 +657,10 @@ class OrganisationTagHandler(BaseHandler):
             return self.error(404, error)
 
         if self.accept_type("json"):
-            self.write(json.dumps(organisation_tag.obj()))
+            self.write(json.dumps(
+                    organisation_tag.obj(),
+                    indent=2,
+                    ))
         else:
             self.render('organisation_tag.html',
                         current_user=self.current_user,
