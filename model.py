@@ -92,6 +92,14 @@ organisation_note = Table(
 
 
 
+organisation_tag_note = Table(
+    'organisation_tag_note', Base.metadata,
+    Column('organisation_tag_id', Integer, ForeignKey('organisation_tag.organisation_tag_id'), primary_key=True),
+    Column('note_e', Integer, ForeignKey('note.note_e'), primary_key=True)
+    )
+
+
+
 organisation_address = Table(
     'organisation_address', Base.metadata,
     Column('organisation_id', Integer, ForeignKey('organisation.organisation_id'), primary_key=True),
@@ -375,7 +383,6 @@ class Address(Base):
         address.address_e = self.address_e
         for note in self.note_list():
             address.note_entity_list.append(note)
-
         return address
 
     def _geocode(self, address):
@@ -545,6 +552,11 @@ class OrganisationTag(Base):
 
     moderation_user = relationship(User, backref='moderation_organisation_tag_list')
 
+    note_entity_list = relationship("Note",
+                                    secondary=organisation_tag_note,
+                                    backref='organisation_tag_list'
+                                    )
+
     def __init__(self, name, moderation_user=None):
         self.moderation_user = moderation_user
         self.a_time = time.time()
@@ -564,6 +576,8 @@ class OrganisationTag(Base):
             self.name,
             moderation_user)
         organisation_tag.organisation_tag_e = self.organisation_tag_e
+        for note in self.note_list():
+            organisation_tag.note_entity_list.append(note)
         return organisation_tag
 
     def obj(self):
@@ -572,7 +586,16 @@ class OrganisationTag(Base):
             "url": self.url,
             "name": self.name,
             "short": self.short,
+            "note_id": [note.note_e for note in self.note_list()],
+            "note": [note.obj() for note in self.note_list()],
             }
+
+    def note_list(self):
+        return Note.query_latest(object_session(self)).join((
+                organisation_tag_note,
+                organisation_tag_note.c.note_e == Note.note_e,
+                ))\
+            .filter_by(organisation_tag_id=self.organisation_tag_id).all()
 
     @property
     def url(self):

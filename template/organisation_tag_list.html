@@ -12,6 +12,7 @@
     <tr>
       <td><a href="${organisation_tag.url}">${organisation_tag.name}</a></td>
       <td>${organisation_tag.short}</td>
+      <td>${len(organisation_tag.note_list())} notes</td>
     </tr>
     % endfor
   </tbody>

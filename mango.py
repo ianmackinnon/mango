@@ -285,7 +285,6 @@ class HomeHandler(BaseHandler):
 
 
 
-
 class NoteListHandler(BaseHandler):
     def get(self):
 
@@ -698,6 +697,11 @@ class AddressHandler(BaseHandler):
         else:
             raise tornado.web.HTTPError(400, "'content-type' required.")
 
+        if address.name == name and \
+                set(note_e_list) == set([note.note_e for note in address.note_list()]):
+            self.redirect(address.url)
+            return
+            
         new_address = address.copy(moderation_user=self.current_user)
         new_address.postal = postal
         new_address.lookup = lookup
@@ -819,13 +823,31 @@ class OrganisationTagHandler(BaseHandler):
 
         if self.content_type("application/x-www-form-urlencoded"):
             name = self.get_argument("name")
+            note_e_list = [
+                int(note_id) for note_id in self.get_arguments("note_id")
+                ]
         elif self.content_type("application/json"):
             name = self.get_json_argument("name")
+            note_e_list = self.get_json_argument("note_id", [])
         else:
             raise tornado.web.HTTPError(400, "'content-type' required.")
 
+        if organisation_tag.name == name and \
+                set(note_e_list) == set([note.note_e for note in organisation_tag.note_list()]):
+            self.redirect(organisation_tag.url)
+            return
+            
         new_organisation_tag = organisation_tag.copy(moderation_user=self.current_user)
         new_organisation_tag.name = name
+        del new_organisation_tag.note_entity_list[:]
+
+        if note_e_list:
+            note_list = Note.query_latest(self.orm)\
+                .filter(Note.note_e.in_(note_e_list))\
+                .all()
+            for note in note_list:
+                new_organisation_tag.note_entity_list.append(note)
+
         self.orm.commit()
         self.redirect(new_organisation_tag.url)
 
