@@ -9,7 +9,6 @@ import logging
 
 from mako.template import Template
 from mako.lookup import TemplateLookup
-from mako import exceptions
 
 import tornado.httpserver
 import tornado.ioloop
@@ -18,6 +17,7 @@ import tornado.web
 
 from tornado.options import define, options
 
+from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from handle.base import BaseHandler, authenticated
@@ -26,7 +26,7 @@ from handle.user import UserHandler, UserListHandler
 from handle.home import HomeHandler
 from handle.note import NoteHandler, NoteListHandler
 from handle.address import AddressHandler, AddressListHandler
-from handle.organisation import OrganisationHandler, OrganisationListHandler, OrganisationAddressListHandler
+from handle.organisation import OrganisationHandler, OrganisationListHandler, OrganisationNoteListHandler, OrganisationAddressListHandler
 from handle.organisation_tag import OrganisationTagHandler, OrganisationTagListHandler
 
 
@@ -81,7 +81,7 @@ class Application(tornado.web.Application):
 
             (r"/organisation", OrganisationListHandler),
             (r"/organisation/%s" % re_e_id, OrganisationHandler),
-#            (r"/organisation/%s/note" % re_e_id, OrganisationNoteHandler),
+            (r"/organisation/%s/note" % re_e_id, OrganisationNoteListHandler),
             (r"/organisation/%s/address" % re_e_id, OrganisationAddressListHandler),
 
             (r"/address", AddressListHandler),

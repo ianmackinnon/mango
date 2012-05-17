@@ -5,6 +5,7 @@ from base import BaseHandler, authenticated
 from model import Note
 
 
+
 class BaseNoteHandler(BaseHandler):
     def _get_arguments(self):
         if self.content_type("application/x-www-form-urlencoded"):

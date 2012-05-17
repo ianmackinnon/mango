@@ -6,22 +6,7 @@ from model import Address, Note
 
 
 
-class AddressListHandler(BaseHandler):
-    def get(self):
-
-        address_list = Address.query_latest(self.orm).all()
-
-        self.render(
-            'address_list.html',
-            current_user=self.current_user,
-            uri=self.request.uri,
-            address_list=address_list,
-            xsrf=self.xsrf_token,
-            )
-
-
-
-class AddressHandler(BaseHandler):
+class BaseAddressHandler(BaseHandler):
     def _get_arguments(self):
         if self.content_type("application/x-www-form-urlencoded"):
             postal = self.get_argument("postal")
@@ -40,6 +25,25 @@ class AddressHandler(BaseHandler):
         else:
             raise tornado.web.HTTPError(400, "'content-type' required.")
         return postal, lookup, manual_longitude, manual_latitude, note_e_list
+
+
+
+class AddressListHandler(BaseAddressHandler):
+    def get(self):
+
+        address_list = Address.query_latest(self.orm).all()
+
+        self.render(
+            'address_list.html',
+            current_user=self.current_user,
+            uri=self.request.uri,
+            address_list=address_list,
+            xsrf=self.xsrf_token,
+            )
+
+
+
+class AddressHandler(BaseAddressHandler):
         
     def get(self, address_e_string, address_id_string):
         address_e = int(address_e_string)
@@ -84,7 +88,8 @@ class AddressHandler(BaseHandler):
         except sqlalchemy.orm.exc.NoResultFound:
             return self.error(404, "%d: No such address" % address_e)
 
-        postal, lookup, manual_longitude, manual_latitude, note_e_list = self._get_arguments()
+        postal, lookup, manual_longitude, manual_latitude, note_e_list = \
+            BaseAddressHandler._get_arguments(self)
 
         if address.postal == postal and \
                 address.lookup == lookup and \

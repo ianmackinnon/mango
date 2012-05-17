@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from base import BaseHandler, authenticated
+from note import BaseNoteHandler
+from address import BaseAddressHandler
 
 from model import Organisation, Note, Address, OrganisationTag
 
@@ -190,7 +192,7 @@ class OrganisationHandler(BaseHandler):
         
 
 
-class OrganisationAddressListHandler(BaseHandler):
+class OrganisationAddressListHandler(BaseAddressHandler):
     @authenticated
     def post(self, organisation_e_string, organisation_id_string):
         if organisation_id_string:
@@ -198,14 +200,16 @@ class OrganisationAddressListHandler(BaseHandler):
 
         organisation_e = int(organisation_e_string)
 
-        query = Organisation.query_latest(self.orm).filter_by(organisation_e=organisation_e)
+        query = Organisation.query_latest(self.orm).\
+            filter_by(organisation_e=organisation_e)
 
         try:
             organisation = query.one()
         except sqlalchemy.orm.exc.NoResultFound:
             return self.error(404, "%d: No such organisation" % organisation_e)
 
-        postal, lookup, manual_longitude, manual_latitude, note_e_list = AddressHanlder._get_arguments(self)
+        postal, lookup, manual_longitude, manual_latitude, note_e_list = \
+            BaseAddressHandler._get_arguments(self)
 
         new_address = Address(postal, lookup,
                           manual_longitude=manual_longitude,
@@ -214,16 +218,50 @@ class OrganisationAddressListHandler(BaseHandler):
         self.orm.add(new_address)
         new_address.geocode()
         self.orm.flush()
-        self.orm.refresh(new_address)  # Setting address_e in a trigger, so we have to update manually.
-
+        # Setting address_e in a trigger, so we have to update manually.
+        self.orm.refresh(new_address)
         assert new_address.address_e
 
-        new_organisation = organisation.copy(moderation_user=self.current_user, visible=True)
+        new_organisation = organisation.copy(
+            moderation_user=self.current_user, visible=True
+            )
         self.orm.add(new_organisation)
-        for address in organisation.address_list():
-            new_organisation.address_entity_list.append(address)
         new_organisation.address_entity_list.append(new_address)
+        self.orm.commit()
+        self.redirect(new_organisation.url)
 
+
+
+class OrganisationNoteListHandler(BaseNoteHandler):
+    @authenticated
+    def post(self, organisation_e_string, organisation_id_string):
+        if organisation_id_string:
+            return self.error(405, "Cannot edit revisions.")
+
+        organisation_e = int(organisation_e_string)
+
+        query = Organisation.query_latest(self.orm)\
+            .filter_by(organisation_e=organisation_e)
+
+        try:
+            organisation = query.one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            return self.error(404, "%d: No such organisation" % organisation_e)
+
+        text, source = BaseNoteHandler._get_arguments(self)
+
+        new_note = Note(text, source,
+                        moderation_user=self.current_user)
+        self.orm.add(new_note)
+        self.orm.flush()
+        # Setting note_e in a trigger, so we have to update manually.
+        self.orm.refresh(new_note)
+        assert new_note.note_e
+
+        new_organisation = organisation.copy(
+            moderation_user=self.current_user, visible=True)
+        self.orm.add(new_organisation)
+        new_organisation.note_entity_list.append(new_note)
         self.orm.commit()
         self.redirect(new_organisation.url)
 
