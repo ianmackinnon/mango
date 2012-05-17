@@ -27,7 +27,7 @@ from handle.home import HomeHandler
 from handle.note import NoteHandler, NoteListHandler
 from handle.address import AddressHandler, AddressListHandler
 from handle.organisation import OrganisationHandler, OrganisationListHandler, OrganisationNoteListHandler, OrganisationAddressListHandler
-from handle.organisation_tag import OrganisationTagHandler, OrganisationTagListHandler
+from handle.organisation_tag import OrganisationTagHandler, OrganisationTagListHandler, OrganisationTagNoteListHandler
 
 
 
@@ -86,11 +86,11 @@ class Application(tornado.web.Application):
 
             (r"/address", AddressListHandler),
             (r"/address/%s" % re_e_id, AddressHandler),
-#            (r"/address/%s/note" % re_e_id, AddressNoteHandler),
+#            (r"/address/%s/note" % re_e_id, AddressNoteListHandler),
 
             (r"/organisation-tag", OrganisationTagListHandler),
             (r"/organisation-tag/%s" % re_e_id, OrganisationTagHandler),
-#            (r"/organisation-tag/%s/note" % re_e_id, OrganisationTagNoteHandler),
+            (r"/organisation-tag/%s/note" % re_e_id, OrganisationTagNoteListHandler),
 
             (r"/auth/login", AuthLoginHandler),
             (r"/auth/login/google", AuthLoginGoogleHandler),

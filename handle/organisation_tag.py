@@ -1,12 +1,30 @@
 # -*- coding: utf-8 -*-
 
 from base import BaseHandler, authenticated
+from note import BaseNoteHandler
 
 from model import OrganisationTag, Note
 
 
 
-class OrganisationTagListHandler(BaseHandler):
+class BaseOrganisationTagHandler(BaseHandler):
+    def _get_arguments(self):
+        if self.content_type("application/x-www-form-urlencoded"):
+            name = self.get_argument("name")
+            note_e_list = [
+                int(note_id) for note_id in self.get_arguments("note_id")
+                ]
+        elif self.content_type("application/json"):
+            name = self.get_json_argument("name")
+            note_e_list = self.get_json_argument("note_id", [])
+        else:
+            raise tornado.web.HTTPError(400, "'content-type' required.")
+
+        return name, note_e_list
+
+
+
+class OrganisationTagListHandler(BaseOrganisationTagHandler):
     def get(self):
         name = self.get_argument("name", None)
         short = self.get_argument("short", None)
@@ -32,7 +50,7 @@ class OrganisationTagListHandler(BaseHandler):
                         )
 
     def post(self):
-        name = OrganisationTagHandler._get_arguments(self)
+        name, note_e_list = BaseOrganisationTagHandler._get_arguments(self)
 
         organisation_tag = OrganisationTag(name, moderation_user=self.current_user)
         self.orm.add(organisation_tag)
@@ -45,21 +63,7 @@ class OrganisationTagListHandler(BaseHandler):
 
 
 
-class OrganisationTagHandler(BaseHandler):
-    def _get_arguments(self):
-        if self.content_type("application/x-www-form-urlencoded"):
-            name = self.get_argument("name")
-            note_e_list = [
-                int(note_id) for note_id in self.get_arguments("note_id")
-                ]
-        elif self.content_type("application/json"):
-            name = self.get_json_argument("name")
-            note_e_list = self.get_json_argument("note_id", [])
-        else:
-            raise tornado.web.HTTPError(400, "'content-type' required.")
-
-        return name, note_e_list
-
+class OrganisationTagHandler(BaseOrganisationTagHandler):
     def get(self, organisation_tag_e_string, organisation_tag_id_string):
         organisation_tag_e = int(organisation_tag_e_string)
         organisation_tag_id = \
@@ -110,7 +114,7 @@ class OrganisationTagHandler(BaseHandler):
         except sqlalchemy.orm.exc.NoResultFound:
             return self.error(404, "%d: No such organisation_tag" % organisation_tag_e)
 
-        name, note_e_list = OrganisationTagHandler._get_arguments(self)
+        name, note_e_list = BaseOrganisationTagHandler._get_arguments(self)
 
         if organisation_tag.name == name and \
                 set(note_e_list) == set([note.note_e for note in organisation_tag.note_list()]):
@@ -132,4 +136,36 @@ class OrganisationTagHandler(BaseHandler):
         self.redirect(new_organisation_tag.url)
 
 
+
+class OrganisationTagNoteListHandler(BaseNoteHandler):
+    @authenticated
+    def post(self, organisation_tag_e_string, organisation_tag_id_string):
+        if organisation_tag_id_string:
+            return self.error(405, "Cannot edit revisions.")
+
+        organisation_tag_e = int(organisation_tag_e_string)
+
+        query = OrganisationTag.query_latest(self.orm).filter_by(organisation_tag_e=organisation_tag_e)
+
+        try:
+            organisation_tag = query.one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            return self.error(404, "%d: No such organisation_tag" % organisation_tag_e)
+
+        text, source = BaseNoteHandler._get_arguments(self)
+
+        new_note = Note(text, source,
+                        moderation_user=self.current_user)
+        self.orm.add(new_note)
+        self.orm.flush()
+        # Setting note_e in a trigger, so we have to update manually.
+        self.orm.refresh(new_note)
+        assert new_note.note_e
+
+        new_organisation_tag = organisation_tag.copy(
+            moderation_user=self.current_user)
+        self.orm.add(new_organisation_tag)
+        new_organisation_tag.note_entity_list.append(new_note)
+        self.orm.commit()
+        self.redirect(new_organisation_tag.url)
 

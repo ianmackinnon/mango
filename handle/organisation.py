@@ -267,6 +267,3 @@ class OrganisationNoteListHandler(BaseNoteHandler):
 
 
 
-
-
-
