@@ -11,7 +11,7 @@
     % for address in address_list:
     <tr>
       <td><a href="${address.url}">${address.postal | n, h, unicode, newline}</a></td>
-      <td>${address.repr_coordinates(address.longitude, address.latitude)}</a></td>
+      <td>${address.repr_coordinates(address.longitude, address.latitude)}</td>
       <td>
 	%if address.note_list():
 	<ul>

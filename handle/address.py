@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from base import BaseHandler, authenticated
+from sqlalchemy.sql import func
 
+from base import BaseHandler, authenticated
 from model import Address, Note
 
 
@@ -30,8 +31,38 @@ class BaseAddressHandler(BaseHandler):
 
 class AddressListHandler(BaseAddressHandler):
     def get(self):
+        lookup = self.get_argument("lookup", None)
+        latitude_min = self.get_argument_float("latitude_min", None)
+        latitude_max = self.get_argument_float("latitude_max", None)
+        longitude_min = self.get_argument_float("longitude_min", None)
+        longitude_max = self.get_argument_float("longitude_max", None)
+        latitude = self.get_argument_float("latitude", None)
+        longitude = self.get_argument_float("longitude", None)
 
-        address_list = Address.query_latest(self.orm).all()
+        address_list = Address.query_latest(self.orm)
+        
+        if lookup is not None:
+            
+        if latitude_min is not None and latitude_max is not None and \
+                longitude_min is not None and longitude_max is not None:
+            address_list = address_list \
+                .filter(Address.latitude >= latitude_min) \
+                .filter(Address.latitude <= latitude_max) \
+                .filter(Address.longitude >= longitude_min) \
+                .filter(Address.longitude <= longitude_max)
+        else:
+            if (latitude is None or longitude is None) and lookup:
+                latitude, longitude = Address._geocode(lookup)
+            if latitude is not None and longitude is not None:
+            address_list = address_list \
+                .filter(Address.latitude != None) \
+                .filter(Address.longitude != None) \
+                .order_by(
+                func.abs(latitude - Address.latitude) + \
+                func.abs(longitude - Address.longitude)
+                )
+
+        address_list = address_list.limit(10).all()
 
         self.render(
             'address_list.html',
