@@ -6,7 +6,7 @@ Mapping Application for NGOs
 
     sudo apt-get install python-setuptools sqlite3
 
-    sudo pip install mako tornado sqlalchemy geopy
+    sudo pip install mako tornado sqlalchemy geopy markdown
 
     make
 

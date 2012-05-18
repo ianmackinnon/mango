@@ -35,7 +35,7 @@
     %for note in organisation_tag.note_list():
     <tr>
       <td>
-	${note.text | n, h, unicode, newline}
+	${note.text | n, markdown_safe}
       </td>
       %if current_user:
       <td>

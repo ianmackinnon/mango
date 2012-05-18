@@ -1,12 +1,19 @@
 # -*- coding: utf-8 -*-
 
 import json
+import markdown
 import tornado.web
 import sqlalchemy.orm.exc
 
 from mako import exceptions
 
 from model import Session
+
+
+
+md_safe = markdown.Markdown(
+    safe_mode=True,
+    )
 
 
 
@@ -19,6 +26,11 @@ def authenticated(f):
 
 def newline(text):
     return text.replace("\n", "<br />")
+
+
+
+def markdown_safe(text):
+    return md_safe.convert(text)
 
 
 
@@ -74,6 +86,7 @@ class BaseHandler(tornado.web.RequestHandler):
     def render(self, template_name, **kwargs):
         template = self.application.lookup.get_template(template_name)
         kwargs["newline"] = newline
+        kwargs["markdown_safe"] = markdown_safe
         try:
             self.write(template.render(**kwargs))
         except:
