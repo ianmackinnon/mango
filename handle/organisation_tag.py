@@ -43,10 +43,7 @@ class OrganisationTagListHandler(BaseOrganisationTagHandler):
             self.write_json([tag.obj() for tag in tag_list])
         else:
             self.render('organisation_tag_list.html',
-                        current_user=self.current_user,
-                        uri=self.request.uri,
                         organisation_tag_list=tag_list,
-                        xsrf=self.xsrf_token
                         )
 
     def post(self):
@@ -94,10 +91,7 @@ class OrganisationTagHandler(BaseOrganisationTagHandler):
                     )
         else:
             self.render('organisation_tag.html',
-                        current_user=self.current_user,
-                        uri=self.request.uri,
-                        xsrf=self.xsrf_token,
-                        organisation_tag=organisation_tag
+                        organisation_tag=organisation_tag,
                         )
 
     @authenticated

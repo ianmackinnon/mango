@@ -11,6 +11,16 @@
 
 <body>
 
+  %if messages:
+  <table>
+    <tbody>
+      %for message in messages:
+      <tr><td>${message[1]}</td></tr>
+      %endfor
+    </tbody>
+  </table>
+  %endif
+
   <nav>
     <a href="/">Home</a>
     <a href="/organisation">Organisations</a>

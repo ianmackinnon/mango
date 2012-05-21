@@ -38,10 +38,7 @@ class OrganisationListHandler(BaseHandler):
                     )
         else:
             self.render('organisation_list.html',
-                        current_user=self.current_user,
-                        uri=self.request.uri,
                         organisation_list=organisation_list,
-                        xsrf=self.xsrf_token,
                         )
 
     def post(self):
@@ -94,9 +91,6 @@ class OrganisationHandler(BaseHandler):
                     )
         else:
             self.render('organisation.html',
-                        current_user=self.current_user,
-                        uri=self.request.uri,
-                        xsrf=self.xsrf_token,
                         organisation=organisation,
                         )
 

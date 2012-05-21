@@ -6,8 +6,7 @@ import sys
 import time
 import logging
 
-import geopy
-from urllib2 import URLError
+import geo
 
 from hashlib import sha1
 from optparse import OptionParser
@@ -343,8 +342,6 @@ class Address(Base):
 
     moderation_user = relationship(User, backref='moderation_address_list')
     
-    geocoder = geopy.geocoders.Google()
-
     note_entity_list = relationship("Note",
                                     secondary=address_note,
                                     backref='address_list'
@@ -385,35 +382,20 @@ class Address(Base):
             address.note_entity_list.append(note)
         return address
 
-    def _geocode(self, address):
-        address, (latitude, longitude) = self.geocoder.geocode(address.encode("utf-8"))
-        return (latitude, longitude)
-
     def geocode(self):
         if self.manual_longitude and self.manual_latitude:
             self.longitude = self.manual_longitude
             self.latitude = self.manual_latitude
             return
         
-        if self.lookup:
-            try:
-                (self.latitude, self.longitude) = self._geocode(self.lookup)
-            except geopy.geocoders.google.GQueryError as e:
-                pass
-            except URLError as e:
-                pass
-            except ValueError as e:
-                pass
+        coords = geo.geocode(self.lookup)
+        if coords:
+            (self.latitude, self.longitude) = coords
             return
 
-        try:
-            (self.latitude, self.longitude) = self._geocode(self.postal)
-        except geopy.geocoders.google.GQueryError as e:
-            pass
-        except URLError as e:
-            pass
-        except ValueError as e:
-            pass
+        coords = geo.geocode(self.postal)
+        if coords:
+            (self.latitude, self.longitude) = coords
 
     def obj(self):
         return {

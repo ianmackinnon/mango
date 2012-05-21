@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import geo
+
 from sqlalchemy.sql import func
 
 from base import BaseHandler, authenticated
@@ -41,8 +43,6 @@ class AddressListHandler(BaseAddressHandler):
 
         address_list = Address.query_latest(self.orm)
         
-        if lookup is not None:
-            
         if latitude_min is not None and latitude_max is not None and \
                 longitude_min is not None and longitude_max is not None:
             address_list = address_list \
@@ -52,24 +52,26 @@ class AddressListHandler(BaseAddressHandler):
                 .filter(Address.longitude <= longitude_max)
         else:
             if (latitude is None or longitude is None) and lookup:
-                latitude, longitude = Address._geocode(lookup)
+                coords = geo.geocode(lookup)
+                if coords:
+                    latitude, longitude = coords
+                    print lookup, latitude, longitude
+                else:
+                    self.messages.append(("WARNING", "Could not find address: '%s'." % lookup))
             if latitude is not None and longitude is not None:
-            address_list = address_list \
-                .filter(Address.latitude != None) \
-                .filter(Address.longitude != None) \
-                .order_by(
-                func.abs(latitude - Address.latitude) + \
-                func.abs(longitude - Address.longitude)
-                )
+                address_list = address_list \
+                    .filter(Address.latitude != None) \
+                    .filter(Address.longitude != None) \
+                    .order_by(
+                    func.abs(latitude - Address.latitude) + \
+                    func.abs(longitude - Address.longitude)
+                    )
 
         address_list = address_list.limit(10).all()
 
         self.render(
             'address_list.html',
-            current_user=self.current_user,
-            uri=self.request.uri,
             address_list=address_list,
-            xsrf=self.xsrf_token,
             )
 
 
@@ -99,9 +101,6 @@ class AddressHandler(BaseAddressHandler):
         else:
             self.render(
                 'address.html',
-                current_user=self.current_user,
-                uri=self.request.uri,
-                xsrf=self.xsrf_token,
                 address=address
                 )
 

@@ -10,7 +10,9 @@ class UserListHandler(BaseHandler):
     @authenticated
     def get(self):
         user_list = self.orm.query(User).all()
-        self.render('user_list.html', current_user=self.current_user, uri=self.request.uri, user_list=user_list)
+        self.render('user_list.html',
+                    user_list=user_list
+                    )
 
 class UserHandler(BaseHandler):
     @authenticated
@@ -22,10 +24,7 @@ class UserHandler(BaseHandler):
             return self.error(404, "%d: No such user" % user_id)
         self.render(
             'user.html',
-            current_user=self.current_user,
-            uri=self.request.uri,
-            xsrf=self.xsrf_token,
-            user=user
+            user=user,
             )
 
 

@@ -36,6 +36,10 @@ def markdown_safe(text):
 
 class BaseHandler(tornado.web.RequestHandler):
 
+    def __init__(self, *args, **kwargs):
+        self.messages = []
+        tornado.web.RequestHandler.__init__(self, *args, **kwargs)
+
     def _execute(self, transforms, *args, **kwargs):
         method = self.get_argument("_method", None)
         if method and self.request.method.lower() == "post":
@@ -85,8 +89,15 @@ class BaseHandler(tornado.web.RequestHandler):
 
     def render(self, template_name, **kwargs):
         template = self.application.lookup.get_template(template_name)
-        kwargs["newline"] = newline
-        kwargs["markdown_safe"] = markdown_safe
+        kwargs.update({
+                "messages": self.messages,
+                "newline": newline,
+                "markdown_safe": markdown_safe,
+                "current_user": self.current_user,
+                "uri": self.request.uri,
+                "xsrf": self.xsrf_token,
+                })
+
         try:
             self.write(template.render(**kwargs))
         except:

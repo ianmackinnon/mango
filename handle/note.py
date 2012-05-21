@@ -27,10 +27,7 @@ class NoteListHandler(BaseNoteHandler):
 
         self.render(
             'note_list.html',
-            current_user=self.current_user,
-            uri=self.request.uri,
             note_list=note_list,
-            xsrf=self.xsrf_token
             )
 
     def post(self):
@@ -68,9 +65,6 @@ class NoteHandler(BaseNoteHandler):
         else:
             self.render(
                 'note.html',
-                current_user=self.current_user,
-                uri=self.request.uri,
-                xsrf=self.xsrf_token,
                 note=note
                 )
 

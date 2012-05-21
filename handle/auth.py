@@ -11,8 +11,6 @@ class AuthLoginHandler(BaseHandler):
     def get(self):
         self.render(
             'login.html',
-            user=self.current_user,
-            uri=self.request.uri,
             next=self.get_argument("next", "/")
             )
 
