@@ -13,6 +13,7 @@ class BaseAddressHandler(BaseHandler):
     def _get_arguments(self):
         if self.content_type("application/x-www-form-urlencoded"):
             postal = self.get_argument("postal")
+            source = self.get_argument("source")
             lookup = self.get_argument("lookup", None)
             manual_longitude = self.get_argument_float("manual_longitude", None)
             manual_latitude = self.get_argument_float("manual_latitude", None)
@@ -21,13 +22,14 @@ class BaseAddressHandler(BaseHandler):
                 ]
         elif self.content_type("application/json"):
             postal = self.get_json_argument("postal")
+            source = self.get_json_argument("source")
             lookup = self.get_json_argument("lookup", None)
             manual_longitude = self.get_json_argument_float("manual_longitude", None)
             manual_latitude = self.get_json_argument_float("manual_latitude", None)
             note_e_list = self.get_json_argument("note_id", [])
         else:
             raise tornado.web.HTTPError(400, "'content-type' required.")
-        return postal, lookup, manual_longitude, manual_latitude, note_e_list
+        return postal, source, lookup, manual_longitude, manual_latitude, note_e_list
 
 
 
@@ -42,7 +44,7 @@ class AddressListHandler(BaseAddressHandler):
         longitude = self.get_argument_float("longitude", None)
 
         address_list = Address.query_latest(self.orm)
-        
+
         if latitude_min is not None and latitude_max is not None and \
                 longitude_min is not None and longitude_max is not None:
             address_list = address_list \
@@ -118,10 +120,11 @@ class AddressHandler(BaseAddressHandler):
         except sqlalchemy.orm.exc.NoResultFound:
             return self.error(404, "%d: No such address" % address_e)
 
-        postal, lookup, manual_longitude, manual_latitude, note_e_list = \
+        postal, source, lookup, manual_longitude, manual_latitude, note_e_list = \
             BaseAddressHandler._get_arguments(self)
 
         if address.postal == postal and \
+                address.source == source and \
                 address.lookup == lookup and \
                 address.manual_longitude == manual_longitude and \
                 address.manual_latitude == manual_latitude and \
@@ -131,6 +134,7 @@ class AddressHandler(BaseAddressHandler):
             
         new_address = address.copy(moderation_user=self.current_user)
         new_address.postal = postal
+        new_address.source = source
         new_address.lookup = lookup
         new_address.manual_longitude = manual_longitude
         new_address.manual_latitude = manual_latitude

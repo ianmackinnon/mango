@@ -41,7 +41,7 @@ def get_one_note(text, source):
         }
     h.follow_redirects = True
     h.follow_all_redirects = True
-    uri = "http://localhost:8802/note?text=%s,source=%s" % urllib.quote_plus(text, source)
+    uri = "http://localhost:8802/note?text=%s,source=%s" % (urllib.quote_plus(text), urllib.quote_plus(source))
     res, body = h.request(
         uri,
         headers=headers,
@@ -101,6 +101,26 @@ def make_organisation(name):
         )
     assert res.status == 200
     return json.loads(body)
+
+def get_organisation_by_id(id):
+    headers = {
+        "Accept": "application/json",
+        }
+    h.follow_redirects = True
+    h.follow_all_redirects = True
+    res, body = h.request(
+        "http://localhost:8802/organisation/%d" % id,
+        headers=headers,
+        )
+    assert res.status == 200, repr((res, body))
+    try:
+        obj = json.loads(body)
+    except ValueError as e:
+        print body
+        raise e
+    if not obj:
+        return None
+    return obj
 
 def get_one_organisation(name):
     headers = {
@@ -269,10 +289,10 @@ def organisation_add_tag(organisation, tag):
 
 
 
-def organisation_add_address(organisation, address_text):
+def organisation_add_address(organisation, postal, source):
     # Only if it doesn't already exist
     for address in organisation["address"]:
-        if address["postal"] == address_text:
+        if address["postal"] == postal:
             if address["lookup"] is not None:
                 break
             if address["manual_longitude"] is not None:
@@ -287,11 +307,13 @@ def organisation_add_address(organisation, address_text):
         }
     h.follow_redirects = True
     h.follow_all_redirects = True
+    data = json.dumps({"postal": postal, "source": source})
+    print data
     res, body = h.request(
         "http://localhost:8802%s/address" % organisation["url"],
         "POST",
         headers=headers,
-        body=json.dumps({"postal": address_text})
+        body=data,
         )
     assert res.status == 200, repr((res, body))
     return json.loads(body)

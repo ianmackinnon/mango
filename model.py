@@ -334,6 +334,7 @@ class Address(Base):
     a_time = Column(Float, nullable=False)
 
     postal = Column(Unicode, nullable=False)
+    source = Column(Unicode, nullable=False)
     lookup = Column(Unicode)
     manual_longitude = Column(Float)
     manual_latitude = Column(Float)
@@ -347,7 +348,7 @@ class Address(Base):
                                     backref='address_list'
                                     )
 
-    def __init__(self, postal=None, lookup=None,
+    def __init__(self, postal=None, source=None, lookup=None,
                  manual_longitude=None, manual_latitude=None,
                  longitude=None, latitude=None,
                  moderation_user=None):
@@ -355,6 +356,7 @@ class Address(Base):
         self.a_time = time.time()
 
         self.postal = postal
+        self.source = source
         self.lookup = lookup
         self.manual_longitude = manual_longitude
         self.manual_latitude = manual_latitude
@@ -373,7 +375,7 @@ class Address(Base):
     def copy(self, moderation_user=None):
         assert self.address_e
         address = Address(
-            self.postal, self.lookup,
+            self.postal, self.source, self.lookup,
             self.manual_longitude, self.manual_latitude,
             self.longitude, self.latitude,
             moderation_user)
@@ -388,10 +390,11 @@ class Address(Base):
             self.latitude = self.manual_latitude
             return
         
-        coords = geo.geocode(self.lookup)
-        if coords:
-            (self.latitude, self.longitude) = coords
-            return
+        if self.lookup:
+            coords = geo.geocode(self.lookup)
+            if coords:
+                (self.latitude, self.longitude) = coords
+                return
 
         coords = geo.geocode(self.postal)
         if coords:

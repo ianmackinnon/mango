@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
+from sqlalchemy.orm.exc import NoResultFound
+
 from base import BaseHandler, authenticated
 from note import BaseNoteHandler
 from address import BaseAddressHandler
 
-from model import Organisation, Note, Address, OrganisationTag
+from model import Organisation, Note, Address, OrganisationTag, organisation_organisation_tag
 
 
 
@@ -29,8 +31,7 @@ class OrganisationListHandler(BaseHandler):
                 (tag_list, organisation_organisation_tag.c.organisation_tag_e == tag_list.c.organisation_tag_e)
                 )
 
-
-        organisation_list = organisation_list.all()
+        organisation_list = organisation_list.limit(10).all()
 
         if self.accept_type("json"):
             self.write_json(
@@ -82,7 +83,7 @@ class OrganisationHandler(BaseHandler):
 
         try:
             organisation = query.one()
-        except sqlalchemy.orm.exc.NoResultFound:
+        except NoResultFound:
             return self.error(404, error)
 
         if self.accept_type("json"):
@@ -105,7 +106,7 @@ class OrganisationHandler(BaseHandler):
 
         try:
             organisation = query.one()
-        except sqlalchemy.orm.exc.NoResultFound:
+        except NoResultFound:
             return self.error(404, "%d: No such organisation" % organisation_e)
 
         new_organisation = organisation.copy(moderation_user=self.current_user, visible=False)
@@ -124,7 +125,7 @@ class OrganisationHandler(BaseHandler):
 
         try:
             organisation = query.one()
-        except sqlalchemy.orm.exc.NoResultFound:
+        except NoResultFound:
             return self.error(404, "%d: No such organisation" % organisation_e)
 
         if self.content_type("application/x-www-form-urlencoded"):
@@ -199,13 +200,13 @@ class OrganisationAddressListHandler(BaseAddressHandler):
 
         try:
             organisation = query.one()
-        except sqlalchemy.orm.exc.NoResultFound:
+        except NoResultFound:
             return self.error(404, "%d: No such organisation" % organisation_e)
 
-        postal, lookup, manual_longitude, manual_latitude, note_e_list = \
+        postal, source, lookup, manual_longitude, manual_latitude, note_e_list = \
             BaseAddressHandler._get_arguments(self)
 
-        new_address = Address(postal, lookup,
+        new_address = Address(postal, source, lookup,
                           manual_longitude=manual_longitude,
                           manual_latitude=manual_latitude,
                           moderation_user=self.current_user)
@@ -239,7 +240,7 @@ class OrganisationNoteListHandler(BaseNoteHandler):
 
         try:
             organisation = query.one()
-        except sqlalchemy.orm.exc.NoResultFound:
+        except NoResultFound:
             return self.error(404, "%d: No such organisation" % organisation_e)
 
         text, source = BaseNoteHandler._get_arguments(self)
