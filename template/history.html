@@ -1,0 +1,37 @@
+<%inherit file="base.html"/>
+
+<%!
+    import datetime
+%>
+
+<%def name="title()">History</%def>
+
+<%def name="page()">
+
+<h1>History</h1>
+
+<div class="box-full">
+
+<table class="history">
+  <tbody>
+    %for entity in history:
+    <tr>
+	
+      <td>${datetime.datetime.fromtimestamp(entity.date).strftime("%Y/%m/%d %H:%M:%S")}</td>
+      <td>${entity.type}</td>
+      <td>${entity.entity_id}${entity.entity_v_id and ",%d" % entity.entity_v_id or ""}</td>
+      <td>
+	<img width="24px" height="24px"
+	   src="http://gravatar.com/avatar/${entity.gravatar_hash}?d=identicon&s=24">
+	${entity.name}
+      </td>
+    </tr>
+    %endfor
+  </tbody>
+</table>
+
+History
+
+</div>
+
+</%def>

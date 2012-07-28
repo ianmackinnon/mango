@@ -6,13 +6,22 @@
 
 <ul id="all_users">
   % if current_user:
-  <li><a href="/user/${current_user.user_id}">${current_user.name}</a> (you)</li>
+  <li>
+    <a
+       href="${url_rewrite("/user/%d" % current_user.user_id, parameters)}"
+       >${current_user.name}</a>
+    (you)
+  </li>
   % endif
   % for user in user_list:
   % if current_user and current_user == user:
   <% continue %>
   % endif
-  <li><a href="/user/${user.user_id}">${user.name}</a></li>
+  <li>
+    <a
+       href="${url_rewrite("/user/%d" % user.user_id, parameters)}"
+       >${user.name}</a>
+  </li>
   % endfor
 </ul>
 

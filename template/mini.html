@@ -1,0 +1,419 @@
+<%!
+import datetime
+%>
+
+
+
+<%def name="visibility_bar(obj)">\
+%if obj and "public" in obj:
+<div class="visibility
+  ${{True: "public", False: "private", None: "pending",}[obj["public"]]}
+  ">\
+${{True: "Public", False: "Private", None: "Pending",}[obj["public"]]}\
+</div>\
+%endif
+</%def>
+
+
+
+<%def name="visibility_search_input(visibility=None, current_user=None)">
+    %if current_user:
+    <input type="hidden" name="visibility" value="${visibility or ""}">
+    %endif
+</%def>
+
+
+
+<%def name="org_box(org, tag=False, note=False, geobox=None, parameters=None)">
+<%
+if not parameters:
+   parameters = {}
+%>
+<div class="org-box">
+  ${visibility_bar(org)}
+  
+  <div class="org_name">
+    <a
+       href="${url_rewrite(org["url"], parameters)}"
+       >${org["name"]}</a>
+  </div>
+
+  %if tag:
+  <ul class="tag_list">
+    %for tag in org["tag"]:
+    <li class="orgtag">
+      <a
+         href="${url_rewrite(tag["url"], parameters)}"
+         >${tag["name"]}</a>
+    </li>
+    %endfor
+  </ul>
+  %endif
+
+  %if "address_list" in org:
+  <div class="org_address_list">
+    %for address in org["address_list"]:
+    %if not geo_in(address["latitude"], address["longitude"], geobox):
+    <% continue %>
+    %endif
+    <div class="address-row">
+      <div class="pin"
+	   color="yellow"
+	   source="mini.html"
+           %if address["latitude"]:
+           latitude="${address["latitude"]}"
+           longitude="${address["longitude"]}"
+           %endif
+           >
+        &nbsp;
+      </div>
+      <div class="address">
+	${visibility_bar(address)}
+        <a
+           href="${url_rewrite(address["url"], parameters)}"
+           >${address["postal"] | n, h, unicode, newline_comma}</a>
+      </div>
+    </div>
+    %endfor
+  </div>
+  %endif
+
+  %if note and "note_list" in org:
+  <div class="note_len">
+    ${len(org["note_list"])}
+  </div>
+  %endif
+
+</div>
+
+</%def>
+
+
+
+<%def name="address_box(address, link_url=False, unlink=False, parameters=None)">\
+<%
+if not parameters:
+    parameters = {}
+%>\
+        <div class="address-box">
+	  ${visibility_bar(address)}
+          <div class="address-row">
+	    <div class="pin"
+		 %if address.get("latitude", None):
+	         latitude="${address["latitude"]}"
+		 longitude="${address["longitude"]}"
+		 %endif
+		 >
+	      &nbsp;
+	    </div>
+	    <div class="address">
+	      ${address["postal"] | n, h, unicode, newline}
+	    </div>
+	    %if current_user:
+	    <div class="actions">
+	      <a
+                 href="${url_rewrite(address["url"], parameters)}"
+                 class="action"
+                 >Edit</a>
+
+    %if unlink and link_url:
+    <span>
+      <form action="${link_url}?next=${uri}" method="post">
+	<input name="_xsrf" type="hidden" value="${xsrf}">
+	<input name="_method" type="hidden" value="delete">
+	<input type="submit" value="Delete">
+      </form>
+    </span>
+    %endif
+
+	    </div>
+	    %endif
+          </div>
+        </div>
+</%def>
+
+
+
+<%def name="org_li(org, link_url=False, unlink=False, visibility=False, parameters=None)">\
+<%
+if not parameters:
+    parameters = {}
+%>\
+<li class="tag">\
+<span class="org_name">\
+<a
+   href="${url_rewrite(org["url"], parameters)}"
+   >${org["name"] | n, h, unicode, nbsp}</a>\
+</span>\
+%if unlink and link_url and current_user:
+&nbsp;\
+<span>\
+<form action="${link_url}?next=${uri}" method="post">\
+<input name="_xsrf" type="hidden" value="${xsrf}">\
+<input name="_method" type="hidden" value="delete">\
+<input type="submit" value="✕">\
+</form>\
+</span>\
+%endif
+%if visibility and "public" in org:
+&nbsp;\
+${visibility_bar(org)}\
+%endif
+</li>
+</%def>
+
+
+
+<%def name="address_li(address, link_url=False, unlink=False, parameters=None)">\
+<%
+if not parameters:
+    parameters = {}
+%>\
+  <li class="tag">
+    <span class="address_name">
+      <a
+         href="${url_rewrite(address["url"], parameters)}"
+         >${address["postal"]}</a>
+    </span>
+    %if unlink and link_url and current_user:
+    <span>
+      <form action="${link_url}?next=${uri}" method="post">
+	<input name="_xsrf" type="hidden" value="${xsrf}">
+	<input name="_method" type="hidden" value="delete">
+	<input type="submit" value="✕">
+      </form>
+    </span>
+    %endif
+
+  </li>
+</%def>
+
+
+
+<%def name="tag_li(tag, org=False, note=False,
+	    link_url=False, unlink=False, link=False, next=False,
+	    visibility=False, parameters=None)">\
+<%
+if not parameters:
+    parameters = {}
+%>\
+<li class="tag">\
+<span class="tag_name">\
+<a
+   href="${url_rewrite(tag["url"], parameters)}"
+   >\
+${tag["name"] | n, h, unicode, nbsp}\
+</a>\
+</span>\
+\
+%if org and tag.get("org_len", None):
+&nbsp;\
+(\
+<span class="org_len">\
+<a
+   href="${url_rewrite("/organisation", dict(parameters, tag=tag["short"]))}"
+   >${tag["org_len"]}</a>\
+</span>\
+)\
+%endif
+\
+%if note and tag.get("note_len", False):
+<span class="has-notes">…</span>\
+%endif
+%if link and link_url and current_user:
+<span>\
+<form action="${link_url}" method="post">\
+<input name="_xsrf" type="hidden" value="${xsrf}">\
+<input name="_method" type="hidden" value="put">\
+%if next:
+<input name="next" type="hidden" value="${next}">\
+%endif
+&nbsp;\
+<input type="submit" value="+">\
+</form>\
+</span>\
+%endif
+\
+%if unlink and link_url and current_user:
+&nbsp;\
+<span>\
+<form action="${link_url}?next=${uri}" method="post">\
+<input name="_xsrf" type="hidden" value="${xsrf}">\
+<input name="_method" type="hidden" value="delete">\
+%if next:
+<input name="next" type="hidden" value="${next}">\
+%endif
+&nbsp;\
+<input type="submit" value="✕">\
+</form>\
+</span>\
+%endif
+%if visibility and "public" in tag:
+&nbsp;\
+${visibility_bar(tag)}\
+%endif
+</li>
+</%def>
+
+
+
+<%def name="render_note(
+            obj, action=True, id=None,
+            next_url=None, unlink_url=None,
+            parameters=None)">\
+<%
+if not parameters:
+    parameters = {}
+%>\
+    <div ${id and 'id="%s" ' % id or '' | n}class="note">
+      ${visibility_bar(note)}
+      <div class="note-text markdown">
+	${obj["text"] | n, markdown_safe, convert_links}
+      </div>
+      <div class="note-source markdown">
+	${obj["source"] | n, markdown_safe, convert_links}
+      </div>
+      <div class="note-date">
+	<a
+           href="${url_rewrite(obj["url"], parameters)}"
+           >
+	${datetime.datetime.fromtimestamp(obj["date"]).strftime("%Y/%m/%d %H:%M")}
+	%if "linked" in obj and len(obj["linked"]) != 1:
+	|
+	${len(obj["linked"])} links
+	%endif
+	</a>
+      </div>
+      %if action and current_user:
+      <div class="action-bar no-border right">
+	<a
+           class="action"
+           href="${url_rewrite(obj["url"], dict(
+                                        parameters,
+                                        next=url_rewrite(uri, parameters),
+                                        ))}"
+           >Edit</a>
+	%if unlink_url and "linked" in obj and len(obj["linked"]) > 1:
+	<form action="${unlink_url}${obj["url"]}" method="post">
+	  <input name="_xsrf" type="hidden" value="${xsrf}">
+	  <input name="_method" type="hidden" value="delete">
+	  %if next_url:
+	  <input name="next" type="hidden" value="${next_url}">
+	  %endif
+	  <input type="submit" value="Unlink">
+	</form>
+	%endif
+	<form action="${obj["url"]}" method="post">
+	  <input name="_xsrf" type="hidden" value="${xsrf}">
+	  <input name="_method" type="hidden" value="delete">
+	  %if next_url:
+	  <input name="next" type="hidden" value="${next_url}">
+	  %endif
+	  <input type="submit" value="Delete">
+	</form>
+      </div>
+      %endif
+    </div>
+</%def>
+
+
+
+<%def name="render_note_section(note_list, new_url, next_url=None, note_search=None, note_order=None, unlink_url=None, parameters=None)">\
+<%
+if not parameters:
+    parameters = {}
+%>\
+<div class="section">
+  <div class="box full">
+    <div class="action-bar no-border">
+      <h3>Notes (${len(note_list)})</h3>
+      
+      %if note_list or note_search:
+
+	<form id="note-filter">
+	  <label name="note_search">
+	    <span>Search</span>
+	    <input name="note_search" value="${note_search or ''}">
+	    <select name="note_order">
+	      <option value="desc"
+		      ${note_order != "asc" and "selected='selected'" or ""}
+		      >Newest</option>
+	      <option value="asc"
+		      ${note_order == "asc" and "selected='selected'" or ""}
+		      >Oldest</options>
+	    </select>
+	  </label>
+	  <input type="submit">
+	</form>
+
+%endif
+
+        %if current_user:
+	<ul class="actions">
+	  <a
+             class="action"
+             href="${url_rewrite(new_url, parameters)}"
+             >Add a note</a>
+	</ul>
+	%endif
+      </div>
+
+    %for note in note_list:
+    ${self.render_note(
+      note, next_url=next_url, unlink_url=unlink_url, parameters=parameters)}
+    %endfor
+  </div>
+    </div>
+
+</%def>
+
+
+
+<%def name="visibility_input(entity=None, default='pending')">
+<%
+    options = ["pending", "public", "private"]
+    selected = {}
+    for option in options:
+        selected[option] = ""
+    if entity:
+        if entity.get("public", None) is True:
+            selected["public"] = "selected='selected'"
+        elif entity.get("public") is False:
+            selected["private"] = "selected='selected'"
+        else:
+            selected["pending"] = "selected='selected'"
+    else:
+        selected[default] = "selected='selected'"
+%>
+    <div class="action-bar no-border section">
+      <h3>Visibility</h3>
+      <select name="public">
+	%for option in options:
+	<option value="${option}" ${selected[option]}>${option.title()}</option>
+	%endfor
+      </select>
+    </div>
+</%def>
+
+
+
+<%def name="counts(obj_list, offset, total, more_link)">
+    %if len(obj_list):
+    Showing
+    <span class="count_showing_from">${offset + 1}</span>
+    -
+    <span class="count_showing_to">${offset + len(obj_list)}</span>
+    of
+    <span class="count_total">${total}</span>.
+
+    <span class="more">
+    %if more_link and (offset + len(obj_list) < total):
+      <a
+         href="${more_link}"
+         >More</a>
+    %endif
+    </span>
+    %else:
+    No matching results
+    %endif
+</%def>

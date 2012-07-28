@@ -1,91 +1,145 @@
 # -*- coding: utf-8 -*-
 
-from base import BaseHandler, authenticated
+from sqlalchemy.orm import joinedload
 
+from base import authenticated
+from base_note import BaseNoteHandler
+from orgtag import BaseOrgtagHandler
+from org import BaseOrgHandler
 from model import Note
-
-
-
-class BaseNoteHandler(BaseHandler):
-    def _get_arguments(self):
-        if self.content_type("application/x-www-form-urlencoded"):
-            text = self.get_argument("text")
-            source = self.get_argument("source")
-        elif self.content_type("application/json"):
-            text = self.get_json_argument("text")
-            source = self.get_json_argument("source")
-        else:
-            raise tornado.web.HTTPError(400, "'content-type' required.")
-        return text, source
 
 
 
 class NoteListHandler(BaseNoteHandler):
     def get(self):
+        note_list = self.orm.query(Note)
 
-        note_list = Note.query_latest(self.orm).all()
+        note_list = self.filter_visibility(
+            note_list, Note, self.parameters["visibility"])
+
+        note_search = self.get_argument("note_search", None)
+        note_order = self.get_argument_order("note_order", None)
+        note_list = self._filter_search(note_list, note_search, note_order)
+
+        note_list = [note.obj(public=bool(self.current_user)) \
+                         for note in note_list.limit(20)]
 
         self.render(
             'note_list.html',
             note_list=note_list,
+            note_search=note_search,
+            note_order=note_order,
             )
 
     def post(self):
-        text, source = BaseNoteHandler._get_arguments(self)
-        note = Note(text, source, moderation_user=self.current_user)
+        text, source, public = BaseNoteHandler._get_arguments(self)
+        note = Note(text, source,
+                    moderation_user=self.current_user,
+                    public=public,
+                    )
         self.orm.add(note)
         self.orm.commit()
-        # Setting note_e in a trigger, so we have to update manually.
-        self.orm.refresh(note)
-        self.redirect(note.url)
+        self.redirect(self.next or note.url)
+
+
+
+class NoteLinkHandler(BaseNoteHandler, BaseOrgHandler, BaseOrgtagHandler):
+    @authenticated
+    def get(self, note_id_string):
+        orgtag_search = self.get_argument("orgtag_search", None)
+        orgtag_list = self._get_orgtag_list_search(search=orgtag_search)
+
+        org_search = self.get_argument("org_search", None)
+        org_list, org_count, geobox, latlon = self._get_org_list_search(name_search=org_search)
+
+        note = self._get_note(note_id_string)
+        self.render(
+            'note_link.html',
+            note=note,
+            orgtag_search=orgtag_search,
+            orgtag_list=orgtag_list,
+            org_search=org_search,
+            org_list=org_list,
+            org_count=org_count,
+            )
+
+
+
+class NoteNewHandler(BaseNoteHandler):
+    def get(self):
+        self.render('note.html')
 
 
 
 class NoteHandler(BaseNoteHandler):
-    def get(self, note_e_string, note_id_string):
-        note_e = int(note_e_string)
-        note_id = note_id_string and int(note_id_string) or None
-        
-        if note_id:
-            if not self.current_user:
-                return self.error(404, "Not found")
-            query = self.orm.query(Note).filter_by(note_e=note_e).filter_by(note_id=note_id)
-            error = "%d, %d: No such note, version" % (note_e, note_id)
-        else:
-            query = Note.query_latest(self.orm).filter_by(note_e=note_e)
-            error = "%d: No such note" % note_e
+    def get(self, note_id_string):
+        public = bool(self.current_user)
 
-        try:
-            note = query.one()
-        except sqlalchemy.orm.exc.NoResultFound:
-            return self.error(404, error)
+        if self.deep_visible():
+            options = (
+                joinedload("address_list"),
+                joinedload("orgtag_list"),
+                joinedload("org_list"),
+                )
+        else:
+            options = (
+                joinedload("address_list_public"),
+                joinedload("orgtag_list_public"),
+                joinedload("org_list_public"),
+                )
+
+        note = self._get_note(note_id_string, options=options)
+
+        if self.deep_visible():
+            address_list=note.address_list
+            orgtag_list=note.orgtag_list
+            org_list=note.org_list
+        else:
+            address_list=note.address_list_public
+            orgtag_list=note.orgtag_list_public
+            org_list=note.org_list_public
+
+        address_list = [address.obj(public=public) for address in address_list]
+        orgtag_list = [orgtag.obj(public=public) for orgtag in orgtag_list]
+        org_list = [org.obj(public=public) for org in org_list]
+
+        obj = note.obj(
+            public=public,
+            address_obj_list=address_list,
+            orgtag_obj_list=orgtag_list,
+            org_obj_list=org_list,
+            )
 
         if self.accept_type("json"):
-            self.write_json(note.obj())
+            self.write_json(obj)
         else:
             self.render(
                 'note.html',
-                note=note
+                obj=obj
                 )
 
     @authenticated
-    def put(self, note_e_string, note_id_string):
-        if note_id_string:
-            return self.error(405, "Cannot edit revisions.")
-
-        note_e = int(note_e_string)
-
-        query = Note.query_latest(self.orm).filter_by(note_e=note_e)
-
-        try:
-            note = query.one()
-        except sqlalchemy.orm.exc.NoResultFound:
-            return self.error(404, "%d: No such note" % note_e)
-
-        text, source = BaseNoteHandler._get_arguments(self)
-
-        new_note = note.copy(moderation_user=self.current_user)
-        new_note.text = text
-        new_note.source = source
+    def delete(self, note_id_string):
+        note = self._get_note(note_id_string)
+        self.orm.delete(note)
         self.orm.commit()
-        self.redirect(new_note.url)
+        self.redirect(self.next or "/note")
+        
+    @authenticated
+    def put(self, note_id_string):
+        note = self._get_note(note_id_string)
+
+        text, source, public = BaseNoteHandler._get_arguments(self)
+
+        if note.text == text and \
+                note.public == public and \
+                note.source == source:
+            self.redirect(self.next or note.url)
+            return
+
+        note.text = text
+        note.source = source
+        note.public = public
+        note.moderation_user = self.current_user
+        self.orm.commit()
+        self.redirect(self.next or note.url)

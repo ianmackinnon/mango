@@ -10,9 +10,10 @@ class UserListHandler(BaseHandler):
     @authenticated
     def get(self):
         user_list = self.orm.query(User).all()
-        self.render('user_list.html',
-                    user_list=user_list
-                    )
+        self.render(
+            'user_list.html',
+            user_list=user_list
+            )
 
 class UserHandler(BaseHandler):
     @authenticated

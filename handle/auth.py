@@ -11,7 +11,7 @@ class AuthLoginHandler(BaseHandler):
     def get(self):
         self.render(
             'login.html',
-            next=self.get_argument("next", "/")
+            next=self.next or '/',
             )
 
 
@@ -20,7 +20,6 @@ class AuthLoginLocalHandler(BaseHandler):
     def get(self):
         if not self.is_local():
             raise tornado.web.HTTPError(500, "Auth failed")
-
         user = self.orm.query(User).filter_by(user_id=-1).one()
         session = Session(
                 user,
@@ -31,7 +30,7 @@ class AuthLoginLocalHandler(BaseHandler):
         self.orm.add(session)
         self.orm.flush()
         self.start_session(str(session.session_id))
-        self.redirect(self.get_argument("next", "/"))
+        self.redirect(self.next or '/')
 
 
 
@@ -60,9 +59,8 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
         user = User.get_from_auth(self.orm, self.openid_url, auth_name)
 
         if not user:
-            raise tornado.web.HTTPError(
-                404, "%s %s: No account found" % (self.openid_url, auth_name)
-                )
+            self.error(404, "No account found for %s" % auth_user["email"])
+            return
 
         session = Session(
                 user,
@@ -74,7 +72,7 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
         self.orm.flush()
         self.start_session(str(session.session_id))
 
-        self.redirect(self.get_argument("next", "/"))
+        self.redirect(self.next or '/')
 
 
 
@@ -85,10 +83,9 @@ class AuthLogoutHandler(BaseHandler):
             session.close_commit()
         self.end_session()
         self.clear_cookie("_xsrf")
-        next_path = self.get_argument("next", "/")
-        if self.application.path_is_authenticated(next_path):
-            next_path = "/"
-        self.redirect(next_path)
+        if self.next and self.application.path_is_authenticated(self.next):
+            self.next = '/'
+        self.redirect(self.next or '/')
 
 
 

@@ -1,0 +1,32 @@
+<%inherit file="base.html"/>
+
+<%def name="title()">New Organisation</%def>
+
+<%def name="page()">
+
+<h1>New Organisation</h1>
+
+<div class="section">
+
+  <div class="form-by-map" id="org-form">
+    
+    <h3>Organisation</h3>
+    
+    <form action="/organisation" method="post">
+      <input name="_xsrf" type="hidden" value="${xsrf}">
+      <label name="name">
+	<span>Name</span>
+	<span class="requirement">(required)</span>
+	<input name="name" value="">
+      </label>
+      ${self.mini.visibility_input()}
+      <input type="submit">
+    </form>
+  </div>
+</div>
+
+</%def>
+
+
+
+

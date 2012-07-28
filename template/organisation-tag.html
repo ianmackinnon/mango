@@ -1,0 +1,109 @@
+<%inherit file="base.html"/>
+
+
+
+<%def name="title()">
+%if obj:
+${obj["name"]}
+%else:
+New Organisation Tag
+%endif
+</%def>
+
+
+
+<%def name="page()">
+
+<h1>
+%if obj:
+<a
+   href="${url_rewrite(obj["url"], parameters)}"
+   >${obj["name"]}</a>
+%else:
+New Organisation Tag
+%endif
+</h1>
+
+<div class="section">
+<%
+
+action = "/organisation-tag"
+put = False
+if obj:
+    action = obj["url"]
+    put = True
+
+%>
+
+  %if current_user:
+  <div class="box left" id="orgtag-form">
+    <form action="${action}" method="post">
+      <input name="_xsrf" type="hidden" value="${xsrf}">
+      %if put:
+      <input name="_method" type="hidden" value="put">
+      %endif
+      <label name="name">
+	<span>Name</span>
+	<input name="name" value="${obj and obj["name"] or ''}">
+      </label>
+      ${self.mini.visibility_input(obj)}
+      <input type="submit">
+    </form>
+
+    %if current_user and obj and "org_list" in obj and not obj["org_list"]:
+    <form action="${obj["url"]}" method="post">
+      <input name="_xsrf" type="hidden" value="${xsrf}">
+      <input name="_method" type="hidden" value="delete">
+      <input type="submit" value="Delete">
+    </form>
+    %endif
+
+  </div>
+
+  <div class="box right">
+    <h3>Suggested existing tags</h3>
+    <ul id="tag_list_suggested" class="tag_list" class="block-right">
+    </ul>
+  </div>
+
+  %endif
+
+</div>
+
+%if obj:
+<div class="box full" id="orgtag-links">
+  %if obj and "org_list" in obj:
+  <div>
+    <h3>Organisations (${len(obj["org_list"])})</h3>
+    <ul class="tag_list">
+      %for org in obj["org_list"]:
+      ${self.mini.org_li(
+        org,
+        link_url=org["url"] + obj["url"],
+        unlink=len(obj["org_list"]),
+        visibility=True,
+      )}
+      %endfor
+    </ul>
+  </div>
+  %endif
+</div>
+%endif
+
+%if obj:
+%if "note_list" in obj:
+${self.mini.render_note_section(obj["note_list"],
+    obj["url"] + "/note", obj["url"],
+    note_search, note_order, unlink_url=obj["url"]
+)}
+%endif
+%endif
+
+<script type="text/html" id="org_li">\
+${mini.org_li | n}\
+</script>
+<script type="text/html" id="tag_li">\
+${mini.tag_li | n}\
+</script>
+
+</%def>

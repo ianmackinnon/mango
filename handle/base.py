@@ -1,13 +1,20 @@
 # -*- coding: utf-8 -*-
 
+import re
 import json
+import codecs
 import markdown
 import tornado.web
-import sqlalchemy.orm.exc
 
+from urllib import urlencode
+from bs4 import BeautifulSoup
+from sqlalchemy.orm.exc import NoResultFound
 from mako import exceptions
 
-from model import Session
+import geo
+import template.mini
+
+from model import Session, Address
 
 
 
@@ -29,8 +36,56 @@ def newline(text):
 
 
 
+def newline_comma(text):
+    return text.replace("\n", ", ")
+
+
+
+def nbsp(text):
+    text = re.sub("[\s]+", "&nbsp;", text)
+    text = text.replace("-", "&#8209;")
+    return text
+
+
+
 def markdown_safe(text):
     return md_safe.convert(text)
+
+
+
+def has_link_parent(soup):
+    if not soup.parent:
+        return False
+    if soup.parent.name == "a":
+        return True
+    return has_link_parent(soup.parent)
+
+
+
+def convert_links(text, quote="\""):
+    soup = BeautifulSoup(text, "html.parser")
+    for t in soup.findAll(text=True):
+        if has_link_parent(t):
+            continue
+        split = re.split("(?:(https?://)|(www\.))([\S]+\.[^\s<>\"\']+)", t)
+        r = u""
+        n = 0
+        split = [s or u"" for s in split]
+        while split:
+            if n % 2 == 0:
+                r += split[0]
+                split.pop(0)
+            else:
+                r += u"<a href=%shttp://%s%s%s>%s%s%s</a>" % (
+                    quote, split[1], split[2], quote, split[0], split[1], split[2]
+                    )
+                split.pop(0)
+                split.pop(0)
+                split.pop(0)
+            n += 1
+
+        t.replaceWith(BeautifulSoup(r, "html.parser"))
+    return unicode(soup)
 
 
 
@@ -38,7 +93,10 @@ class BaseHandler(tornado.web.RequestHandler):
 
     def __init__(self, *args, **kwargs):
         self.messages = []
+        self.scripts = []
         tornado.web.RequestHandler.__init__(self, *args, **kwargs)
+        self.set_parameters()
+        self.next = self.get_argument("next", None)
 
     def _execute(self, transforms, *args, **kwargs):
         method = self.get_argument("_method", None)
@@ -87,19 +145,58 @@ class BaseHandler(tornado.web.RequestHandler):
     def end_session(self):
         self.clear_cookie(self.application.session_cookie_name)
 
+    @staticmethod
+    def geo_in(latitude, longitude, geobox):
+        if not geobox:
+            return True
+        if latitude < geobox["latmin"] or latitude > geobox["latmax"]:
+            return False
+        if longitude < geobox["lonmin"] or longitude > geobox["lonmax"]:
+            return False
+        return True
+
+    def query_rewrite(self, options):
+        arguments = self.request.arguments
+        arguments.update(options)
+        uri = self.request.path + "?" + urlencode(arguments, True)
+        return uri
+
+    def url_rewrite(self, path, options):
+        uri = path
+        for key, value in options.items():
+            if value is None:
+                del options[key]
+        parameters = urlencode(options, True)
+        if parameters:
+            uri += "?" + parameters
+        return uri
+
     def render(self, template_name, **kwargs):
-        template = self.application.lookup.get_template(template_name)
+        mako_template = self.application.lookup.get_template(template_name)
+
         kwargs.update({
+                "mini": template.mini,
+                "geo_in": self.geo_in,
+                "next": self.next,
                 "messages": self.messages,
+                "scripts": self.scripts,
                 "newline": newline,
+                "newline_comma": newline_comma,
+                "nbsp": nbsp,
                 "markdown_safe": markdown_safe,
+                "convert_links": convert_links,
                 "current_user": self.current_user,
                 "uri": self.request.uri,
                 "xsrf": self.xsrf_token,
+                "json_dumps": json.dumps,
+                "query_rewrite": self.query_rewrite,
+                "url_rewrite": self.url_rewrite,
+                "parameters": self.parameters,
+                "mini_js" : open("template/mini.js.html").read(),
                 })
 
         try:
-            self.write(template.render(**kwargs))
+            self.write(mako_template.render(**kwargs))
         except:
             self.write(exceptions.html_error_template().render())
         if self.orm.new or self.orm.dirty or self.orm.deleted:
@@ -111,7 +208,7 @@ class BaseHandler(tornado.web.RequestHandler):
         try:
             session = self.orm.query(Session).\
                 filter_by(session_id=session_id).one()
-        except sqlalchemy.orm.exc.NoResultFound:
+        except NoResultFound:
             self.end_session()
             return None
         if session.d_time is not None:
@@ -128,13 +225,30 @@ class BaseHandler(tornado.web.RequestHandler):
         return None
 
     def error(self, status_code, message):
-        self.status_code = status_code
+        self.set_status(status_code);
         self.render('error.html',
                     current_user=self.current_user, uri=self.request.uri,
                     status_code=self.status_code, message=message,
                     )
+        self.finish()
 
     _ARG_DEFAULT_MANGO = []
+
+    def get_argument_int(self, name, default=_ARG_DEFAULT_MANGO, strip=True):
+        value = self.get_argument(name, default, strip)
+        if value == default:
+            if default is self._ARG_DEFAULT_MANGO:
+                raise tornado.web.HTTPError(400, "Missing argument %s" % name)
+            return value
+
+        try:
+            return int(value)
+        except ValueError as e:
+            raise tornado.web.HTTPError(
+                400,
+                "Cannot convert argument %s to a integer number." % name
+                )
+
     def get_argument_float(self, name, default=_ARG_DEFAULT_MANGO, strip=True):
         value = self.get_argument(name, default, strip)
         if value == default:
@@ -150,17 +264,101 @@ class BaseHandler(tornado.web.RequestHandler):
                 "Cannot convert argument %s to a floating point number." % name
                 )
 
+    def get_argument_restricted(self, name, allowed, default=_ARG_DEFAULT_MANGO):
+        value = self.get_argument(name, default)
+        if value == default:
+            if default is self._ARG_DEFAULT_MANGO:
+                raise tornado.web.HTTPError(400, "Missing argument %s" % name)
+            return value
+
+        if not value in allowed:
+            raise tornado.web.HTTPError(
+                400,
+                "Argument %s must be one of %s." % (name, ", ".join(allowed))
+                )
+        return value
+
+    def get_argument_order(self, name, default=_ARG_DEFAULT_MANGO):
+        return self.get_argument_restricted(
+            name, ("asc", "desc"), default)
+
+    def get_argument_public(self, name="public", default=_ARG_DEFAULT_MANGO):
+        table = {
+            "pending": None,
+            "public": True, 
+            "private": False,
+            }
+        value = self.get_argument_restricted(
+            name, table.keys(), default)
+        return table[value]
+
+    def get_argument_visibility(self):
+        if not self.current_user:
+            return None
+        return self.get_argument_restricted(
+            "visibility", ("pending", "all", "private", "public"), None)
+        
+
+    def get_argument_geobox(self, name="geobox", default=_ARG_DEFAULT_MANGO):
+        value = self.get_argument(name, default)
+        if value == default:
+            if default is self._ARG_DEFAULT_MANGO:
+                raise tornado.web.HTTPError(400, "Missing argument %s" % name)
+            return value
+        
+        parts = value.split(",")
+        if not len(parts) == 4:
+            raise tornado.web.HTTPError(
+                400,
+                "Argument %s should be 4 comma-separated floating point numbers." % name
+                )
+        try:
+            parts = [float(part) for part in parts]
+        except ValueError as e:
+            raise tornado.web.HTTPError(
+                400,
+                "Argument %s should be 4 comma-separated floating point numbers." % name
+                )
+        
+        return dict(zip(["latmin", "latmax", "lonmin", "lonmax"], parts))
+
+    def get_argument_latlon(self, name="latlon", default=_ARG_DEFAULT_MANGO):
+        value = self.get_argument(name, default)
+        if value == default:
+            if default is self._ARG_DEFAULT_MANGO:
+                raise tornado.web.HTTPError(400, "Missing argument %s" % name)
+            return value
+        
+        parts = value.split(",")
+        if not len(parts) == 2:
+            raise tornado.web.HTTPError(
+                400,
+                "Argument %s should be 2 comma-separated floating point numbers." % name
+                )
+        try:
+            parts = [float(part) for part in parts]
+        except ValueError as e:
+            raise tornado.web.HTTPError(
+                400,
+                "Argument %s should be 2 comma-separated floating point numbers." % name
+                )
+        
+        return parts
+
     def get_json_data(self):
         if hasattr(self, "json_data") and self.json_data:
             return
-        try:
-            self.json_data = json.loads(self.request.body)
-        except ValueError as e:
-            raise tornado.web.HTTPError(400, "Could not decode JSON data.")
+        if self.request.body:
+            try:
+                self.json_data = json.loads(self.request.body)
+            except ValueError as e:
+                raise tornado.web.HTTPError(400, "Could not decode JSON data.")
+        else:
+            self.json_data = {}
 
     def get_json_argument(self, name, default=_ARG_DEFAULT_MANGO):
         self.get_json_data()
-
+        
         if not name in self.json_data:
             if default is self._ARG_DEFAULT_MANGO:
                 raise tornado.web.HTTPError(400, "Missing argument %s" % name)
@@ -168,6 +366,21 @@ class BaseHandler(tornado.web.RequestHandler):
 
         return self.json_data[name]
 
+    def get_json_argument_int(self, name, default=_ARG_DEFAULT_MANGO):
+        value = self.get_json_argument(name, default)
+        if value == default:
+            if default is self._ARG_DEFAULT_MANGO:
+                raise tornado.web.HTTPError(400, "Missing argument %s" % name)
+            return value
+
+        try:
+            return int(value)
+        except ValueError as e:
+            raise tornado.web.HTTPError(
+                400,
+                "Cannot convert argument %s to a integer number." % name
+                )
+    
     def get_json_argument_float(self, name, default=_ARG_DEFAULT_MANGO):
         value = self.get_json_argument(name, default)
         if value == default:
@@ -182,10 +395,143 @@ class BaseHandler(tornado.web.RequestHandler):
                 400,
                 "Cannot convert argument %s to a floating point number." % name
                 )
+    
+    def get_json_argument_restricted(self, name,
+                                     allowed, default=_ARG_DEFAULT_MANGO):
+        value = self.get_json_argument(name, default)
+        if value == default:
+            if default is self._ARG_DEFAULT_MANGO:
+                raise tornado.web.HTTPError(400, "Missing argument %s" % name)
+            return value
+
+        if not value in ["asc", "desc"]:
+            raise tornado.web.HTTPError(
+                400,
+                "Cannot convert argument %s to a floating point number." % name
+                )
+        return value
+
+    def get_json_argument_order(self, name, default=_ARG_DEFAULT_MANGO):
+        return self.get_json_argument_restricted(
+            name, ("asc", "desc"), default)
+
+    def get_json_argument_public(self, name="public", default=_ARG_DEFAULT_MANGO):
+        table = {
+            "pending": None,
+            "public": True, 
+            "private": False,
+            }
+        value = self.get_json_argument_restricted(
+            name, table.keys(), default)
+        return table[value]
+
+    def get_json_argument_visibility(self):
+        return self.get_json_argument_restricted(
+            "visibility", ("pending", "all", "private", "public"), None)
+
+    def get_arguments_multi(self, name, delimiter):
+        ret = []
+        args = self.get_arguments(name)
+        for arg in args:
+            ret += [value.strip() for value in arg.split(delimiter)]
+        return ret
+
+    def get_arguments_int(self, name):
+        return [int(value) for value in self.get_arguments(name)]
 
     def write_json(self, obj):
         self.write(json.dumps(obj, indent=2))
 
-        
+    def has_geo_arguments(self):
+        self.lookup = self.get_argument("lookup", None)
+        return bool(
+            self.get_argument_geobox(default=None) or \
+                self.get_argument_latlon("latlon", None) or \
+                self.lookup
+            )
+
+    def get_geobox(self):
+        geobox = self.get_argument_geobox(default=None)
+        if geobox:
+            return geobox
+        latlon = self.get_argument_latlon("latlon", None)
+        distance = self.get_argument_float("distance", 25)
+        if not latlon:
+            lookup = self.get_argument("lookup", None)
+            if lookup:
+                latlon = geo.geocode(lookup)
+                if not latlon:
+                    self.messages.append(("WARNING", "Could not find address: '%s'." % lookup))
+                    return None
+        if not latlon:
+            return None
+        return Address.geobox(latlon[0], latlon[1], distance)
+
+    def geo_address_query(self):
+        query = self.orm.query(Address)
+        geobox = self.get_geobox()
+        return Address.filter_geobox(query, geobox)
+
+    def filter_geo(self, address_list, limit=10):
+        geobox = self.get_argument_geobox(default=None)
+        latlon = self.get_argument_latlon("latlon", None)
+        if geobox:
+            return Address.filter_geobox(address_list, geobox), geobox, latlon
+
+        # Find geobox around the center that includes at least 10 matches
+        if not latlon:
+            lookup = self.get_argument("lookup", None)
+            if lookup:
+                latlon = geo.geocode(lookup)
+                if not latlon:
+                    self.messages.append(("WARNING", "Could not find address: '%s'." % lookup))
+        if not latlon:
+            return address_list.limit(limit), geobox, latlon
+
+        address_list_2 = Address.order_distance(address_list, latlon)
+        address_list_2 = address_list_2.limit(limit)
+        max_dist = Address.max_distance(
+            self.orm, address_list_2, latlon[0], latlon[1])
+        max_dist *= 1.1
+
+        scale = Address.scale(latlon[0])
+
+        values = (
+            latlon[0] - max_dist,
+            latlon[0] + max_dist,
+            max(latlon[1] - max_dist / max(scale, 0.01), -180),
+            min(latlon[1] + max_dist / max(scale, 0.01), 180),
+            )
+        geobox = dict(zip(["latmin", "latmax", "lonmin", "lonmax"], values))
+        return Address.filter_geobox(address_list, geobox), geobox, latlon
+
+    def filter_visibility(self, query, Entity, visibility=None, secondary=False):
+        if secondary:
+            if visibility in ["pending", "private"]:
+                visibility = "all"
+        if self.current_user and visibility:
+            if visibility == "pending":
+                query = query.filter(Entity.public==None)
+            elif visibility == "all":
+                query = query
+            elif visibility == "private":
+                query = query.filter(Entity.public==False)
+            else:
+                query = query.filter(Entity.public==True)
+        else:
+            query = query.filter(Entity.public==True)
+        return query
+
+    def set_parameters(self):
+        self.parameters = {}
+        if self.content_type("application/json"):
+            self.parameters["visibility"] = self.get_json_argument_visibility()
+        else:
+            self.parameters["visibility"] = self.get_argument_visibility()
+
+    def deep_visible(self):
+        return self.parameters["visibility"] in ["pending", "private", "all"]
+    
+
 
 

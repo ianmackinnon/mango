@@ -1,0 +1,65 @@
+<%inherit file="base.html"/>
+
+<%def name="title()">${obj["name"]} | Edit tags</%def>
+
+<%def name="page()">
+
+<h1>
+  <a
+     href="${url_rewrite(obj["url"], parameters)}"
+     >${obj["name"]}</a> | Edit tags
+</h1>
+
+<div class="section">
+  <h3>Current Tags</h3>
+
+  <ul class="tag_list">
+    %for orgtag in obj["orgtag_list"]:
+    ${self.mini.tag_li(orgtag, org=False, note=False,
+      link_url="%s/tag/%s" % (obj["url"], orgtag["id"]),
+      unlink=True, next=uri,
+      visibility=True)}
+    %endfor
+  </ul>
+</div>    
+    
+<div class="section">
+  <h3>Available Tags</h3>
+
+  <div class="action-bar">
+    <form id="orgtag-search">
+      <label name="search">
+        <span>Search</span>
+        <input name="search" value="${search or ''}">
+      </label>
+      ${self.mini.visibility_search_input(visibility, current_user)}
+      <input type="submit">
+    </form>
+
+    <ul class="actions">
+      <a
+         class="action"
+         href="${url_rewrite("/organisation-tag/new", dict(
+                                      parameters,
+                                      next=url_rewrite(uri, parameters),
+                                      ))}"
+         >Create a tag</a>
+    </ul>
+
+  </div>
+
+<ul class="tag_list">
+  %for orgtag in orgtag_list:
+  %if orgtag not in obj["orgtag_list"]:
+  ${self.mini.tag_li(orgtag, org=False, note=False,
+    link_url="%s/tag/%s" % (obj["url"], orgtag["id"]),
+    link=True, next=uri,
+    visibility=True)}
+  %endif
+  %endfor
+</ul>
+
+</div>
+
+</%def>
+

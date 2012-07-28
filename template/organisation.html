@@ -1,196 +1,109 @@
 <%inherit file="base.html"/>
 
-<%def name="title()">${organisation.name}</%def>
+<%def name="title()">${obj["name"]}</%def>
 
 <%def name="page()">
 
-<h1><a href="${organisation.url}">${organisation.name}</a></h1>
+<h1>
+  <a
+     href="${url_rewrite(obj["url"], parameters)}"
+     >${obj["name"]}</a>
+</h1>
 
-%if current_user:
-${organisation.visible and "Visible" or "Deleted"}
-<form action="${organisation.url}" method="post">
-  <input name="_xsrf" type="hidden" value="${xsrf}">
-  <input name="_method" type="hidden" value="put">
-  <label>
-    <span>Name</span>
-    <input name="name" value="${organisation.name}">
-  </label>
+<div class="section">
 
-  %for note in organisation.note_list():
-  <input name="note_id" type="hidden" value="${note.note_e}">
-  %endfor
+  <div id="mango-map-box">
+    <div id="mango-map-canvas">Map loading...</div>
+  </div>
+  
+  <div class="form-by-map" id="org-form">
+    
+    <h3>Organisation</h3>
+    
+    %if current_user:
+    <form action="${obj["url"]}" method="post">
+      <input name="_xsrf" type="hidden" value="${xsrf}">
+      <input name="_method" type="hidden" value="put">
+      <label name="name">
+	<span>Name</span>
+	<span class="requirement">(required)</span>
+	<input name="name" value="${obj["name"]}">
+      </label>
+      
+      ${self.mini.visibility_input(obj)}
 
-  %for address in organisation.address_list():
-  <input name="address_id" type="hidden" value="${address.address_e}">
-  %endfor
+      <input type="submit">
+    </form>
+    %else:
+    ${obj["name"]}
+    %endif
 
-  %for tag in organisation.tag_list():
-  <input name="tag_id" type="hidden" value="${tag.organisation_tag_e}">
-  %endfor
+    
+    %if current_user:
+    <form action="${obj["url"]}" method="post">
+      <input name="_xsrf" type="hidden" value="${xsrf}">
+      <input name="_method" type="hidden" value="delete">
+      <input type="submit" value="Delete">
+    </form>
+    %endif
 
-  <input type="submit">
-</form>
+    <div class="action-bar no-border">
+      <h3>Tags</h3>
 
-<form action="${organisation.url}" method="post">
-  <input name="_xsrf" type="hidden" value="${xsrf}">
-  <input name="_method" type="hidden" value="delete">
-  <input type="submit" value="delete">
-</form>
+      %if current_user:
+      <div class="actions">
+        <a
+           href="${url_rewrite("%s/tag" % obj["url"], parameters)}"
+           class="action"
+           >Edit tags</a>
+      </div>
+      %endif
+    </div>
+
+    %if "orgtag_list" in obj:
+    <ul class="tag_list">
+      %for orgtag in obj["orgtag_list"]:
+      ${self.mini.tag_li(
+        orgtag, visibility=True, parameters=parameters,
+        )}
+      %endfor
+    </ul>
+    %endif
+    
+    %if "address_list" in obj:
+    <div class="action-bar no-border">
+      <h3>Addresses</h3>
+
+      %if current_user:
+      <div class="actions">
+        <a
+           href="${url_rewrite("%s/address" % obj["url"], parameters)}"
+           class="action"
+           >Add an address</a>
+      </div>
+      %endif
+    </div>
+
+    %for address in obj["address_list"]:
+    ${self.mini.address_box(
+      address,
+      "%s%s" % (obj["url"], address["url"]), unlink=True,
+      parameters=parameters,
+      )}
+    %endfor
+    %endif
+
+  </div>
+  
+</div>
+
+%if obj and "note_list" in obj:
+${self.mini.render_note_section(obj["note_list"],
+  obj["url"] + "/note", obj["url"],
+  note_search, note_order, unlink_url=obj["url"],
+  parameters=parameters,
+  )}
 %endif
-
-<h3>Tags</h3>
-<table>
-  <tbody>
-    %for tag in organisation.tag_list():
-    <tr>
-      <td>
-	<a href="${tag.url}">${tag.name}</a>
-      </td>
-      %if current_user:
-      <td>
-	<form action="${organisation.url}" method="post">
-	  <input name="_xsrf" type="hidden" value="${xsrf}">
-	  <input name="_method" type="hidden" value="put">
-	  <input name="name" type="hidden" value="${organisation.name}">
-	  %for note in organisation.note_list():
-	  <input name="note_id" type="hidden" value="${note.note_e}">
-	  %endfor
-	  %for address in organisation.address_list():
-	  <input name="address_id" type="hidden" value="${address.address_e}">
-	  %endfor
-	  %for tag_2 in organisation.tag_list():
-	  %if tag_2.organisation_tag_e == tag.organisation_tag_e:
-	  <% continue %>
-	  %endif
-	  <input name="tag_id" type="hidden" value="${tag_2.organisation_tag_e}">
-	  %endfor
-	  <input type="submit" value="delete">
-	</form>
-      </td>
-      %endif
-    </tr>
-    %endfor
-  </tbody>
-</table>
-
-
-<h3>Addresses</h3>
-<table>
-  <tbody>
-    %for address in organisation.address_list():
-    <tr>
-      <td>
-	${address.postal | n, h, unicode, newline}
-      </td>
-      %if current_user:
-      <td>
-	<a href="${address.url}">Edit</a>
-      </td>
-      <td>
-	<form action="${organisation.url}" method="post">
-	  <input name="_xsrf" type="hidden" value="${xsrf}">
-	  <input name="_method" type="hidden" value="put">
-	  <input name="name" type="hidden" value="${organisation.name}">
-	  %for note in organisation.note_list():
-	  <input name="note_id" type="hidden" value="${note.note_e}">
-	  %endfor
-	  %for address_2 in organisation.address_list():
-	  %if address_2.address_e == address.address_e:
-	  <% continue %>
-	  %endif
-	  <input name="address_id" type="hidden" value="${address_2.address_e}">
-	  %endfor
-	  %for tag in organisation.tag_list():
-	  <input name="tag_id" type="hidden" value="${tag.organisation_tag_e}">
-	  %endfor
-	  <input type="submit" value="delete">
-	</form>
-      </td>
-      %endif
-    </tr>
-    %endfor
-  </tbody>
-</table>
-
-<h4>Add address</h4>
-<form action="${organisation.url}/address" method="post">
-  <input name="_xsrf" type="hidden" value="${xsrf}">
-  <label>
-    <span>Postal</span>
-    <textarea name="postal"></textarea>
-  </label>
-  <label>
-    <span>Lookup</span>
-    <textarea name="lookup"></textarea>
-  </label>
-  <label>
-    <span>Longitude</span>
-    <input name="longitude" value="">
-  </label>
-  <label>
-    <span>Latitude</span>
-    <input name="latitude" value="">
-  </label>
-  <input type="submit">
-</form>
-
-
-
-<h3>Notes</h3>
-<table>
-  <tbody>
-    %for note in organisation.note_list():
-    <tr>
-      <td>
-	${note.text | n, h, unicode, newline}
-      </td>
-      %if current_user:
-      <td>
-	<a href="${note.url}">Edit</a>
-      </td>
-      <td>
-	<form action="${organisation.url}" method="post">
-	  <input name="_xsrf" type="hidden" value="${xsrf}">
-	  <input name="_method" type="hidden" value="put">
-	  <input name="name" type="hidden" value="${organisation.name}">
-	  %for note_2 in organisation.note_list():
-	  %if note_2.note_e == note.note_e:
-	  <% continue %>
-	  %endif
-	  <input name="note_id" type="hidden" value="${note_2.note_e}">
-	  %endfor
-	  %for address in organisation.address_list():
-	  <input name="address_id" type="hidden" value="${address.address_e}">
-	  %endfor
-	  %for tag in organisation.tag_list():
-	  <input name="tag_id" type="hidden" value="${tag.organisation_tag_e}">
-	  %endfor
-	  <input type="submit" value="delete">
-	</form>
-      </td>
-      %endif
-    </tr>
-    %endfor
-  </tbody>
-</table>
-
-<h4>Add note</h4>
-<form action="${organisation.url}/note" method="post">
-  <input name="_xsrf" type="hidden" value="${xsrf}">
-  <label>
-    <span>Text</span>
-    <textarea name="text"></textarea>
-  </label>
-  <label>
-    <span>Source</span>
-    <textarea name="source"></textarea>
-  </label>
-  <input type="submit">
-</form>
-
 
 </%def>
 
-</body>
-
-</html>

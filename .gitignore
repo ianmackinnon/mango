@@ -1,4 +1,9 @@
+.mango.conf
 .xsrf
+seed.bash
 *.pyc
 *.db
 log/
+test/
+static/image/map/marker
+tools/

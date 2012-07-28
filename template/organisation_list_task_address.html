@@ -4,20 +4,15 @@
 
 <%def name="page()">
 
-<h1>Organisations</h1>
+<h1>Organisations with no Address</h1>
 
 <div class="action-bar">
   <h3>Filter</h3>
   <form id="org-search">
     ${self.mini.visibility_search_input(parameters.get("visibility", None), current_user)}
-    <input type="hidden" name="offset" value="0">
     <label name="name_search">
       <span>Name</span>
       <input name="name_search" value="${name_search or ""}" placeholder="Eg. BAE Systems">
-    </label>
-    <label name="lookup">
-      <span>Location</span>
-      <input name="lookup" value="${lookup or ""}" placeholder="Eg. NW1">
     </label>
     <label name="tag">
       <span>Tags</span>
@@ -35,11 +30,7 @@
   </form>
 </div>
 
-<div id="mango-map-box">
-  <div id="mango-map-canvas">Map loading...</div>
-</div>
-
-<div class="box right" id="org_list">
+<div class="box full" id="org_list">
 <div class="action-bar">
   <div class="counts">
     ${self.mini.counts(
@@ -62,7 +53,7 @@
 
 <div class="column">
   %for org in org_packet["org_list"]:
-  ${self.mini.org_box(org, geobox=org_packet["geobox"], parameters=parameters) | n}
+  ${self.mini.org_box(org) | n}
   %endfor
 </div>
 </div>

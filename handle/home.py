@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 
-from base import BaseHandler, authenticated
+from base import BaseHandler
 
 
 
 class HomeHandler(BaseHandler):
     def get(self):
-        self.render('home.html',
-                    )
+        self.render('home.html')
 
 
 

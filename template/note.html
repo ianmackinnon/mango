@@ -1,42 +1,204 @@
 <%inherit file="base.html"/>
 
-<%def name="title()">Note ${note.note_e}</%def>
+
+
+<%def name="title()">
+%if obj:
+%if "linked" in obj and obj["linked"] == 1:
+${obj["linked"][0]["name"]} | 
+%endif
+Note ${obj["id"]}
+%else:
+%if entity:
+${entity["name"]} | Add Note
+%else:
+New Note
+%endif
+%endif
+</%def>
+
+
 
 <%def name="page()">
 
-<h1><a href="${note.url}">Note ${note.note_e}</a></h1>
+<%
+    assert int(bool(obj)) + int(bool(entity)) <= 1
+%>
+
+<h1>
+%if obj:
+%if "linked" in obj and len(obj["linked"]) == 1:
+<a
+   href="${url_rewrite(obj["linked"][0]["url"], parameters)}"
+   >${obj["linked"][0]["name"]}</a>
+ | 
+%endif
+<a
+   href="${url_rewrite(obj["url"], parameters)}"
+   >Note ${obj["id"]}</a>
+%else:
+%if entity:
+${entity["name"]} | Add Note
+%else:
+New Note
+%endif
+%endif
+</h1>
 
 %if current_user:
-<form action="${note.url}" method="post">
-  <input name="_xsrf" type="hidden" value="${xsrf}">
-  <input name="_method" type="hidden" value="put">
-  <label>
-    <span>Text</span>
-    <textarea name="text">${note.text}</textarea>
-  </label>
-  <label>
-    <span>Source</span>
-    <textarea name="source">${note.source or ""}</textarea>
-  </label>
-  <input type="submit">
-</form>
-%else:
-<table>
-  <tbody>
-    <tr>
-      <td>Text</td>
-      <td>${note.text | n, h, unicode, newline}</a></td>
-    </tr>
-    <tr>
-      <td>Source</td>
-      <td>${note.source | n, h, unicode, newline}</a></td>
-    </tr>
-  </tbody>
-</table>
+${note_form(obj=obj, entity=entity, next=next)}
+%endif
+
+<div class="box full">
+  %if current_user:
+  <div class="action-bar no-border">
+    <h3>Preview</h3>
+  </div>
+  %endif
+
+  %if obj:
+  ${self.mini.render_note(obj, action=False, id='note-preview')}
+  %else:
+    <div id="note-preview" class="note">
+      <div class="note-text markdown">
+      </div>
+      <div class="note-source markdown">
+      </div>
+    </div>
+  %endif
+</div>
+
+%if note:
+<div class="box full" id="note-links">
+  <div class="action-bar no-border">
+    <h3>Links</h3>
+    %if current_user:
+    <ul class="actions">
+      <a
+         class="action"
+         href="${url_rewrite("%s/link" % obj["url"], parameters)}"
+         >Edit links</a>
+    </ul>
+    %endif
+  </div>
+  <% unlink = "linked" in obj and len(obj["linked"]) > 1 %>
+  %if obj["org_list"]:
+  <div>
+    <h3>Organisations</h3>
+    <ul class="tag_list">
+      %for org in obj["org_list"]:
+      ${self.mini.org_li(
+        org,
+        link_url=org["url"] + obj["url"],
+        unlink=unlink,
+      )}
+      %endfor
+    </ul>
+  </div>
+  %endif
+  %if obj["orgtag_list"]:
+  <div>
+    <h3>Organisation Tags</h3>
+    <ul class="tag_list">
+      %for orgtag in obj["orgtag_list"]:
+      ${self.mini.tag_li(
+        orgtag,
+        org=False,
+        note=False,
+        link_url=orgtag["url"] + obj["url"],
+        unlink=unlink,
+      )}
+      %endfor
+    </ul>
+  </div>
+  %endif
+  %if obj["address_list"]:
+  <div>
+    <h3>Addresses</h3>
+    <ul class="tag_list">
+      %for address in obj["address_list"]:
+      ${self.mini.address_li(
+        address,
+        link_url=address["url"] + obj["url"],
+        unlink=unlink,
+      )}
+      %endfor
+    </ul>
+  </div>
+  %endif
+</div>
+
+<script type="text/html" id="org_li">\
+${mini.org_li | n}\
+</script>
+
 %endif
 
 </%def>
 
-</body>
 
-</html>
+<%def name="note_form(obj=None, entity=None, next=None)">
+<%
+action = "/note"
+put = False
+if entity:
+    action = entity["url"] + "/note"
+    next = entity["url"]
+elif note:
+    put = True
+    action = obj["url"]
+%>
+
+<div class="box full" id="note-form">
+  <div class="form-hint">
+    <p>Enter note text and source using <a href='http://daringfireball.net/projects/markdown/syntax'>Markdown syntax</a>.</p>
+  </div>
+
+  <form action="${action}" method="post">
+    <input name="_xsrf" type="hidden" value="${xsrf}">
+    %if put:
+    <input name="_method" type="hidden" value="put">
+    %endif
+    <input name="next" type="hidden" value="${next or ""}">
+    <label
+       name="text"
+       status="${obj and obj.get("text", "") and 'good' or 'bad'}"
+       class="textarea"
+       >
+      <span>Text</span>\
+      <span class="requirement">(required)</span>
+      <textarea
+         name="text"
+         >${obj and obj.get("text", "") or ""}</textarea>
+    </label>
+    <label
+       name="source"
+       status="${obj and obj.get("source", "") and 'good' or 'bad'}"
+       class="textarea"
+       >
+      <span>Source</span>
+      <span class="requirement">(required)</span>
+      <textarea
+         name="source"
+         placeholder="One or more external links or publications where the information can be verified, eg. www.example.com/address, Janes Defence issue 123."
+         >${obj and obj.get("source", "") or ""}</textarea>
+    </label>
+
+    ${self.mini.visibility_input(obj)}
+
+    <input type="submit" value="Save">
+  </form>
+
+  %if obj:
+  <form action="${obj["url"]}" method="post">
+    <input name="_xsrf" type="hidden" value="${xsrf}">
+    <input name="_method" type="hidden" value="delete">
+    %if next:
+    <input name="next" type="hidden" value="${next}">
+    %endif
+    <input type="submit" value="Delete">
+  </form>
+  %endif
+</div>
+
+</%def>

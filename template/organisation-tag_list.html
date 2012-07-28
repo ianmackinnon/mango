@@ -1,0 +1,41 @@
+<%inherit file="base.html"/>
+
+<%def name="title()">Organisation Tags</%def>
+
+<%def name="page()">
+
+<h1>Organisation Tags</h1>
+
+<div class="action-bar">
+  <form id="orgtag-search">
+    <label name="search">
+      <span>Search</span>
+      <input name="search" value="${search or ''}">
+    </label>
+    ${self.mini.visibility_search_input(visibility, current_user)}
+    <input type="submit">
+  </form>
+  <ul class="actions">
+    <a
+       class="action"
+       href="${url_rewrite("/organisation-tag/new", parameters)}"
+       >Create a tag</a>
+  </ul>
+</div>
+
+<ul id="tag_list" class="tag_list">
+  %for orgtag in orgtag_list:
+  ${self.mini.tag_li(orgtag, org=True, note=True,
+    visibility=True, parameters=parameters)}
+  %endfor
+</ul>
+
+<script type="text/html" id="tag_li">\
+${mini.tag_li | n}\
+</script>
+
+<script type="text/html" id="visibility_bar">\
+${mini.visibility_bar | n}\
+</script>
+
+</%def>

@@ -20,18 +20,30 @@ from tornado.options import define, options
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
+import mysql.mysql_init
+
 from handle.base import BaseHandler, authenticated
-from handle.auth import AuthLoginHandler, AuthLoginLocalHandler, AuthLoginGoogleHandler, AuthLogoutHandler
+from handle.generate import GenerateMarkerHandler
+from handle.auth import AuthLoginHandler, AuthLoginLocalHandler, \
+    AuthLoginGoogleHandler, AuthLogoutHandler
 from handle.user import UserHandler, UserListHandler
 from handle.home import HomeHandler
-from handle.note import NoteHandler, NoteListHandler
-from handle.address import AddressHandler, AddressListHandler
-from handle.organisation import OrganisationHandler, OrganisationListHandler, OrganisationNoteListHandler, OrganisationAddressListHandler
-from handle.organisation_tag import OrganisationTagHandler, OrganisationTagListHandler, OrganisationTagNoteListHandler
+from handle.note import NoteHandler, NoteNewHandler, NoteListHandler, \
+    NoteLinkHandler
+from handle.address import AddressHandler, \
+    AddressLookupHandler, AddressNoteListHandler, AddressNoteHandler
+from handle.org import OrgHandler, OrgNewHandler, OrgListHandler, \
+    OrgOrgtagListHandler, OrgOrgtagHandler, OrgNoteListHandler, OrgNoteHandler, \
+    OrgAddressListHandler, OrgAddressHandler, \
+    OrgListTaskAddressHandler, OrgListTaskVisibilityHandler
+from handle.orgtag import OrgtagHandler, OrgtagListHandler, OrgtagNewHandler, \
+    OrgtagNoteListHandler, OrgtagNoteHandler
+from handle.history import HistoryHandler
 
 
 
 define("port", default=8802, help="Run on the given port", type=int)
+define("database", default="sqlite", help="sqlite or mysql", type=str)
 
 
 
@@ -44,12 +56,13 @@ class Application(tornado.web.Application):
             self.cookie_secret = open(".xsrf", "r").read().strip()
         except IOError as e:
             sys.stderr.write(
-                "Could not open XSRF key. Run 'make' to generate one.\n"
+                "Could not open XSRF key. Run 'make .xsrf' to generate one.\n"
                 )
             sys.exit(1)
 
     def path_is_authenticated(self, path):
-        for key, value in self.handler_list:
+        for row in self.handler_list:
+            key, value = row[:2]
             if re.match(key, path) and hasattr(value, "get"):
                 if hasattr(value.get, "authenticated") and \
                         value.get.authenticated == True:
@@ -68,37 +81,62 @@ class Application(tornado.web.Application):
             )
 
         re_id = "([1-9][0-9]*)"
-        re_e_id = "([1-9][0-9]*)(?:,([1-9][0-9]*))?"
 
         self.handler_list = [
             (r"/", HomeHandler),
+            (r'/static/image/map/marker/(.*)',
+             GenerateMarkerHandler, {'path': "static/image/map/marker"}),
+            (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': "static"}),
 
             (r"/user", UserListHandler),
             (r"/user/%s" % re_id , UserHandler),
 
             (r"/note", NoteListHandler),
-            (r"/note/%s" % re_e_id, NoteHandler),
+            (r"/note/new", NoteNewHandler),
+            (r"/note/%s" % re_id, NoteHandler),
+            (r"/note/%s/link" % re_id, NoteLinkHandler),
 
-            (r"/organisation", OrganisationListHandler),
-            (r"/organisation/%s" % re_e_id, OrganisationHandler),
-            (r"/organisation/%s/note" % re_e_id, OrganisationNoteListHandler),
-            (r"/organisation/%s/address" % re_e_id, OrganisationAddressListHandler),
+            (r"/organisation", OrgListHandler),
+            (r"/organisation/new", OrgNewHandler),
+            (r"/organisation/%s" % re_id, OrgHandler),
+            (r"/organisation/%s/tag" % re_id, OrgOrgtagListHandler),
+            (r"/organisation/%s/tag/%s" % (re_id, re_id), OrgOrgtagHandler),
+            (r"/organisation/%s/note" % re_id, OrgNoteListHandler),
+            (r"/organisation/%s/note/%s" % (re_id, re_id), OrgNoteHandler),
+            (r"/organisation/%s/address" % re_id, OrgAddressListHandler),
+            (r"/organisation/%s/address/%s" % (re_id, re_id),
+             OrgAddressHandler),
 
-            (r"/address", AddressListHandler),
-            (r"/address/%s" % re_e_id, AddressHandler),
-#            (r"/address/%s/note" % re_e_id, AddressNoteListHandler),
+            (r"/task/address", OrgListTaskAddressHandler),
+            (r"/task/visibility", OrgListTaskVisibilityHandler),
 
-            (r"/organisation-tag", OrganisationTagListHandler),
-            (r"/organisation-tag/%s" % re_e_id, OrganisationTagHandler),
-            (r"/organisation-tag/%s/note" % re_e_id, OrganisationTagNoteListHandler),
+            (r"/address/lookup", AddressLookupHandler),
+            (r"/address/%s" % re_id, AddressHandler),
+            (r"/address/%s/note" % re_id, AddressNoteListHandler),
+            (r"/address/%s/note/%s" % (re_id, re_id), AddressNoteHandler),
 
-            (r"/auth/login", AuthLoginHandler),
+            (r"/organisation-tag", OrgtagListHandler),
+            (r"/organisation-tag/new", OrgtagNewHandler),
+            (r"/organisation-tag/%s" % re_id, OrgtagHandler),
+            (r"/organisation-tag/%s/note" % re_id, OrgtagNoteListHandler),
+            (r"/organisation-tag/%s/note/%s" % (re_id, re_id), OrgtagNoteHandler),
+
+            (r"/auth/login", AuthLoginGoogleHandler),
             (r"/auth/login/google", AuthLoginGoogleHandler),
             (r"/auth/login/local", AuthLoginLocalHandler),
             (r"/auth/logout", AuthLogoutHandler),
+
+            (r"/history", HistoryHandler),
             ]
 
-        connection_url = 'sqlite:///mango.db'
+        if options.database == "mysql":
+            (database,
+             app_username, app_password,
+             admin_username, admin_password) = mysql.mysql_init.get_conf()
+            connection_url = 'mysql://%s:%s@localhost/%s?charset=utf8' % (
+                admin_username, admin_password, database)
+        else:
+            connection_url = 'sqlite:///mango.db'
     
         engine = create_engine(connection_url)
 

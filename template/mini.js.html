@@ -1,0 +1,22 @@
+<script id="template_counts" type="text/html">
+  <span>
+  <% if (obj_list.length) { %>
+  Showing
+    <span class="count_showing_from"><%= offset + 1 %></span>
+    -
+    <span class="count_showing_to"><%= offset + obj_list.length %></span>
+    of
+    <span class="count_total"><%= total %></span>.
+
+    <span class="more">
+      <% if (!!more_link && (offset + obj_list.length < total)) { %>
+      <a
+         href=""
+         >More</a>
+      <% } %>
+    </span>
+  <% } else { %>
+  No Matching results.
+  <% } %>
+  </span>
+</script>

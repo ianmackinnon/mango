@@ -4,7 +4,17 @@
 
 <%def name="page()">
 
-<h1><a href="/user/${user.user_id}">${user.name}</a></h1>
+<h1>
+  <a
+     href="${url_rewrite("/user/%d" % user.user_id, parameters)}"
+     >${user.name}</a>
+</h1>
+
+<div>
+  <% hash = user.auth.gravatar_hash %>
+  <img width="96px" height="96px"
+       src="http://gravatar.com/avatar/${hash}?d=identicon&s=96">
+</div>
 
 </%def>
 

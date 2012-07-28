@@ -5,20 +5,8 @@
 <%def name="page()">
 
 <h1>Notes</h1>
-
-<table>
-  <tbody>
-    % for note in note_list:
-    <tr>
-      <td><a href="${note.url}">${note.text}</a></td>
-      <td>${note.source}</td>
-    </tr>
-    % endfor
-  </tbody>
-</table>
+${self.mini.render_note_section(
+  note_list, "/note/new", None, note_search, note_order
+)}
 
 </%def>
-
-</body>
-
-</html>

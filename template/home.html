@@ -3,8 +3,30 @@
 <%def name="title()">Home</%def>
 
 <%def name="page()">
+
+<div class="center-box">
+
+  <h2>Search for arms companies and peace groups</h2>
+  <h3>by location</h3>
+  <div class="action-bar home">
+    <form id="org-search" action="/organisation" method="get">
+      <label name="lookup">
+	<input name="lookup" value="${lookup or ""}" placeholder="Eg. NW1">
+      </label>
+      <input type="submit">
+    </form>
+  </div>
+
+  <h3>or by name</h3>
+  <div class="action-bar home">
+    <form id="org-search" action="/organisation" method="get">
+      <label name="name_search">
+	<input name="name_search" value="${name_search or ""}" placeholder="Eg. BAE Systems">
+      </label>
+      <input type="submit">
+    </form>
+  </div>
+
+</div>
+
 </%def>
-
-</body>
-
-</html>

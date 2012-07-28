@@ -1,54 +1,126 @@
 <%inherit file="base.html"/>
 
-<%def name="title()">Address ${address.address_e}</%def>
+<%def name="title()">
+%if entity:
+${entity["name"]} | address
+%elif "org_list" in obj and len(obj["org_list"]) == 1:
+${obj["org_list"][0]["name"]} | address
+%else:
+Address ${obj["address_id"]}
+%endif
+</%def>
 
 <%def name="page()">
 
-<h1><a href="${address.url}">Address ${address.address_e}</a></h1>
-
-%if current_user:
-<form action="${address.url}" method="post">
-  <input name="_xsrf" type="hidden" value="${xsrf}">
-  <input name="_method" type="hidden" value="put">
-  <label>
-    <span>Postal</span>
-    <textarea name="postal">${address.postal}</textarea>
-  </label>
-  <label>
-    <span>Source</span>
-    <textarea name="source">${address.source}</textarea>
-  </label>
-  <label>
-    <span>Lookup</span>
-    <textarea name="lookup">${address.lookup or ""}</textarea>
-  </label>
-  <label>
-    <span>Manual Longitude</span>
-    <input name="manual_longitude" value="${address.manual_longitude or ""}">
-  </label>
-  <label>
-    <span>Manual Latitude</span>
-    <input name="manual_latitude" value="${address.manual_latitude or ""}">
-  </label>
-  <input type="submit">
-</form>
+<h1>
+%if entity:
+<h1>
+  <a
+     href="${url_rewrite(entity["url"], parameters)}"
+     >${entity["name"]}</a>
+  | address
+</h1>
+%elif "org_list" in obj and len(obj["org_list"]) == 1:
+<h1>
+  <a
+     href="${url_rewrite(obj["org_list"][0]["url"], parameters)}"
+     >${obj["org_list"][0]["name"]}</a>
+  | address
+</h1>
 %else:
-<table>
-  <tbody>
-    <tr>
-      <td>Postal</td>
-      <td><a href="${address.url}">${address.postal | n, h, unicode, newline}</a></td>
-    </tr>
-    <tr>
-      <td>Location</td>
-      <td>${address.repr_coordinates(address.longitude, address.latitude)}</td>
-    </tr>
-  </tbody>
-</table>
+<a
+   href="${url_rewrite(obj["url"], parameters)}"
+   >Address ${obj["address_id"]}</a>
+%endif
+</h1>
+
+  <div id="mango-map-box">
+    <div id="mango-map-canvas">Map loading...</div>
+  </div>
+
+  %if current_user:
+  <div class="box right" id="address-form">
+    <div class="form-hint">
+      <p>Enter a postal address and a source where it can be verified.</p>
+    </div>
+<%
+action = entity and "%s/address" % entity["url"] or obj["url"]
+%>
+    <form action="${action}" method="post">
+      <input name="_xsrf" type="hidden" value="${xsrf}">
+      %if obj:
+      <input name="_method" type="hidden" value="put">
+      %endif
+      %if entity:
+      <input name="next" type="hidden" value="${entity["url"]}">
+      %elif "org_list" in obj and len(obj["org_list"]) == 1:
+      <input name="next" type="hidden" value="${obj["org_list"][0]["url"]}">
+      %endif
+      <label name="postal"
+             status="${obj and obj.get("postal", "") and 'good' or 'bad'}"
+	     class="textarea">
+	<span>Postal</span>\
+	<span class="requirement">(required)</span>
+	<textarea name="postal"
+                  >${obj and obj.get("postal", "") or ""}</textarea>
+      </label>
+      <label name="lookup"
+             status="${obj and obj.get("lookup", "") and 'good' or ''}"
+	     class="textarea">
+	<span>Lookup</span>
+	<span class="requirement">(optional)</span>
+	<textarea name="lookup"
+		  placeholder="A machine-comprehensible version of the address
+			       can be added if the postal address is not
+			       understood."
+                  >${obj and obj.get("lookup", "") or ""}</textarea>
+      </label>
+      <input name="latitude" type="hidden"
+	     value="${obj and obj.get("latitude", "") or ""}">
+      <input name="longitude" type="hidden"
+	     value="${obj and obj.get("longitude", "") or ""}">
+      <input name="manual_latitude" type="hidden"
+	     value="${obj and obj.get("manual_latitude", "") or ""}">
+      <input name="manual_longitude" type="hidden"
+	     value="${obj and obj.get("manual_latitude", "") or ""}">
+      <label name="source"
+	     status="${obj and obj.get("source", "") and 'good' or 'bad'}"
+	     class="textarea">
+	<span>Source</span>
+	<span class="requirement">(required)</span>
+	<textarea name="source"
+		  placeholder="One or more external links or publications where
+			       the address can be verified,
+			       eg. www.example.com/address,
+			       Janes Defence issue 123."
+                  >${obj and obj.get("source", "") or ""}</textarea>
+      </label>
+
+      ${self.mini.visibility_input(obj, 'public')}
+      <input type="submit" value="Save">
+    </form>
+
+  </div>
+  %else:
+  <div class="box right" id="address-form">
+    <h3>Address</h3>
+    <p>
+    ${obj["postal"] | n, h, unicode, newline}
+    </p>
+    <h3>Source</h3>
+    <p>
+    ${obj["source"] | n, h, convert_links}
+    </p>
+  </div>
+  %endif
+
+%if obj and "note_list" in obj:
+${self.mini.render_note_section(obj["note_list"],
+    obj["url"] + "/note", obj["url"],
+    note_search, note_order, unlink_url=obj["url"]
+)}
 %endif
 
+</div>
+
 </%def>
-
-</body>
-
-</html>
