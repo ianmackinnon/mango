@@ -35,14 +35,10 @@ class BaseOrgtagHandler(BaseHandler):
         return orgtag
 
     def _get_arguments(self):
-        if self.content_type("application/json"):
-            name = self.get_json_argument("name")
-            public = self.get_json_argument_public("public")
-            note_id_list = self.get_json_argument("note_id", [])
-        else:
-            name = self.get_argument("name")
-            public = self.get_argument_public("public")
-            note_id_list = self.get_arguments_int("note_id")
+        is_json = self.content_type("application/json")
+        name = self.get_argument("name", json=is_json)
+        public = self.get_argument_public("public", json=is_json)
+        note_id_list = self.get_argument("note_id", [], json=is_json)
 
         return name, public, note_id_list
 
@@ -89,14 +85,10 @@ class BaseOrgtagHandler(BaseHandler):
         return tag_and_org_count_list
         
     def _get_orgtag_and_org_count_list_search_and_args(self):
-        if self.content_type("application/json"):
-            name = self.get_json_argument("name", None)
-            short = self.get_json_argument("short", None)
-            search = self.get_json_argument("search", None)
-        else:
-            name = self.get_argument("name", None)
-            short = self.get_argument("short", None)
-            search = self.get_argument("search", None)
+        is_json = self.content_type("application/json")
+        name = self.get_argument("name", None, json=is_json)
+        short = self.get_argument("short", None, json=is_json)
+        search = self.get_argument("search", None, json=is_json)
 
         orgtag_and_org_count_list = self._get_orgtag_and_org_count_list_search(
             name=name,
@@ -138,10 +130,15 @@ class OrgtagListHandler(BaseOrgtagHandler):
             self.write_json(orgtag_list)
         else:
             self.render(
-                'organisation-tag_list.html',
-                orgtag_list=orgtag_list,
+                'tag_list.html',
+                tag_list=orgtag_list,
                 search=search,
                 visibility=self.parameters["visibility"],
+                type_title="Organisation",
+                type_title_plural="Organisations",
+                type_url="organisation",
+                type_entity_list="org_list",
+                type_li_template="org_li",
                 )
 
     def post(self):
@@ -159,7 +156,14 @@ class OrgtagListHandler(BaseOrgtagHandler):
 
 class OrgtagNewHandler(BaseOrgtagHandler):
     def get(self):
-        self.render('organisation-tag.html')
+        self.render(
+            'tag.html',
+            type_title="Organisation",
+            type_title_plural="Organisations",
+            type_url="organisation",
+            type_entity_list="org_list",
+            type_li_template="org_li",
+            )
 
 
 
@@ -203,10 +207,15 @@ class OrgtagHandler(BaseOrgtagHandler):
             self.write_json(obj)
         else:
             self.render(
-                'organisation-tag.html',
+                'tag.html',
                 obj=obj,
                 note_search=note_search,
                 note_order=note_order,
+                type_title="Organisation",
+                type_title_plural="Organisations",
+                type_url="organisation",
+                type_entity_list="org_list",
+                type_li_template="org_li",
                 )
 
     @authenticated

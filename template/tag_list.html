@@ -1,13 +1,13 @@
 <%inherit file="base.html"/>
 
-<%def name="title()">Organisation Tags</%def>
+<%def name="title()">${type_title} Tags</%def>
 
 <%def name="page()">
 
-<h1>Organisation Tags</h1>
+<h1>${type_title} Tags</h1>
 
 <div class="action-bar">
-  <form id="orgtag-search">
+  <form id="tag-search">
     <label name="search">
       <span>Search</span>
       <input name="search" value="${search or ''}">
@@ -18,14 +18,17 @@
   <ul class="actions">
     <a
        class="action"
-       href="${url_rewrite("/organisation-tag/new", parameters)}"
+       href="${url_rewrite("/%s-tag/new" % type_url, parameters)}"
        >Create a tag</a>
   </ul>
 </div>
 
 <ul id="tag_list" class="tag_list">
-  %for orgtag in orgtag_list:
-  ${self.mini.tag_li(orgtag, org=True, note=True,
+  %for tag in tag_list:
+  ${self.mini.tag_li(tag, entity={
+  "len": "org_len",
+  "url": type_url,
+  }, note=True,
     visibility=True, parameters=parameters)}
   %endfor
 </ul>

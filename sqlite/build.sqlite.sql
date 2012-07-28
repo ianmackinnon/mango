@@ -1,8 +1,10 @@
 -- Indices
 
 create index org_public_idx on org (public);
+create index event_public_idx on event (public);
 create index address_public_idx on address (public);
 create index orgtag_public_idx on orgtag (public);
+create index eventtag_public_idx on eventtag (public);
 create index note_public_idx on note (public);
 create index address_latitude_idx on address (latitude);
 create index address_longitude_idx on address (longitude);
@@ -26,6 +28,27 @@ CREATE TABLE org_v (
     name VARCHAR NOT NULL, 
 
     FOREIGN KEY(org_id) REFERENCES org (org_id), --
+    FOREIGN KEY(moderation_user_id) REFERENCES user (user_id), 
+    CHECK (public IN (0, 1))
+);
+
+CREATE TABLE event_v (
+    event_v_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, --
+    event_id INTEGER NOT NULL, 
+
+    moderation_user_id INTEGER, 
+    a_time FLOAT NOT NULL, 
+    public BOOLEAN,
+    existence BOOLEAN NOT NULL, --
+
+    name VARCHAR NOT NULL, 
+    start_date DATE NOT NULL, 
+    end_date DATE NOT NULL, 
+    description VARCHAR, 
+    start_time TIME, 
+    end_time TIME, 
+
+    FOREIGN KEY(event_id) REFERENCES event (event_id), --
     FOREIGN KEY(moderation_user_id) REFERENCES user (user_id), 
     CHECK (public IN (0, 1))
 );
@@ -83,12 +106,37 @@ CREATE TABLE orgtag_v (
     CHECK (public IN (0, 1))
 );
 
+CREATE TABLE eventtag_v (
+    eventtag_v_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, --
+    eventtag_id INTEGER NOT NULL, 
+    moderation_user_id INTEGER, 
+    a_time FLOAT NOT NULL, 
+    public BOOLEAN, 
+    existence BOOLEAN NOT NULL, --
+
+    name VARCHAR NOT NULL, 
+    short VARCHAR NOT NULL, 
+
+    FOREIGN KEY(eventtag_id) REFERENCES eventtag (eventtag_id), --
+    FOREIGN KEY(moderation_user_id) REFERENCES user (user_id), 
+    CHECK (public IN (0, 1))
+);
+
 CREATE TABLE org_address_v (
     org_id INTEGER NOT NULL, 
     address_id INTEGER NOT NULL, 
     a_time FLOAT, 
     existence BOOLEAN NOT NULL, --
     FOREIGN KEY(org_id) REFERENCES org (org_id), 
+    FOREIGN KEY(address_id) REFERENCES address (address_id)
+);
+
+CREATE TABLE event_address_v (
+    event_id INTEGER NOT NULL, 
+    address_id INTEGER NOT NULL, 
+    a_time FLOAT, 
+    existence BOOLEAN NOT NULL, --
+    FOREIGN KEY(event_id) REFERENCES event (event_id), 
     FOREIGN KEY(address_id) REFERENCES address (address_id)
 );
 
@@ -100,6 +148,14 @@ CREATE TABLE org_note_v (
     FOREIGN KEY(org_id) REFERENCES org (org_id), 
     FOREIGN KEY(note_id) REFERENCES note (note_id)
 );
+CREATE TABLE event_note_v (
+    event_id INTEGER NOT NULL, 
+    note_id INTEGER NOT NULL, 
+    a_time FLOAT, 
+    existence BOOLEAN NOT NULL, --
+    FOREIGN KEY(event_id) REFERENCES event (event_id), 
+    FOREIGN KEY(note_id) REFERENCES note (note_id)
+);
 CREATE TABLE org_orgtag_v (
     org_id INTEGER NOT NULL, 
     orgtag_id INTEGER NOT NULL, 
@@ -108,12 +164,28 @@ CREATE TABLE org_orgtag_v (
     FOREIGN KEY(org_id) REFERENCES org (org_id), 
     FOREIGN KEY(orgtag_id) REFERENCES orgtag (orgtag_id)
 );
+CREATE TABLE event_eventtag_v (
+    event_id INTEGER NOT NULL, 
+    eventtag_id INTEGER NOT NULL, 
+    a_time FLOAT, 
+    existence BOOLEAN NOT NULL, --
+    FOREIGN KEY(event_id) REFERENCES event (event_id), 
+    FOREIGN KEY(eventtag_id) REFERENCES eventtag (eventtag_id)
+);
 CREATE TABLE orgtag_note_v (
     orgtag_id INTEGER NOT NULL, 
     note_id INTEGER NOT NULL, 
     a_time FLOAT, 
     existence BOOLEAN NOT NULL, --
     FOREIGN KEY(orgtag_id) REFERENCES orgtag (orgtag_id), 
+    FOREIGN KEY(note_id) REFERENCES note (note_id)
+);
+CREATE TABLE eventtag_note_v (
+    eventtag_id INTEGER NOT NULL, 
+    note_id INTEGER NOT NULL, 
+    a_time FLOAT, 
+    existence BOOLEAN NOT NULL, --
+    FOREIGN KEY(eventtag_id) REFERENCES eventtag (eventtag_id), 
     FOREIGN KEY(note_id) REFERENCES note (note_id)
 );
 CREATE TABLE address_note_v (
@@ -178,6 +250,55 @@ begin
         )
         values (
 	old.org_id,
+	old.name,
+	old.moderation_user_id, strftime('%s','now'), old.public,
+	0
+	);
+end;
+
+
+
+-- event
+
+create trigger event_insert_after after insert on event
+begin
+    update event set a_time = strftime('%s','now') where event_id = new.event_id;
+    insert into event_v (
+        event_id, name, moderation_user_id, a_time, public,
+	existence
+        )
+        values (
+	new.event_id,
+	new.name,
+	new.moderation_user_id, strftime('%s','now'), new.public,
+	1
+	);
+end;
+
+create trigger event_update_after after update on event
+when cast(strftime('%s','now') as float) != new.a_time
+begin
+    update event set a_time = strftime('%s','now') where event_id = new.event_id;
+    insert into event_v (
+        event_id, name, moderation_user_id, a_time, public,
+	existence
+        )
+        values (
+	new.event_id,
+	new.name,
+	new.moderation_user_id, strftime('%s','now'), new.public,
+	1
+	);
+end;
+
+create trigger event_delete_after after delete on event
+begin
+    insert into event_v (
+        event_id, name, moderation_user_id, a_time, public,
+	existence
+        )
+        values (
+	old.event_id,
 	old.name,
 	old.moderation_user_id, strftime('%s','now'), old.public,
 	0
@@ -373,6 +494,64 @@ end;
 
 
 
+-- eventtag
+
+
+create trigger eventtag_insert_after after insert on eventtag
+begin
+    update eventtag
+        set a_time = strftime('%s','now') where eventtag_id = new.eventtag_id;
+    insert into eventtag_v (
+        eventtag_id,
+	name, short,
+	moderation_user_id, a_time, public,
+	existence
+        )
+        values (
+	new.eventtag_id,
+	new.name, new.short,
+	new.moderation_user_id, strftime('%s','now'), new.public,
+	1
+	);
+end;
+
+create trigger eventtag_update_after after update on eventtag
+when cast(strftime('%s','now') as float) != new.a_time
+begin
+    update eventtag
+        set a_time = strftime('%s','now') where eventtag_id = new.eventtag_id;
+    insert into eventtag_v (
+        eventtag_id,
+	name, short,
+	moderation_user_id, a_time, public,
+	existence
+        )
+        values (
+	new.eventtag_id,
+	new.name, new.short,
+	new.moderation_user_id, strftime('%s','now'), new.public,
+	1
+	);
+end;
+
+create trigger eventtag_delete_after after delete on eventtag
+begin
+    insert into eventtag_v (
+        eventtag_id,
+	name, short,
+	moderation_user_id, a_time, public,
+	existence
+        )
+        values (
+	old.eventtag_id,
+	old.name, old.short,
+	old.moderation_user_id, strftime('%s','now'), old.public,
+	0
+	);
+end;
+
+
+
 -- org_address
 
 
@@ -397,6 +576,34 @@ create trigger org_address_delete_after after delete on org_address
 begin
     insert into org_address_v (org_id, address_id, a_time, existence)
         values (old.org_id, old.address_id, strftime('%s','now'), 0);
+end;
+
+
+
+-- event_address
+
+
+create trigger event_address_insert_after after insert on event_address
+begin
+    update event_address
+        set a_time = strftime('%s','now') where event_id = new.event_id;
+    insert into event_address_v (event_id, address_id, a_time, existence)
+        values (new.event_id, new.address_id, strftime('%s','now'), 1);
+end;
+
+create trigger event_address_update_after after update on event_address
+when cast(strftime('%s','now') as float) != new.a_time
+begin
+    update event_address
+        set a_time = strftime('%s','now') where event_id = new.event_id;
+    insert into event_address_v (event_id, address_id, a_time, existence)
+        values (new.event_id, new.address_id, strftime('%s','now'), 1);
+end;
+
+create trigger event_address_delete_after after delete on event_address
+begin
+    insert into event_address_v (event_id, address_id, a_time, existence)
+        values (old.event_id, old.address_id, strftime('%s','now'), 0);
 end;
 
 
@@ -429,6 +636,34 @@ end;
 
 
 
+-- event_note
+
+
+create trigger event_note_insert_after after insert on event_note
+begin
+    update event_note
+        set a_time = strftime('%s','now') where event_id = new.event_id;
+    insert into event_note_v (event_id, note_id, a_time, existence)
+        values (new.event_id, new.note_id, strftime('%s','now'), 1);
+end;
+
+create trigger event_note_update_after after update on event_note
+when cast(strftime('%s','now') as float) != new.a_time
+begin
+    update event_note
+        set a_time = strftime('%s','now') where event_id = new.event_id;
+    insert into event_note_v (event_id, note_id, a_time, existence)
+        values (new.event_id, new.note_id, strftime('%s','now'), 1);
+end;
+
+create trigger event_note_delete_after after delete on event_note
+begin
+    insert into event_note_v (event_id, note_id, a_time, existence)
+        values (old.event_id, old.note_id, strftime('%s','now'), 0);
+end;
+
+
+
 -- org_orgtag
 
 
@@ -457,6 +692,34 @@ end;
 
 
 
+-- event_eventtag
+
+
+create trigger event_eventtag_insert_after after insert on event_eventtag
+begin
+    update event_eventtag
+        set a_time = strftime('%s','now') where event_id = new.event_id;
+    insert into event_eventtag_v (event_id, eventtag_id, a_time, existence)
+        values (new.event_id, new.eventtag_id, strftime('%s','now'), 1);
+end;
+
+create trigger event_eventtag_update_after after update on event_eventtag
+when cast(strftime('%s','now') as float) != new.a_time
+begin
+    update event_eventtag
+        set a_time = strftime('%s','now') where event_id = new.event_id;
+    insert into event_eventtag_v (event_id, eventtag_id, a_time, existence)
+        values (new.event_id, new.eventtag_id, strftime('%s','now'), 1);
+end;
+
+create trigger event_eventtag_delete_after after delete on event_eventtag
+begin
+    insert into event_eventtag_v (event_id, eventtag_id, a_time, existence)
+        values (old.event_id, old.eventtag_id, strftime('%s','now'), 0);
+end;
+
+
+
 -- orgtag_note
 
 
@@ -481,6 +744,34 @@ create trigger orgtag_note_delete_after after delete on orgtag_note
 begin
     insert into orgtag_note_v (orgtag_id, note_id, a_time, existence)
         values (old.orgtag_id, old.note_id, strftime('%s','now'), 0);
+end;
+
+
+
+-- eventtag_note
+
+
+create trigger eventtag_note_insert_after after insert on eventtag_note
+begin
+    update eventtag_note
+        set a_time = strftime('%s','now') where eventtag_id = new.eventtag_id;
+    insert into eventtag_note_v (eventtag_id, note_id, a_time, existence)
+        values (new.eventtag_id, new.note_id, strftime('%s','now'), 1);
+end;
+
+create trigger eventtag_note_update_after after update on eventtag_note
+when cast(strftime('%s','now') as float) != new.a_time
+begin
+    update eventtag_note
+        set a_time = strftime('%s','now') where eventtag_id = new.eventtag_id;
+    insert into eventtag_note_v (eventtag_id, note_id, a_time, existence)
+        values (new.eventtag_id, new.note_id, strftime('%s','now'), 1);
+end;
+
+create trigger eventtag_note_delete_after after delete on eventtag_note
+begin
+    insert into eventtag_note_v (eventtag_id, note_id, a_time, existence)
+        values (old.eventtag_id, old.note_id, strftime('%s','now'), 0);
 end;
 
 

@@ -8,14 +8,20 @@ user
 session
 
 org
+event
 address
 note
 orgtag
+eventtag
+event_address
+event_eventtag
+event_note
+eventtag_note
 org_address
-org_orgtag
 org_note
-address_note
+org_orgtag
 orgtag_note
+address_note
 
 address_note_v
 address_v
@@ -26,6 +32,12 @@ org_orgtag_v
 org_v
 orgtag_note_v
 orgtag_v
+event_address_v
+event_note_v
+event_eventtag_v
+event_v
+eventtag_note_v
+eventtag_v
 "
 
 for table in $tables

@@ -93,16 +93,11 @@ class BaseOrgHandler(BaseHandler):
 
 class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
     def get(self):
-        if self.content_type("application/json"):
-            name = self.get_json_argument("name", None)
-            name_search = self.get_json_argument("name_search", None)
-            tag_name_list = self.get_json_arguments("tag")
-            offset = self.get_json_argument_int("offset", None)
-        else:
-            name = self.get_argument("name", None)
-            name_search = self.get_argument("name_search", None)
-            tag_name_list = self.get_arguments_multi("tag", ",")
-            offset = self.get_argument_int("offset", None)
+        is_json = self.content_type("application/json")
+        name = self.get_argument("name", None, json=is_json)
+        name_search = self.get_argument("name_search", None, json=is_json)
+        tag_name_list = self.get_arguments("tag", json=is_json)
+        offset = self.get_argument_int("offset", None, json=is_json)
 
         if self.deep_visible():
             address_list_name = "address_list"
@@ -158,12 +153,10 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
                 )
 
     def post(self):
-        if self.content_type("application/json"):
-            name = self.get_json_argument("name")
-            public = self.get_json_argument_public("public")
-        else:
-            name = self.get_argument("name")
-            public = self.get_argument_public("public")
+        is_json = self.content_type("application/json")
+        name = self.get_argument("name", json=is_json)
+        public = self.get_argument_public("public", json=is_json)
+
         org = Org(name, moderation_user=self.current_user, public=public)
         self.orm.add(org)
         self.orm.commit()
@@ -173,7 +166,9 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
 
 class OrgNewHandler(BaseOrgHandler):
     def get(self):
-        self.render('organisation_new.html')
+        self.render(
+            'organisation.html',
+            )
 
 
 
@@ -240,12 +235,9 @@ class OrgHandler(BaseOrgHandler):
     def put(self, org_id_string):
         org = self._get_org(org_id_string)
 
-        if self.content_type("application/json"):
-            name = self.get_json_argument("name")
-            public = self.get_json_argument_public("public")
-        else:
-            name = self.get_argument("name")
-            public = self.get_argument_public("public")
+        is_json = self.content_type("application/json")
+        name = self.get_argument("name", json=is_json)
+        public = self.get_argument_public("public", json=is_json)
 
         if org.name == name and \
                 org.public == public:
@@ -313,10 +305,14 @@ class OrgNoteListHandler(BaseOrgHandler, BaseNoteHandler):
     @authenticated
     def get(self, org_id_string):
         org = self._get_org(org_id_string)
+        public = bool(self.current_user)
+        obj = org.obj(
+            public=public,
+            )
         self.next = org.url
         self.render(
             'note.html',
-            entity=org
+            entity=obj
             )
 
 
@@ -407,10 +403,16 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
                     ))
 
         self.render(
-            'organisation_orgtag.html',
+            'entity_tag.html',
             obj=obj,
-            orgtag_list=orgtag_list,
+            tag_list=orgtag_list,
             search=search,
+            type_title="Organisation",
+            type_title_plural="Organisations",
+            type_url="organisation",
+            type_tag_list="orgtag_list",
+            type_entity_list="org_list",
+            type_li_template="org_li",
             )
 
 
@@ -441,16 +443,11 @@ class OrgOrgtagHandler(BaseOrgHandler, BaseOrgtagHandler):
 
 class OrgListTaskAddressHandler(BaseOrgHandler, BaseOrgtagHandler):
     def get(self):
-        if self.content_type("application/json"):
-            name = self.get_json_argument("name", None)
-            name_search = self.get_json_argument("name_search", None)
-            tag_name_list = self.get_json_arguments("tag")
-            offset = self.get_json_argument_int("offset", None)
-        else:
-            name = self.get_argument("name", None)
-            name_search = self.get_argument("name_search", None)
-            tag_name_list = self.get_arguments_multi("tag", ",")
-            offset = self.get_argument_int("offset", None)
+        is_json = self.content_type("application/json")
+        name = self.get_argument("name", None, json=is_json)
+        name_search = self.get_argument("name_search", None, json=is_json)
+        tag_name_list = self.get_arguments("tag", json=is_json)
+        offset = self.get_argument_int("offset", None, json=is_json)
 
         if self.deep_visible():
             address_list_name = "address_list"

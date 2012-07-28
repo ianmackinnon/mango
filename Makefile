@@ -39,7 +39,7 @@ mysql :
 clean-mysql:
 	@./mysql/mysql_init.py > /dev/null
 	@echo "Logging into MySQL as user 'root'"
-	@./mysql/mysql_init.py -c | mysql -u root -p
+	@./mysql/mysql_init.py -x | mysql -u root -p
 
 seed :
 	if [ -e seed.bash ]; then ./seed.bash; fi

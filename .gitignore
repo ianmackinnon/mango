@@ -7,3 +7,4 @@ log/
 test/
 static/image/map/marker
 tools/
+mysql/migrate.bash

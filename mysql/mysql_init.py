@@ -48,9 +48,9 @@ section, name))
 
 
 
-def get_conf():
+def get_conf(conf):
     config = ConfigParser.ConfigParser()
-    config.read('.mango.conf')
+    config.read(conf)
 
     try:
         database = config.get("mysql", "database")
@@ -74,8 +74,8 @@ def get_conf():
     return database, app_username, app_password, admin_username, admin_password
 
 
-def mysql_init(clean=False, datum=None):
-    database, app_username, app_password, admin_username, admin_password = get_conf()
+def mysql_init(conf, clean=False, datum=None):
+    database, app_username, app_password, admin_username, admin_password = get_conf(conf)
     if datum:
         print database
         return
@@ -110,11 +110,13 @@ if __name__ == "__main__":
                       help="Print verbose information for debugging.", default=0)
     parser.add_option("-q", "--quiet", action="count", dest="quiet",
                       help="Suppress warnings.", default=0)
-    parser.add_option("-c", "--clean", action="store_true", dest="clean",
+    parser.add_option("-x", "--clean", action="store_true", dest="clean",
                       help="Delete database and users.", default=False)
     parser.add_option("-d", "--datum", action="store", dest="datum",
                       help="Print a particular datum.", default=False)
-
+    parser.add_option("-c", "--configuration", action="store",
+                      dest="configuration", help=".conf file.",
+                      default=".mango.conf")
 
     (options, args) = parser.parse_args()
 
@@ -128,4 +130,4 @@ if __name__ == "__main__":
         (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[verbosity]
         )
 
-    mysql_init(clean=options.clean, datum=options.datum)
+    mysql_init(conf=options.configuration, clean=options.clean, datum=options.datum)

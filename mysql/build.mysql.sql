@@ -24,6 +24,26 @@ CREATE TABLE org_v (
       REFERENCES user (user_id)
 ) DEFAULT CHARSET=utf8;
 
+CREATE TABLE event_v (
+    event_v_id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, --
+    event_id INTEGER NOT NULL, 
+    moderation_user_id INTEGER, 
+    a_time FLOAT NOT NULL, 
+    public BOOLEAN,
+    existence BOOLEAN NOT NULL, --
+
+    name LONGTEXT NOT NULL, 
+    start_date date NOT NULL,
+    end_date date NOT NULL,
+    description longtext,
+    start_time time DEFAULT NULL,
+    end_time time DEFAULT NULL,
+
+    KEY moderation_user_id (moderation_user_id),
+    CONSTRAINT event_v_c2 FOREIGN KEY (moderation_user_id)
+      REFERENCES user (user_id)
+) DEFAULT CHARSET=utf8;
+
 CREATE TABLE address_v (
     address_v_id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, --
     address_id INTEGER NOT NULL, 
@@ -77,6 +97,22 @@ CREATE TABLE orgtag_v (
       REFERENCES user (user_id)
 ) DEFAULT CHARSET=utf8;
 
+CREATE TABLE eventtag_v (
+    eventtag_v_id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, --
+    eventtag_id INTEGER NOT NULL, 
+    moderation_user_id INTEGER, 
+    a_time FLOAT NOT NULL, 
+    public BOOLEAN,
+    existence BOOLEAN NOT NULL, --
+
+    name LONGTEXT NOT NULL, 
+    short LONGTEXT NOT NULL, 
+
+    KEY moderation_user_id (moderation_user_id),
+    CONSTRAINT eventtag_v_c2 FOREIGN KEY (moderation_user_id)
+      REFERENCES user (user_id)
+) DEFAULT CHARSET=utf8;
+
 CREATE TABLE org_address_v (
     org_id INTEGER NOT NULL,
     address_id INTEGER NOT NULL, 
@@ -100,6 +136,34 @@ CREATE TABLE org_orgtag_v (
 
 CREATE TABLE orgtag_note_v (
     orgtag_id INTEGER NOT NULL,
+    note_id INTEGER NOT NULL, 
+    a_time FLOAT NOT NULL, 
+    existence BOOLEAN NOT NULL --
+) DEFAULT CHARSET=utf8;
+
+CREATE TABLE event_address_v (
+    event_id INTEGER NOT NULL,
+    address_id INTEGER NOT NULL, 
+    a_time FLOAT NOT NULL, 
+    existence BOOLEAN NOT NULL --
+) DEFAULT CHARSET=utf8;
+
+CREATE TABLE event_note_v (
+    event_id INTEGER NOT NULL,
+    note_id INTEGER NOT NULL, 
+    a_time FLOAT NOT NULL, 
+    existence BOOLEAN NOT NULL --
+) DEFAULT CHARSET=utf8;
+
+CREATE TABLE event_eventtag_v (
+    event_id INTEGER NOT NULL,
+    eventtag_id INTEGER NOT NULL, 
+    a_time FLOAT NOT NULL, 
+    existence BOOLEAN NOT NULL --
+) DEFAULT CHARSET=utf8;
+
+CREATE TABLE eventtag_note_v (
+    eventtag_id INTEGER NOT NULL,
     note_id INTEGER NOT NULL, 
     a_time FLOAT NOT NULL, 
     existence BOOLEAN NOT NULL --
@@ -170,6 +234,52 @@ for each row begin
         )
         values (
 	old.org_id,
+	old.moderation_user_id, UNIX_TIMESTAMP(), old.public, 0,
+	old.name
+	);
+end $$
+
+-- event
+
+create trigger event_insert_before before insert on event
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+    insert into event_v (
+        event_id,
+        moderation_user_id, a_time, public, existence,
+	name
+        )
+        values (
+	new.event_id,
+	new.moderation_user_id, UNIX_TIMESTAMP(), new.public, 1,
+	new.name
+	);
+end $$
+
+create trigger event_update_before before update on event
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+    insert into event_v (
+        event_id,
+        moderation_user_id, a_time, public, existence,
+	name
+        )
+        values (
+	new.event_id,
+	new.moderation_user_id, UNIX_TIMESTAMP(), new.public, 1,
+	new.name
+	);
+end $$
+
+create trigger event_delete_before before delete on event
+for each row begin
+    insert into event_v (
+        event_id,
+        moderation_user_id, a_time, public, existence,
+	name
+        )
+        values (
+	old.event_id,
 	old.moderation_user_id, UNIX_TIMESTAMP(), old.public, 0,
 	old.name
 	);
@@ -325,6 +435,52 @@ for each row begin
 	);
 end $$
 
+-- eventtag
+
+create trigger eventtag_insert_before before insert on eventtag
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+    insert into eventtag_v (
+        eventtag_id,
+        moderation_user_id, a_time, public, existence,
+	name, short
+        )
+        values (
+	new.eventtag_id,
+	new.moderation_user_id, UNIX_TIMESTAMP(), new.public, 1,
+	new.name, new.short
+	);
+end $$
+
+create trigger eventtag_update_before before update on eventtag
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+    insert into eventtag_v (
+        eventtag_id,
+        moderation_user_id, a_time, public, existence,
+	name, short
+        )
+        values (
+	new.eventtag_id,
+	new.moderation_user_id, UNIX_TIMESTAMP(), new.public, 1,
+	new.name, new.short
+	);
+end $$
+
+create trigger eventtag_delete_before before delete on eventtag
+for each row begin
+    insert into eventtag_v (
+        eventtag_id,
+        moderation_user_id, a_time, public, existence,
+	name, short
+        )
+        values (
+	old.eventtag_id,
+	old.moderation_user_id, UNIX_TIMESTAMP(), old.public, 0,
+	old.name, old.short
+	);
+end $$
+
 -- org_address
 
 create trigger org_address_insert_before before insert on org_address
@@ -431,6 +587,114 @@ for each row begin
     insert into orgtag_note_v (orgtag_id, note_id, a_time, existence)
       values (
 	old.orgtag_id, old.note_id, UNIX_TIMESTAMP(), 1);
+end $$
+
+-- event_address
+
+create trigger event_address_insert_before before insert on event_address
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+
+    insert into event_address_v (event_id, address_id, a_time, existence)
+      values (
+	new.event_id, new.address_id, UNIX_TIMESTAMP(), 1);
+end $$
+
+create trigger event_address_update_before before update on event_address
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+
+    insert into event_address_v (event_id, address_id, a_time, existence)
+      values (
+	new.event_id, new.address_id, UNIX_TIMESTAMP(), 1);
+end $$
+
+create trigger event_address_delete_before before delete on event_address
+for each row begin
+    insert into event_address_v (event_id, address_id, a_time, existence)
+      values (
+	old.event_id, old.address_id, UNIX_TIMESTAMP(), 1);
+end $$
+
+-- event_note
+
+create trigger event_note_insert_before before insert on event_note
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+
+    insert into event_note_v (event_id, note_id, a_time, existence)
+      values (
+	new.event_id, new.note_id, UNIX_TIMESTAMP(), 1);
+end $$
+
+create trigger event_note_update_before before update on event_note
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+
+    insert into event_note_v (event_id, note_id, a_time, existence)
+      values (
+	new.event_id, new.note_id, UNIX_TIMESTAMP(), 1);
+end $$
+
+create trigger event_note_delete_before before delete on event_note
+for each row begin
+    insert into event_note_v (event_id, note_id, a_time, existence)
+      values (
+	old.event_id, old.note_id, UNIX_TIMESTAMP(), 1);
+end $$
+
+-- event_eventtag
+
+create trigger event_eventtag_insert_before before insert on event_eventtag
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+
+    insert into event_eventtag_v (event_id, eventtag_id, a_time, existence)
+      values (
+	new.event_id, new.eventtag_id, UNIX_TIMESTAMP(), 1);
+end $$
+
+create trigger event_eventtag_update_before before update on event_eventtag
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+
+    insert into event_eventtag_v (event_id, eventtag_id, a_time, existence)
+      values (
+	new.event_id, new.eventtag_id, UNIX_TIMESTAMP(), 1);
+end $$
+
+create trigger event_eventtag_delete_before before delete on event_eventtag
+for each row begin
+    insert into event_eventtag_v (event_id, eventtag_id, a_time, existence)
+      values (
+	old.event_id, old.eventtag_id, UNIX_TIMESTAMP(), 1);
+end $$
+
+-- eventtag_note
+
+create trigger eventtag_note_insert_before before insert on eventtag_note
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+
+    insert into eventtag_note_v (eventtag_id, note_id, a_time, existence)
+      values (
+	new.eventtag_id, new.note_id, UNIX_TIMESTAMP(), 1);
+end $$
+
+create trigger eventtag_note_update_before before update on eventtag_note
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+
+    insert into eventtag_note_v (eventtag_id, note_id, a_time, existence)
+      values (
+	new.eventtag_id, new.note_id, UNIX_TIMESTAMP(), 1);
+end $$
+
+create trigger eventtag_note_delete_before before delete on eventtag_note
+for each row begin
+    insert into eventtag_note_v (eventtag_id, note_id, a_time, existence)
+      values (
+	old.eventtag_id, old.note_id, UNIX_TIMESTAMP(), 1);
 end $$
 
 -- address_note

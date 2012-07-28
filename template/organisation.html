@@ -1,13 +1,17 @@
 <%inherit file="base.html"/>
 
-<%def name="title()">${obj["name"]}</%def>
+<%def name="title()">${obj and obj["name"] or "New Organisation"}</%def>
 
 <%def name="page()">
 
 <h1>
+  %if obj:
   <a
      href="${url_rewrite(obj["url"], parameters)}"
      >${obj["name"]}</a>
+  %else:
+  New Organisation
+  %endif
 </h1>
 
 <div class="section">
@@ -21,24 +25,24 @@
     <h3>Organisation</h3>
     
     %if current_user:
-    <form action="${obj["url"]}" method="post">
+    <form action="${obj and obj["url"] or '/organisation'}" method="post">
       <input name="_xsrf" type="hidden" value="${xsrf}">
+      %if obj:
       <input name="_method" type="hidden" value="put">
+      %endif:
       <label name="name">
 	<span>Name</span>
 	<span class="requirement">(required)</span>
-	<input name="name" value="${obj["name"]}">
+	<input name="name" value="${obj and obj["name"] or ''}">
       </label>
       
       ${self.mini.visibility_input(obj)}
 
       <input type="submit">
     </form>
-    %else:
-    ${obj["name"]}
     %endif
 
-    
+    %if obj:
     %if current_user:
     <form action="${obj["url"]}" method="post">
       <input name="_xsrf" type="hidden" value="${xsrf}">
@@ -93,6 +97,7 @@
     %endfor
     %endif
 
+    %endif
   </div>
   
 </div>

@@ -36,26 +36,14 @@ class BaseAddressHandler(BaseHandler):
         return address
 
     def _get_arguments(self):
-        if self.content_type("application/json"):
-            postal = self.get_json_argument("postal")
-            source = self.get_json_argument("source")
-            lookup = self.get_json_argument("lookup", None)
-            manual_longitude = self.get_json_argument_float("manual_longitude", None)
-            manual_latitude = self.get_json_argument_float("manual_latitude", None)
-            public = self.get_json_argument_public("public")
-            note_id_list = self.get_json_argument("note_id", [])
-        else:
-            postal = self.get_argument("postal")
-            source = self.get_argument("source")
-            lookup = self.get_argument("lookup", None)
-            manual_longitude = self.get_argument_float("manual_longitude", None)
-            manual_latitude = self.get_argument_float("manual_latitude", None)
-            public = self.get_argument_public("public")
-            note_id_list = [
-                int(note_id) for note_id in self.get_arguments("note_id")
-                ]
-        return (postal, source, lookup, manual_longitude, manual_latitude, public,
-            note_id_list)
+        is_json = self.content_type("application/json")
+        postal = self.get_argument("postal", json=is_json)
+        source = self.get_argument("source", json=is_json)
+        lookup = self.get_argument("lookup", None, json=is_json)
+        manual_longitude = self.get_argument_float("manual_longitude", None, json=is_json)
+        manual_latitude = self.get_argument_float("manual_latitude", None, json=is_json)
+        public = self.get_argument_public("public", json=is_json)
+        return (postal, source, lookup, manual_longitude, manual_latitude, public)
 
 
 
@@ -138,12 +126,9 @@ class AddressHandler(BaseAddressHandler):
 
 class AddressLookupHandler(BaseAddressHandler):
     def get(self):
-        if self.content_type("application/json"):
-            postal = self.get_json_argument("postal")
-            lookup = self.get_json_argument("lookup", None)
-        else:
-            postal = self.get_argument("postal")
-            lookup = self.get_argument("lookup", None)
+        is_json = self.content_type("application/json")
+        postal = self.get_argument("postal", json=is_json)
+        lookup = self.get_argument("lookup", None, json=is_json)
 
         address = Address(postal, None, lookup)
         address.geocode()

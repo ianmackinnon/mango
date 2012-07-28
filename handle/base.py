@@ -4,6 +4,7 @@ import re
 import json
 import codecs
 import markdown
+import datetime
 import tornado.web
 
 from urllib import urlencode
@@ -228,79 +229,95 @@ class BaseHandler(tornado.web.RequestHandler):
         self.set_status(status_code);
         self.render('error.html',
                     current_user=self.current_user, uri=self.request.uri,
-                    status_code=self.status_code, message=message,
+                    status_code=status_code, message=message,
                     )
         self.finish()
 
     _ARG_DEFAULT_MANGO = []
 
-    def get_argument_int(self, name, default=_ARG_DEFAULT_MANGO, strip=True):
-        value = self.get_argument(name, default, strip)
+    def get_argument_restricted(self, name, fn, message,
+                                  default=_ARG_DEFAULT_MANGO, json=False):
+        value = self.get_argument(name, default, json)
         if value == default:
             if default is self._ARG_DEFAULT_MANGO:
                 raise tornado.web.HTTPError(400, "Missing argument %s" % name)
             return value
-
+        
         try:
-            return int(value)
-        except ValueError as e:
-            raise tornado.web.HTTPError(
-                400,
-                "Cannot convert argument %s to a integer number." % name
-                )
-
-    def get_argument_float(self, name, default=_ARG_DEFAULT_MANGO, strip=True):
-        value = self.get_argument(name, default, strip)
-        if value == default:
-            if default is self._ARG_DEFAULT_MANGO:
-                raise tornado.web.HTTPError(400, "Missing argument %s" % name)
-            return value
-
-        try:
-            return float(value)
-        except ValueError as e:
-            raise tornado.web.HTTPError(
-                400,
-                "Cannot convert argument %s to a floating point number." % name
-                )
-
-    def get_argument_restricted(self, name, allowed, default=_ARG_DEFAULT_MANGO):
-        value = self.get_argument(name, default)
-        if value == default:
-            if default is self._ARG_DEFAULT_MANGO:
-                raise tornado.web.HTTPError(400, "Missing argument %s" % name)
-            return value
-
-        if not value in allowed:
-            raise tornado.web.HTTPError(
-                400,
-                "Argument %s must be one of %s." % (name, ", ".join(allowed))
-                )
+            value = fn(value)
+        except ValueError:
+            raise tornado.web.HTTPError(400, message)
         return value
 
-    def get_argument_order(self, name, default=_ARG_DEFAULT_MANGO):
+    def get_argument_int(self, name, default=_ARG_DEFAULT_MANGO, json=False):
         return self.get_argument_restricted(
-            name, ("asc", "desc"), default)
+            name,
+            lambda value: int(value),
+            "Value must be an integer number",
+            default,
+            json)
 
-    def get_argument_public(self, name="public", default=_ARG_DEFAULT_MANGO):
+    def get_argument_float(self, name, default=_ARG_DEFAULT_MANGO, json=False):
+        return self.get_argument_restricted(
+            name,
+            lambda value: int(value),
+            "Value must be a floating point number",
+            default,
+            json)
+
+    def get_argument_allowed(self, name, allowed, default=_ARG_DEFAULT_MANGO, json=False):
+        def test(value, allowed):
+            if not value in allowed:
+                raise ValueError
+            return value
+        return self.get_argument_restricted(
+            name,
+            lambda value: test(value, allowed),
+            "Value must be in the format 'YYYY-MM-DD",
+            default,
+            json)
+
+    def get_argument_date(self, name, default=_ARG_DEFAULT_MANGO, json=False):
+        return self.get_argument_restricted(
+            name,
+            lambda value: datetime.datetime.strptime(value, "%Y-%m-%d").date(),
+            "Value must be in the format 'YYYY-MM-DD",
+            default,
+            json)
+
+    def get_argument_time(self, name, default=_ARG_DEFAULT_MANGO, json=False):
+        return self.get_argument_restricted(
+            name,
+            lambda value: datetime.datetime.strptime(value, "%H-%M").time(),
+            "Value must be in the format 'YYYY-MM-DD",
+            default,
+            json)
+
+    def get_argument_order(self, name, default=_ARG_DEFAULT_MANGO, json=False):
+        return self.get_argument_allowed(
+            name, ("asc", "desc"), default,
+            json)
+
+    def get_argument_public(self, name="public", default=_ARG_DEFAULT_MANGO, json=False):
         table = {
             "pending": None,
             "public": True, 
             "private": False,
             }
-        value = self.get_argument_restricted(
-            name, table.keys(), default)
+        value = self.get_argument_allowed(
+            name, table.keys(), default,
+            json)
         return table[value]
 
-    def get_argument_visibility(self):
+    def get_argument_visibility(self, json=False):
         if not self.current_user:
             return None
-        return self.get_argument_restricted(
-            "visibility", ("pending", "all", "private", "public"), None)
+        return self.get_argument_allowed(
+            "visibility", ("pending", "all", "private", "public"), None, json)
         
 
-    def get_argument_geobox(self, name="geobox", default=_ARG_DEFAULT_MANGO):
-        value = self.get_argument(name, default)
+    def get_argument_geobox(self, name="geobox", default=_ARG_DEFAULT_MANGO, json=False):
+        value = self.get_argument(name, default, json)
         if value == default:
             if default is self._ARG_DEFAULT_MANGO:
                 raise tornado.web.HTTPError(400, "Missing argument %s" % name)
@@ -322,8 +339,8 @@ class BaseHandler(tornado.web.RequestHandler):
         
         return dict(zip(["latmin", "latmax", "lonmin", "lonmax"], parts))
 
-    def get_argument_latlon(self, name="latlon", default=_ARG_DEFAULT_MANGO):
-        value = self.get_argument(name, default)
+    def get_argument_latlon(self, name="latlon", default=_ARG_DEFAULT_MANGO, json=False):
+        value = self.get_argument(name, default, json)
         if value == default:
             if default is self._ARG_DEFAULT_MANGO:
                 raise tornado.web.HTTPError(400, "Missing argument %s" % name)
@@ -356,9 +373,14 @@ class BaseHandler(tornado.web.RequestHandler):
         else:
             self.json_data = {}
 
-    def get_json_argument(self, name, default=_ARG_DEFAULT_MANGO):
+    def get_argument(self, name, default=_ARG_DEFAULT_MANGO, json=False):
+        if not json:
+            if default is self._ARG_DEFAULT_MANGO:
+                default = tornado.web.RequestHandler._ARG_DEFAULT
+            return tornado.web.RequestHandler.get_argument(self, name, default)
+
         self.get_json_data()
-        
+
         if not name in self.json_data:
             if default is self._ARG_DEFAULT_MANGO:
                 raise tornado.web.HTTPError(400, "Missing argument %s" % name)
@@ -366,68 +388,12 @@ class BaseHandler(tornado.web.RequestHandler):
 
         return self.json_data[name]
 
-    def get_json_argument_int(self, name, default=_ARG_DEFAULT_MANGO):
-        value = self.get_json_argument(name, default)
-        if value == default:
-            if default is self._ARG_DEFAULT_MANGO:
-                raise tornado.web.HTTPError(400, "Missing argument %s" % name)
-            return value
+    def get_arguments(self, name, strip=True, json=False):
+        if not json:
+            return tornado.web.RequestHandler.get_arguments(self, name, strip)
 
-        try:
-            return int(value)
-        except ValueError as e:
-            raise tornado.web.HTTPError(
-                400,
-                "Cannot convert argument %s to a integer number." % name
-                )
-    
-    def get_json_argument_float(self, name, default=_ARG_DEFAULT_MANGO):
-        value = self.get_json_argument(name, default)
-        if value == default:
-            if default is self._ARG_DEFAULT_MANGO:
-                raise tornado.web.HTTPError(400, "Missing argument %s" % name)
-            return value
-
-        try:
-            return float(value)
-        except ValueError as e:
-            raise tornado.web.HTTPError(
-                400,
-                "Cannot convert argument %s to a floating point number." % name
-                )
-    
-    def get_json_argument_restricted(self, name,
-                                     allowed, default=_ARG_DEFAULT_MANGO):
-        value = self.get_json_argument(name, default)
-        if value == default:
-            if default is self._ARG_DEFAULT_MANGO:
-                raise tornado.web.HTTPError(400, "Missing argument %s" % name)
-            return value
-
-        if not value in ["asc", "desc"]:
-            raise tornado.web.HTTPError(
-                400,
-                "Cannot convert argument %s to a floating point number." % name
-                )
-        return value
-
-    def get_json_argument_order(self, name, default=_ARG_DEFAULT_MANGO):
-        return self.get_json_argument_restricted(
-            name, ("asc", "desc"), default)
-
-    def get_json_argument_public(self, name="public", default=_ARG_DEFAULT_MANGO):
-        table = {
-            "pending": None,
-            "public": True, 
-            "private": False,
-            }
-        value = self.get_json_argument_restricted(
-            name, table.keys(), default)
-        return table[value]
-
-    def get_json_argument_visibility(self):
-        return self.get_json_argument_restricted(
-            "visibility", ("pending", "all", "private", "public"), None)
+        self.get_json_data()
+        return self.json_data.get(name)
 
     def get_arguments_multi(self, name, delimiter):
         ret = []
@@ -524,10 +490,8 @@ class BaseHandler(tornado.web.RequestHandler):
 
     def set_parameters(self):
         self.parameters = {}
-        if self.content_type("application/json"):
-            self.parameters["visibility"] = self.get_json_argument_visibility()
-        else:
-            self.parameters["visibility"] = self.get_argument_visibility()
+        is_json = self.content_type("application/json")
+        self.parameters["visibility"] = self.get_argument_visibility(json=is_json)
 
     def deep_visible(self):
         return self.parameters["visibility"] in ["pending", "private", "all"]

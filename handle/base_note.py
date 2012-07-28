@@ -30,14 +30,10 @@ class BaseNoteHandler(BaseHandler):
         return note
 
     def _get_arguments(self):
-        if self.content_type("application/json"):
-            text = self.get_json_argument("text")
-            source = self.get_json_argument("source")
-            public = self.get_json_argument_public("public")
-        else:
-            text = self.get_argument("text")
-            source = self.get_argument("source")
-            public = self.get_argument_public("public")
+        is_json = self.content_type("application/json")
+        text = self.get_argument("text", json=is_json)
+        source = self.get_argument("source", json=is_json)
+        public = self.get_argument_public("public", json=is_json)
 
         return text, source, public
 

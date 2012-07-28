@@ -1,7 +1,7 @@
 <script id="template_counts" type="text/html">
   <span>
-  <% if (obj_list.length) { %>
-  Showing
+    <% if (obj_list.length) { %>
+    Showing
     <span class="count_showing_from"><%= offset + 1 %></span>
     -
     <span class="count_showing_to"><%= offset + obj_list.length %></span>
@@ -10,13 +10,86 @@
 
     <span class="more">
       <% if (!!more_link && (offset + obj_list.length < total)) { %>
-      <a
-         href=""
-         >More</a>
-      <% } %>
+         <a
+            href=""
+            >More</a>
+         <% } %>
     </span>
-  <% } else { %>
-  No Matching results.
-  <% } %>
+    <% } else { %>
+    No Matching results.
+    <% } %>
   </span>
+</script>
+
+
+<script id="template_event_box" type="text/html">
+  <div class="event-box">
+    
+    <%=tmpl("visibility_bar", {obj: event})%>
+    
+    <div class="event_name">
+      <a
+         href="<%= m.url_rewrite(event["url"], parameters) %>"
+         ><%=m.filter.h(event["name"])%></a>
+    </div>
+    
+    <% if (tag && event.tag_list) { %>
+    <ul class="tag_list">
+      <% for (t in event["tag_list"]) { %>
+      <% var tag = event["tag_list"][t]; %>
+      <li class="eventtag">
+        <a
+           href="<%= m.url_rewrite(tag["url"], parameters) %>"
+           ><%=m.filter.h(tag["name"])%></a>
+      </li>
+      <% } %>
+    </ul>
+    <% } %>
+
+    <% if (event.address_list) { %>
+    <div class="event_address_list">
+      <% for (a in event["address_list"]) { %>
+      <% var address = event["address_list"][a]; %>
+      <% if (!m.geo.in(address["latitude"], address["longitude"], geobox)) continue; %>
+      <div class="address-row">
+        <div class="pin"
+	     <%
+	        var short_names = new Array();
+	        for (t in event["tag"]) {
+	        short_names.push(event["tag"][t]["short"]);
+	        }
+                if ($.inArray("arms-trade", short_names) >= 0) {%>
+	  color="red"
+	  <% } else if ($.inArray("peace-group", short_names) >= 0) { %>
+      color="green"
+      <% } else { %>
+      color="<%=short_names%>"
+      <% } %>
+      all="<%=short_names%>"
+      source="mini.py"
+      <%if (address["latitude"]) { %>
+      latitude="<%=m.filter.h(address["latitude"])%>"
+      longitude="<%=m.filter.h(address["longitude"])%>"
+      <% } %>
+      >
+      &nbsp;
+</div>
+<div class="address">
+  <%=tmpl("visibility_bar", {obj: address})%>
+  <a
+     href="<%= m.url_rewrite(address["url"], parameters) %>"
+     ><%=m.filter.newline_comma(m.filter.h(address["postal"]))%></a>
+</div>
+</div>
+<% } %>
+</div>
+<% } %>
+
+<% if (note && event.note_list) { %>
+<div class="note_len">
+  <%=event["note_list"].length%>
+</div>
+<% } %>
+
+</div>
 </script>

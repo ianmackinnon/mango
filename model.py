@@ -17,7 +17,7 @@ from urllib import urlencode
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy import Column, Table, and_
 from sqlalchemy import ForeignKey, ForeignKeyConstraint, UniqueConstraint, CheckConstraint, PrimaryKeyConstraint
-from sqlalchemy import Boolean, Integer, Float, Numeric
+from sqlalchemy import Boolean, Integer, Float, Numeric, Date, Time
 from sqlalchemy.orm import sessionmaker, create_session, relationship, backref, object_session
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm.interfaces import MapperExtension 
@@ -51,9 +51,13 @@ SQLITE :  Destination SQLite database. If not supplied, you must
 
     parser = OptionParser(usage=usage)
     parser.add_option("-v", "--verbose", action="store_true", dest="verbosity",
-                      help="Print verbose information for debugging.", default=None)
+                      help="Print verbose information for debugging.",
+                      default=None)
     parser.add_option("-q", "--quiet", action="store_false", dest="verbosity",
                       help="Suppress warnings.", default=None)
+    parser.add_option("-c", "--configuration", action="store",
+                      dest="configuration", help=".conf file.",
+                      default=".mango.conf")
 
     (options, args) = parser.parse_args()
 
@@ -70,7 +74,8 @@ SQLITE :  Destination SQLite database. If not supplied, you must
         # MySQL
         (database,
          app_username, app_password,
-         admin_username, admin_password) = mysql.mysql_init.get_conf()
+         admin_username, admin_password) = mysql.mysql_init.get_conf(
+            options.configuration)
         connection_url = 'mysql://%s:%s@localhost/%s?charset=utf8' % (
             admin_username, admin_password, database)
         use_mysql()
@@ -170,9 +175,27 @@ org_note = Table(
 
 
 
+event_note = Table(
+    'event_note', Base.metadata,
+    Column('event_id', Integer, ForeignKey('event.event_id'), primary_key=True),
+    Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
+    Column('a_time', Float),
+    )
+
+
+
 orgtag_note = Table(
     'orgtag_note', Base.metadata,
     Column('orgtag_id', Integer, ForeignKey('orgtag.orgtag_id'), primary_key=True),
+    Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
+    Column('a_time', Float),
+    )
+
+
+
+eventtag_note = Table(
+    'eventtag_note', Base.metadata,
+    Column('eventtag_id', Integer, ForeignKey('eventtag.eventtag_id'), primary_key=True),
     Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
     Column('a_time', Float),
     )
@@ -188,10 +211,28 @@ org_address = Table(
 
 
 
+event_address = Table(
+    'event_address', Base.metadata,
+    Column('event_id', Integer, ForeignKey('event.event_id'), primary_key=True),
+    Column('address_id', Integer, ForeignKey('address.address_id'), primary_key=True),
+    Column('a_time', Float),
+    )
+
+
+
 org_orgtag = Table(
     'org_orgtag', Base.metadata,
     Column('org_id', Integer, ForeignKey('org.org_id'), primary_key=True),
     Column('orgtag_id', Integer, ForeignKey('orgtag.orgtag_id'), primary_key=True),
+    Column('a_time', Float),
+    )
+
+
+
+event_eventtag = Table(
+    'event_eventtag', Base.metadata,
+    Column('event_id', Integer, ForeignKey('event.event_id'), primary_key=True),
+    Column('eventtag_id', Integer, ForeignKey('eventtag.eventtag_id'), primary_key=True),
     Column('a_time', Float),
     )
 
@@ -364,9 +405,9 @@ class Org(Base, NotableEntity):
         self.public = public
 
     def __unicode__(self):
-        return u"<Org-%s(%d) '%s'>" % (
+        return u"<Org-%s (%s) '%s'>" % (
             self.org_id or "?",
-            self.public,
+            {True:"public", False:"private", None: "pending"}[self.public],
             self.name,
             )
 
@@ -430,6 +471,136 @@ class Org(Base, NotableEntity):
 
 
 
+class Event(Base, NotableEntity):
+    __tablename__ = 'event'
+    __table_args__ = {'sqlite_autoincrement':True}
+
+    event_id = Column(Integer, primary_key=True)
+
+    name = Column(Unicode(), nullable=False)
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=False)
+
+    description = Column(Unicode())
+    start_time = Column(Time)
+    end_time = Column(Time)
+
+    moderation_user_id = Column(Integer, ForeignKey(User.user_id))
+    a_time = Column(Float, nullable=False)
+    public = Column(Boolean)
+
+    moderation_user = relationship(User, backref='moderation_event_list')
+    
+    note_list = relationship(
+        "Note", secondary=event_note, backref='event_list')
+    address_list = relationship(
+        "Address", secondary=event_address, backref='event_list')
+    eventtag_list = relationship(
+        "Eventtag", secondary=event_eventtag, backref='event_list')
+
+    note_list_public = relationship(
+        "Note",
+        secondary=event_note,
+        primaryjoin="Event.event_id == event_note.c.event_id",
+        secondaryjoin=(
+            "and_(Note.note_id == event_note.c.note_id, "
+            "Note.public==True)"
+            ),
+        passive_deletes=True,
+        )
+    address_list_public = relationship(
+        "Address",
+        secondary=event_address,
+        primaryjoin="Event.event_id == event_address.c.event_id",
+        secondaryjoin=(
+            "and_(Address.address_id == event_address.c.address_id, "
+            "Address.public==True)"
+            ),
+        passive_deletes=True,
+        )
+    eventtag_list_public = relationship(
+        "Eventtag",
+        secondary=event_eventtag,
+        primaryjoin="Event.event_id == event_eventtag.c.event_id",
+        secondaryjoin=(
+            "and_(Eventtag.eventtag_id == event_eventtag.c.eventtag_id, "
+            "Eventtag.public==True)"
+            ),
+        passive_deletes=True,
+        )
+    
+    def __init__(self,
+                 name, start_date, end_date,
+                 description=None, start_time=None, end_time=None,
+                 moderation_user=None, public=None):
+        self.name = self.sanitise_name(name)
+        self.start_date = start_date
+        self.end_date = end_date
+
+        self.description = description
+        self.start_time = start_time
+        self.end_time = end_time
+
+        self.moderation_user = moderation_user
+        self.a_time = 0
+        self.public = public
+
+    def __unicode__(self):
+        return u"<Event-%s (%s) '%s'>" % (
+            self.event_id or "?",
+            {True:"public", False:"private", None: "pending"}[self.public],
+            self.name,
+            )
+
+    def __str__(self):
+        return unicode(self).encode("utf8")
+
+    def obj(self, public=False,
+            note_obj_list=None, address_obj_list=None, eventtag_obj_list=None):
+        obj = {
+            "id": self.event_id,
+            "url": self.url,
+            "date": self.a_time,
+            "name": self.name,
+            "start_date": self.start_date.strftime("%Y-%m-%d"),
+            "end_date": self.end_date.strftime("%Y-%m-%d"),
+            "description": self.description,
+            "start_time": self.start_time,
+            "end_time": self.end_time,
+            }
+        if public:
+            obj["public"] = self.public
+        if note_obj_list is not None:
+            obj["note_list"] = note_obj_list
+        if address_obj_list is not None:
+            obj["address_list"] = address_obj_list
+        if eventtag_obj_list is not None:
+            obj["eventtag_list"] = eventtag_obj_list
+        return obj
+
+    @property
+    def url(self):
+        return "/event/%d" % self.event_id
+
+    @staticmethod
+    def sanitise_name(name):
+        return re.sub("[\s]+", " ", name).strip()
+
+    @staticmethod
+    def get(orm, name, moderation_user=None, public=None):
+        name = Event.sanitise_name(name)
+        try:
+            event = orm.query(Event).filter(Event.name == name).one()
+        except NoResultFound:
+            event = Event(
+                name,
+                moderation_user=moderation_user, public=public,
+                )
+            orm.add(event)
+        return event
+
+
+
 class Address(Base, NotableEntity):
     __tablename__ = 'address'
     __table_args__ = {'sqlite_autoincrement':True}
@@ -476,6 +647,16 @@ class Address(Base, NotableEntity):
             ),
         passive_deletes=True,
         )
+    event_list_public = relationship(
+        "Event",
+        secondary=event_address,
+        primaryjoin="Address.address_id == event_address.c.address_id",
+        secondaryjoin=(
+            "and_(Event.event_id == event_address.c.event_id, "
+            "Event.public==True)"
+            ),
+        passive_deletes=True,
+        )
 
     def __init__(self,
                  postal=None, source=None, lookup=None,
@@ -496,8 +677,9 @@ class Address(Base, NotableEntity):
         self.public = public
 
     def __unicode__(self):
-        return u"<Addr-%s '%s' '%s' %s %s>" % (
+        return u"<Addr-%s (%s) '%s' '%s' %s %s>" % (
             self.address_id or "?",
+            {True:"public", False:"private", None: "pending"}[self.public],
             self.postal[:10].replace("\n", " "),
             (self.lookup or "")[:10],
             self.repr_coordinates(self.manual_longitude, self.manual_latitude),
@@ -523,7 +705,7 @@ class Address(Base, NotableEntity):
                 (self.latitude, self.longitude) = coords
 
     def obj(self, public=False,
-            note_obj_list=None, org_obj_list=None):
+            note_obj_list=None, org_obj_list=None, event_obj_list=None):
         obj = {
             "id": self.address_id,
             "url": self.url,
@@ -543,6 +725,8 @@ class Address(Base, NotableEntity):
             obj["note_list"] = note_obj_list
         if org_obj_list is not None:
             obj["org_list"] = org_obj_list
+        if event_obj_list is not None:
+            obj["event_list"] = event_obj_list
         return obj
 
     @property
@@ -628,7 +812,7 @@ class Address(Base, NotableEntity):
 
 
 
-class OrgtagExtension(MapperExtension):
+class TagExtension(MapperExtension):
     def before_insert(self, mapper, connection, instance):
         instance.short = short_name(instance.name)
 
@@ -640,7 +824,7 @@ class OrgtagExtension(MapperExtension):
 class Orgtag(Base, NotableEntity):
     __tablename__ = 'orgtag'
     __table_args__ = {'sqlite_autoincrement':True}
-    __mapper_args__ = {'extension':OrgtagExtension()}
+    __mapper_args__ = {'extension':TagExtension()}
 
     orgtag_id = Column(Integer, primary_key=True)
 
@@ -687,8 +871,9 @@ class Orgtag(Base, NotableEntity):
         self.public = public
 
     def __unicode__(self):
-        return u"<Orgtag-%s '%s'>" % (
+        return u"<Orgtag-%s (%s) '%s'>" % (
             self.orgtag_id or "?",
+            {True:"public", False:"private", None: "pending"}[self.public],
             self.name,
             )
 
@@ -741,6 +926,111 @@ class Orgtag(Base, NotableEntity):
 
         
 
+class Eventtag(Base, NotableEntity):
+    __tablename__ = 'eventtag'
+    __table_args__ = {'sqlite_autoincrement':True}
+    __mapper_args__ = {'extension':TagExtension()}
+
+    eventtag_id = Column(Integer, primary_key=True)
+
+    moderation_user_id = Column(Integer, ForeignKey(User.user_id))
+    a_time = Column(Float, nullable=False)
+    public = Column(Boolean)
+
+    name = Column(Unicode(), nullable=False)
+    short = Column(Unicode(), nullable=False)
+
+    moderation_user = relationship(User, backref='moderation_eventtag_list')
+
+    note_list = relationship("Note",
+                             secondary=eventtag_note,
+                             backref='eventtag_list'
+                             )
+
+    note_list_public = relationship(
+        "Note",
+        secondary=eventtag_note,
+        primaryjoin="Eventtag.eventtag_id == eventtag_note.c.eventtag_id",
+        secondaryjoin=(
+            "and_(Note.note_id == eventtag_note.c.note_id, "
+            "Note.public==True)"
+            ),
+        passive_deletes=True,
+        )
+    event_list_public = relationship(
+        "Event",
+        secondary=event_eventtag,
+        primaryjoin="Eventtag.eventtag_id == event_eventtag.c.eventtag_id",
+        secondaryjoin=(
+            "and_(Event.event_id == event_eventtag.c.event_id, "
+            "Event.public==True)"
+            ),
+        passive_deletes=True,
+        )
+
+    def __init__(self, name, moderation_user=None, public=None):
+        self.name = name
+
+        self.moderation_user = moderation_user
+        self.a_time = 0
+        self.public = public
+
+    def __unicode__(self):
+        return u"<Eventtag-%s (%s) '%s'>" % (
+            self.eventtag_id or "?",
+            {True:"public", False:"private", None: "pending"}[self.public],
+            self.name,
+            )
+
+    def __str__(self):
+        return unicode(self).encode("utf8")
+
+    def obj(self, public=False,
+            note_obj_list=None, event_obj_list=None,
+            event_len=None):
+        obj = {
+            "id": self.eventtag_id,
+            "url": self.url,
+            "date": self.a_time,
+            "event_list_url": self.event_list_url(None),
+            "name": self.name,
+            "short": self.short,
+            }
+        if public:
+            obj["public"] = self.public
+        if note_obj_list is not None:
+            obj["note_list"] = note_obj_list
+        if event_obj_list is not None:
+            obj["event_list"] = event_obj_list
+        if event_len is not None:
+            obj["event_len"] = event_len
+        return obj
+
+    def event_list_url(self, parameters=None):
+        if parameters == None:
+            parameters = {}
+        parameters["tag"] = self.short
+
+        return "/event?%s" % urlencode(parameters)
+
+    @property
+    def url(self):
+        return "/event-tag/%d" % self.eventtag_id
+
+    @staticmethod
+    def get(orm, name, moderation_user=None, public=None):
+        try:
+            eventtag = orm.query(Eventtag).filter(Eventtag.name == name).one()
+        except NoResultFound:
+            eventtag = Eventtag(
+                name,
+                moderation_user=moderation_user, public=public,
+                )
+            orm.add(eventtag)
+        return eventtag
+
+        
+
 class Note(Base):
     __tablename__ = 'note'
     __table_args__ = {'sqlite_autoincrement':True}
@@ -763,6 +1053,16 @@ class Note(Base):
         secondaryjoin=(
             "and_(Org.org_id == org_note.c.org_id, "
             "Org.public==True)"
+            ),
+        passive_deletes=True,
+        )
+    event_list_public = relationship(
+        "Event",
+        secondary=event_note,
+        primaryjoin="Note.note_id == event_note.c.note_id",
+        secondaryjoin=(
+            "and_(Event.event_id == event_note.c.event_id, "
+            "Event.public==True)"
             ),
         passive_deletes=True,
         )
@@ -797,8 +1097,9 @@ class Note(Base):
         self.public = public
 
     def __unicode__(self):
-        return u"<Note-%s '%s' '%s'>" % (
+        return u"<Note-%s (%s) '%s' '%s'>" % (
             self.note_id or "?",
+            {True:"public", False:"private", None: "pending"}[self.public],
             self.text[:10].replace("\n", " "),
             self.source[:10],
             )
@@ -807,7 +1108,7 @@ class Note(Base):
         return unicode(self).encode("utf8")
 
     def obj(self, public=False,
-            org_obj_list=None, address_obj_list=None, orgtag_obj_list=None):
+            org_obj_list=None, event_obj_list=None, address_obj_list=None, orgtag_obj_list=None, eventtag_obj_list=None):
         obj = {
             "id": self.note_id,
             "url": self.url,
@@ -821,12 +1122,18 @@ class Note(Base):
         if org_obj_list is not None:
             obj["org_list"] = org_obj_list
             linked = (linked or []) + org_obj_list
+        if event_obj_list is not None:
+            obj["event_list"] = event_obj_list
+            linked = (linked or []) + event_obj_list
         if address_obj_list is not None:
             obj["address_list"] = address_obj_list
             linked = (linked or []) + address_obj_list
         if orgtag_obj_list is not None:
             obj["orgtag_list"] = orgtag_obj_list
             linked = (linked or []) + orgtag_obj_list
+        if eventtag_obj_list is not None:
+            obj["eventtag_list"] = eventtag_obj_list
+            linked = (linked or []) + eventtag_obj_list
         if linked is not False:
             obj["linked"] = linked
         return obj
@@ -835,14 +1142,6 @@ class Note(Base):
     def url(self):
         return "/note/%d" % self.note_id
 
-
-
-Base._types = {
-    "Org":Org,
-    "Address":Address,
-    "Orgtag":Orgtag,
-    "Note":Note,
-    }
 
 
 if __name__ == '__main__':

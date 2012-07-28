@@ -1,0 +1,80 @@
+<%inherit file="base.html"/>
+
+<%def name="title()">Events</%def>
+
+<%def name="page()">
+
+<h1>Events</h1>
+
+<div class="action-bar">
+  <h3>Filter</h3>
+  <form id="event-search">
+    ${self.mini.visibility_search_input(parameters.get("visibility", None), current_user)}
+    <input type="hidden" name="offset" value="0">
+    <label name="name_search">
+      <span>Name</span>
+      <input name="name_search" value="${name_search or ""}" placeholder="Eg. BAE Systems">
+    </label>
+    <label name="lookup">
+      <span>Location</span>
+      <input name="lookup" value="${lookup or ""}" placeholder="Eg. NW1">
+    </label>
+    <label name="tag">
+      <span>Tags</span>
+      <div class="dropdown">
+        <ul class="dropdown">
+        </ul>
+      </div>
+      <input
+         name="tag"
+         value="${tag_name_list and ", ".join([short for short in tag_name_list]) or ""}"
+         placeholder="Type to search..."
+         >
+    </label>
+    <input type="submit">
+  </form>
+</div>
+
+<div id="mango-map-box">
+  <div id="mango-map-canvas">Map loading...</div>
+</div>
+
+<div class="box right" id="event_list">
+<div class="action-bar">
+  <div class="counts">
+    ${self.mini.counts(
+      event_packet["event_list"],
+      event_packet.get("offset", 0),
+      event_packet["event_count"],
+      not lookup and query_rewrite(dict(parameters, **{"offset": event_packet.get("offset", 0) + len(event_packet["event_list"])}))
+      )}
+  </div>
+
+  %if current_user:
+  <ul class="actions">
+    <a
+       class="action"
+       href="${url_rewrite("/event/new", parameters)}"
+       >Create an event</a>
+  </ul>
+  %endif
+</div>
+
+<div class="column">
+  %for event in event_packet["event_list"]:
+  ${self.mini.event_box(event, geobox=event_packet["geobox"], parameters=parameters) | n}
+  %endfor
+</div>
+</div>
+
+<script type="text/javascript">
+event_packet = ${json_dumps(event_packet) | n};
+eventtag_list = ${eventtag_list_json | n};
+</script>
+
+<script type="text/html" id="visibility_bar">\
+${mini.visibility_bar | n}\
+</script>
+
+</%def>
+

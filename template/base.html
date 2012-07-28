@@ -22,8 +22,12 @@
 
   <nav>
     <a href="${url_rewrite("/", parameters)}">Home</a>
-    <a href="${url_rewrite("/organisation", parameters)}">Organisations</a>
-    <a href="${url_rewrite("/organisation-tag", parameters)}">Organisation Tags</a>
+    <div class="nav-group">
+      <a href="${url_rewrite("/organisation", parameters)}">Organisations</a><a href="${url_rewrite("/organisation-tag", parameters)}">Tags</a>
+    </div>
+    <div class="nav-group">
+      <a href="${url_rewrite("/event", parameters)}">Events</a><a href="${url_rewrite("/event-tag", parameters)}">Tags</a>
+    </div>
     <a href="${url_rewrite("/note", parameters)}">Notes</a>
     %if current_user:
     |

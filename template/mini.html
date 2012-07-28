@@ -90,6 +90,72 @@ if not parameters:
 
 
 
+<%def name="event_box(event, tag=False, note=False, geobox=None, parameters=None)">
+<%
+if not parameters:
+   parameters = {}
+%>
+<div class="event-box">
+  ${visibility_bar(event)}
+  
+  <div class="event_name">
+    <a
+       href="${url_rewrite(event["url"], parameters)}"
+       >${event["name"]}</a>
+  </div>
+
+  %if tag:
+  <ul class="tag_list">
+    %for tag in event["tag"]:
+    <li class="eventtag">
+      <a
+         href="${url_rewrite(tag["url"], parameters)}"
+         >${tag["name"]}</a>
+    </li>
+    %endfor
+  </ul>
+  %endif
+
+  %if "address_list" in event:
+  <div class="event_address_list">
+    %for address in event["address_list"]:
+    %if not geo_in(address["latitude"], address["longitude"], geobox):
+    <% continue %>
+    %endif
+    <div class="address-row">
+      <div class="pin"
+	   color="yellow"
+	   source="mini.html"
+           %if address["latitude"]:
+           latitude="${address["latitude"]}"
+           longitude="${address["longitude"]}"
+           %endif
+           >
+        &nbsp;
+      </div>
+      <div class="address">
+	${visibility_bar(address)}
+        <a
+           href="${url_rewrite(address["url"], parameters)}"
+           >${address["postal"] | n, h, unicode, newline_comma}</a>
+      </div>
+    </div>
+    %endfor
+  </div>
+  %endif
+
+  %if note and "note_list" in event:
+  <div class="note_len">
+    ${len(event["note_list"])}
+  </div>
+  %endif
+
+</div>
+
+</%def>
+
+
+
 <%def name="address_box(address, link_url=False, unlink=False, parameters=None)">\
 <%
 if not parameters:
@@ -190,7 +256,7 @@ if not parameters:
 
 
 
-<%def name="tag_li(tag, org=False, note=False,
+<%def name="tag_li(tag, entity=False, note=False,
 	    link_url=False, unlink=False, link=False, next=False,
 	    visibility=False, parameters=None)">\
 <%
@@ -206,13 +272,13 @@ ${tag["name"] | n, h, unicode, nbsp}\
 </a>\
 </span>\
 \
-%if org and tag.get("org_len", None):
+%if entity and tag.get(entity["len"], None):
 &nbsp;\
 (\
-<span class="org_len">\
+<span class="number">\
 <a
-   href="${url_rewrite("/organisation", dict(parameters, tag=tag["short"]))}"
-   >${tag["org_len"]}</a>\
+   href="${url_rewrite("/%s" % entity["url"], dict(parameters, tag=tag["short"]))}"
+   >${tag[entity["len"]]}</a>\
 </span>\
 )\
 %endif

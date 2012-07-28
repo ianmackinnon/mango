@@ -14,9 +14,9 @@
   <h3>Current Tags</h3>
 
   <ul class="tag_list">
-    %for orgtag in obj["orgtag_list"]:
-    ${self.mini.tag_li(orgtag, org=False, note=False,
-      link_url="%s/tag/%s" % (obj["url"], orgtag["id"]),
+    %for tag in obj[type_tag_list]:
+    ${self.mini.tag_li(tag, entity=False, note=False,
+      link_url="%s/tag/%s" % (obj["url"], tag["id"]),
       unlink=True, next=uri,
       visibility=True)}
     %endfor
@@ -27,7 +27,7 @@
   <h3>Available Tags</h3>
 
   <div class="action-bar">
-    <form id="orgtag-search">
+    <form id="tag-search">
       <label name="search">
         <span>Search</span>
         <input name="search" value="${search or ''}">
@@ -39,7 +39,7 @@
     <ul class="actions">
       <a
          class="action"
-         href="${url_rewrite("/organisation-tag/new", dict(
+         href="${url_rewrite("/%s-tag/new" % type_url, dict(
                                       parameters,
                                       next=url_rewrite(uri, parameters),
                                       ))}"
@@ -49,10 +49,10 @@
   </div>
 
 <ul class="tag_list">
-  %for orgtag in orgtag_list:
-  %if orgtag not in obj["orgtag_list"]:
-  ${self.mini.tag_li(orgtag, org=False, note=False,
-    link_url="%s/tag/%s" % (obj["url"], orgtag["id"]),
+  %for tag in tag_list:
+  %if tag not in obj[type_tag_list]:
+  ${self.mini.tag_li(tag, entity=False, note=False,
+    link_url="%s/tag/%s" % (obj["url"], tag["id"]),
     link=True, next=uri,
     visibility=True)}
   %endif

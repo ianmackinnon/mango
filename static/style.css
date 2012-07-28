@@ -176,6 +176,30 @@ nav a,
     padding: 0px 6px;
     line-height: 23px;
 }
+nav .nav-group
+{
+    display: inline-block;
+}
+nav .nav-group a
+{
+    border-radius: 0;
+    border-right: 0;
+    margin-right: 0;
+    margin-left: 0;
+}
+nav .nav-group a:first-of-type
+{
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
+    margin-left: 2px;
+}
+nav .nav-group a:last-of-type
+{
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+    margin-right: 2px;
+    border-right: 1px solid #ccc;
+}
 #account img
 {
     margin-left: -6px;
@@ -357,21 +381,24 @@ img.throbber
 .visibility.pending { background: #ddd; }
 
 
-/* org */
+/* org / Event */
 
-div.org-box
+div.org-box,
+div.event-box
 {
     margin-top: 2px;
     border: 1px solid #aaa;
     padding: 2px;
     border-radius: 3px;
 }
-div.org_name
+div.org_name,
+div.event_name
 {
     padding-bottom: 4px;
 }
 
-#org-form
+#org-form,
+#event-form
 {
     float: left;
 
@@ -381,6 +408,12 @@ div.org_name
     border: 1px solid #ccc;
     border-radius: 3px;
     padding: 2px;
+}
+
+#event-form label[name="description"],
+#event-form label[name="description"] textarea
+{
+    width: 384px;
 }
 
 /* address */
@@ -393,10 +426,7 @@ div.org_name
 {
     float: right;
 }
-#address-form label[name="source"]
-{
-    width: 384px;
-}
+#address-form label[name="source"],
 #address-form label[name="source"] textarea
 {
     width: 384px;

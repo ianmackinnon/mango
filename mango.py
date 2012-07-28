@@ -33,17 +33,23 @@ from handle.note import NoteHandler, NoteNewHandler, NoteListHandler, \
 from handle.address import AddressHandler, \
     AddressLookupHandler, AddressNoteListHandler, AddressNoteHandler
 from handle.org import OrgHandler, OrgNewHandler, OrgListHandler, \
-    OrgOrgtagListHandler, OrgOrgtagHandler, OrgNoteListHandler, OrgNoteHandler, \
-    OrgAddressListHandler, OrgAddressHandler, \
+    OrgOrgtagListHandler, OrgOrgtagHandler, OrgNoteListHandler, \
+    OrgNoteHandler, OrgAddressListHandler, OrgAddressHandler, \
     OrgListTaskAddressHandler, OrgListTaskVisibilityHandler
-from handle.orgtag import OrgtagHandler, OrgtagListHandler, OrgtagNewHandler, \
-    OrgtagNoteListHandler, OrgtagNoteHandler
+from handle.event import EventHandler, EventNewHandler, EventListHandler, \
+    EventEventtagListHandler, EventEventtagHandler, EventNoteListHandler, \
+    EventNoteHandler, EventAddressListHandler, EventAddressHandler
+from handle.orgtag import OrgtagHandler, OrgtagListHandler, \
+    OrgtagNewHandler, OrgtagNoteListHandler, OrgtagNoteHandler
+from handle.eventtag import EventtagHandler, EventtagListHandler, \
+    EventtagNewHandler, EventtagNoteListHandler, EventtagNoteHandler
 from handle.history import HistoryHandler
 
 
 
 define("port", default=8802, help="Run on the given port", type=int)
 define("database", default="sqlite", help="sqlite or mysql", type=str)
+define("conf", default=".mango.conf", help="eg. .mango.conf", type=str)
 
 
 
@@ -107,6 +113,17 @@ class Application(tornado.web.Application):
             (r"/organisation/%s/address/%s" % (re_id, re_id),
              OrgAddressHandler),
 
+            (r"/event", EventListHandler),
+            (r"/event/new", EventNewHandler),
+            (r"/event/%s" % re_id, EventHandler),
+            (r"/event/%s/tag" % re_id, EventEventtagListHandler),
+            (r"/event/%s/tag/%s" % (re_id, re_id), EventEventtagHandler),
+            (r"/event/%s/note" % re_id, EventNoteListHandler),
+            (r"/event/%s/note/%s" % (re_id, re_id), EventNoteHandler),
+            (r"/event/%s/address" % re_id, EventAddressListHandler),
+            (r"/event/%s/address/%s" % (re_id, re_id),
+             EventAddressHandler),
+
             (r"/task/address", OrgListTaskAddressHandler),
             (r"/task/visibility", OrgListTaskVisibilityHandler),
 
@@ -121,6 +138,12 @@ class Application(tornado.web.Application):
             (r"/organisation-tag/%s/note" % re_id, OrgtagNoteListHandler),
             (r"/organisation-tag/%s/note/%s" % (re_id, re_id), OrgtagNoteHandler),
 
+            (r"/event-tag", EventtagListHandler),
+            (r"/event-tag/new", EventtagNewHandler),
+            (r"/event-tag/%s" % re_id, EventtagHandler),
+            (r"/event-tag/%s/note" % re_id, EventtagNoteListHandler),
+            (r"/event-tag/%s/note/%s" % (re_id, re_id), EventtagNoteHandler),
+
             (r"/auth/login", AuthLoginGoogleHandler),
             (r"/auth/login/google", AuthLoginGoogleHandler),
             (r"/auth/login/local", AuthLoginLocalHandler),
@@ -132,7 +155,7 @@ class Application(tornado.web.Application):
         if options.database == "mysql":
             (database,
              app_username, app_password,
-             admin_username, admin_password) = mysql.mysql_init.get_conf()
+             admin_username, admin_password) = mysql.mysql_init.get_conf(options.conf)
             connection_url = 'mysql://%s:%s@localhost/%s?charset=utf8' % (
                 admin_username, admin_password, database)
         else:

@@ -1,0 +1,171 @@
+<%inherit file="base.html"/>
+
+<%def name="title()">${obj and obj["name"] or "New Event"}</%def>
+
+<%def name="page()">
+
+<h1>
+  %if obj:
+  <a
+     href="${url_rewrite(obj["url"], parameters)}"
+     >${obj["name"]}</a>
+  %else:
+  New Event
+  %endif
+</h1>
+
+<div class="section">
+
+  <div id="mango-map-box">
+    <div id="mango-map-canvas">Map loading...</div>
+  </div>
+  
+  <div class="form-by-map" id="event-form">
+    
+    <h3>Event</h3>
+    
+    %if current_user:
+    <form action="${obj and obj["url"] or '/event'}" method="post">
+      <input name="_xsrf" type="hidden" value="${xsrf}">
+      %if obj:
+      <input name="_method" type="hidden" value="put">
+      %endif
+      <label
+         name="name"
+         status="${obj and 'good' or 'bad'}"
+         >
+	<span>Name</span>
+	<span class="requirement">(required)</span>
+	<input name="name" value="${obj and obj["name"] or ''}">
+      </label>
+      <label name="start_date" status="${obj and 'good' or 'bad'}">
+	<span>Start Date</span>
+	<span class="requirement">(required)</span>
+	<input
+           name="start_date"
+           placeholder="Format is 'YYYY-MM-DD', eg. '2012-07-24'."
+           value="${obj and obj["start_date"] or ''}"
+           >
+      </label>
+      <label name="end_date" status="${obj and 'good' or 'bad'}">
+	<span>End Date</span>
+	<span class="requirement">(required)</span>
+	<input
+           name="end_date"
+           placeholder="Format is 'YYYY-MM-DD', eg. '2012-07-24'."
+           value="${obj and obj["end_date"] or ''}"
+           >
+      </label>
+      <label name="start_time">
+	<span>Start Time</span>
+	<span class="requirement"></span>
+	<input
+           name="start_tiem"
+           placeholder="Format is 'HH:MM', eg. '19.30'. Times in UK time zone."
+           value="${obj and obj["start_time"] or ""}"
+           >
+      </label>
+      <label name="end_time">
+	<span>End Time</span>
+	<span class="requirement"></span>
+	<input
+           name="end_time"
+           placeholder="Format is 'HH:MM', eg. '19.30'. Times in UK time zone."
+           value="${obj and obj["end_time"] or ""}"
+           >
+      </label>
+     <div class="form-hint">
+      <p>Enter description using <a href='http://daringfireball.net/projects/markdown/syntax'>Markdown syntax</a>.</p>
+    </div>
+
+      <label
+         name="description"
+         status="${obj and obj.get("description", "") and 'good' or ''}"
+         class="textarea"
+         >
+        <span>Description</span>\
+        <span class="requirement"></span>
+        <textarea
+           name="description"
+           >${obj and obj.get("description", "") or ""}</textarea>
+      </label>
+      
+      ${self.mini.visibility_input(obj)}
+
+      <input type="submit">
+    </form>
+    %else:
+    ${obj["name"]}
+    %endif
+
+    %if obj:
+    %if current_user:
+    <form action="${obj["url"]}" method="post">
+      <input name="_xsrf" type="hidden" value="${xsrf}">
+      <input name="_method" type="hidden" value="delete">
+      <input type="submit" value="Delete">
+    </form>
+    %endif
+
+    <div class="action-bar no-border">
+      <h3>Tags</h3>
+
+      %if current_user:
+      <div class="actions">
+        <a
+           href="${url_rewrite("%s/tag" % obj["url"], parameters)}"
+           class="action"
+           >Edit tags</a>
+      </div>
+      %endif
+    </div>
+
+    %if "eventtag_list" in obj:
+    <ul class="tag_list">
+      %for eventtag in obj["eventtag_list"]:
+      ${self.mini.tag_li(
+        eventtag, visibility=True, parameters=parameters,
+        )}
+      %endfor
+    </ul>
+    %endif
+    
+    %if "address_list" in obj:
+    <div class="action-bar no-border">
+      <h3>Addresses</h3>
+
+      %if current_user:
+      <div class="actions">
+        <a
+           href="${url_rewrite("%s/address" % obj["url"], parameters)}"
+           class="action"
+           >Add an address</a>
+      </div>
+      %endif
+    </div>
+
+    %for address in obj["address_list"]:
+    ${self.mini.address_box(
+      address,
+      "%s%s" % (obj["url"], address["url"]), unlink=True,
+      parameters=parameters,
+      )}
+    %endfor
+    %endif
+
+    %endif
+
+  </div>
+  
+</div>
+
+%if obj and "note_list" in obj:
+${self.mini.render_note_section(obj["note_list"],
+  obj["url"] + "/note", obj["url"],
+  note_search, note_order, unlink_url=obj["url"],
+  parameters=parameters,
+  )}
+%endif
+
+</%def>
+

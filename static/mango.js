@@ -755,6 +755,10 @@ var m = {
       m.build_map();
       m.init_org_search();
     }],
+    [/^\/event$/, function() {
+      m.build_map();
+      m.init_org_search();
+    }],
     [/^\/task\/address$/, function() {
       m.init_org_search();
     }],
@@ -770,6 +774,20 @@ var m = {
       $("#address-form textarea[name='postal']").focus();
     }],
     [/^\/organisation\/([1-9][0-9]*)\/note$/, function() {
+      m.note_markdown();
+    }],
+    [/^\/event\/([1-9][0-9]*)$/, function() {
+      m.build_map();
+      m.clear_points();
+      m.add_pins();
+      //            m.fit_map();
+    }],
+    [/^\/event\/([1-9][0-9]*)\/address$/, function() {
+      m.build_map();
+      m.init_address_form("address-form");
+      $("#address-form textarea[name='postal']").focus();
+    }],
+    [/^\/event\/([1-9][0-9]*)\/note$/, function() {
       m.note_markdown();
     }],
 
