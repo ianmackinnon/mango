@@ -271,7 +271,7 @@ class OrgAddressListHandler(BaseOrgHandler, BaseAddressHandler):
         org = self._get_org(org_id_string)
 
         postal, source, lookup, manual_longitude, manual_latitude, \
-            public, note_id_list = \
+            public = \
             BaseAddressHandler._get_arguments(self)
 
         address = Address(postal, source, lookup,

@@ -104,6 +104,10 @@ if not parameters:
        >${event["name"]}</a>
   </div>
 
+  <div class="event_time">
+    ${event | n, page_period}
+  </div>
+
   %if tag:
   <ul class="tag_list">
     %for tag in event["tag"]:

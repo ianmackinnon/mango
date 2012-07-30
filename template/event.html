@@ -44,7 +44,7 @@
 	<input
            name="start_date"
            placeholder="Format is 'YYYY-MM-DD', eg. '2012-07-24'."
-           value="${obj and obj["start_date"] or ''}"
+           value="${obj and obj["start_date"] | n, form_date}"
            >
       </label>
       <label name="end_date" status="${obj and 'good' or 'bad'}">
@@ -53,25 +53,25 @@
 	<input
            name="end_date"
            placeholder="Format is 'YYYY-MM-DD', eg. '2012-07-24'."
-           value="${obj and obj["end_date"] or ''}"
+           value="${obj and obj["end_date"] | n, form_date}"
            >
       </label>
-      <label name="start_time">
+      <label name="start_time" status="${obj and obj["start_time"] and 'good' or ''}">
 	<span>Start Time</span>
 	<span class="requirement"></span>
 	<input
-           name="start_tiem"
-           placeholder="Format is 'HH:MM', eg. '19.30'. Times in UK time zone."
-           value="${obj and obj["start_time"] or ""}"
+           name="start_time"
+           placeholder="Format is 'HH:MM', eg. '19:30'. Times in UK time zone."
+           value="${obj and obj["start_time"] | n, form_time}"
            >
       </label>
-      <label name="end_time">
+      <label name="end_time" status="${obj and obj["end_time"] and 'good' or ''}">
 	<span>End Time</span>
 	<span class="requirement"></span>
 	<input
            name="end_time"
-           placeholder="Format is 'HH:MM', eg. '19.30'. Times in UK time zone."
-           value="${obj and obj["end_time"] or ""}"
+           placeholder="Format is 'HH:MM', eg. '19:30'. Times in UK time zone."
+           value="${obj and obj["end_time"] | n, form_time}"
            >
       </label>
      <div class="form-hint">
@@ -106,6 +106,10 @@
       <input type="submit" value="Delete">
     </form>
     %endif
+
+    <h3>Time</h3>
+
+    ${obj["start_date"] | n, page_date}
 
     <div class="action-bar no-border">
       <h3>Tags</h3>

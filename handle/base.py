@@ -54,6 +54,45 @@ def markdown_safe(text):
 
 
 
+def form_date(date):
+    return date or ""
+
+
+
+def form_time(time):
+    return time and str(time) or ""
+
+
+
+def page_date(date):
+    return date and datetime.datetime.strptime(date, "%Y-%m-%d").date().strftime("%a %d %b %Y") or ""
+
+
+
+def page_time(time):
+    return time and str(time) or ""
+
+
+
+def page_period(obj):
+    s = page_date(obj["start_date"])
+    if obj["start_time"]:
+        s += ", %s" % page_time(obj["start_time"])
+    elif obj["end_time"]:
+        s += ", ??:??"
+    s += " "
+    if (obj["end_date"] and obj["end_date"] != obj["start_date"]) or obj["end_time"]:
+        s += " -"
+    if obj["end_date"] and obj["end_date"] != obj["start_date"]:
+        s += " %s" % page_date(obj["end_date"])
+    if obj["end_time"]:
+        if obj["end_date"] and obj["end_date"] != obj["start_date"]:
+            s += ","
+        s += " %s" % page_time(obj["end_time"])
+    return s
+
+
+
 def has_link_parent(soup):
     if not soup.parent:
         return False
@@ -184,6 +223,11 @@ class BaseHandler(tornado.web.RequestHandler):
                 "newline": newline,
                 "newline_comma": newline_comma,
                 "nbsp": nbsp,
+                "form_date": form_date,
+                "form_time": form_time,
+                "page_date": page_date,
+                "page_time": page_time,
+                "page_period": page_period,
                 "markdown_safe": markdown_safe,
                 "convert_links": convert_links,
                 "current_user": self.current_user,
@@ -242,7 +286,6 @@ class BaseHandler(tornado.web.RequestHandler):
             if default is self._ARG_DEFAULT_MANGO:
                 raise tornado.web.HTTPError(400, "Missing argument %s" % name)
             return value
-        
         try:
             value = fn(value)
         except ValueError:
@@ -281,15 +324,15 @@ class BaseHandler(tornado.web.RequestHandler):
         return self.get_argument_restricted(
             name,
             lambda value: datetime.datetime.strptime(value, "%Y-%m-%d").date(),
-            "Value must be in the format 'YYYY-MM-DD",
+            "Value must be in the format 'YYYY-MM-DD, eg. 2012-02-17",
             default,
             json)
 
     def get_argument_time(self, name, default=_ARG_DEFAULT_MANGO, json=False):
         return self.get_argument_restricted(
             name,
-            lambda value: datetime.datetime.strptime(value, "%H-%M").time(),
-            "Value must be in the format 'YYYY-MM-DD",
+            lambda value: datetime.datetime.strptime(value, "%H:%M").time(),
+            "Value must be in the 24-hour format 'HH:MM, eg. 19:30",
             default,
             json)
 

@@ -180,6 +180,51 @@ var m = {
       }
     },
 
+    "event_packet": function(event_packet, ajaxFunction) {
+      var column = $("#event_list > .column");
+      column.empty();
+
+      offset = event_packet.offset || 0;
+      
+      var $counts = $(tmpl("template_counts", {
+        "obj_list": event_packet.event_list,
+        "offset": offset,
+        "total": event_packet.event_count,
+        "more_link": true,
+      }));
+
+      $counts.find("a").click(function(e) {
+        if (e.which != 1 || e.metaKey || e.shiftKey) {
+	  return;
+        }
+        e.preventDefault();
+        ajaxFunction(null, offset + event_packet.event_list.length);
+      });
+      
+      $(".counts").empty().append($counts);
+
+      var alpha = 0;
+      $.each(event_packet.event_list, function(index, value) {
+	var event = $(tmpl("template_event_box", {
+          "event":value,
+          "tag":false,
+          "note":false,
+	  "geobox":event_packet.geobox,
+          "parameters":m.parameters,
+        }));
+	column.append(event);
+      });
+      if (!!m.map) {
+	m.clear_points();
+        m.add_pins();
+	if (event_packet.latlon) {
+	  m.positions.push(new google.maps.LatLng(
+	    event_packet.latlon[0], event_packet.latlon[1]));
+	}
+	m.fit_map();
+      }
+    },
+
     "orgtag_packet": function(tag_list_id, orgtag_packet) {
       var tag_list = $(tag_list_id);
       tag_list.empty();
@@ -217,8 +262,8 @@ var m = {
     }
   },
 
-  "init_org_search": function() {
-    var form = $("#org-search");
+  "init_entity_search": function(searchId, tagList, process, packet) {
+    var form = $(searchId);
     var name_search = m.get_field(form, "name_search");
     var lookup = m.get_field(form, "lookup");
     var tag = form.find("input[name='tag']");
@@ -256,7 +301,7 @@ var m = {
     var update_dropdown = function() {
       dropdown.empty();
       var term = tag_search_term();
-      var tags = term && orgtag_list.filter(function(element, index, array) {
+      var tags = term && tagList.filter(function(element, index, array) {
         return element.short.substring(0, term.length) == term;
       }) || [];
       var helper = function(name) {
@@ -265,9 +310,9 @@ var m = {
         }
       }
       for (i=0; i < Math.min(10, tags.length); i++) {
-        var orgtag = tags[i];
-        var li = $("<li>" + orgtag["short"] + "</li>");
-        li.click(helper(orgtag["short"]));
+        var tag = tags[i];
+        var li = $("<li>" + tag["short"] + "</li>");
+        li.click(helper(tag["short"]));
         dropdown.append(li);
       }
     }
@@ -314,7 +359,7 @@ var m = {
 	"dataType": "json",
 	"data": data,
 	"success": function(data, textStatus, jqXHR) {
-	  m.process.org_packet(data, change);
+          process(data, change);
 	  throbber.hide();
 	},
 	"error": function(jqXHR, textStatus, errorThrown) {
@@ -334,7 +379,25 @@ var m = {
     m.on_change(lookup.input, "lookup", change, 500);
     m.on_change(tag, "tag", change, 500);
     visibility.change(change);
-    m.process.org_packet(org_packet, change);
+    process(packet, change);
+  },
+
+  "init_org_search": function() {
+    m.init_entity_search(
+      "#org-search",
+      orgtag_list,
+      m.process.org_packet,
+      org_packet
+    )
+  },
+
+  "init_event_search": function() {
+    m.init_entity_search(
+      "#event-search",
+      eventtag_list,
+      m.process.event_packet,
+      event_packet
+    )
   },
 
   "init_orgtag_search": function(id, field) {
@@ -757,7 +820,7 @@ var m = {
     }],
     [/^\/event$/, function() {
       m.build_map();
-      m.init_org_search();
+      m.init_event_search();
     }],
     [/^\/task\/address$/, function() {
       m.init_org_search();

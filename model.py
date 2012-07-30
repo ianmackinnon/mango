@@ -565,8 +565,8 @@ class Event(Base, NotableEntity):
             "start_date": self.start_date.strftime("%Y-%m-%d"),
             "end_date": self.end_date.strftime("%Y-%m-%d"),
             "description": self.description,
-            "start_time": self.start_time,
-            "end_time": self.end_time,
+            "start_time": self.start_time and self.start_time.strftime("%H:%M"),
+            "end_time": self.end_time and self.end_time.strftime("%H:%M"),
             }
         if public:
             obj["public"] = self.public

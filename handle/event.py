@@ -254,6 +254,8 @@ class EventHandler(BaseEventHandler):
         end_time = self.get_argument_time("end_time", None, json=is_json)
         public = self.get_argument_public("public", json=is_json)
 
+        print start_time
+
         if event.name == name and \
                 event.start_date == start_date and \
                 event.end_date == end_date and \
@@ -296,7 +298,7 @@ class EventAddressListHandler(BaseEventHandler, BaseAddressHandler):
         event = self._get_event(event_id_string)
 
         postal, source, lookup, manual_longitude, manual_latitude, \
-            public, note_id_list = \
+            public = \
             BaseAddressHandler._get_arguments(self)
 
         address = Address(postal, source, lookup,

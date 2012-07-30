@@ -98,7 +98,7 @@ class AddressHandler(BaseAddressHandler):
         address = self._get_address(address_id_string)
 
         postal, source, lookup, manual_longitude, manual_latitude, \
-            public, note_id_list = \
+            public = \
             BaseAddressHandler._get_arguments(self)
 
         if address.postal == postal and \
