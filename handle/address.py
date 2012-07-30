@@ -57,11 +57,13 @@ class AddressHandler(BaseAddressHandler):
         if self.deep_visible():
             options = (
                 joinedload("org_list"),
+                joinedload("event_list"),
                 joinedload("note_list"),
                 )
         else:
             options = (
                 joinedload("org_list_public"),
+                joinedload("event_list_public"),
                 joinedload("note_list_public"),
                 )
 
@@ -69,17 +71,21 @@ class AddressHandler(BaseAddressHandler):
 
         if self.deep_visible():
             org_list=address.org_list
+            event_list=address.event_list
             note_list=address.note_list
         else:
             org_list=address.org_list_public
+            event_list=address.event_list_public
             note_list=address.note_list_public
 
         org_list = [org.obj(public=public) for org in org_list]
+        event_list = [event.obj(public=public) for event in event_list]
         note_list = [note.obj(public=public) for note in note_list]
 
         obj = address.obj(
             public=public,
             org_obj_list=org_list,
+            event_obj_list=event_list,
             note_obj_list=note_list,
             )
 
@@ -91,6 +97,7 @@ class AddressHandler(BaseAddressHandler):
                 obj=obj,
                 note_search=note_search,
                 note_order=note_order,
+                entity_list="entity_list",
                 )
 
     @authenticated

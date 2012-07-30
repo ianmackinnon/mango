@@ -291,6 +291,7 @@ class EventAddressListHandler(BaseEventHandler, BaseAddressHandler):
             'address.html',
             address=None,
             entity=obj,
+            entity_list="event_list",
             )
         
     @authenticated

@@ -3,10 +3,10 @@
 <%def name="title()">
 %if entity:
 ${entity["name"]} | address
-%elif "org_list" in obj and len(obj["org_list"]) == 1:
-${obj["org_list"][0]["name"]} | address
+%elif entity_list in obj and len(obj[entity_list]) == 1:
+${obj[entity_list][0]["name"]} | address
 %else:
-Address ${obj["address_id"]}
+Address ${obj["id"]}
 %endif
 </%def>
 
@@ -20,17 +20,17 @@ Address ${obj["address_id"]}
      >${entity["name"]}</a>
   | address
 </h1>
-%elif "org_list" in obj and len(obj["org_list"]) == 1:
+%elif entity_list in obj and len(obj[entity_list]) == 1:
 <h1>
   <a
-     href="${url_rewrite(obj["org_list"][0]["url"], parameters)}"
-     >${obj["org_list"][0]["name"]}</a>
+     href="${url_rewrite(obj[entity_list][0]["url"], parameters)}"
+     >${obj[entity_list][0]["name"]}</a>
   | address
 </h1>
 %else:
 <a
    href="${url_rewrite(obj["url"], parameters)}"
-   >Address ${obj["address_id"]}</a>
+   >Address ${obj["id"]}</a>
 %endif
 </h1>
 
@@ -53,8 +53,8 @@ action = entity and "%s/address" % entity["url"] or obj["url"]
       %endif
       %if entity:
       <input name="next" type="hidden" value="${entity["url"]}">
-      %elif "org_list" in obj and len(obj["org_list"]) == 1:
-      <input name="next" type="hidden" value="${obj["org_list"][0]["url"]}">
+      %elif entity_list in obj and len(obj[entity_list]) == 1:
+      <input name="next" type="hidden" value="${obj[entity_list][0]["url"]}">
       %endif
       <label name="postal"
              status="${obj and obj.get("postal", "") and 'good' or 'bad'}"
@@ -104,6 +104,10 @@ action = entity and "%s/address" % entity["url"] or obj["url"]
   %else:
   <div class="box right" id="address-form">
     <h3>Address</h3>
+    <span 
+       latitude="${obj and (obj.get("manual_latitude", "") or obj.get("latitude", "")) or ""}"
+       longitude="${obj and (obj.get("manual_longitude", "") or obj.get("longitude", "")) or ""}"
+       >
     <p>
     ${obj["postal"] | n, h, unicode, newline}
     </p>

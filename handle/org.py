@@ -257,13 +257,16 @@ class OrgAddressListHandler(BaseOrgHandler, BaseAddressHandler):
     def get(self, org_id_string):
         public = bool(self.current_user)
         org = self._get_org(org_id_string)
+
         obj = org.obj(
             public=public,
             )
+
         self.render(
             'address.html',
             address=None,
             entity=obj,
+            entity_list="org_list",
             )
         
     @authenticated

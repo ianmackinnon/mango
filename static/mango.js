@@ -498,6 +498,23 @@ var m = {
 
   "init_address_form": function(id) {
     var form = $("#" + id).find("form");
+    if (!form.length) {
+      var $span = $("span[latitude]");
+      if (!$span.length) {
+        return;
+      }
+      var latitude = $span.attr("latitude")
+      var longitude = $span.attr("longitude")
+      m.clear_points();
+      var position = new google.maps.LatLng(
+	    latitude, longitude);
+      var marker = new google.maps.Marker({
+	position: position,
+	map: m.map
+      });
+      m.markers.push(marker);
+      return;
+    }
     var search = $("<input>").attr({
       "type":"button",
       "value":"Find address on map"
@@ -533,7 +550,7 @@ var m = {
 
     var manual_control = $("<div class='caption'>");
     var manual_control_hint = $("<span>").text("The address could not be found automatically. You may wish to check the address for accuracy, consider adding a machine-friendly 'Lookup' address, or click the map to set the position manually.").hide();
-    var manual_control_span1 = $("<span>").text("Click on the map or drag a marker to set position manually.");
+    var manual_control_span1 = $("<span>").text("Click on the map or drag a marker to set position manually.").hide();
     var manual_control_span2 = $("<span>").text("Map position has been set manually.").hide();
     var manual_control_button = $("<input type='button' id='manual_position_clear' value='Remove'>").hide();
     $("#mango-map-box").append(manual_control);

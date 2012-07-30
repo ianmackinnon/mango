@@ -725,8 +725,10 @@ class Address(Base, NotableEntity):
             obj["note_list"] = note_obj_list
         if org_obj_list is not None:
             obj["org_list"] = org_obj_list
+            obj["entity_list"] = obj.get("entity_list", []) + org_obj_list
         if event_obj_list is not None:
             obj["event_list"] = event_obj_list
+            obj["entity_list"] = obj.get("entity_list", []) + event_obj_list
         return obj
 
     @property
