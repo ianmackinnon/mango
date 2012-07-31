@@ -30,7 +30,15 @@ var m = {
 
     "markdown": function(text) {
       return !!text ? markdown.toHTML(text) : '';
-    }
+    },
+
+    pageTime: function(time) {
+      return time;
+    },
+    pageDate: function(date) {
+      return $.datepicker.formatDate('D dd M yy', new Date(date));
+    },
+    
   },
 
   "filter_object_true": function(arr) {

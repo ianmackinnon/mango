@@ -6,6 +6,7 @@
   <title>${self.title()}</title>
   <link href="data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQEAYAAABPYyMiAAAABmJLR0T///////8JWPfcAAAACXBIWXMAAABIAAAASABGyWs+AAAAF0lEQVRIx2NgGAWjYBSMglEwCkbBSAcACBAAAeaR9cIAAAAASUVORK5CYII=" rel="icon" type="image/x-icon" />
   <link rel="stylesheet" type="text/css" href="/static/style.css" />
+  <link rel="stylesheet" type="text/css" href="/static/jquery-ui.css" />
 </head>
 
 <body>
@@ -83,9 +84,10 @@ ${parameters.get("visibility", "public")=="all" and " selected" or "" | n}"
 
 </div>
 
-<script type="text/javascript" src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
+<script type="text/javascript" src="/static/jquery.min.js"></script>
+<script type="text/javascript" src="/static/jquery-ui.min.js"></script>
+<script type="text/javascript" src="/static/markdown.js"></script>
 <script type="text/javascript" src="http://maps.google.com/maps/api/js?libraries=geometry&amp;sensor=false"></script>
-<script type="text/javascript" src="https://raw.github.com/evilstreak/markdown-js/master/lib/markdown.js"></script>
 <script type="text/javascript" src="/static/mango.js"></script>
 
 <script type="text/javascript">
