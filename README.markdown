@@ -9,7 +9,7 @@ Mapping Application for NGOs
 
     sudo pip install \
       mako tornado sqlalchemy geopy markdown redis pysqlite BeautifulSoup4 \
-      python-levenshtein mysql-python
+      python-levenshtein mysql-python python-memcached
 
     make
 

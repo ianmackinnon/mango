@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
+
+import datetime
+
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
+from sqlalchemy.sql.expression import literal
+from sqlalchemy import Unicode
 from tornado.web import HTTPError
 
 import geo
@@ -9,7 +14,8 @@ import geo
 from base import BaseHandler, authenticated
 from note import BaseNoteHandler
 
-from model import Address, Note, Org, Orgtag
+from model import Address, Note, Org, Orgtag, Event, \
+    org_address, event_address
 
 
 
@@ -128,6 +134,55 @@ class AddressHandler(BaseAddressHandler):
         address.geocode()
         self.orm.commit()
         self.redirect(self.next or address.url)
+
+
+
+class AddressHandler(BaseAddressHandler):
+    def get(self):
+        key = "address:%s" % ["public", "all"][self.deep_visible()]
+
+        value = self.cache.get(key)
+        if value:
+            self.write(value)
+            return
+
+        address_list = self.orm.query(
+            Address.address_id,
+            func.coalesce(Address.latitude, Address.manual_latitude),
+            func.coalesce(Address.longitude, Address.manual_longitude),
+            )
+
+        org_list = address_list \
+            .join((org_address,
+                   Address.address_id == org_address.c.address_id)) \
+            .join((Org, Org.org_id == org_address.c.org_id)) \
+            .add_columns(Org.org_id, Org.name, literal("org"))
+
+        event_list = address_list \
+            .join((event_address,
+                   Address.address_id == event_address.c.address_id)) \
+            .join((Event, Event.event_id == event_address.c.event_id)) \
+            .add_columns(Event.event_id, Event.name, literal("event"))
+
+        today = datetime.datetime.now().date()
+        event_list = event_list.filter(Event.start_date >= today)
+
+        if not self.deep_visible():
+            org_list = org_list.filter(Org.public==True)
+            event_list = org_list.filter(Event.public==True)
+        
+        address_list = org_list.union(event_list)
+
+        obj_list = []
+        for result in address_list.all():
+            obj_list.append(dict(zip(
+                        ["address_id", "latitude", "longitude", "entity_id", "name", "entity"],
+                        result)))
+
+        value = self.dump_json(obj_list)
+        self.cache.set(key, value)
+
+        self.write(value)
 
 
 

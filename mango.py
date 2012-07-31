@@ -5,7 +5,9 @@ import os
 import re
 import sys
 import errno
+import hashlib
 import logging
+import memcache
 
 from mako.template import Template
 from mako.lookup import TemplateLookup
@@ -19,6 +21,7 @@ from tornado.options import define, options
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy import __version__ as sqlalchemy_version
 
 import mysql.mysql_init
 
@@ -50,6 +53,48 @@ from handle.history import HistoryHandler
 define("port", default=8802, help="Run on the given port", type=int)
 define("database", default="sqlite", help="sqlite or mysql", type=str)
 define("conf", default=".mango.conf", help="eg. .mango.conf", type=str)
+
+
+
+def sha1_concat(*parts):
+    sha1 = hashlib.sha1()
+    for part in parts:
+        sha1.update(part)
+    return sha1.hexdigest()
+
+
+
+class DictCache(object):
+    def __init__(self, namespace):
+        self._cache = {}
+        
+    def get(self, key):
+        return self._cache.get(key, None)
+
+    def set(self, key, value):
+        self._cache[key] = value
+
+    def delete(self, key):
+        del self._cache[key]
+
+
+
+class MemcacheCache(object):
+    def __init__(self, namespace):
+        self._cache = memcache.Client(["127.0.0.1:11211"])
+        self._namespace = namespace
+        
+    def key(self, key):
+        return self._namespace + ":" + key
+        
+    def get(self, key):
+        return self._cache.get(self.key(key))
+
+    def set(self, key, value):
+        self._cache.set(self.key(key), value, time=15*60)  # 15 minutes
+
+    def delete(self, key):
+        self._cache.delete(self.key(key))
 
 
 
@@ -127,6 +172,7 @@ class Application(tornado.web.Application):
             (r"/task/address", OrgListTaskAddressHandler),
             (r"/task/visibility", OrgListTaskVisibilityHandler),
 
+            (r"/address", AddressHandler),
             (r"/address/lookup", AddressLookupHandler),
             (r"/address/%s" % re_id, AddressHandler),
             (r"/address/%s/note" % re_id, AddressNoteListHandler),
@@ -156,14 +202,25 @@ class Application(tornado.web.Application):
             (database,
              app_username, app_password,
              admin_username, admin_password) = mysql.mysql_init.get_conf(options.conf)
+            database_namespace = 'mysql://%s' % database
             connection_url = 'mysql://%s:%s@localhost/%s?charset=utf8' % (
                 admin_username, admin_password, database)
         else:
-            connection_url = 'sqlite:///mango.db'
+            database = "mango.db"
+            database_namespace = 'sqlite:///%s' % database
+            connection_url = 'sqlite:///%s' % database
+
+        cache_namespace = sha1_concat(
+            sys.version,
+            sqlalchemy_version,
+            database_namespace,
+            )
     
         engine = create_engine(connection_url)
 
         self.orm = scoped_session(sessionmaker(bind=engine, autocommit=False))
+
+        self.cache = MemcacheCache(cache_namespace)
 
         self.lookup = TemplateLookup(directories=['template'],
                                      input_encoding='utf-8',

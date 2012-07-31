@@ -144,10 +144,6 @@ class BaseHandler(tornado.web.RequestHandler):
             self.request.method = method.upper()
         tornado.web.RequestHandler._execute(self, transforms, *args, **kwargs)
 
-    @property
-    def orm(self):
-        return self.application.orm
-
     def content_type(self, name):
         if "Content-Type" in self.request.headers:
             return self.request.headers["Content-Type"].lower() == name.lower()
@@ -464,8 +460,11 @@ class BaseHandler(tornado.web.RequestHandler):
     def get_arguments_int(self, name):
         return [int(value) for value in self.get_arguments(name)]
 
+    def dump_json(self, obj):
+        return json.dumps(obj, indent=2)
+
     def write_json(self, obj):
-        self.write(json.dumps(obj, indent=2))
+        self.write(self.dump_json(obj))
 
     def has_geo_arguments(self):
         self.lookup = self.get_argument("lookup", None)
@@ -555,6 +554,14 @@ class BaseHandler(tornado.web.RequestHandler):
     def deep_visible(self):
         return self.parameters["visibility"] in ["pending", "private", "all"]
     
+    @property
+    def orm(self):
+        return self.application.orm
+
+    @property
+    def cache(self):
+        return self.application.cache
+
 
 
 
