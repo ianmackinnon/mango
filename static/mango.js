@@ -398,6 +398,49 @@ var m = {
     process(packet, change);
   },
 
+  "all_addresses": function() {
+    var data = {}
+    if (m.parameters.visibility) {
+      data["visibility"] = m.parameters.visibility;
+    }
+    $.ajax("/address", {
+      "dataType": "json",
+      "data": data,
+      "success": function(data, textStatus, jqXHR) {
+        m.clear_points();
+        $.each(data, function(i, result) {
+          var position = new google.maps.LatLng(
+	    result.latitude, result.longitude);
+          var color;
+          console.log(result);
+          if (result.entity == "org") {
+            color= "ff7755";
+          } else {
+            color= "5577ff";
+          }
+          var pin_url = "/static/image/map/marker/pin-" + color + ".png"
+          var marker = new google.maps.Marker({
+	    position: position,
+	    map: m.map,
+            icon: pin_url,
+          });
+          m.markers.push(marker);
+          m.fit_map();
+        });
+      },
+      "error": function(jqXHR, textStatus, errorThrown) {
+	if (textStatus == "abort") {
+	  return;
+	}
+	console.log("error");
+	console.log(jqXHR);
+	console.log(textStatus);
+	console.log(errorThrown);
+	throbber.hide();
+      },
+    });
+  },
+
   "init_org_search": function() {
     m.init_entity_search(
       "#org-search",
@@ -844,6 +887,13 @@ var m = {
   },
 
   "route": [
+    [/^\/$/, function() {
+      m.build_map();
+      m.all_addresses();
+    }],
+    [/^\/home$/, function() {
+      m.build_map();
+    }],
     [/^\/note\/new$/, function() {
       m.note_markdown();
     }],

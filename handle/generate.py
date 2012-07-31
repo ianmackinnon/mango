@@ -116,17 +116,26 @@ class GenerateMarkerHandler(GenerateHandler):
         else:
             raise HTTPError(404)
 
-        if len(form) != 2:
+        if len(form) == 2:
+            (fill, text, ) = form
+            if not re.match("[0-9a-zA-Z?]$", text):
+                raise HTTPError(404)
+            if not re.match("[0-9a-fA-F]{6}$", fill):
+                raise HTTPError(404)
+            svg = self.render(template,
+                              text=text,
+                              fill="#" + fill,
+                              )
+        elif len(form) == 1:
+            (fill, ) = form
+            if not re.match("[0-9a-fA-F]{6}$", fill):
+                raise HTTPError(404)
+            svg = self.render(template,
+                              text="",
+                              fill="#" + fill,
+                              )
+        else:
             raise HTTPError(404)
-        fill, text = form
-        if not re.match("[0-9a-zA-Z?]$", text):
-            raise HTTPError(404)
-        if not re.match("[0-9a-fA-F]{6}$", fill):
-            raise HTTPError(404)
-        svg = self.render(template,
-                    text=text,
-                    fill="#" + fill,
-                    )
 
         cmd = ["convert", "-background", "none", "svg:-", abspath]
         process = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
