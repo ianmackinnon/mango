@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import json
+import datetime
 
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm import joinedload
@@ -39,9 +40,13 @@ class BaseEventHandler(BaseHandler):
         return event
 
     def _get_event_list_search(self, name=None, name_search=None,
-                             tag_name_list=None, visibility=None,
+                             tag_name_list=None, past=False, visibility=None,
                              address_list_name=None, geo=True, address=True, limit=10, offset=0):
         event_list = self.orm.query(Event)
+
+        if not past:
+            today = datetime.datetime.now().date()
+            event_list = event_list.filter(Event.start_date >= today)
 
         event_list = self.filter_visibility(event_list, Event, visibility)
 
@@ -77,10 +82,13 @@ class BaseEventHandler(BaseHandler):
         else:
             if name_search:
                 event_list = event_list \
-                    .order_by(Event.name.startswith(name_search).desc(), Event.name)
+                    .order_by(Event.name.startswith(name_search).desc(),
+                              Event.start_date, Event.start_time)
             else:
-                event_list = event_list.order_by(Event.name)
-            event_count = self.orm.query(event_list.subquery().c.event_id.distinct()).count()
+                event_list = event_list.order_by(Event.start_date,
+                                                 Event.start_time)
+            event_count = self.orm.query(
+                event_list.subquery().c.event_id.distinct()).count()
             if offset:
                 event_list = event_list.offset(offset);
             if limit:
@@ -96,6 +104,7 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler):
         is_json = self.content_type("application/json")
         name = self.get_argument("name", None, json=is_json)
         name_search = self.get_argument("name_search", None, json=is_json)
+        past = self.get_argument_bool("past", None, json=is_json)
         tag_name_list = self.get_arguments("tag", json=is_json)
         offset = self.get_argument_int("offset", None, json=is_json)
 
@@ -108,6 +117,7 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler):
             name=name,
             name_search=name_search,
             tag_name_list=tag_name_list,
+            past=past,
             visibility=self.parameters["visibility"],
             address_list_name=address_list_name,
             offset=offset,
@@ -149,6 +159,7 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler):
                 name_search=name_search,
                 tag_name_list=tag_name_list,
                 lookup=self.lookup,
+                past=past,
                 eventtag_list_json=json.dumps(full_eventtag_list),
                 )
 

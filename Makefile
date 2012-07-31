@@ -33,8 +33,10 @@ mysql :
 	@./mysql/mysql_init.py | mysql -u root -p
 	./model.py
 	@cat \
-	  <(echo "use $$(./mysql/mysql_init.py -d database) ;") \
-	  mysql/build.mysql.sql | mysql -u root -p
+	  mysql/build.mysql.sql \
+	  mysql/build_triggers.mysql.sql \
+	  mysql/seed.mysql.sql \
+	 | mysql -u root -p -D $$(./mysql/mysql_init.py -d database)
 
 clean-mysql:
 	@./mysql/mysql_init.py > /dev/null

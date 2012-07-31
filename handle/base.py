@@ -300,6 +300,22 @@ class BaseHandler(tornado.web.RequestHandler):
             default,
             json)
 
+    def get_argument_bool(self, name, default=_ARG_DEFAULT_MANGO, json=False):
+        def helper(value):
+            value = value.strip().lower()
+            if value.strip() in ['yes', 'y', 'true', 't', '1']:
+                return True
+            if value.strip() in ['no', 'n', 'false', 'f', '0']:
+                return False
+            raise ValueError
+            
+        return self.get_argument_restricted(
+            name,
+            helper,
+            "Value must be a boolean, eg. True, y, 1, f, no, 0, etc.",
+            default,
+            json)
+
     def get_argument_float(self, name, default=_ARG_DEFAULT_MANGO, json=False):
         return self.get_argument_restricted(
             name,

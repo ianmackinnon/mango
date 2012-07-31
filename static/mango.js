@@ -267,6 +267,7 @@ var m = {
     var name_search = m.get_field(form, "name_search");
     var lookup = m.get_field(form, "lookup");
     var tag = form.find("input[name='tag']");
+    var past = m.get_field(form, "past");
     var visibility = form.find("input[name='visibility']")
     var dropdown = form.find("ul.dropdown")
     var throbber = $("<img>").attr({
@@ -352,6 +353,10 @@ var m = {
 	"tag": tag_values(),
         "offset": offset || 0,
       });
+      if (past) {
+        console.log(past.input.attr("checked") && past.input.val());
+	data["past"] = past.input.attr("checked") && past.input.val();
+      }
       if (visibility.length) {
 	data["visibility"] = visibility.val()
       }
@@ -378,6 +383,9 @@ var m = {
     m.on_change(name_search.input, "name_search", change, 500);
     m.on_change(lookup.input, "lookup", change, 500);
     m.on_change(tag, "tag", change, 500);
+    if (past) {
+      m.on_change(past.input, "past", change, 500);
+    }
     visibility.change(change);
     process(packet, change);
   },
@@ -490,6 +498,9 @@ var m = {
   "get_field": function(form, name) {
     var label = form.find("label[name='" + name + "']");
     var input = label.find("input, textarea").filter("[name='" + name + "']");
+    if ((!label.length) || (!input.length)) {
+      return null;
+    }
     return {
       "label": label,
       "input": input

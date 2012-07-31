@@ -302,6 +302,12 @@ img.throbber
     display: inline;
 }
 
+.action-bar input[type='text'],
+.action-bar input:not([type])
+{
+    width: 146px;
+}
+
 .action-bar
 {
     border: 1px solid #ccc;
