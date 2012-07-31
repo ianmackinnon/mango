@@ -412,7 +412,6 @@ var m = {
           var position = new google.maps.LatLng(
 	    result.latitude, result.longitude);
           var color;
-          console.log(result);
           if (result.entity == "org") {
             color= "ff7755";
           } else {
@@ -424,6 +423,12 @@ var m = {
 	    map: m.map,
             icon: pin_url,
           });
+          var helper = function() {
+            return function() {
+              location.replace("/address/" + result.address_id);
+            }
+          }
+          google.maps.event.addListener(marker, 'click', helper());
           m.markers.push(marker);
           m.fit_map();
         });

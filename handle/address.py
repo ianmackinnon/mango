@@ -137,7 +137,7 @@ class AddressHandler(BaseAddressHandler):
 
 
 
-class AddressHandler(BaseAddressHandler):
+class AddressListHandler(BaseAddressHandler):
     def get(self):
         key = "address:%s" % ["public", "all"][self.deep_visible()]
 
@@ -150,7 +150,10 @@ class AddressHandler(BaseAddressHandler):
             Address.address_id,
             func.coalesce(Address.latitude, Address.manual_latitude),
             func.coalesce(Address.longitude, Address.manual_longitude),
-            )
+            ).filter(func.coalesce(
+                Address.latitude, Address.manual_latitude,
+                Address.longitude, Address.manual_longitude
+                ) != None);
 
         org_list = address_list \
             .join((org_address,

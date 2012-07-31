@@ -33,7 +33,7 @@ from handle.user import UserHandler, UserListHandler
 from handle.home import HomeHandler
 from handle.note import NoteHandler, NoteNewHandler, NoteListHandler, \
     NoteLinkHandler
-from handle.address import AddressHandler, \
+from handle.address import AddressHandler, AddressListHandler, \
     AddressLookupHandler, AddressNoteListHandler, AddressNoteHandler
 from handle.org import OrgHandler, OrgNewHandler, OrgListHandler, \
     OrgOrgtagListHandler, OrgOrgtagHandler, OrgNoteListHandler, \
@@ -172,7 +172,7 @@ class Application(tornado.web.Application):
             (r"/task/address", OrgListTaskAddressHandler),
             (r"/task/visibility", OrgListTaskVisibilityHandler),
 
-            (r"/address", AddressHandler),
+            (r"/address", AddressListHandler),
             (r"/address/lookup", AddressLookupHandler),
             (r"/address/%s" % re_id, AddressHandler),
             (r"/address/%s/note" % re_id, AddressNoteListHandler),
