@@ -109,6 +109,10 @@ class GenerateMarkerHandler(GenerateHandler):
             template = 'map-marker-circle.svg'
             path = path[:-4]
             form = path[7:].split("-")
+        elif path.startswith("dot-"): 
+            template = 'map-marker-dot.svg'
+            path = path[:-4]
+            form = path[4:].split("-")
         elif path.startswith("pin-"): 
             template = 'map-marker-pin.svg'
             path = path[:-4]
