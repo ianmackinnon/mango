@@ -422,6 +422,7 @@ var m = {
 	    position: position,
 	    map: m.map,
             icon: pin_url,
+            title: result.name,
           });
           var helper = function() {
             return function() {
