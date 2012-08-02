@@ -1,13 +1,29 @@
 <%inherit file="base.html"/>
 
-<%def name="title()">Home</%def>
+<%def name="title()">The Arms Trade on you Doorstep</%def>
 
 <%def name="page()">
 
-<div class="center-box">
+<h1>The arms trade mapped</h1>
 
-  <h2>Search for arms companies and peace groups</h2>
-  <h3>by location</h3>
+<div id="mango-map-box">
+  <div id="mango-map-canvas">Map loading...</div>
+</div>
+
+<div class="box right">
+
+  <h3>The arms trade on your doorstep</h3>
+
+  <p>Sometimes the death and destruction that the arms trade wreaks seems too far away to be relevant to our daily lives. In fact, conflict, repression and destruction around the world are fuelled by weapons and components made all across the UK. Browse our new map of the arms trade in the UK to find the arms trade on you doorstep.</p>
+  
+  <h3>Take action this September</h3>
+  
+  <p>One year before the world's largest arms fair is due to return to London, <a href="">take part in a month of action</a> to show arms companies that <strong>wherever they operate there is opposition</strong></p>
+
+  <h3>Search the map for arms companies:</h2>
+
+  <div class="home-inline">
+  <h3>By location</h3>
   <div class="action-bar home">
     <form id="org-search" action="/organisation" method="get">
       <label name="lookup">
@@ -16,8 +32,10 @@
       <input type="submit">
     </form>
   </div>
+  </div>
 
-  <h3>or by name</h3>
+  <div class="home-inline">
+  <h3>By name</h3>
   <div class="action-bar home">
     <form id="org-search" action="/organisation" method="get">
       <label name="name_search">
@@ -26,11 +44,7 @@
       <input type="submit">
     </form>
   </div>
-
-  <div id="mango-map-box">
-    <div id="mango-map-canvas">Map loading...</div>
   </div>
-  
 
 </div>
 

@@ -52,6 +52,12 @@ input[type="button"]:active
     background: #fff;
 }
 
+p
+{
+    margin: 10px;
+    line-height: 16px;
+}
+
 .section
 {
     clear: both;
@@ -226,6 +232,7 @@ nav a:hover,
 }
 
 
+
 /* forms */
 
 label
@@ -371,6 +378,22 @@ img.throbber
     clear: both;
 }
 
+/* Home */
+
+.home-inline h3
+{
+    margin-left: 10px;
+    display: inline-block;
+    width: 100px;
+}
+.home-inline div
+{
+    display: inline;
+}
+.home-inline .action-bar
+{
+    border: none;
+}
 
 /* Entity */
 
