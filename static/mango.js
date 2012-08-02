@@ -445,6 +445,20 @@ var m = {
 	throbber.hide();
       },
     });
+
+    var manual_control = $("<div class='caption'>");
+    var img1 = $("<img>").attr("src", "/static/image/map/marker/dot-ff7755.png");
+    var img2 = $("<img>").attr("src", "/static/image/map/marker/dot-5577ff.png");
+    var manual_control_hint = $("<ul>");
+    var li1 = $("<li>").text(" Arms company")
+    var li2 = $("<li>").text(" Future action/event")
+    li1.prepend(img1);
+    li2.prepend(img2);
+    manual_control_hint.append(li1);
+    manual_control_hint.append(li2);
+    manual_control.append(manual_control_hint);
+    $("#mango-map-box").append(manual_control);
+
   },
 
   "init_org_search": function() {

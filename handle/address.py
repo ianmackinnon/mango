@@ -172,7 +172,7 @@ class AddressListHandler(BaseAddressHandler):
 
         if not self.deep_visible():
             org_list = org_list.filter(Org.public==True)
-            event_list = org_list.filter(Event.public==True)
+            event_list = event_list.filter(Event.public==True)
         
         address_list = org_list.union(event_list)
 

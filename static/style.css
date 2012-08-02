@@ -394,6 +394,17 @@ img.throbber
 {
     border: none;
 }
+.caption ul
+{
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.caption img
+{
+    display: inline-block;
+    padding: 0 5px;
+}
 
 /* Entity */
 

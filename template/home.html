@@ -46,6 +46,20 @@
   </div>
   </div>
 
+  <h3>Search for upcoming actions and events:</h2>
+
+  <div class="home-inline">
+  <h3>By location</h3>
+  <div class="action-bar home">
+    <form id="event-search" action="/event" method="get">
+      <label name="lookup">
+	<input name="lookup" value="${lookup or ""}" placeholder="Eg. London">
+      </label>
+      <input type="submit">
+    </form>
+  </div>
+  </div>
+
 </div>
 
 </%def>
