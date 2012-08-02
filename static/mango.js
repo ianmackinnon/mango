@@ -417,7 +417,7 @@ var m = {
           } else {
             color= "5577ff";
           }
-          var pin_url = "/static/image/map/marker/pin-" + color + ".png"
+          var pin_url = "/static/image/map/marker/dot-" + color + ".png"
           var marker = new google.maps.Marker({
 	    position: position,
 	    map: m.map,
