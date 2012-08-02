@@ -5,9 +5,12 @@ import os
 import re
 import sys
 import errno
+import urllib
 import hashlib
 import logging
 import memcache
+
+from BeautifulSoup import BeautifulSoup
 
 from mako.template import Template
 from mako.lookup import TemplateLookup
@@ -51,6 +54,8 @@ from handle.history import HistoryHandler
 
 
 define("port", default=8802, help="Run on the given port", type=int)
+define("root", default='', help="URL root", type=str)
+define("caat", default=True, help="CAAT header", type=bool)
 define("database", default="sqlite", help="sqlite or mysql", type=str)
 define("conf", default=".mango.conf", help="eg. .mango.conf", type=str)
 
@@ -90,8 +95,8 @@ class MemcacheCache(object):
     def get(self, key):
         return self._cache.get(self.key(key))
 
-    def set(self, key, value):
-        self._cache.set(self.key(key), value, time=15*60)  # 15 minutes
+    def set(self, key, value, period=15*60):  # 15 minutes
+        self._cache.set(self.key(key), value, time=period)
 
     def delete(self, key):
         self._cache.delete(self.key(key))
@@ -121,6 +126,60 @@ class Application(tornado.web.Application):
         return False
                 
         
+    def caat_header_footer(self):
+        header1 = self.cache.get("header1")
+        header2 = self.cache.get("header2")
+        footer = self.cache.get("footer")
+        if header1 and header2 and footer:
+            return header1, header2, footer
+
+        caat_source = "render-header-footer.php"
+        caat_uri = "http://www.caat.org.uk/resources/mapping/render-header-footer.php"
+        caat_period = 15 * 60 # 15 minutes
+        
+        page = urllib.urlopen(caat_uri).read()
+        soup = BeautifulSoup(page)
+ 
+        regex = re.compile("^[/]")
+        for link in soup.findAll(href=regex):
+            link["href"] = "http://www.caat.org.uk" + link["href"]
+        for link in soup.findAll(src=regex):
+            link["src"] = "http://www.caat.org.uk" + link["src"]
+ 
+        text = unicode(soup)
+
+        text = text.replace("<head>",
+                     """
+<head>
+  <!--[if lt IE 9]>
+  <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+""")
+
+        splitter_1 = '</head>'
+        splitter_2 = '<div id="mapping">'
+
+        assert splitter_2 in text
+
+        header, footer = text.split(splitter_2)
+        header += splitter_2
+
+        assert splitter_1 in header
+
+        header1, header2 = header.split(splitter_1)
+        header2 = splitter_1 + header2
+
+        del header
+
+        self.cache.set("header1", header1, caat_period)
+        self.cache.set("header2", header2, caat_period)
+        self.cache.set("footer", footer, caat_period)
+
+        return header1, header2, footer
+
+
+
     def __init__(self):
 
         self.load_cookie_secret()
@@ -197,6 +256,14 @@ class Application(tornado.web.Application):
 
             (r"/history", HistoryHandler),
             ]
+        
+        self.caat = options.caat
+
+        self.url_root = options.root
+        if not self.url_root.startswith('/'):
+            self.url_root = '/' + self.url_root
+        if not self.url_root.endswith('/'):
+            self.url_root = self.url_root + '/'
 
         if options.database == "mysql":
             (database,
@@ -246,7 +313,7 @@ class Application(tornado.web.Application):
         settings["xsrf_cookies"] = False
         
         tornado.web.Application.__init__(self, self.handler_list, **settings)
-
+        
 
 
 def main():

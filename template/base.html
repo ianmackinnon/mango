@@ -1,15 +1,24 @@
+%if header1:
+${header1 | n}
+%else:
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset=utf-8 />
+%endif
+
   <title>${self.title()}</title>
-  <link href="data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQEAYAAABPYyMiAAAABmJLR0T///////8JWPfcAAAACXBIWXMAAABIAAAASABGyWs+AAAAF0lEQVRIx2NgGAWjYBSMglEwCkbBSAcACBAAAeaR9cIAAAAASUVORK5CYII=" rel="icon" type="image/x-icon" />
-  <link rel="stylesheet" type="text/css" href="/static/style.css" />
-  <link rel="stylesheet" type="text/css" href="/static/jquery-ui.css" />
+  <link rel="stylesheet" type="text/css" href="${url_root}static/style.css" />
+  <link rel="stylesheet" type="text/css" href="${url_root}static/jquery-ui.css" />
+
+%if header2:
+${header2 | n}
+%else:
 </head>
 
 <body>
+%endif
 
   %if messages:
   <table>
@@ -100,8 +109,16 @@ m.parameters = {
 
 ${mini_js | n}
 
+%if footer:
+
+${footer | n}
+
+%else:
+
 </body>
 
 </html>
+
+%endif
 
 <%namespace name="mini" file="mini.html" inheritable="True"/>

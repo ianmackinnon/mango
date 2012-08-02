@@ -234,7 +234,15 @@ class BaseHandler(tornado.web.RequestHandler):
                 "url_rewrite": self.url_rewrite,
                 "parameters": self.parameters,
                 "mini_js" : open("template/mini.js.html").read(),
+                "header1": None,
+                "header2": None,
+                "footer": None,
+                "url_root": self.application.url_root,
                 })
+
+        if self.application.caat:
+            kwargs["header1"], kwargs["header2"], kwargs["footer"] = \
+            self.application.caat_header_footer()
 
         try:
             self.write(mako_template.render(**kwargs))

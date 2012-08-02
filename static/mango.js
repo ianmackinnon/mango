@@ -437,6 +437,9 @@ var m = {
             icon: pin_url,
             title: result.name,
           });
+          if (result.entity == "event") {
+            marker.setZIndex(500);
+          }
           var helper = function() {
             return function() {
               location.replace("/address/" + result.address_id);
@@ -853,6 +856,17 @@ var m = {
     }, 500);
   },
 
+  "event_markdown": function() {
+    var form = $("#event-form")
+    var text = m.get_field(form, "description");
+    m.on_change(text.input, "event-form" + "_" + "text", function(value) {
+      text.label.attr("status", !!value ? "good" : "bad");
+      $(".description.markdown-preview").html(m.filter.markdown(value));
+      m.convert_inline_links($(".description.markdown-preview"));
+    }, 500);
+    
+  },
+
   "set_visibility": function(value) {
     $("a").each(function() {
       var $el = $(this);
@@ -948,7 +962,7 @@ var m = {
       m.build_map();
       m.clear_points();
       m.add_pins();
-      //            m.fit_map();
+      m.fit_map();
     }],
     [/^\/organisation\/([1-9][0-9]*)\/address$/, function() {
       m.build_map();
@@ -962,7 +976,8 @@ var m = {
       m.build_map();
       m.clear_points();
       m.add_pins();
-      //            m.fit_map();
+      m.fit_map();
+      m.event_markdown();
     }],
     [/^\/event\/([1-9][0-9]*)\/address$/, function() {
       m.build_map();

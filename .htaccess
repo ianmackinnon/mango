@@ -1,0 +1,7 @@
+order allow,deny
+deny from all
+
+<Files render-header-footer.php>
+    Order Allow,Deny
+    Allow from all
+</Files>

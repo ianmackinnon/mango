@@ -60,9 +60,9 @@ ${note_form(obj=obj, entity=entity, next=next)}
   ${self.mini.render_note(obj, action=False, id='note-preview')}
   %else:
     <div id="note-preview" class="note">
-      <div class="note-text markdown">
+      <div class="note-text markdown markdown-preview">
       </div>
-      <div class="note-source markdown">
+      <div class="note-source markdown markdown-preview">
       </div>
     </div>
   %endif

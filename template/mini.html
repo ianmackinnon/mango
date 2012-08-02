@@ -108,18 +108,6 @@ if not parameters:
     ${event | n, page_period}
   </div>
 
-  %if tag:
-  <ul class="tag_list">
-    %for tag in event["tag"]:
-    <li class="eventtag">
-      <a
-         href="${url_rewrite(tag["url"], parameters)}"
-         >${tag["name"]}</a>
-    </li>
-    %endfor
-  </ul>
-  %endif
-
   %if "address_list" in event:
   <div class="event_address_list">
     %for address in event["address_list"]:
@@ -145,8 +133,23 @@ if not parameters:
       </div>
     </div>
     %endfor
+
   </div>
   %endif
+
+
+  %if tag:
+  <ul class="tag_list">
+    %for tag in event["tag"]:
+    <li class="eventtag">
+      <a
+         href="${url_rewrite(tag["url"], parameters)}"
+         >${tag["name"]}</a>
+    </li>
+    %endfor
+  </ul>
+  %endif
+
 
   %if note and "note_list" in event:
   <div class="note_len">

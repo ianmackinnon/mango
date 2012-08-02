@@ -694,3 +694,12 @@ ul.dropdown li:hover
 {
     background: #eee;
 }
+
+
+/* Event markdown */
+
+.description.markdown-preview
+{
+    height: 300px;
+    overflow-y: auto;
+}

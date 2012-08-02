@@ -18,6 +18,14 @@
 
   <div id="mango-map-box">
     <div id="mango-map-canvas">Map loading...</div>
+
+    %if current_user:
+    <h3>Description Preview</h3>
+    <div class="description markdown markdown-preview">
+      ${obj and obj["description"] | n, markdown_safe, convert_links}
+    </div>
+    %endif
+
   </div>
   
   <div class="form-by-map" id="event-form">
@@ -94,12 +102,8 @@
 
       <input type="submit">
     </form>
-    %else:
-    ${obj["name"]}
-    %endif
 
     %if obj:
-    %if current_user:
     <form action="${obj["url"]}" method="post">
       <input name="_xsrf" type="hidden" value="${xsrf}">
       <input name="_method" type="hidden" value="delete">
@@ -107,9 +111,20 @@
     </form>
     %endif
 
+    %else:
+    ${obj["name"]}
+
     <h3>Time</h3>
 
     ${obj["start_date"] | n, page_date}
+
+    <h3>Description</h3>
+
+    <div class="description-preview markdown">
+      ${obj and obj["description"] | n, markdown_safe, convert_links}
+    </div>
+
+    %endif
 
     <div class="action-bar no-border">
       <h3>Tags</h3>
@@ -155,8 +170,6 @@
       parameters=parameters,
       )}
     %endfor
-    %endif
-
     %endif
 
   </div>
