@@ -117,6 +117,8 @@ class Application(tornado.web.Application):
             sys.exit(1)
 
     def path_is_authenticated(self, path):
+        if path.startswith(self.url_root):
+            path = "/" + path[len(self.url_root):]
         for row in self.handler_list:
             key, value = row[:2]
             if re.match(key, path) and hasattr(value, "get"):
@@ -183,12 +185,6 @@ class Application(tornado.web.Application):
     def __init__(self):
 
         self.load_cookie_secret()
-
-        settings = dict(
-            xsrf_cookies=True,
-            cookie_secret=self.cookie_secret,
-            login_url="/auth/login",
-            )
 
         re_id = "([1-9][0-9]*)"
 
@@ -264,6 +260,14 @@ class Application(tornado.web.Application):
             self.url_root = '/' + self.url_root
         if not self.url_root.endswith('/'):
             self.url_root = self.url_root + '/'
+
+        settings = dict(
+            xsrf_cookies=True,
+            cookie_secret=self.cookie_secret,
+            login_url=self.url_root + "auth/login",
+            )
+
+        print settings
 
         if options.database == "mysql":
             (database,

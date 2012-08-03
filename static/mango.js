@@ -137,6 +137,11 @@ var m = {
 
   "url_rewrite": function(path, parameters) {
     var url = path;
+    console.log(url);
+    if (url.indexOf("/") == 0) {
+      url = m.url_root + url.substring(1);
+      console.log(url);
+    }
     var query = null;
     $.each(parameters, function(key, value) {
       if (!value) {
@@ -292,7 +297,7 @@ var m = {
     var visibility = form.find("input[name='visibility']")
     var dropdown = form.find("ul.dropdown")
     var throbber = $("<img>").attr({
-      "src": "/static/image/throbber.gif",
+      "src": m.url_root + "static/image/throbber.gif",
       "class": "throbber"
     }).hide();
 
@@ -416,7 +421,7 @@ var m = {
     if (m.parameters.visibility) {
       data["visibility"] = m.parameters.visibility;
     }
-    $.ajax("/address", {
+    $.ajax(m.url_root + "address", {
       "dataType": "json",
       "data": data,
       "success": function(data, textStatus, jqXHR) {
@@ -430,7 +435,7 @@ var m = {
           } else {
             color= "5577ff";
           }
-          var pin_url = "/static/image/map/marker/dot-" + color + ".png"
+          var pin_url = m.url_root + "static/image/map/marker/dot-" + color + ".png"
           var marker = new google.maps.Marker({
 	    position: position,
 	    map: m.map,
@@ -442,7 +447,7 @@ var m = {
           }
           var helper = function() {
             return function() {
-              location.replace("/address/" + result.address_id);
+              location.replace(m.url_root + "address/" + result.address_id);
             }
           }
           google.maps.event.addListener(marker, 'click', helper());
@@ -467,8 +472,8 @@ var m = {
     });
 
     var manual_control = $("<div class='caption'>");
-    var img1 = $("<img>").attr("src", "/static/image/map/marker/dot-ff7755.png");
-    var img2 = $("<img>").attr("src", "/static/image/map/marker/dot-5577ff.png");
+    var img1 = $("<img>").attr("src", m.url_root + "static/image/map/marker/dot-ff7755.png");
+    var img2 = $("<img>").attr("src", m.url_root + "static/image/map/marker/dot-5577ff.png");
     var manual_control_hint = $("<ul>");
     var li1 = $("<li>").text(" Arms company")
     var li2 = $("<li>").text(" Future action/event")
@@ -504,7 +509,7 @@ var m = {
     var search = m.get_field(form, field);
     var visibility = form.find("input[name='visibility']")
     var throbber = $("<img>").attr({
-      "src": "/static/image/throbber.gif",
+      "src": m.url_root + "static/image/throbber.gif",
       "class": "throbber"
     }).hide();
     form.append(throbber);
@@ -522,7 +527,7 @@ var m = {
 	data["visibility"] = visibility.val()
 	console.log(data);
       }
-      xhr = $.ajax("/organisation-tag", {
+      xhr = $.ajax(m.url_root + "organisation-tag", {
 	"dataType": "json",
 	"data": data,
 	"success": function(data, textStatus, jqXHR) {
@@ -702,7 +707,7 @@ var m = {
     });
     
     var address_search = function() {
-      $.ajax("/address/lookup", {
+      $.ajax(m.url_root + "address/lookup", {
 	"dataType": "json",
 	"data": {
 	  "postal": postal.input.val(),
@@ -785,8 +790,8 @@ var m = {
 	color = "ddddff";
 	z_index = 100;
       }
-      var pin_url = "/static/image/map/marker/pin-" + color + "-" + letter + ".png"
-      var circle_url = "/static/image/map/marker/circle-" + color + "-" + letter + ".png"
+      var pin_url = m.url_root + "static/image/map/marker/pin-" + color + "-" + letter + ".png"
+      var circle_url = m.url_root + "static/image/map/marker/circle-" + color + "-" + letter + ".png"
       
       var marker = new google.maps.Marker({
 	position: position,
@@ -804,7 +809,7 @@ var m = {
     });
     circle = $("<img>").attr(
       "src",
-      "/static/circleUnknown.png");
+      m.url_root + "static/circleUnknown.png");
     $(".pin:not([latitude])").empty().append(circle);
   },
 
@@ -876,7 +881,7 @@ var m = {
       if (!$el.attr("href")) {
         return;
       }
-      if ($el.attr("href").substring(0, 1) != "/") {
+      if ($el.attr("href").indexOf(m.url_root) != 0) {
 	return;
       }
       var href = $el.attr("href");
@@ -1016,6 +1021,12 @@ var m = {
   
   "handle": function() {
     var path = window.location.pathname;
+    if (path.indexOf(m.url_root) != 0) {
+      console.log("Path does not match url root", path, m.url_root);
+    }
+    path = "/" + path.substring(m.url_root.length);
+    console.log(path);
+    console.log(m.url_root);
     $.each(m.route, function(index, value) {
       regex = value[0];
       func = value[1];

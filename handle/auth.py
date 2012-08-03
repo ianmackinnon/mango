@@ -11,7 +11,7 @@ class AuthLoginHandler(BaseHandler):
     def get(self):
         self.render(
             'login.html',
-            next=self.next or '/',
+            next=self.next or self.application.url_root,
             )
 
 
@@ -30,7 +30,7 @@ class AuthLoginLocalHandler(BaseHandler):
         self.orm.add(session)
         self.orm.flush()
         self.start_session(str(session.session_id))
-        self.redirect(self.next or '/')
+        self.redirect(self.next or self.application.url_root)
 
 
 
@@ -40,10 +40,11 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
     
     @tornado.web.asynchronous
     def get(self):
+        print self.get_login_url()
         if self.get_argument("openid.mode", None):
             self.get_authenticated_user(self.async_callback(self._on_auth))
             return
-        self.authenticate_redirect()
+        self.authenticate_redirect(self.get_login_url())
     
     def _on_auth(self, auth_user):
         """
@@ -72,7 +73,7 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
         self.orm.flush()
         self.start_session(str(session.session_id))
 
-        self.redirect(self.next or '/')
+        self.redirect(self.next or self.application.url_root)
 
 
 
@@ -84,8 +85,8 @@ class AuthLogoutHandler(BaseHandler):
         self.end_session()
         self.clear_cookie("_xsrf")
         if self.next and self.application.path_is_authenticated(self.next):
-            self.next = '/'
-        self.redirect(self.next or '/')
+            self.next = self.application.url_root
+        self.redirect(self.next or self.application.url_root)
 
 
 

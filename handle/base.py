@@ -197,8 +197,13 @@ class BaseHandler(tornado.web.RequestHandler):
         uri = self.request.path + "?" + urlencode(arguments, True)
         return uri
 
-    def url_rewrite(self, path, options):
+    def url_rewrite(self, path, options=None):
+        if options is None:
+            options = {}
         uri = path
+        print uri
+        if uri.startswith("/"):
+            uri = self.application.url_root + uri[1:]
         for key, value in options.items():
             if value is None:
                 del options[key]

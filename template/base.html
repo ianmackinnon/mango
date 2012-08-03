@@ -6,6 +6,8 @@ ${header1 | n}
 
 <head>
   <meta charset=utf-8 />
+  <script type="text/javascript" src="${url_root}static/jquery.min.js"></script>
+  <script type="text/javascript" src="${url_root}static/jquery-ui.min.js"></script>
 %endif
 
   <title>${self.title()}</title>
@@ -14,11 +16,21 @@ ${header1 | n}
 
 %if header2:
 ${header2 | n}
+<a href=".">Arms trade map</a> |
+<a href="about-this-map.php">About this map</a> |
+<a href="why-take-action.php">Why take action?</a> |
+<a href="expose-the-arms-trade.php">Expose the arms trade</a> | 
+<a href="creative-action.php">Creative action</a> |
+<a href="make-links-with-others.php">Make links with others</a> | 
+<a href="doing-more-digging.php">Doing more digging</a>
+
 %else:
 </head>
 
 <body>
 %endif
+
+<div id="mango">
 
   %if messages:
   <table>
@@ -55,9 +67,9 @@ ${header2 | n}
 	   src="http://gravatar.com/avatar/${hash}?d=identicon&s=24">
       ${current_user.name}
     </a>
-    <a href="/auth/logout?next=${uri}">Log out</a>
+    <a href="${url_rewrite("/auth/logout", {"next": url_rewrite(uri)})}">Log out</a>
     %else:
-    <a href="/auth/login?next=${uri}">Log in</a>
+    <a href="${url_rewrite("/auth/login", {"next": url_rewrite(uri)})}">Log in</a>
     %endif
   </div>
 
@@ -93,13 +105,14 @@ ${parameters.get("visibility", "public")=="all" and " selected" or "" | n}"
 
 </div>
 
-<script type="text/javascript" src="/static/jquery.min.js"></script>
-<script type="text/javascript" src="/static/jquery-ui.min.js"></script>
-<script type="text/javascript" src="/static/markdown.js"></script>
-<script type="text/javascript" src="http://maps.google.com/maps/api/js?libraries=geometry&amp;sensor=false"></script>
-<script type="text/javascript" src="/static/mango.js"></script>
+</div>
+
+<script type="text/javascript" src="${url_root}static/markdown.js"></script>
+<script type="text/javascript" src="http://maps.google.com/maps/api/js?libraries=geometry&sensor=false"></script>
+<script type="text/javascript" src="${url_root}static/mango.js"></script>
 
 <script type="text/javascript">
+m.url_root = "${url_root}";
 m.parameters = {
 %if "visibility" in parameters:
   visibility: "${parameters["visibility"]}"
