@@ -369,7 +369,7 @@ if not parameters:
     parameters = {}
 %>\
     <div ${id and 'id="%s" ' % id or '' | n}class="note">
-      ${visibility_bar(note)}
+      ${visibility_bar(obj)}
       <div class="note-text markdown">
 	${obj["text"] | n, markdown_safe, convert_links}
       </div>
