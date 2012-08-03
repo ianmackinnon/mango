@@ -1,5 +1,5 @@
 %if header1:
-${header1 | n}
+${header1.replace("/render-header-footer.php", uri) | n}
 %else:
 <!DOCTYPE html>
 <html lang="en">
@@ -16,7 +16,7 @@ ${header1 | n}
   <script type="text/javascript" src="${url_root}static/jquery-ui.min.js"></script>
  
 %if header2:
-${header2 | n}
+${header2.replace("/render-header-footer.php", uri) | n}
 <div id="caat-page-links">
 <a href=".">Arms trade map</a> |
 <a href="about-this-map.php">About this map</a> |
@@ -127,7 +127,7 @@ ${mini_js | n}
 
 %if footer:
 
-${footer | n}
+${footer.replace("/render-header-footer.php", uri) | n}
 
 %else:
 
