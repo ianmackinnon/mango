@@ -39,7 +39,7 @@ class NoteListHandler(BaseNoteHandler):
                     )
         self.orm.add(note)
         self.orm.commit()
-        self.redirect(self.next or note.url)
+        self.redirect(self.next or self.url_root[:-1] + note.url)
 
 
 
@@ -123,7 +123,7 @@ class NoteHandler(BaseNoteHandler):
         note = self._get_note(note_id_string)
         self.orm.delete(note)
         self.orm.commit()
-        self.redirect(self.next or "/note")
+        self.redirect(self.next or self.url_root[:-1] + "/note")
         
     @authenticated
     def put(self, note_id_string):
@@ -134,7 +134,7 @@ class NoteHandler(BaseNoteHandler):
         if note.text == text and \
                 note.public == public and \
                 note.source == source:
-            self.redirect(self.next or note.url)
+            self.redirect(self.next or self.url_root[:-1] + note.url)
             return
 
         note.text = text
@@ -142,4 +142,4 @@ class NoteHandler(BaseNoteHandler):
         note.public = public
         note.moderation_user = self.current_user
         self.orm.commit()
-        self.redirect(self.next or note.url)
+        self.redirect(self.next or self.url_root[:-1] + note.url)

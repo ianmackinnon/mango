@@ -160,7 +160,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
         org = Org(name, moderation_user=self.current_user, public=public)
         self.orm.add(org)
         self.orm.commit()
-        self.redirect(self.next or org.url)
+        self.redirect(self.next or self.url_root[:-1] + org.url)
 
 
 
@@ -229,7 +229,7 @@ class OrgHandler(BaseOrgHandler):
         org = self._get_org(org_id_string)
         self.orm.delete(org)
         self.orm.commit()
-        self.redirect(self.next or "/organisation")
+        self.redirect(self.next or self.url_root[:-1] + "/organisation")
         
     @authenticated
     def put(self, org_id_string):
@@ -241,14 +241,14 @@ class OrgHandler(BaseOrgHandler):
 
         if org.name == name and \
                 org.public == public:
-            self.redirect(self.next or org.url)
+            self.redirect(self.next or self.url_root[:-1] + org.url)
             return
 
         org.name = name
         org.public = public
         org.moderation_user = self.current_user
         self.orm.commit()
-        self.redirect(self.next or org.url)
+        self.redirect(self.next or self.url_root[:-1] + org.url)
         
 
 
@@ -286,7 +286,7 @@ class OrgAddressListHandler(BaseOrgHandler, BaseAddressHandler):
         address.geocode()
         org.address_list.append(address)
         self.orm.commit()
-        self.redirect(self.next or org.url)
+        self.redirect(self.next or self.url_root[:-1] + org.url)
 
 
 
@@ -303,7 +303,7 @@ class OrgNoteListHandler(BaseOrgHandler, BaseNoteHandler):
                     )
         org.note_list.append(note)
         self.orm.commit()
-        self.redirect(self.next or org.url)
+        self.redirect(self.next or self.url_root[:-1] + org.url)
 
     @authenticated
     def get(self, org_id_string):
@@ -328,7 +328,7 @@ class OrgAddressHandler(BaseOrgHandler, BaseAddressHandler):
         if address not in org.address_list:
             org.address_list.append(address)
             self.orm.commit()
-        self.redirect(self.next or org.url)
+        self.redirect(self.next or self.url_root[:-1] + org.url)
 
     @authenticated
     def delete(self, org_id_string, address_id_string):
@@ -337,7 +337,7 @@ class OrgAddressHandler(BaseOrgHandler, BaseAddressHandler):
         if address in org.address_list:
             org.address_list.remove(address)
             self.orm.commit()
-        self.redirect(self.next or org.url)
+        self.redirect(self.next or self.url_root[:-1] + org.url)
 
 
 
@@ -349,7 +349,7 @@ class OrgNoteHandler(BaseOrgHandler, BaseNoteHandler):
         if note not in org.note_list:
             org.note_list.append(note)
             self.orm.commit()
-        self.redirect(self.next or org.url)
+        self.redirect(self.next or self.url_root[:-1] + org.url)
 
     @authenticated
     def delete(self, org_id_string, note_id_string):
@@ -358,7 +358,7 @@ class OrgNoteHandler(BaseOrgHandler, BaseNoteHandler):
         if note in org.note_list:
             org.note_list.remove(note)
             self.orm.commit()
-        self.redirect(self.next or org.url)
+        self.redirect(self.next or self.url_root[:-1] + org.url)
 
 
 
@@ -429,7 +429,7 @@ class OrgOrgtagHandler(BaseOrgHandler, BaseOrgtagHandler):
             org.orgtag_list.append(orgtag)
             self.orm.commit()
         print self.next
-        self.redirect(self.next or org.url)
+        self.redirect(self.next or self.url_root[:-1] + org.url)
 
     @authenticated
     def delete(self, org_id_string, orgtag_id_string):
@@ -438,7 +438,7 @@ class OrgOrgtagHandler(BaseOrgHandler, BaseOrgtagHandler):
         if orgtag in org.orgtag_list:
             org.orgtag_list.remove(orgtag)
             self.orm.commit()
-        self.redirect(self.next or org.url)
+        self.redirect(self.next or self.url_root[:-1] + org.url)
 
 
 

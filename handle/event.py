@@ -180,7 +180,7 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler):
             moderation_user=self.current_user, public=public)
         self.orm.add(event)
         self.orm.commit()
-        self.redirect(self.next or event.url)
+        self.redirect(self.next or self.url_root[:-1] + event.url)
 
 
 
@@ -250,7 +250,7 @@ class EventHandler(BaseEventHandler):
         event = self._get_event(event_id_string)
         self.orm.delete(event)
         self.orm.commit()
-        self.redirect(self.next or "/event")
+        self.redirect(self.next or self.url_root[:-1] + "/event")
         
     @authenticated
     def put(self, event_id_string):
@@ -274,7 +274,7 @@ class EventHandler(BaseEventHandler):
                 event.start_time == start_time and \
                 event.end_time == end_time and \
                 event.public == public:
-            self.redirect(self.next or event.url)
+            self.redirect(self.next or self.url_root[:-1] + event.url)
             return
 
         event.name = name
@@ -286,7 +286,7 @@ class EventHandler(BaseEventHandler):
         event.moderation_user = self.current_user
         event.public = public
         self.orm.commit()
-        self.redirect(self.next or event.url)
+        self.redirect(self.next or self.url_root[:-1] + event.url)
 
 
 
@@ -322,7 +322,7 @@ class EventAddressListHandler(BaseEventHandler, BaseAddressHandler):
         address.geocode()
         event.address_list.append(address)
         self.orm.commit()
-        self.redirect(self.next or event.url)
+        self.redirect(self.next or self.url_root[:-1] + event.url)
 
 
 
@@ -339,7 +339,7 @@ class EventNoteListHandler(BaseEventHandler, BaseNoteHandler):
                     )
         event.note_list.append(note)
         self.orm.commit()
-        self.redirect(self.next or event.url)
+        self.redirect(self.next or self.url_root[:-1] + event.url)
 
     @authenticated
     def get(self, event_id_string):
@@ -364,7 +364,7 @@ class EventAddressHandler(BaseEventHandler, BaseAddressHandler):
         if address not in event.address_list:
             event.address_list.append(address)
             self.orm.commit()
-        self.redirect(self.next or event.url)
+        self.redirect(self.next or self.url_root[:-1] + event.url)
 
     @authenticated
     def delete(self, event_id_string, address_id_string):
@@ -373,7 +373,7 @@ class EventAddressHandler(BaseEventHandler, BaseAddressHandler):
         if address in event.address_list:
             event.address_list.remove(address)
             self.orm.commit()
-        self.redirect(self.next or event.url)
+        self.redirect(self.next or self.url_root[:-1] + event.url)
 
 
 
@@ -385,7 +385,7 @@ class EventNoteHandler(BaseEventHandler, BaseNoteHandler):
         if note not in event.note_list:
             event.note_list.append(note)
             self.orm.commit()
-        self.redirect(self.next or event.url)
+        self.redirect(self.next or self.url_root[:-1] + event.url)
 
     @authenticated
     def delete(self, event_id_string, note_id_string):
@@ -394,7 +394,7 @@ class EventNoteHandler(BaseEventHandler, BaseNoteHandler):
         if note in event.note_list:
             event.note_list.remove(note)
             self.orm.commit()
-        self.redirect(self.next or event.url)
+        self.redirect(self.next or self.url_root[:-1] + event.url)
 
 
 
@@ -465,7 +465,7 @@ class EventEventtagHandler(BaseEventHandler, BaseEventtagHandler):
             event.eventtag_list.append(eventtag)
             self.orm.commit()
         print self.next
-        self.redirect(self.next or event.url)
+        self.redirect(self.next or self.url_root[:-1] + event.url)
 
     @authenticated
     def delete(self, event_id_string, eventtag_id_string):
@@ -474,7 +474,7 @@ class EventEventtagHandler(BaseEventHandler, BaseEventtagHandler):
         if eventtag in event.eventtag_list:
             event.eventtag_list.remove(eventtag)
             self.orm.commit()
-        self.redirect(self.next or event.url)
+        self.redirect(self.next or self.url_root[:-1] + event.url)
 
 
 

@@ -194,7 +194,12 @@ class BaseHandler(tornado.web.RequestHandler):
     def query_rewrite(self, options):
         arguments = self.request.arguments
         arguments.update(options)
-        uri = self.request.path + "?" + urlencode(arguments, True)
+        uri = self.request.path
+        print uri
+        if uri.startswith("/"):
+            uri = self.application.url_root + uri[1:]
+        print uri
+        uri += "?" + urlencode(arguments, True)
         return uri
 
     def url_rewrite(self, path, options=None):
@@ -574,6 +579,10 @@ class BaseHandler(tornado.web.RequestHandler):
     @property
     def cache(self):
         return self.application.cache
+
+    @property
+    def url_root(self):
+        return self.application.url_root
 
 
 

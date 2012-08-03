@@ -1,5 +1,8 @@
 <h4>Add note</h4>
-<form action="${orgtag.url}/note" method="post">
+<form
+   action="${url_rewrite(orgtag.url + "/note", parameters)}"
+   method="post"
+   >
   <input name="_xsrf" type="hidden" value="${xsrf}">
   <label>
     <span>Text</span>

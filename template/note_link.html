@@ -53,7 +53,10 @@
       </span>
 
       <span>
-	<form action="${org.url}${note.url}?next=${uri}" method="post">
+	<form
+           action="${url_rewrite(org.url + not.url, dict(parameters, {"next": url_rewrite(uri)))}"
+           method="post"
+           >
 	  <input name="_xsrf" type="hidden" value="${xsrf}">
 	  <input name="_method" type="hidden" value="put">
 	  <input type="submit" value="+">
@@ -103,7 +106,10 @@
       </span>
 
       <span>
-	<form action="${orgtag.url}${note.url}?next=${uri}" method="post">
+	<form
+           action="${url_rewrite(orgtag.url + not.url, dict(parameters, {"next": url_rewrite(uri)))}"
+           method="post"
+           >
 	  <input name="_xsrf" type="hidden" value="${xsrf}">
 	  <input name="_method" type="hidden" value="put">
 	  <input type="submit" value="+">

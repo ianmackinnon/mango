@@ -13,9 +13,11 @@ ${header1 | n}
   <title>${self.title()}</title>
   <link rel="stylesheet" type="text/css" href="${url_root}static/style.css" />
   <link rel="stylesheet" type="text/css" href="${url_root}static/jquery-ui.css" />
-
+  <script type="text/javascript" src="${url_root}static/jquery-ui.min.js"></script>
+ 
 %if header2:
 ${header2 | n}
+<div id="caat-page-links">
 <a href=".">Arms trade map</a> |
 <a href="about-this-map.php">About this map</a> |
 <a href="why-take-action.php">Why take action?</a> |
@@ -23,6 +25,7 @@ ${header2 | n}
 <a href="creative-action.php">Creative action</a> |
 <a href="make-links-with-others.php">Make links with others</a> | 
 <a href="doing-more-digging.php">Doing more digging</a>
+</div>
 
 %else:
 </head>

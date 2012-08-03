@@ -12,7 +12,10 @@
     
     <h3>Organisation</h3>
     
-    <form action="/organisation" method="post">
+    <form
+       action="${url_rewrite("/organisation", parameters)}"
+       method="post"
+       >
       <input name="_xsrf" type="hidden" value="${xsrf}">
       <label name="name">
 	<span>Name</span>

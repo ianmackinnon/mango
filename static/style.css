@@ -1,31 +1,30 @@
 /* general */
 
-html,
-textarea,
-input[type="submit"],
-input[type="button"]
+#mango
+{
+    width: 800px;
+}
+
+#caat-page-links
+{
+    width: 800px;
+    margin: 10px;
+    text-align: center;
+    font-size: 80%;
+}
+
+#mango,
+#mango textarea,
+#mango input[type="submit"],
+#mango input[type="button"]
 {
     font-size: 12px;
     font-family: helvetica;
 }
 
-a
-{
-    color: #339;
-    text-decoration: none;
-}
-a:visited
-{
-    color: #639;
-}
-a:hover
-{
-    text-decoration: underline;
-}
-
-a.action,
-input[type="submit"],
-input[type="button"]
+#mango a.action,
+#mango input[type="submit"],
+#mango input[type="button"]
 {
     border: 1px solid #ccc;
     border-radius: 3px;
@@ -34,80 +33,81 @@ input[type="button"]
     color: #333;
     background: #f8f8f8;
 }
-a.action:hover,
-input[type="submit"]:hover,
-input[type="button"]:hover
+#mango a.action:hover,
+#mango input[type="submit"]:hover,
+#mango input[type="button"]:hover
 {
     text-decoration: none;
     color: #333;
     border-color: #999;
     cursor: pointer;
 }
-a.action:active,
-input[type="submit"]:active,
-input[type="button"]:active
+#mango a.action:active,
+#mango input[type="submit"]:active,
+#mango input[type="button"]:active
 {
     color: #666;
     border-color: #ccc;
     background: #fff;
 }
 
-p
+#mango p
 {
     margin: 10px;
     line-height: 16px;
 }
 
-.section
+#mango .section
 {
     clear: both;
     overflow: auto;
     margin-bottom: 10px;
 }
 
-h1
+#mango h1
 {
+    text-align: left;
     margin: 12px 2px 8px 2px;
 }
 
-h2
+#mango h2
 {
     margin: 12px 2px 8px 2px;
     line-height: 22px;
 }
 
-h3
+#mango h3
 {
     margin: 6px 2px 8px 2px;
     line-height: 22px;
 }
 
-label
+#mango label
 {
     border: 1px solid #aaa;
     border-radius: 3px;
     background: #ddd;
 }
 
-label[status="bad"]
+#mango label[status="bad"]
 {
     border-color: #caa;
     background: #fcc;
 }
 
-label[status="good"]
+#mango label[status="good"]
 {
     border-color: #aca;
     background: #cfc;
 }
 
-input[disabled="disabled"]
+#mango input[disabled="disabled"]
 {
     opacity: .5;
 }
 
 
-.sublinks
+#mango .sublinks
 {
     margin: 2px;
     margin-bottom: 6px;
@@ -115,19 +115,12 @@ input[disabled="disabled"]
 
 /* page */
 
-body
-{
-    width: 800px;
-    margin: auto;
-    padding: 0px;
-}
-
 #page
 {
     clear: both;
 }
 
-div.box
+#mango div.box
 {
     width: 390px;
 
@@ -137,33 +130,33 @@ div.box
     padding: 2px;
 }
 
-div.box.full
+#mango div.box.full
 {
     float: left;
     width: 790px;
 }
 
-div.box.left
+#mango div.box.left
 {
     float: left;
 }
 
-div.box.right
+#mango div.box.right
 {
     float: right;
 }
 
-div.center-box
+#mango div.center-box
 {
     text-align: center;
 }
 
-nav,
+#mango nav,
 #account
 {
     margin: 4px 0;
 }
-nav
+#mango nav
 {
     float: left;
 }
@@ -171,7 +164,7 @@ nav
 {
     float: right;
 }
-nav a,
+#mango nav a,
 #account a,
 #visibility a
 {
@@ -182,24 +175,24 @@ nav a,
     padding: 0px 6px;
     line-height: 23px;
 }
-nav .nav-group
+#mango nav .nav-group
 {
     display: inline-block;
 }
-nav .nav-group a
+#mango nav .nav-group a
 {
     border-radius: 0;
     border-right: 0;
     margin-right: 0;
     margin-left: 0;
 }
-nav .nav-group a:first-of-type
+#mango nav .nav-group a:first-of-type
 {
     border-top-left-radius: 3px;
     border-bottom-left-radius: 3px;
     margin-left: 2px;
 }
-nav .nav-group a:last-of-type
+#mango nav .nav-group a:last-of-type
 {
     border-top-right-radius: 3px;
     border-bottom-right-radius: 3px;
@@ -223,7 +216,7 @@ nav .nav-group a:last-of-type
     background: #eee;
 }
 
-nav a:hover,
+#mango nav a:hover,
 #account a:hover,
 #visibility a:hover
 {
@@ -235,7 +228,7 @@ nav a:hover,
 
 /* forms */
 
-label
+#mango label
 {
     float: left;
     display: block;
@@ -246,8 +239,8 @@ label
     margin-bottom: 4px;
     padding: 2px;
 }
-input,
-textarea
+#mango input,
+#mango textarea
 {
     margin: -2px;
     margin-top: 1px;
@@ -258,29 +251,29 @@ textarea
     border-bottom-right-radius: 3px;
     padding: 2px;
 }
-input
+#mango input
 {
     width: 384px;
 }
-textarea
+#mango textarea
 {
     resize: none;
     height: 100px;
     width: 187px;
 }
-label.textarea
+#mango label.textarea
 {
     width: 187px;
 }
-input[type="button"],
-input[type="submit"]
+#mango input[type="button"],
+#mango input[type="submit"]
 {
     width: 390px;
     margin: 0px;
     padding: 2px 4px;
     margin-bottom: 4px;
 }
-span.checkbox
+#mango span.checkbox
 {
     margin: 0 2px;
     border: 1px solid #ccc;
@@ -288,13 +281,13 @@ span.checkbox
     padding: 2px;
     padding-top: 3px;
 }
-input[type="checkbox"]
+#mango input[type="checkbox"]
 {
     position: relative;
     top: 2px;
     
 }
-img.throbber
+#mango img.throbber
 {
     position: relative;
     top: 4px;
@@ -304,18 +297,18 @@ img.throbber
 
 /* action */
 
-.action-bar form
+#mango .action-bar form
 {
     display: inline;
 }
 
-.action-bar input[type='text'],
-.action-bar input:not([type])
+#mango .action-bar input[type='text'],
+#mango .action-bar input:not([type])
 {
     width: 146px;
 }
 
-.action-bar
+#mango .action-bar
 {
     border: 1px solid #ccc;
     border-radius: 3px;
@@ -325,17 +318,17 @@ img.throbber
     padding: 4px;
     line-height: 26px;
 }
-.action-bar.no-border
+#mango .action-bar.no-border
 {
     margin: 0px;
     border: none;
 }
-.action-bar.right
+#mango .action-bar.right
 {
     text-align: right;
 }
 
-.action-bar *
+#mango .action-bar *
 {
     display: inline;
     margin: auto;
@@ -343,64 +336,64 @@ img.throbber
     width: auto;
 }
 
-.action-bar label
+#mango .action-bar label
 {
     float: none;
     border: none;
     background: inherit;
 }
-.action-bar input
+#mango .action-bar input
 {
     border: 1px solid #ccc;
     border-radius: 3px;
 }
-.action-bar input[type='submit']
+#mango .action-bar input[type='submit']
 {
     margin-bottom: 0px;
     padding-top: 3px;
     width: auto;
 }
-.actions
+#mango .actions
 {
     float: right;
     margin: auto;
     text-align: right;
     line-height: 22px;
 }
-.action-bar.home
+#mango .action-bar.home
 {
     margin: auto;
     width: 240px;
     text-align: center;
 }
-.action-bar.section
+#mango .action-bar.section
 {
     clear: both;
 }
 
 /* Home */
 
-.home-inline h3
+#mango .home-inline h3
 {
     margin-left: 10px;
     display: inline-block;
     width: 100px;
 }
-.home-inline div
+#mango .home-inline div
 {
     display: inline;
 }
-.home-inline .action-bar
+#mango .home-inline .action-bar
 {
     border: none;
 }
-.caption ul
+#mango .caption ul
 {
     margin: 0;
     padding: 0;
     list-style: none;
 }
-.caption img
+#mango .caption img
 {
     display: inline-block;
     padding: 0 5px;
@@ -408,7 +401,7 @@ img.throbber
 
 /* Entity */
 
-.visibility
+#mango .visibility
 {
     margin-bottom: 8px;
     border-radius: 2px;
@@ -416,23 +409,23 @@ img.throbber
     text-align: center;
     opacity: .75;
 }
-.visibility.public { background: #cfc; }
-.visibility.private { background: #fcc; }
-.visibility.pending { background: #ddd; }
+#mango .visibility.public { background: #cfc; }
+#mango .visibility.private { background: #fcc; }
+#mango .visibility.pending { background: #ddd; }
 
 
 /* org / Event */
 
-div.org-box,
-div.event-box
+#mango div.org-box,
+#mango div.event-box
 {
     margin-top: 2px;
     border: 1px solid #aaa;
     padding: 2px;
     border-radius: 3px;
 }
-div.org_name,
-div.event_name
+#mango div.org_name,
+#mango div.event_name
 {
     padding-bottom: 4px;
 }
@@ -458,7 +451,7 @@ div.event_name
 
 /* address */
 
-.address_list
+#mango .address_list
 {
 }
 
@@ -480,36 +473,36 @@ div.event_name
     border-radius: 3px;
 }
 
-div.address-box
+#mango div.address-box
 {
     margin-top: 2px;
     border: 1px solid #aaa;
     padding: 2px;
     border-radius: 3px;
 }
-div.address-row
+#mango div.address-row
 {
     margin: 6px 0;
     overflow: auto;
 }
-div.address-row .pin
+#mango div.address-row .pin
 {
     float: left;
     width: 22px;
     padding: 4px;
 }
-div.address-row .address
+#mango div.address-row .address
 {
     max-width: 90%;
     float: left;
 }
-div.address-row .control
+#mango div.address-row .control
 {
     clear: both;
     padding-top: 4px;
 }
-div.address-row form,
-div.address-row input
+#mango div.address-row form,
+#mango div.address-row input
 {
     display: inline;
     width: auto;
@@ -517,7 +510,7 @@ div.address-row input
 
 /* tag */
 
-ul.tag_list
+#mango ul.tag_list
 {
     display: inline;
     list-style-type: none;
@@ -525,12 +518,12 @@ ul.tag_list
     margin: 0px;
     line-height: 24px;
 }
-ul.tag_list *
+#mango ul.tag_list *
 {
     width: auto;
     display: inline;
 }
-ul.tag_list li
+#mango ul.tag_list li
 {
     margin: 2px;
     border: 1px solid #ccc;
@@ -538,7 +531,7 @@ ul.tag_list li
     border-radius: 3px;
     background: #f8f8f8;
 }
-ul.tag_list input
+#mango ul.tag_list input
 {
     margin: 0;
     border: 0;
@@ -549,59 +542,59 @@ ul.tag_list input
     color: #339;
     text-decoration: none;
 }
-ul.tag_list input:visited
+#mango ul.tag_list input:visited
 {
     color: #639;
 }
-ul.tag_list input:hover
+#mango ul.tag_list input:hover
 {
     text-decoration: underline;
 }
-.has-notes
+#mango .has-notes
 {
     background: #fff;
 }
 
 /* note */
 
-.note
+#mango .note
 {
     border-top: 1px solid #ccc;
     padding: 0;
     overflow: auto;
     padding-top: 2px;
 }
-.note:first-child
+#mango .note:first-child
 {
     border-top: none;
 }
-.note-text,
-.note-date,
-.note-source
+#mango .note-text,
+#mango .note-date,
+#mango .note-source
 {
     padding: 4px;
 }
-.note-date
+#mango .note-date
 {
     display: inline;
     float: left;
     opacity: .5;
     z-index: 10;
 }
-.note p:first-child
+#mango .note p:first-child
 {
     margin-top: 0;
 }
-.note p:last-child
+#mango .note p:last-child
 {
     margin-bottom: 0;
 }
-.note-source
+#mango .note-source
 {
     text-align: right;
     opacity: .5;
 }
-.note-source > p
+#mango .note-source > p
 {
     margin: 0;
     padding: 0;
@@ -652,26 +645,26 @@ ul.tag_list input:hover
 
 /* history */
 
-table.history
+#mango table.history
 {
     margin: 0 auto;
 }
 
-table.history td
+#mango table.history td
 {
     padding: 0 20px;
 }
 
 /* dropdown */
 
-div.dropdown
+#mango div.dropdown
 {
     position: relative;
     width: 0;
     height: 0;
 }
 
-ul.dropdown
+#mango ul.dropdown
 {
     display: none;
     position: absolute;
@@ -683,14 +676,14 @@ ul.dropdown
     padding: 0;
     z-index: 20;
 }
-ul.dropdown li
+#mango ul.dropdown li
 {
     padding: 4px;
     margin: 0;
     display: block;
     line-height: 16px;
 }
-ul.dropdown li:hover
+#mango ul.dropdown li:hover
 {
     background: #eee;
 }
@@ -698,7 +691,7 @@ ul.dropdown li:hover
 
 /* Event markdown */
 
-.description.markdown-preview
+#mango .description.markdown-preview
 {
     height: 300px;
     overflow-y: auto;

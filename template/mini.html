@@ -191,7 +191,10 @@ if not parameters:
 
     %if unlink and link_url:
     <span>
-      <form action="${link_url}?next=${uri}" method="post">
+      <form
+         action="${url_rewrite(link_url, dict(parameters, next=url_rewrite(uri)))}"
+         method="post"
+         >
 	<input name="_xsrf" type="hidden" value="${xsrf}">
 	<input name="_method" type="hidden" value="delete">
 	<input type="submit" value="Delete">
@@ -221,7 +224,10 @@ if not parameters:
 %if unlink and link_url and current_user:
 &nbsp;\
 <span>\
-<form action="${link_url}?next=${uri}" method="post">\
+<form
+   action="${url_rewrite(link_url, dict(parameters, next=url_rewrite(uri)))}"
+   method="post"
+   >\
 <input name="_xsrf" type="hidden" value="${xsrf}">\
 <input name="_method" type="hidden" value="delete">\
 <input type="submit" value="✕">\
@@ -251,7 +257,10 @@ if not parameters:
 %if unlink and link_url and current_user:
 &nbsp;\
 <span>\
-<form action="${link_url}?next=${uri}" method="post">\
+<form
+   action="${url_rewrite(link_url, dict(parameters, next=url_rewrite(uri)))}"
+   method="post"
+   >\
 <input name="_xsrf" type="hidden" value="${xsrf}">\
 <input name="_method" type="hidden" value="delete">\
 <input type="submit" value="✕">\
@@ -280,7 +289,10 @@ if not parameters:
     </span>
     %if unlink and link_url and current_user:
     <span>
-      <form action="${link_url}?next=${uri}" method="post">
+      <form
+         action="${url_rewrite(link_url, dict(parameters, next=url_rewrite(uri)))}"
+         method="post"
+         >
 	<input name="_xsrf" type="hidden" value="${xsrf}">
 	<input name="_method" type="hidden" value="delete">
 	<input type="submit" value="✕">
@@ -325,7 +337,10 @@ ${tag["name"] | n, h, unicode, nbsp}\
 %endif
 %if link and link_url and current_user:
 <span>\
-<form action="${link_url}" method="post">\
+<form
+   action="${url_rewrite(link_url, parameters)}"
+   method="post"
+   >\
 <input name="_xsrf" type="hidden" value="${xsrf}">\
 <input name="_method" type="hidden" value="put">\
 %if next:
@@ -340,7 +355,10 @@ ${tag["name"] | n, h, unicode, nbsp}\
 %if unlink and link_url and current_user:
 &nbsp;\
 <span>\
-<form action="${link_url}?next=${uri}" method="post">\
+<form
+   action="${url_rewrite(link_url, parameters)}"
+   method="post"
+   >\
 <input name="_xsrf" type="hidden" value="${xsrf}">\
 <input name="_method" type="hidden" value="delete">\
 %if next:
@@ -397,7 +415,10 @@ if not parameters:
                                         ))}"
            >Edit</a>
 	%if unlink_url and "linked" in obj and len(obj["linked"]) > 1:
-	<form action="${unlink_url}${obj["url"]}" method="post">
+	<form
+           action="${url_rewrite(unlink_url, parameters)}"
+           method="post"
+           >
 	  <input name="_xsrf" type="hidden" value="${xsrf}">
 	  <input name="_method" type="hidden" value="delete">
 	  %if next_url:
@@ -406,7 +427,10 @@ if not parameters:
 	  <input type="submit" value="Unlink">
 	</form>
 	%endif
-	<form action="${obj["url"]}" method="post">
+	<form
+           action="${url_rewrite(obj["url"], parameters)}"
+           method="post"
+           >
 	  <input name="_xsrf" type="hidden" value="${xsrf}">
 	  <input name="_method" type="hidden" value="delete">
 	  %if next_url:

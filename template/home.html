@@ -25,7 +25,11 @@
   <div class="home-inline">
   <h3>By location</h3>
   <div class="action-bar home">
-    <form id="org-search" action="/organisation" method="get">
+    <form
+       id="org-search"
+       action="${url_rewrite("/organisation", parameters)}"
+       method="get"
+       >
       <label name="lookup">
 	<input name="lookup" value="${lookup or ""}" placeholder="Eg. NW1">
       </label>
@@ -37,7 +41,11 @@
   <div class="home-inline">
   <h3>By name</h3>
   <div class="action-bar home">
-    <form id="org-search" action="/organisation" method="get">
+    <form
+       id="org-search"
+       action="${url_rewrite("/organisation", parameters)}"
+       method="get"
+       >
       <label name="name_search">
 	<input name="name_search" value="${name_search or ""}" placeholder="Eg. BAE Systems">
       </label>
@@ -51,7 +59,11 @@
   <div class="home-inline">
   <h3>By location</h3>
   <div class="action-bar home">
-    <form id="event-search" action="/event" method="get">
+    <form
+       id="event-search"
+       action="${url_rewrite("/event", parameters)}"
+       method="get"
+       >
       <label name="lookup">
 	<input name="lookup" value="${lookup or ""}" placeholder="Eg. London">
       </label>

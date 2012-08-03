@@ -154,7 +154,10 @@ elif note:
     <p>Enter note text and source using <a href='http://daringfireball.net/projects/markdown/syntax'>Markdown syntax</a>.</p>
   </div>
 
-  <form action="${action}" method="post">
+  <form
+     action="${url_rewrite(action, parameters)}"
+     method="post"
+     >
     <input name="_xsrf" type="hidden" value="${xsrf}">
     %if put:
     <input name="_method" type="hidden" value="put">
@@ -190,7 +193,10 @@ elif note:
   </form>
 
   %if obj:
-  <form action="${obj["url"]}" method="post">
+  <form
+     action="${url_rewrite(obj["url"], parameters)}"
+     method="post"
+     >
     <input name="_xsrf" type="hidden" value="${xsrf}">
     <input name="_method" type="hidden" value="delete">
     %if next:

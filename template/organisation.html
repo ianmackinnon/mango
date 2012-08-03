@@ -25,7 +25,10 @@
     <h3>Organisation</h3>
     
     %if current_user:
-    <form action="${obj and obj["url"] or '/organisation'}" method="post">
+    <form
+       action="${url_rewrite(obj and obj["url"] or '/organisation', parameters)}"
+       method="post"
+       >
       <input name="_xsrf" type="hidden" value="${xsrf}">
       %if obj:
       <input name="_method" type="hidden" value="put">
@@ -44,7 +47,10 @@
 
     %if obj:
     %if current_user:
-    <form action="${obj["url"]}" method="post">
+    <form
+       action="${url_rewrite(obj["url"], parameters)}"
+       method="post"
+       >
       <input name="_xsrf" type="hidden" value="${xsrf}">
       <input name="_method" type="hidden" value="delete">
       <input type="submit" value="Delete">

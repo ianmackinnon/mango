@@ -46,7 +46,10 @@ Address ${obj["id"]}
 <%
 action = entity and "%s/address" % entity["url"] or obj["url"]
 %>
-    <form action="${action}" method="post">
+    <form
+       action="${url_rewrite(action, parameters)}"
+       method="post"
+       >
       <input name="_xsrf" type="hidden" value="${xsrf}">
       %if obj:
       <input name="_method" type="hidden" value="put">
