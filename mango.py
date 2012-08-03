@@ -55,7 +55,7 @@ from handle.history import HistoryHandler
 
 define("port", default=8802, help="Run on the given port", type=int)
 define("root", default='', help="URL root", type=str)
-define("caat", default=True, help="CAAT header", type=bool)
+define("caat", default=False, help="CAAT header", type=bool)
 define("database", default="sqlite", help="sqlite or mysql", type=str)
 define("conf", default=".mango.conf", help="eg. .mango.conf", type=str)
 

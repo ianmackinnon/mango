@@ -26,7 +26,7 @@
 <ul id="tag_list" class="tag_list">
   %for tag in tag_list:
   ${self.mini.tag_li(tag, entity={
-  "len": "org_len",
+  "len": "%s_len" % type_url,
   "url": type_url,
   }, note=True,
     visibility=True, parameters=parameters)}

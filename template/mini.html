@@ -237,6 +237,36 @@ ${visibility_bar(org)}\
 
 
 
+<%def name="event_li(event, link_url=False, unlink=False, visibility=False, parameters=None)">\
+<%
+if not parameters:
+    parameters = {}
+%>\
+<li class="tag">\
+<span class="event_name">\
+<a
+   href="${url_rewrite(event["url"], parameters)}"
+   >${event["name"] | n, h, unicode, nbsp}</a>\
+</span>\
+%if unlink and link_url and current_user:
+&nbsp;\
+<span>\
+<form action="${link_url}?next=${uri}" method="post">\
+<input name="_xsrf" type="hidden" value="${xsrf}">\
+<input name="_method" type="hidden" value="delete">\
+<input type="submit" value="✕">\
+</form>\
+</span>\
+%endif
+%if visibility and "public" in event:
+&nbsp;\
+${visibility_bar(event)}\
+%endif
+</li>
+</%def>
+
+
+
 <%def name="address_li(address, link_url=False, unlink=False, parameters=None)">\
 <%
 if not parameters:

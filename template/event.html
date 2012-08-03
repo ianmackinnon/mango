@@ -22,7 +22,9 @@
     %if current_user:
     <h3>Description Preview</h3>
     <div class="description markdown markdown-preview">
-      ${obj and obj["description"] | n, markdown_safe, convert_links}
+      %if obj and obj["description"]:
+      ${obj["description"] | n, markdown_safe, convert_links}
+      %endif
     </div>
     %endif
 
@@ -121,11 +123,14 @@
     <h3>Description</h3>
 
     <div class="description-preview markdown">
-      ${obj and obj["description"] | n, markdown_safe, convert_links}
+      %if obj and obj["description"]:
+      ${obj["description"] | n, markdown_safe, convert_links}
+      %endif
     </div>
 
     %endif
 
+    %if obj:
     <div class="action-bar no-border">
       <h3>Tags</h3>
 
@@ -170,6 +175,7 @@
       parameters=parameters,
       )}
     %endfor
+    %endif
     %endif
 
   </div>
