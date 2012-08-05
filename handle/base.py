@@ -195,10 +195,8 @@ class BaseHandler(tornado.web.RequestHandler):
         arguments = self.request.arguments
         arguments.update(options)
         uri = self.request.path
-        print uri
         if uri.startswith("/"):
             uri = self.application.url_root + uri[1:]
-        print uri
         uri += "?" + urlencode(arguments, True)
         return uri
 
@@ -206,7 +204,6 @@ class BaseHandler(tornado.web.RequestHandler):
         if options is None:
             options = {}
         uri = path
-        print uri
         if uri.startswith("/"):
             uri = self.application.url_root + uri[1:]
         for key, value in options.items():

@@ -40,7 +40,6 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
     
     @tornado.web.asynchronous
     def get(self):
-        print self.get_login_url()
         if self.get_argument("openid.mode", None):
             self.get_authenticated_user(self.async_callback(self._on_auth))
             return

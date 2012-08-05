@@ -175,3 +175,10 @@ CREATE TABLE address_note_v (
     a_time FLOAT NOT NULL, 
     existence BOOLEAN NOT NULL --
 ) DEFAULT CHARSET=utf8;
+
+CREATE TABLE org_event_v (
+    org_id INTEGER NOT NULL,
+    event_id INTEGER NOT NULL, 
+    a_time FLOAT NOT NULL, 
+    existence BOOLEAN NOT NULL --
+) DEFAULT CHARSET=utf8;

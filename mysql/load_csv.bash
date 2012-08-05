@@ -14,6 +14,12 @@ org_orgtag
 org_note
 address_note
 orgtag_note
+event
+event_address
+event_eventtag
+event_note
+eventtag
+eventtag_note
 
 note_fts
 
@@ -26,6 +32,12 @@ org_orgtag_v
 org_v
 orgtag_note_v
 orgtag_v
+event_address_v
+event_eventtag_v
+event_note_v
+event_v
+eventtag_note_v
+eventtag_v
 "
 
 echo "SET foreign_key_checks = 0;"

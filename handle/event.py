@@ -201,12 +201,14 @@ class EventHandler(BaseEventHandler):
 
         if self.deep_visible():
             options = (
+                joinedload("org_list"),
                 joinedload("address_list"),
                 joinedload("eventtag_list"),
                 joinedload("note_list"),
                 )
         else:
             options = (
+                joinedload("org_list_public"),
                 joinedload("address_list_public"),
                 joinedload("eventtag_list_public"),
                 joinedload("note_list_public"),
@@ -215,20 +217,24 @@ class EventHandler(BaseEventHandler):
         event = self._get_event(event_id_string, options=options)
 
         if self.deep_visible():
+            org_list=event.org_list
             address_list=event.address_list
             eventtag_list=event.eventtag_list
             note_list=event.note_list
         else:
+            org_list=event.org_list_public
             address_list=event.address_list_public
             eventtag_list=event.eventtag_list_public
             note_list=event.note_list_public
 
+        org_list = [org.obj(public=public) for org in org_list]
         address_list = [address.obj(public=public) for address in address_list]
         eventtag_list = [eventtag.obj(public=public) for eventtag in eventtag_list]
         note_list = [note.obj(public=public) for note in note_list]
 
         obj = event.obj(
             public=public,
+            org_obj_list=org_list,
             address_obj_list=address_list,
             eventtag_obj_list=eventtag_list,
             note_obj_list=note_list,

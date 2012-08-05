@@ -238,6 +238,15 @@ event_eventtag = Table(
 
 
 
+org_event = Table(
+    'org_event', Base.metadata,
+    Column('org_id', Integer, ForeignKey('org.org_id'), primary_key=True),
+    Column('event_id', Integer, ForeignKey('event.event_id'), primary_key=True),
+    Column('a_time', Float),
+    )
+
+
+
 note_fts = Table(
     'note_fts', Base.metadata,
     Column('docid', Integer, primary_key=True),
@@ -396,6 +405,16 @@ class Org(Base, NotableEntity):
             ),
         passive_deletes=True,
         )
+    event_list_public = relationship(
+        "Event",
+        secondary=org_event,
+        primaryjoin="Org.org_id == org_event.c.org_id",
+        secondaryjoin=(
+            "and_(Event.event_id == org_event.c.event_id, "
+            "Event.public==True)"
+            ),
+        passive_deletes=True,
+        )
     
     def __init__(self, name, moderation_user=None, public=None):
         self.name = self.sanitise_name(name)
@@ -415,7 +434,9 @@ class Org(Base, NotableEntity):
         return unicode(self).encode("utf8")
 
     def obj(self, public=False,
-            note_obj_list=None, address_obj_list=None, orgtag_obj_list=None):
+            note_obj_list=None, address_obj_list=None,
+            orgtag_obj_list=None, event_obj_list=None
+            ):
         obj = {
             "id": self.org_id,
             "url": self.url,
@@ -430,6 +451,8 @@ class Org(Base, NotableEntity):
             obj["address_list"] = address_obj_list
         if orgtag_obj_list is not None:
             obj["orgtag_list"] = orgtag_obj_list
+        if event_obj_list is not None:
+            obj["event_list"] = event_obj_list
         return obj
 
     def merge(self, other, moderation_user=False, public=None):
@@ -441,9 +464,11 @@ class Org(Base, NotableEntity):
                 self.note_list + other.note_list + [alias_note]))
         self.address_list = list(set(self.address_list + other.address_list))
         self.orgtag_list = list(set(self.orgtag_list + other.orgtag_list))
+        self.event_list = list(set(self.event_list + other.event_list))
         other.note_list = []
         other.address_list = []
         other.orgtag_list = []
+        other.event_list = []
         session.commit()
         session.delete(other)
         session.commit()
@@ -528,6 +553,16 @@ class Event(Base, NotableEntity):
             ),
         passive_deletes=True,
         )
+    org_list_public = relationship(
+        "Org",
+        secondary=org_event,
+        primaryjoin="Event.event_id == org_event.c.event_id",
+        secondaryjoin=(
+            "and_(Org.org_id == org_event.c.org_id, "
+            "Org.public==True)"
+            ),
+        passive_deletes=True,
+        )
     
     def __init__(self,
                  name, start_date, end_date,
@@ -556,7 +591,9 @@ class Event(Base, NotableEntity):
         return unicode(self).encode("utf8")
 
     def obj(self, public=False,
-            note_obj_list=None, address_obj_list=None, eventtag_obj_list=None):
+            note_obj_list=None, address_obj_list=None,
+            eventtag_obj_list=None, org_obj_list=None,
+            ):
         obj = {
             "id": self.event_id,
             "url": self.url,
@@ -576,6 +613,8 @@ class Event(Base, NotableEntity):
             obj["address_list"] = address_obj_list
         if eventtag_obj_list is not None:
             obj["eventtag_list"] = eventtag_obj_list
+        if org_obj_list is not None:
+            obj["org_list"] = org_obj_list
         return obj
 
     @property

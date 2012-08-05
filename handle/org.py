@@ -183,13 +183,15 @@ class OrgHandler(BaseOrgHandler):
             options = (
                 joinedload("address_list"),
                 joinedload("orgtag_list"),
-                joinedload("note_list"),
+                joinedload("event_list"),
+                joinedload("event_list"),
                 )
         else:
             options = (
                 joinedload("address_list_public"),
                 joinedload("orgtag_list_public"),
                 joinedload("note_list_public"),
+                joinedload("event_list_public"),
                 )
 
         org = self._get_org(org_id_string, options=options)
@@ -198,20 +200,24 @@ class OrgHandler(BaseOrgHandler):
             address_list=org.address_list
             orgtag_list=org.orgtag_list
             note_list=org.note_list
+            event_list=org.event_list
         else:
             address_list=org.address_list_public
             orgtag_list=org.orgtag_list_public
             note_list=org.note_list_public
+            event_list=org.event_list_public
 
         address_list = [address.obj(public=public) for address in address_list]
         orgtag_list = [orgtag.obj(public=public) for orgtag in orgtag_list]
         note_list = [note.obj(public=public) for note in note_list]
+        event_list = [event.obj(public=public) for event in event_list]
 
         obj = org.obj(
             public=public,
             address_obj_list=address_list,
             orgtag_obj_list=orgtag_list,
             note_obj_list=note_list,
+            event_obj_list=event_list,
             )
 
         if self.accept_type("json"):

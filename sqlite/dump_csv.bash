@@ -38,6 +38,7 @@ event_eventtag_v
 event_v
 eventtag_note_v
 eventtag_v
+org_event_v
 "
 
 for table in $tables

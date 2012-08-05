@@ -184,6 +184,33 @@
     %endif
     %endif
 
+    %if obj:
+    <div class="action-bar no-border">
+      <h3>Organisations</h3>
+
+      %if False and current_user:
+      <div class="actions">
+        <a
+           href="${url_rewrite("%s/organisation" % obj["url"], parameters)}"
+           class="action"
+           >Edit organisations</a>
+      </div>
+      %endif
+    </div>
+    %endif
+
+    %if "org_list" in obj:
+    <ul class="org_list">
+      %for org in obj["org_list"]:
+      ${self.mini.org_box(
+        org, parameters=parameters,
+        )}
+      %endfor
+    </ul>
+    %else:
+    No organisations linked yet.
+    %endif
+
   </div>
   
 </div>

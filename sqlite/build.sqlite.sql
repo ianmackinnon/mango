@@ -196,6 +196,14 @@ CREATE TABLE address_note_v (
     FOREIGN KEY(address_id) REFERENCES address (address_id), 
     FOREIGN KEY(note_id) REFERENCES note (note_id)
 );
+CREATE TABLE org_event_v (
+    org_id INTEGER NOT NULL, 
+    event_id INTEGER NOT NULL, 
+    a_time FLOAT, 
+    existence BOOLEAN NOT NULL, --
+    FOREIGN KEY(org_id) REFERENCES org (org_id), 
+    FOREIGN KEY(event_id) REFERENCES event (event_id)
+);
 
 
 
@@ -800,6 +808,34 @@ create trigger address_note_delete_after after delete on address_note
 begin
     insert into address_note_v (address_id, note_id, a_time, existence)
         values (old.address_id, old.note_id, strftime('%s','now'), 0);
+end;
+
+
+
+-- org_event
+
+
+create trigger org_event_insert_after after insert on org_event
+begin
+    update org_event
+        set a_time = strftime('%s','now') where org_id = new.org_id;
+    insert into org_event_v (org_id, event_id, a_time, existence)
+        values (new.org_id, new.event_id, strftime('%s','now'), 1);
+end;
+
+create trigger org_event_update_after after update on org_event
+when cast(strftime('%s','now') as float) != new.a_time
+begin
+    update org_event
+        set a_time = strftime('%s','now') where org_id = new.org_id;
+    insert into org_event_v (org_id, event_id, a_time, existence)
+        values (new.org_id, new.event_id, strftime('%s','now'), 1);
+end;
+
+create trigger org_event_delete_after after delete on org_event
+begin
+    insert into org_event_v (org_id, event_id, a_time, existence)
+        values (old.org_id, old.event_id, strftime('%s','now'), 0);
 end;
 
 

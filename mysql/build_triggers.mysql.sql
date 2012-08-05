@@ -545,6 +545,33 @@ for each row begin
 	old.address_id, old.note_id, UNIX_TIMESTAMP(), 1);
 end $$
 
+-- org_event
+
+create trigger org_event_insert_before before insert on org_event
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+
+    insert into org_event_v (org_id, event_id, a_time, existence)
+      values (
+	new.org_id, new.event_id, UNIX_TIMESTAMP(), 1);
+end $$
+
+create trigger org_event_update_before before update on org_event
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+
+    insert into org_event_v (org_id, event_id, a_time, existence)
+      values (
+	new.org_id, new.event_id, UNIX_TIMESTAMP(), 1);
+end $$
+
+create trigger org_event_delete_before before delete on org_event
+for each row begin
+    insert into org_event_v (org_id, event_id, a_time, existence)
+      values (
+	old.org_id, old.event_id, UNIX_TIMESTAMP(), 1);
+end $$
+
 delimiter ;
 
 

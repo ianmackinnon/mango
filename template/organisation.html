@@ -57,6 +57,42 @@
     </form>
     %endif
 
+    %if obj:
+    <div class="action-bar no-border">
+      <h3>Events</h3>
+
+      %if False and current_user:
+      <div class="actions">
+        <a
+           href="${url_rewrite("%s/event" % obj["url"], parameters)}"
+           class="action"
+           >Edit events</a>
+      </div>
+      %endif
+    </div>
+    %endif
+
+    %if "event_list" in obj and obj["event_list"]:
+    <ul class="event_list">
+      %for event in obj["event_list"]:
+      ${self.mini.event_box(
+        event, parameters=parameters,
+        )}
+      %endfor
+    </ul>
+    %else:
+    %if not current_user:
+    <p>No events yet.
+    <a
+       href="${url_rewrite("/creative-action.php", parameters)}"
+       >Learn more about organising your own</a>,
+    then 
+    <a
+       href="${url_rewrite("/submit.php", parameters)}"
+       >tell us about it</a>!</p>
+    %endif
+    %endif
+
     <div class="action-bar no-border">
       <h3>Tags</h3>
 
