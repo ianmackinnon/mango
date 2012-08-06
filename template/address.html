@@ -45,6 +45,12 @@ Address ${obj["id"]}
     </div>
 <%
 action = entity and "%s/address" % entity["url"] or obj["url"]
+next = None
+if entity:
+    next = entity["url"]
+elif entity_list in obj and len(obj[entity_list]) == 1:
+    next = obj[entity_list][0]["url"]
+
 %>
     <form
        action="${url_rewrite(action, parameters)}"
@@ -54,10 +60,12 @@ action = entity and "%s/address" % entity["url"] or obj["url"]
       %if obj:
       <input name="_method" type="hidden" value="put">
       %endif
-      %if entity:
-      <input name="next" type="hidden" value="${entity["url"]}">
-      %elif entity_list in obj and len(obj[entity_list]) == 1:
-      <input name="next" type="hidden" value="${obj[entity_list][0]["url"]}">
+      %if next:
+      <input
+         name="next"
+         type="hidden"
+         value="${url_rewrite(next, parameters)}"
+         >
       %endif
       <label name="postal"
              status="${obj and obj.get("postal", "") and 'good' or 'bad'}"

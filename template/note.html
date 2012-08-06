@@ -162,7 +162,9 @@ elif note:
     %if put:
     <input name="_method" type="hidden" value="put">
     %endif
-    <input name="next" type="hidden" value="${next or ""}">
+    %if next:
+    <input name="next" type="hidden" value="${url_rewrite(next, parameters)}">
+    %endif
     <label
        name="text"
        status="${obj and obj.get("text", "") and 'good' or 'bad'}"
@@ -200,7 +202,7 @@ elif note:
     <input name="_xsrf" type="hidden" value="${xsrf}">
     <input name="_method" type="hidden" value="delete">
     %if next:
-    <input name="next" type="hidden" value="${next}">
+    <input name="next" type="hidden" value="${url_rewrite(next, parameters)}">
     %endif
     <input type="submit" value="Delete">
   </form>

@@ -104,7 +104,6 @@ var m = {
 
   "fit_map": function(callback) {
     m.fit_map_delay();
-    console.log("e", !!callback);
     google.maps.event.addListener(m.map, 'idle', function() {
       m.fit_map_delay();
       google.maps.event.clearListeners(m.map, 'idle');
@@ -132,15 +131,12 @@ var m = {
       m.map.fitBounds(bounds);
       m.map.setZoom(Math.min(m.map.getZoom(), 16));
     }
-    console.log("fit");
   },
 
   "url_rewrite": function(path, parameters) {
     var url = path;
-    console.log(url);
     if (url.indexOf("/") == 0) {
       url = m.url_root + url.substring(1);
-      console.log(url);
     }
     var query = null;
     $.each(parameters, function(key, value) {
@@ -184,7 +180,6 @@ var m = {
       
       $(".counts").empty().append($counts);
 
-      var alpha = 0;
       $.each(org_packet.org_list, function(index, value) {
 	var org = $(tmpl("org_box", {
           "org":value,
@@ -229,7 +224,6 @@ var m = {
       
       $(".counts").empty().append($counts);
 
-      var alpha = 0;
       $.each(event_packet.event_list, function(index, value) {
 	var event = $(tmpl("template_event_box", {
           "event":value,
@@ -779,7 +773,9 @@ var m = {
       var position = new google.maps.LatLng(
 	latitude, longitude);
       var z_index;
+      console.log("alpha", alpha);
       letter = String.fromCharCode(alpha + 65);
+      console.log("letter", letter);
       if (color == "red") {
 	color = "ee6666";
 	z_index = 200;
@@ -792,6 +788,7 @@ var m = {
       }
       var pin_url = m.url_root + "static/image/map/marker/pin-" + color + "-" + letter + ".png"
       var circle_url = m.url_root + "static/image/map/marker/circle-" + color + "-" + letter + ".png"
+      console.log(pin_url);
       
       var marker = new google.maps.Marker({
 	position: position,
@@ -804,7 +801,12 @@ var m = {
         "alt": "Map location of address is unknown."
       });
       pin.empty().append(circle);
-      alpha = (alpha + 1) % 24;
+      alpha = (alpha + 1);
+      if (alpha == 26) {
+        alpha = 32;
+      } else if (alpha == 58) {
+        alpha = 0;
+      }
       m.markers.push(marker);
     });
     circle = $("<img>").attr(
@@ -830,8 +832,6 @@ var m = {
   "convert_inline_links": function(el) {
     m.text_children(el).replaceWith(function() {
       if (m.has_link_parent(this)) {
-	console.log("link");
-	console.log($(this));
 	return $("<span>" + this.textContent + "</span>");
       }
       var html = this.textContent.replace(
@@ -1025,8 +1025,6 @@ var m = {
       console.log("Path does not match url root", path, m.url_root);
     }
     path = "/" + path.substring(m.url_root.length);
-    console.log(path);
-    console.log(m.url_root);
     $.each(m.route, function(index, value) {
       regex = value[0];
       func = value[1];

@@ -114,6 +114,10 @@ class AddressHandler(BaseAddressHandler):
             public = \
             BaseAddressHandler._get_arguments(self)
 
+        print self.next
+        print self.url_root
+        print self.url_root[:-1] + address.url
+
         if address.postal == postal and \
                 address.source == source and \
                 address.lookup == lookup and \
