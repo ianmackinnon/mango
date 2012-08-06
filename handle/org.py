@@ -183,7 +183,7 @@ class OrgHandler(BaseOrgHandler):
             options = (
                 joinedload("address_list"),
                 joinedload("orgtag_list"),
-                joinedload("event_list"),
+                joinedload("note_list"),
                 joinedload("event_list"),
                 )
         else:

@@ -199,7 +199,7 @@
     </div>
     %endif
 
-    %if "org_list" in obj:
+    %if obj and "org_list" in obj:
     <ul class="org_list">
       %for org in obj["org_list"]:
       ${self.mini.org_box(

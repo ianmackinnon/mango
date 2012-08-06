@@ -374,6 +374,8 @@ class Org(Base, NotableEntity):
         "Address", secondary=org_address, backref='org_list')
     orgtag_list = relationship(
         "Orgtag", secondary=org_orgtag, backref='org_list')
+    event_list = relationship(
+        "Event", secondary=org_event, backref='org_list')
 
     note_list_public = relationship(
         "Note",
