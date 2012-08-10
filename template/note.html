@@ -68,7 +68,7 @@ ${note_form(obj=obj, entity=entity, next=next)}
   %endif
 </div>
 
-%if note:
+%if obj:
 <div class="box full" id="note-links">
   <div class="action-bar no-border">
     <h3>Links</h3>
@@ -143,8 +143,8 @@ action = "/note"
 put = False
 if entity:
     action = entity["url"] + "/note"
-    next = entity["url"]
-elif note:
+    next = url_rewrite(entity["url"], parameters)
+elif obj:
     put = True
     action = obj["url"]
 %>
@@ -163,7 +163,7 @@ elif note:
     <input name="_method" type="hidden" value="put">
     %endif
     %if next:
-    <input name="next" type="hidden" value="${url_rewrite(next, parameters)}">
+    <input name="next" type="hidden" value="${next}">
     %endif
     <label
        name="text"

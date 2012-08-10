@@ -114,10 +114,6 @@ class AddressHandler(BaseAddressHandler):
             public = \
             BaseAddressHandler._get_arguments(self)
 
-        print self.next
-        print self.url_root
-        print self.url_root[:-1] + address.url
-
         if address.postal == postal and \
                 address.source == source and \
                 address.lookup == lookup and \
@@ -223,10 +219,16 @@ class AddressNoteListHandler(BaseAddressHandler, BaseNoteHandler):
 
     def get(self, address_id_string):
         address = self._get_address(address_id_string)
-        self.next = address.url
+
+        public = bool(self.current_user)
+
+        obj = address.obj(
+            public=public,
+            )
+
         self.render(
             'note.html',
-            entity=address
+            entity=obj,
             )
 
 
