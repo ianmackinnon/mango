@@ -22,9 +22,10 @@ import tornado.web
 
 from tornado.options import define, options
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, __version__ as sqlalchemy_version
 from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy import __version__ as sqlalchemy_version
+from sqlalchemy.orm.query import Query
+from sqlalchemy.exc import SQLAlchemyError
 
 import mysql.mysql_init
 
@@ -101,6 +102,30 @@ class MemcacheCache(object):
     def delete(self, key):
         self._cache.delete(self.key(key))
 
+
+
+def SafeQueryClass(retry=3):
+    class SafeQuery(Query):
+        def __init__(self, entities, session=None):
+            Query.__init__(self, entities, session)
+            self._retry = retry
+
+        def __iter__(self):
+            tries = self._retry
+            while True:
+                try:
+                    results = list(Query.__iter__(self))
+                    break
+                except SQLAlchemyError as e:
+                    if tries:
+                        self.session.rollback()
+                        tries -= 1
+                        continue
+                    raise e
+            return iter(results)
+
+    return SafeQuery
+        
 
 
 class Application(tornado.web.Application):
@@ -289,7 +314,11 @@ class Application(tornado.web.Application):
     
         engine = create_engine(connection_url)
 
-        self.orm = scoped_session(sessionmaker(bind=engine, autocommit=False))
+        self.orm = scoped_session(sessionmaker(
+                bind=engine,
+                autocommit=False,
+                query_cls=SafeQueryClass(),
+                ))
 
         self.cache = MemcacheCache(cache_namespace)
 
