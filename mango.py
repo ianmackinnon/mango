@@ -40,7 +40,7 @@ from handle.note import NoteHandler, NoteNewHandler, NoteListHandler, \
 from handle.address import AddressHandler, AddressListHandler, \
     AddressLookupHandler, AddressNoteListHandler, AddressNoteHandler
 from handle.org import OrgHandler, OrgNewHandler, OrgListHandler, \
-    OrgOrgaliasListHandler, OrgOrgaliasHandler, \
+    OrgOrgaliasListHandler, \
     OrgOrgtagListHandler, OrgOrgtagHandler, \
     OrgNoteListHandler, OrgNoteHandler, \
     OrgAddressListHandler, OrgAddressHandler, \

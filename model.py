@@ -470,7 +470,7 @@ class Org(Base, NotableEntity):
     def merge(self, other, moderation_user=False, public=None):
         session = object_session(self)
         assert session
-        Orgalias(other.name, self, moderation_user, public)
+        orgalias = Orgalias.get(session, other.name, self, moderation_user, public)
         for alias in other.orgalias_list:
             alias.org = self
         self.address_list = list(set(self.address_list + other.address_list))
@@ -524,7 +524,7 @@ class Orgalias(Base):
     moderation_user = relationship(User, backref='moderation_orgalias_list')
 
     org = relationship(
-        "Org", backref='alias_list')
+        "Org", backref='orgalias_list')
 
     def __init__(self, name, org, moderation_user=None, public=None):
         self.name = Org.sanitise_name(name)
