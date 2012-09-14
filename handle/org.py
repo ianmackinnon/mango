@@ -12,7 +12,7 @@ from note import BaseNoteHandler
 from orgtag import BaseOrgtagHandler
 from address import BaseAddressHandler
 
-from model import Org, Note, Address, Orgtag, org_orgtag, org_address
+from model import Org, Note, Address, Orgalias, Orgtag, org_orgtag, org_address
 
 
 
@@ -447,6 +447,58 @@ class OrgOrgtagHandler(BaseOrgHandler, BaseOrgtagHandler):
         self.redirect(self.next or self.url_root[:-1] + org.url)
 
 
+
+class OrgOrgaliasListHandler(BaseOrgHandler, BaseOrgtagHandler):
+    @authenticated
+    def get(self, org_id_string):
+        # org...
+
+        if self.deep_visible():
+            options = (
+                joinedload("orgalias_list"),
+                )
+        else:
+            options = (
+                joinedload("orgalias_list_public"),
+                )
+
+        org = self._get_org(org_id_string, options=options)
+
+        if self.deep_visible():
+            orgalias_list=org.orgalias_list
+        else:
+            orgalias_list=org.orgalias_list_public
+
+        public = bool(self.current_user)
+
+        orgalias_list = [orgalias.obj(public=public) for orgalias in orgalias_list]
+
+        obj = org.obj(
+            public=public,
+            orgalias_obj_list=orgalias_list,
+            )
+
+        if self.accept_type("json"):
+            self.write_json(obj)
+        else:
+            self.render(
+                '.html',
+                obj=obj,
+                )
+
+    @authenticated
+    def post(self, org_id_string):
+        is_json = self.content_type("application/json")
+        name = self.get_argument("name", json=is_json)
+
+        org = self._get_org(org_id_string)
+
+        print org
+
+        orgalias = Orgalias.get(self.orm, name, org, self.current_user, True)
+        self.orm.commit()
+
+        self.redirect(self.next or self.url_root[:-1] + org.url)
 
 
 

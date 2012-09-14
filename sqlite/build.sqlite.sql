@@ -1,6 +1,7 @@
 -- Indices
 
 create index org_public_idx on org (public);
+create index orgalias_public_idx on orgalias (public);
 create index event_public_idx on event (public);
 create index address_public_idx on address (public);
 create index orgtag_public_idx on orgtag (public);
@@ -28,6 +29,22 @@ CREATE TABLE org_v (
     name VARCHAR NOT NULL, 
 
     FOREIGN KEY(org_id) REFERENCES org (org_id), --
+    FOREIGN KEY(moderation_user_id) REFERENCES user (user_id), 
+    CHECK (public IN (0, 1))
+);
+
+CREATE TABLE orgalias_v (
+    orgalias_v_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, --
+    orgalias_id INTEGER NOT NULL, 
+    moderation_user_id INTEGER, 
+    a_time FLOAT NOT NULL, 
+    public BOOLEAN,
+    existence BOOLEAN NOT NULL, --
+
+    org_id INTEGER NOT NULL, 
+    name VARCHAR NOT NULL, 
+
+    FOREIGN KEY(orgalias_id) REFERENCES orgalias (orgalias_id), --
     FOREIGN KEY(moderation_user_id) REFERENCES user (user_id), 
     CHECK (public IN (0, 1))
 );
@@ -259,6 +276,55 @@ begin
         values (
 	old.org_id,
 	old.name,
+	old.moderation_user_id, strftime('%s','now'), old.public,
+	0
+	);
+end;
+
+
+
+-- orgalias
+
+create trigger orgalias_insert_after after insert on orgalias
+begin
+    update orgalias set a_time = strftime('%s','now') where orgalias_id = new.orgalias_id;
+    insert into orgalias_v (
+        orgalias_id, org_id, name, moderation_user_id, a_time, public,
+	existence
+        )
+        values (
+	new.orgalias_id,
+	new.org_id, new.name,
+	new.moderation_user_id, strftime('%s','now'), new.public,
+	1
+	);
+end;
+
+create trigger orgalias_update_after after update on orgalias
+when cast(strftime('%s','now') as float) != new.a_time
+begin
+    update orgalias set a_time = strftime('%s','now') where orgalias_id = new.orgalias_id;
+    insert into orgalias_v (
+        orgalias_id, org_id, name, moderation_user_id, a_time, public,
+	existence
+        )
+        values (
+	new.orgalias_id,
+	new.org_id, new.name,
+	new.moderation_user_id, strftime('%s','now'), new.public,
+	1
+	);
+end;
+
+create trigger orgalias_delete_after after delete on orgalias
+begin
+    insert into orgalias_v (
+        orgalias_id, org_id, name, moderation_user_id, a_time, public,
+	existence
+        )
+        values (
+	old.orgalias_id,
+        old.org_id, old.name,
 	old.moderation_user_id, strftime('%s','now'), old.public,
 	0
 	);

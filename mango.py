@@ -40,9 +40,12 @@ from handle.note import NoteHandler, NoteNewHandler, NoteListHandler, \
 from handle.address import AddressHandler, AddressListHandler, \
     AddressLookupHandler, AddressNoteListHandler, AddressNoteHandler
 from handle.org import OrgHandler, OrgNewHandler, OrgListHandler, \
-    OrgOrgtagListHandler, OrgOrgtagHandler, OrgNoteListHandler, \
-    OrgNoteHandler, OrgAddressListHandler, OrgAddressHandler, \
+    OrgOrgaliasListHandler, OrgOrgaliasHandler, \
+    OrgOrgtagListHandler, OrgOrgtagHandler, \
+    OrgNoteListHandler, OrgNoteHandler, \
+    OrgAddressListHandler, OrgAddressHandler, \
     OrgListTaskAddressHandler, OrgListTaskVisibilityHandler
+from handle.orgalias import OrgaliasHandler
 from handle.event import EventHandler, EventNewHandler, EventListHandler, \
     EventEventtagListHandler, EventEventtagHandler, EventNoteListHandler, \
     EventNoteHandler, EventAddressListHandler, EventAddressHandler
@@ -232,11 +235,14 @@ class Application(tornado.web.Application):
             (r"/organisation/%s" % re_id, OrgHandler),
             (r"/organisation/%s/tag" % re_id, OrgOrgtagListHandler),
             (r"/organisation/%s/tag/%s" % (re_id, re_id), OrgOrgtagHandler),
+            (r"/organisation/%s/alias" % re_id, OrgOrgaliasListHandler),
             (r"/organisation/%s/note" % re_id, OrgNoteListHandler),
             (r"/organisation/%s/note/%s" % (re_id, re_id), OrgNoteHandler),
             (r"/organisation/%s/address" % re_id, OrgAddressListHandler),
             (r"/organisation/%s/address/%s" % (re_id, re_id),
              OrgAddressHandler),
+
+            (r"/organisation-alias/%s" % re_id, OrgaliasHandler),
 
             (r"/event", EventListHandler),
             (r"/event/new", EventNewHandler),

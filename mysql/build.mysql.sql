@@ -24,6 +24,22 @@ CREATE TABLE org_v (
       REFERENCES user (user_id)
 ) DEFAULT CHARSET=utf8;
 
+CREATE TABLE orgalias_v (
+    orgalias_v_id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, --
+    orgalias_id INTEGER NOT NULL, 
+    moderation_user_id INTEGER, 
+    a_time FLOAT NOT NULL, 
+    public BOOLEAN,
+    existence BOOLEAN NOT NULL, --
+ 
+    org_id INTEGER NOT NULL, 
+    name LONGTEXT NOT NULL, 
+
+    KEY moderation_user_id (moderation_user_id),
+    CONSTRAINT orgalias_v_c2 FOREIGN KEY (moderation_user_id)
+      REFERENCES user (user_id)
+) DEFAULT CHARSET=utf8;
+
 CREATE TABLE event_v (
     event_v_id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, --
     event_id INTEGER NOT NULL, 

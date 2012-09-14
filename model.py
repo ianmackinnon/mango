@@ -377,6 +377,13 @@ class Org(Base, NotableEntity):
     event_list = relationship(
         "Event", secondary=org_event, backref='org_list')
 
+    orgalias_list_public = relationship(
+        "Orgalias",
+        primaryjoin=(
+            "and_(Orgalias.org_id == Org.org_id, "
+            "Orgalias.public==True)"
+            ),
+        )
     note_list_public = relationship(
         "Note",
         secondary=org_note,
@@ -437,7 +444,8 @@ class Org(Base, NotableEntity):
 
     def obj(self, public=False,
             note_obj_list=None, address_obj_list=None,
-            orgtag_obj_list=None, event_obj_list=None
+            orgtag_obj_list=None, event_obj_list=None,
+            orgalias_obj_list=None,
             ):
         obj = {
             "id": self.org_id,
@@ -455,15 +463,16 @@ class Org(Base, NotableEntity):
             obj["orgtag_list"] = orgtag_obj_list
         if event_obj_list is not None:
             obj["event_list"] = event_obj_list
+        if orgalias_obj_list is not None:
+            obj["orgalias_list"] = orgalias_obj_list
         return obj
 
     def merge(self, other, moderation_user=False, public=None):
         session = object_session(self)
         assert session
-        alias_note = Note(
-            u"Alias: %s" % other.name, "merge", moderation_user, public)
-        self.note_list = list(set(
-                self.note_list + other.note_list + [alias_note]))
+        Orgalias(other.name, self, moderation_user, public)
+        for alias in other.orgalias_list:
+            alias.org = self
         self.address_list = list(set(self.address_list + other.address_list))
         self.orgtag_list = list(set(self.orgtag_list + other.orgtag_list))
         self.event_list = list(set(self.event_list + other.event_list))
@@ -495,6 +504,86 @@ class Org(Base, NotableEntity):
                 )
             orm.add(org)
         return org
+
+
+
+class Orgalias(Base):
+    __tablename__ = 'orgalias'
+    __table_args__ = {'sqlite_autoincrement':True}
+
+    orgalias_id = Column(Integer, primary_key=True)
+
+    org_id = Column(Integer, ForeignKey(Org.org_id), nullable=False)
+    
+    name = Column(Unicode(), nullable=False)
+
+    moderation_user_id = Column(Integer, ForeignKey(User.user_id))
+    a_time = Column(Float, nullable=False)
+    public = Column(Boolean)
+
+    moderation_user = relationship(User, backref='moderation_orgalias_list')
+
+    org = relationship(
+        "Org", backref='alias_list')
+
+    def __init__(self, name, org, moderation_user=None, public=None):
+        self.name = Org.sanitise_name(name)
+        self.org = org
+
+        self.moderation_user = moderation_user
+        self.a_time = 0
+        self.public = public
+
+    def __unicode__(self):
+        return u"<Orgalias-%s (%s) '%s':%d>" % (
+            self.orgalias_id or "?",
+            {True:"public", False:"private", None: "pending"}[self.public],
+            self.name, self.org_id,
+            )
+
+    def __str__(self):
+        return unicode(self).encode("utf8")
+
+    def obj(self, public=False,
+            org_obj_list=None,
+            ):
+        obj = {
+            "id": self.orgalias_id,
+            "url": self.url,
+            "date": self.a_time,
+            "name": self.name,
+            }
+        if public:
+            obj["public"] = self.public
+        if org_obj_list is not None:
+            obj["org_list"] = org_obj_list
+        return obj
+
+    @property
+    def url(self):
+        return "/organisation-alias/%d" % self.orgalias_id
+
+    @staticmethod
+    def get(orm, name, org, moderation_user=None, public=None):
+        name = Org.sanitise_name(name)
+        try:
+            orgalias = orm.query(Orgalias)\
+                .filter_by(name=name, org_id=org.org_id).one()
+        except NoResultFound:
+            orgalias = Orgalias(
+                name, org,
+                moderation_user=moderation_user, public=public,
+                )
+            orm.add(orgalias)
+        return orgalias
+
+
+
+
+
+
+
+
 
 
 

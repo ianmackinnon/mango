@@ -14,6 +14,8 @@ for each row begin
     end if;
 end $$
 
+
+
 -- org
 
 create trigger org_insert_before before insert on org
@@ -59,6 +61,56 @@ for each row begin
 	old.name
 	);
 end $$
+
+
+
+-- orgalias
+
+create trigger orgalias_insert_before before insert on orgalias
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+    insert into orgalias_v (
+        orgalias_id,
+        moderation_user_id, a_time, public, existence,
+	org_id, name
+        )
+        values (
+	new.orgalias_id,
+	new.moderation_user_id, UNIX_TIMESTAMP(), new.public, 1,
+	new.org_id, new.name
+	);
+end $$
+
+create trigger orgalias_update_before before update on orgalias
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+    insert into orgalias_v (
+        orgalias_id,
+        moderation_user_id, a_time, public, existence,
+	org_id, name
+        )
+        values (
+	new.orgalias_id,
+	new.moderation_user_id, UNIX_TIMESTAMP(), new.public, 1,
+	new.org_id, new.name
+	);
+end $$
+
+create trigger orgalias_delete_before before delete on orgalias
+for each row begin
+    insert into orgalias_v (
+        orgalias_id,
+        moderation_user_id, a_time, public, existence,
+	org_id, name
+        )
+        values (
+	old.orgalias_id,
+	old.moderation_user_id, UNIX_TIMESTAMP(), old.public, 0,
+	old.org_id, old.name
+	);
+end $$
+
+
 
 -- event
 
