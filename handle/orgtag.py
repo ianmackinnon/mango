@@ -185,7 +185,7 @@ class OrgtagHandler(BaseOrgtagHandler):
                 joinedload("note_list_public"),
                 )
 
-        orgtag = self._get_orgtag(orgtag_id_string)
+        orgtag = self._get_orgtag(orgtag_id_string, options)
 
         if self.deep_visible():
             org_list=orgtag.org_list

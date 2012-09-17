@@ -185,6 +185,7 @@ class OrgHandler(BaseOrgHandler):
                 joinedload("orgtag_list"),
                 joinedload("note_list"),
                 joinedload("event_list"),
+                joinedload("orgalias_list"),
                 )
         else:
             options = (
@@ -192,6 +193,7 @@ class OrgHandler(BaseOrgHandler):
                 joinedload("orgtag_list_public"),
                 joinedload("note_list_public"),
                 joinedload("event_list_public"),
+                joinedload("orgalias_list_public"),
                 )
 
         org = self._get_org(org_id_string, options=options)
@@ -201,16 +203,19 @@ class OrgHandler(BaseOrgHandler):
             orgtag_list=org.orgtag_list
             note_list=org.note_list
             event_list=org.event_list
+            orgalias_list=org.orgalias_list
         else:
             address_list=org.address_list_public
             orgtag_list=org.orgtag_list_public
             note_list=org.note_list_public
             event_list=org.event_list_public
+            orgalias_list=org.orgalias_list_public
 
         address_list = [address.obj(public=public) for address in address_list]
         orgtag_list = [orgtag.obj(public=public) for orgtag in orgtag_list]
         note_list = [note.obj(public=public) for note in note_list]
         event_list = [event.obj(public=public) for event in event_list]
+        orgalias_list = [orgalias.obj(public=public) for orgalias in orgalias_list]
 
         obj = org.obj(
             public=public,
@@ -218,6 +223,7 @@ class OrgHandler(BaseOrgHandler):
             orgtag_obj_list=orgtag_list,
             note_obj_list=note_list,
             event_obj_list=event_list,
+            orgalias_obj_list=orgalias_list,
             )
 
         if self.accept_type("json"):
@@ -482,8 +488,13 @@ class OrgOrgaliasListHandler(BaseOrgHandler, BaseOrgtagHandler):
             self.write_json(obj)
         else:
             self.render(
-                '.html',
+                'entity_alias.html',
                 obj=obj,
+                type_title="Organisation",
+                type_title_plural="Organisations",
+                type_url="organisation",
+                type_alias_list="orgalias_list",
+                type_li_template="org_li",
                 )
 
     @authenticated

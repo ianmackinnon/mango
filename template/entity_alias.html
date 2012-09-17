@@ -1,0 +1,54 @@
+<%inherit file="base.html"/>
+
+<%def name="title()">${obj["name"]} | Edit aliases</%def>
+
+<%def name="page()">
+
+<h1>
+  <a
+     href="${url_rewrite(obj["url"], parameters)}"
+     >${obj["name"]}</a> | Edit aliases
+</h1>
+
+<div class="section">
+  <h3>Aliases</h3>
+
+  <ul class="alias_list">
+    %for alias in obj[type_alias_list]:
+    ${self.mini.alias_li(alias,
+      link_url="/organisation-alias/%s" % alias["id"],
+      unlink=True, next=uri,
+      visibility=True)}
+    %endfor
+  </ul>
+</div>    
+    
+
+<h1>New Alias</h1>
+
+<div class="section">
+
+  <div class="form-by-map" id="alias-form">
+    
+    <h3>Organisation Alias</h3>
+    
+    <form
+       action="${url_rewrite("%s/alias" % obj["url"] , parameters)}"
+       method="post"
+       >
+      <input name="_xsrf" type="hidden" value="${xsrf}">
+      <input name="next" type="hidden" value="${url_rewrite("%s/alias" % obj["url"], parameters)}">\
+      <label name="name">
+	<span>Name</span>
+	<span class="requirement">(required)</span>
+	<input name="name" value="">
+      </label>
+      ${self.mini.visibility_input(default='public')}
+      <input type="submit">
+    </form>
+  </div>
+</div>
+
+
+</%def>
+

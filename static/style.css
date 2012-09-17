@@ -510,6 +510,7 @@
 
 /* tag */
 
+#mango ul.alias_list,
 #mango ul.tag_list
 {
     display: inline;
@@ -518,11 +519,13 @@
     margin: 0px;
     line-height: 24px;
 }
+#mango ul.alias_list *,
 #mango ul.tag_list *
 {
     width: auto;
     display: inline;
 }
+#mango ul.alias_list li,
 #mango ul.tag_list li
 {
     margin: 2px;
@@ -531,6 +534,7 @@
     border-radius: 3px;
     background: #f8f8f8;
 }
+#mango ul.alias_list input,
 #mango ul.tag_list input
 {
     margin: 0;
@@ -542,10 +546,12 @@
     color: #339;
     text-decoration: none;
 }
+#mango ul.alias_list input:visited,
 #mango ul.tag_list input:visited
 {
     color: #639;
 }
+#mango ul.alias_list input:hover,
 #mango ul.tag_list input:hover
 {
     text-decoration: underline;

@@ -378,6 +378,52 @@ ${visibility_bar(tag)}\
 
 
 
+<%def name="alias_li(alias,
+	    link_url=False, unlink=False, next=False,
+	    visibility=False, parameters=None)">\
+<%
+if not parameters:
+    parameters = {}
+%>\
+<li class="alias">\
+<span class="alias_name">\
+%if current_user:
+<a
+   href="${url_rewrite(alias["url"], parameters)}"
+   >\
+%endif
+${alias["name"] | n, h, unicode, nbsp}\
+%if current_user:
+</a>\
+%endif
+</span>\
+\
+%if unlink and link_url and current_user:
+&nbsp;\
+<span>\
+<form
+   action="${url_rewrite(link_url, parameters)}"
+   method="post"
+   >\
+<input name="_xsrf" type="hidden" value="${xsrf}">\
+<input name="_method" type="hidden" value="delete">\
+%if next:
+<input name="next" type="hidden" value="${url_rewrite(next, parameters)}">\
+%endif
+&nbsp;\
+<input type="submit" value="✕">\
+</form>\
+</span>\
+%endif
+%if visibility and "public" in alias:
+&nbsp;\
+${visibility_bar(alias)}\
+%endif
+</li>
+</%def>
+
+
+
 <%def name="render_note(
             obj, action=True, id=None,
             next_url=None, unlink_url=None,

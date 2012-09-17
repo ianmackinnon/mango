@@ -470,7 +470,7 @@ class Org(Base, NotableEntity):
     def merge(self, other, moderation_user=False, public=None):
         session = object_session(self)
         assert session
-        orgalias = Orgalias.get(session, other.name, self, moderation_user, public)
+        orgalias = Orgalias.get(session, other.name, self, moderation_user, other.public)
         for alias in other.orgalias_list:
             alias.org = self
         self.address_list = list(set(self.address_list + other.address_list))
@@ -493,16 +493,30 @@ class Org(Base, NotableEntity):
         return re.sub("[\s]+", " ", name).strip()
 
     @staticmethod
-    def get(orm, name, moderation_user=None, public=None):
+    def get(orm, name, accept_alias=None, moderation_user=None, public=None):
         name = Org.sanitise_name(name)
+
+        org = None
         try:
             org = orm.query(Org).filter(Org.name == name).one()
         except NoResultFound:
+            pass
+
+        if accept_alias:
+            try:
+                org = orm.query(Org)\
+                    .join(Orgalias)\
+                    .filter(Orgalias.name == name).one()
+            except NoResultFound:
+                pass
+
+        if not org:
             org = Org(
                 name,
                 moderation_user=moderation_user, public=public,
                 )
             orm.add(org)
+
         return org
 
 
@@ -545,7 +559,7 @@ class Orgalias(Base):
         return unicode(self).encode("utf8")
 
     def obj(self, public=False,
-            org_obj_list=None,
+            org_obj=None,
             ):
         obj = {
             "id": self.orgalias_id,
@@ -555,8 +569,8 @@ class Orgalias(Base):
             }
         if public:
             obj["public"] = self.public
-        if org_obj_list is not None:
-            obj["org_list"] = org_obj_list
+        if org_obj is not None:
+            obj["org"] = org_obj
         return obj
 
     @property

@@ -140,6 +140,29 @@
     %endif
 
     %endif
+
+    %if "orgalias_list" in obj and obj["orgalias_list"]:
+    <div class="action-bar no-border">
+      <h3>Aliases</h3>
+      %if current_user:
+      <div class="actions">
+        <a
+           href="${url_rewrite("%s/alias" % obj["url"], parameters)}"
+           class="action"
+           >Edit aliases</a>
+      </div>
+      %endif
+    </div>
+
+    <ul class="alias_list">
+      %for orgalias in obj["orgalias_list"]:
+      ${self.mini.alias_li(
+        orgalias, visibility=True, parameters=parameters,
+        )}
+      %endfor
+    </ul>
+    %endif
+
   </div>
   
 </div>
