@@ -27,14 +27,24 @@ mango.db : model.py sqlite/build.sqlite.sql
 	./model.py mango.db
 	sqlite3 mango.db < sqlite/build.sqlite.sql
 
-mysql : 
+mysql : mysql-build mysql-triggers mysql-seed
+
+mysql-build:
 	@./mysql/mysql_init.py > /dev/null
 	@echo "Logging into MySQL as user 'root'"
 	@./mysql/mysql_init.py | mysql -u root -p
 	./model.py
 	@cat \
 	  mysql/build.mysql.sql \
+	 | mysql -u root -p -D $$(./mysql/mysql_init.py -d database)
+
+mysql-triggers:
+	@cat \
 	  mysql/build_triggers.mysql.sql \
+	 | mysql -u root -p -D $$(./mysql/mysql_init.py -d database)
+
+mysql-seed:
+	@cat \
 	  mysql/seed.mysql.sql \
 	 | mysql -u root -p -D $$(./mysql/mysql_init.py -d database)
 

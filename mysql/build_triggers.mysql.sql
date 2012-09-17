@@ -221,6 +221,9 @@ end $$
 create trigger note_insert_before before insert on note
 for each row begin
     set new.a_time = UNIX_TIMESTAMP();
+    
+    insert into note_fts (docid, content) values (new.note_id, new.text);
+
     insert into note_v (
         note_id,
         moderation_user_id, a_time, public, existence,
@@ -236,6 +239,9 @@ end $$
 create trigger note_update_before before update on note
 for each row begin
     set new.a_time = UNIX_TIMESTAMP();
+
+    update note_fts set content = new.text where docid = new.note_id;
+
     insert into note_v (
         note_id,
         moderation_user_id, a_time, public, existence,
@@ -250,6 +256,9 @@ end $$
 
 create trigger note_delete_before before delete on note
 for each row begin
+
+    delete from note_fts where docid = old.note_id;
+
     insert into note_v (
         note_id,
         moderation_user_id, a_time, public, existence,

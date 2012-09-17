@@ -494,6 +494,7 @@ end;
 
 create trigger note_delete_after after delete on note
 begin
+    delete from note_fts where docid = old.note_id;
     insert into note_v (
         note_id,
 	text, source,
