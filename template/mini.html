@@ -36,6 +36,9 @@ if not parameters:
     <a
        href="${url_rewrite(org["url"], parameters)}"
        >${org["name"]}</a>
+    %if org.get("alias", None):
+    (${org["alias"]})
+    %endif
   </div>
 
   %if tag:

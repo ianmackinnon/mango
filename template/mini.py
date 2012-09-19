@@ -19,6 +19,9 @@ org_box = u"""
     <a
        href="<%= m.url_rewrite(org["url"], parameters) %>"
        ><%=m.filter.h(org["name"])%></a>
+    <% if (org.alias) { %>
+    (<%=org.alias%>)
+    <% } %>
   </div>
   
   <% if (tag && org.tag_list) { %>

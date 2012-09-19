@@ -141,7 +141,8 @@
 
     %endif
 
-    %if "orgalias_list" in obj and obj["orgalias_list"]:
+    %if obj:
+    %if ("orgalias_list" in obj and obj["orgalias_list"]) or current_user:
     <div class="action-bar no-border">
       <h3>Aliases</h3>
       %if current_user:
@@ -153,7 +154,9 @@
       </div>
       %endif
     </div>
+    %endif
 
+    %if "orgalias_list" in obj and obj["orgalias_list"]:
     <ul class="alias_list">
       %for orgalias in obj["orgalias_list"]:
       ${self.mini.alias_li(
@@ -161,6 +164,7 @@
         )}
       %endfor
     </ul>
+    %endif
     %endif
 
   </div>

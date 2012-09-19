@@ -2,9 +2,10 @@
 
 import json
 
+from sqlalchemy import distinct, or_, and_
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm import joinedload
-from sqlalchemy.sql import exists
+from sqlalchemy.sql import exists, func, literal
 from tornado.web import HTTPError
 
 from base import BaseHandler, authenticated
@@ -46,10 +47,43 @@ class BaseOrgHandler(BaseHandler):
         org_list = self.filter_visibility(org_list, Org, visibility)
 
         if name:
-            org_list = org_list.filter_by(name=name)
+            org_list = org_list \
+                .join(Orgalias) \
+                .add_columns(
+                func.min(func.coalesce(
+                        func.if_(
+                            Org.name == name,
+                            "",
+                            None,
+                            ),
+                        Orgalias.name,
+                        )).label('alias'),
+                ) \
+                .filter(or_(
+                    Org.name == name,
+                    Orgalias.name == name,
+                    ))
         elif name_search:
-            org_list = org_list\
-                .filter(Org.name.contains(name_search))
+            org_list = org_list \
+                .outerjoin(Orgalias) \
+                .add_columns(
+                func.min(func.coalesce(
+                        func.if_(
+                            Org.name.contains(name_search),
+                            "",
+                            None,
+                            ),
+                        Orgalias.name,
+                        )).label('alias'),
+                ) \
+                .filter(or_(
+                    Org.name.contains(name_search),
+                    Orgalias.name.contains(name_search),
+                    ))
+        else:
+            org_list = org_list \
+                .add_columns(literal(None).label('alias'))
+            
 
         if tag_name_list:
             org_list = org_list.join((Orgtag, Org.orgtag_list)) \
@@ -80,6 +114,7 @@ class BaseOrgHandler(BaseHandler):
                     .order_by(Org.name.startswith(name_search).desc(), Org.name)
             else:
                 org_list = org_list.order_by(Org.name)
+            org_list = org_list.group_by(Org.org_id)
             org_count = self.orm.query(org_list.subquery().c.org_id.distinct()).count()
             if offset:
                 org_list = org_list.offset(offset);
@@ -104,7 +139,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
         else:
             address_list_name = "address_list_public"
 
-        org_list, org_count, geobox, latlon = self._get_org_list_search(
+        org_and_alias_list, org_count, geobox, latlon = self._get_org_list_search(
             name=name,
             name_search=name_search,
             tag_name_list=tag_name_list,
@@ -126,7 +161,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
         if offset is not None:
             org_packet["offset"] = offset
 
-        for org in org_list:
+        for org, alias in org_and_alias_list:
             if self.deep_visible():
                 address_list = org.address_list
             else:
@@ -136,6 +171,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
             obj = org.obj(
                 public=bool(self.current_user),
                 address_obj_list=address_list,
+                alias=(alias or None)
                 )
             org_packet["org_list"].append(obj);
 
@@ -440,7 +476,6 @@ class OrgOrgtagHandler(BaseOrgHandler, BaseOrgtagHandler):
         if orgtag not in org.orgtag_list:
             org.orgtag_list.append(orgtag)
             self.orm.commit()
-        print self.next
         self.redirect(self.next or self.url_root[:-1] + org.url)
 
     @authenticated
@@ -503,8 +538,6 @@ class OrgOrgaliasListHandler(BaseOrgHandler, BaseOrgtagHandler):
         name = self.get_argument("name", json=is_json)
 
         org = self._get_org(org_id_string)
-
-        print org
 
         orgalias = Orgalias.get(self.orm, name, org, self.current_user, True)
         self.orm.commit()

@@ -445,7 +445,7 @@ class Org(Base, NotableEntity):
     def obj(self, public=False,
             note_obj_list=None, address_obj_list=None,
             orgtag_obj_list=None, event_obj_list=None,
-            orgalias_obj_list=None,
+            orgalias_obj_list=None, alias=None,
             ):
         obj = {
             "id": self.org_id,
@@ -465,6 +465,8 @@ class Org(Base, NotableEntity):
             obj["event_list"] = event_obj_list
         if orgalias_obj_list is not None:
             obj["orgalias_list"] = orgalias_obj_list
+        if alias is not None:
+            obj["alias"] = alias;
         return obj
 
     def merge(self, other, moderation_user=False, public=None):
