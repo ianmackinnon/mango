@@ -202,6 +202,7 @@ var m = {
     },
 
     "event_packet": function(event_packet, ajaxFunction) {
+      
       var column = $("#event_list > .column");
       column.empty();
 
@@ -449,8 +450,11 @@ var m = {
 
         });
         m.fit_map(function() {
-          m.map.setZoom(m.map.getZoom() + 1);
-          console.log(m.map.getZoom());
+          m.map.setCenter(new google.maps.LatLng(
+            54.12667879191665,
+            -2.8131760625000224
+          ))
+          m.map.setZoom(5);
         });
       },
       "error": function(jqXHR, textStatus, errorThrown) {
@@ -1046,28 +1050,30 @@ var m = {
   this.tmpl = function tmpl(str, data){
     // Figure out if we're getting a template, or if we need to
     // load the template - and be sure to cache the result.
-    var fn = !/\W/.test(str) ?
-      cache[str] = cache[str] ||
-      tmpl(document.getElementById(str).innerHTML) :
-      
-    // Generate a reusable function that will serve as a template
-    // generator (and which will be cached).
-    new Function("obj",
-                 "var p=[],print=function(){p.push.apply(p,arguments);};" +
-                 
-                 // Introduce the data as local variables using with(){}
-                 "with(obj){p.push('" +
-                 
-                 // Convert the template into pure JavaScript
-		 str
-                 .replace(/[\r\t\n]/g, " ")
-                 .split("<%").join("\t")
-                 .replace(/((^|%>)[^\t]*)'/g, "$1\r")
-		 .replace(/\t=(.*?)%>/g, "',$1,'")
-		 .split("\t").join("');")
-		 .split("%>").join("p.push('")
-		 .split("\r").join("\\'")
-		 + "');}return p.join('');");
+
+    if (!/\W/.test(str)) {
+      var fn = cache[str] = cache[str] || tmpl(document.getElementById(str).innerHTML);
+    } else {
+      // Generate a reusable function that will serve as a template
+      // generator (and which will be cached).
+      var functionText = "var p=[],print=function(){p.push.apply(p,arguments);};" +
+                            
+      // Introduce the data as local variables using with(){}
+      "with(obj){p.push('" +
+        
+      // Convert the template into pure JavaScript
+      str
+        .replace(/[\r\t\n]/g, " ")
+        .split("<%").join("\t")
+        .replace(/((^|%>)[^\t]*)'/g, "$1\r")
+	.replace(/\t=(.*?)%>/g, "',$1,'")
+	.split("\t").join("');")
+	.split("%>").join("p.push('")
+	.split("\r").join("\\'")
+	+ "');}return p.join('');";
+
+      var fn = new Function("obj", functionText);
+    }
     
     // Provide some basic currying to the user
     return data ? fn( data ) : fn;
