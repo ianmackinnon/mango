@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
 from tornado.web import HTTPError
 
@@ -174,17 +173,6 @@ class EventtagHandler(BaseEventtagHandler):
         note_order = self.get_argument_order("note_order", None)
 
         public = bool(self.current_user)
-
-        if self.deep_visible():
-            options = (
-                joinedload("event_list"),
-                joinedload("note_list"),
-                )
-        else:
-            options = (
-                joinedload("event_list_public"),
-                joinedload("note_list_public"),
-                )
 
         eventtag = self._get_eventtag(eventtag_id_string)
 

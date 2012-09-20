@@ -199,22 +199,7 @@ class EventHandler(BaseEventHandler):
 
         public = bool(self.current_user)
 
-        if self.deep_visible():
-            options = (
-                joinedload("org_list"),
-                joinedload("address_list"),
-                joinedload("eventtag_list"),
-                joinedload("note_list"),
-                )
-        else:
-            options = (
-                joinedload("org_list_public"),
-                joinedload("address_list_public"),
-                joinedload("eventtag_list_public"),
-                joinedload("note_list_public"),
-                )
-
-        event = self._get_event(event_id_string, options=options)
+        event = self._get_event(event_id_string)
 
         if self.deep_visible():
             org_list=event.org_list
@@ -410,16 +395,7 @@ class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
 
         # event...
 
-        if self.deep_visible():
-            options = (
-                joinedload("eventtag_list"),
-                )
-        else:
-            options = (
-                joinedload("eventtag_list_public"),
-                )
-
-        event = self._get_event(event_id_string, options=options)
+        event = self._get_event(event_id_string)
 
         if self.deep_visible():
             eventtag_list=event.eventtag_list

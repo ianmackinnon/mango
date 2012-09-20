@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
 from tornado.web import HTTPError
 
@@ -174,18 +173,7 @@ class OrgtagHandler(BaseOrgtagHandler):
 
         public = bool(self.current_user)
 
-        if self.deep_visible():
-            options = (
-                joinedload("org_list"),
-                joinedload("note_list"),
-                )
-        else:
-            options = (
-                joinedload("org_list_public"),
-                joinedload("note_list_public"),
-                )
-
-        orgtag = self._get_orgtag(orgtag_id_string, options)
+        orgtag = self._get_orgtag(orgtag_id_string)
 
         if self.deep_visible():
             org_list=orgtag.org_list

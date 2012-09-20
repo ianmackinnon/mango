@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from sqlalchemy.orm import joinedload
-
 from base import authenticated
 from base_note import BaseNoteHandler
 from orgtag import BaseOrgtagHandler
@@ -75,20 +73,7 @@ class NoteHandler(BaseNoteHandler):
     def get(self, note_id_string):
         public = bool(self.current_user)
 
-        if self.deep_visible():
-            options = (
-                joinedload("address_list"),
-                joinedload("orgtag_list"),
-                joinedload("org_list"),
-                )
-        else:
-            options = (
-                joinedload("address_list_public"),
-                joinedload("orgtag_list_public"),
-                joinedload("org_list_public"),
-                )
-
-        note = self._get_note(note_id_string, options=options)
+        note = self._get_note(note_id_string)
 
         if self.deep_visible():
             address_list=note.address_list

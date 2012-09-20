@@ -3,7 +3,6 @@
 import datetime
 
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import literal
 from sqlalchemy import Unicode
@@ -60,20 +59,7 @@ class AddressHandler(BaseAddressHandler):
 
         public = bool(self.current_user)
 
-        if self.deep_visible():
-            options = (
-                joinedload("org_list"),
-                joinedload("event_list"),
-                joinedload("note_list"),
-                )
-        else:
-            options = (
-                joinedload("org_list_public"),
-                joinedload("event_list_public"),
-                joinedload("note_list_public"),
-                )
-
-        address = self._get_address(address_id_string, options=options)
+        address = self._get_address(address_id_string)
 
         if self.deep_visible():
             org_list=address.org_list

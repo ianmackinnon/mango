@@ -215,24 +215,7 @@ class OrgHandler(BaseOrgHandler):
 
         public = bool(self.current_user)
 
-        if self.deep_visible():
-            options = (
-                joinedload("address_list"),
-                joinedload("orgtag_list"),
-                joinedload("note_list"),
-                joinedload("event_list"),
-                joinedload("orgalias_list"),
-                )
-        else:
-            options = (
-                joinedload("address_list_public"),
-                joinedload("orgtag_list_public"),
-                joinedload("note_list_public"),
-                joinedload("event_list_public"),
-                joinedload("orgalias_list_public"),
-                )
-
-        org = self._get_org(org_id_string, options=options)
+        org = self._get_org(org_id_string)
 
         if self.deep_visible():
             address_list=org.address_list
@@ -416,16 +399,7 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
 
         # org...
 
-        if self.deep_visible():
-            options = (
-                joinedload("orgtag_list"),
-                )
-        else:
-            options = (
-                joinedload("orgtag_list_public"),
-                )
-
-        org = self._get_org(org_id_string, options=options)
+        org = self._get_org(org_id_string)
 
         if self.deep_visible():
             orgtag_list=org.orgtag_list
@@ -494,16 +468,7 @@ class OrgOrgaliasListHandler(BaseOrgHandler, BaseOrgtagHandler):
     def get(self, org_id_string):
         # org...
 
-        if self.deep_visible():
-            options = (
-                joinedload("orgalias_list"),
-                )
-        else:
-            options = (
-                joinedload("orgalias_list_public"),
-                )
-
-        org = self._get_org(org_id_string, options=options)
+        org = self._get_org(org_id_string)
 
         if self.deep_visible():
             orgalias_list=org.orgalias_list
