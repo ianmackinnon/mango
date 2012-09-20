@@ -170,6 +170,7 @@ class OrgtagHandler(BaseOrgtagHandler):
     def get(self, orgtag_id_string):
         note_search = self.get_argument("note_search", None)
         note_order = self.get_argument_order("note_order", None)
+        note_offset = self.get_argument_int("note_offset", None)
 
         public = bool(self.current_user)
 
@@ -177,10 +178,15 @@ class OrgtagHandler(BaseOrgtagHandler):
 
         if self.deep_visible():
             org_list=orgtag.org_list
-            note_list=orgtag.note_list
         else:
             org_list=orgtag.org_list_public
-            note_list=orgtag.note_list_public
+
+        note_list, note_count = orgtag.note_list_filtered(
+            note_search=note_search,
+            note_order=note_order,
+            note_offset=note_offset,
+            all_visible=self.deep_visible,
+            )
 
         org_list = [org.obj(public=public) for org in org_list]
         note_list = [note.obj(public=public) for note in note_list]
@@ -189,6 +195,7 @@ class OrgtagHandler(BaseOrgtagHandler):
             public=public,
             org_obj_list=org_list,
             note_obj_list=note_list,
+            note_count=note_count,
             )
 
         if self.accept_type("json"):
@@ -199,6 +206,7 @@ class OrgtagHandler(BaseOrgtagHandler):
                 obj=obj,
                 note_search=note_search,
                 note_order=note_order,
+                note_offset=note_offset,
                 type_title="Organisation",
                 type_title_plural="Organisations",
                 type_url="organisation",

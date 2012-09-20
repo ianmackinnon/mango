@@ -212,6 +212,7 @@ class OrgHandler(BaseOrgHandler):
     def get(self, org_id_string):
         note_search = self.get_argument("note_search", None)
         note_order = self.get_argument_order("note_order", None)
+        note_offset = self.get_argument_int("note_offset", None)
 
         public = bool(self.current_user)
 
@@ -220,15 +221,20 @@ class OrgHandler(BaseOrgHandler):
         if self.deep_visible():
             address_list=org.address_list
             orgtag_list=org.orgtag_list
-            note_list=org.note_list
             event_list=org.event_list
             orgalias_list=org.orgalias_list
         else:
             address_list=org.address_list_public
             orgtag_list=org.orgtag_list_public
-            note_list=org.note_list_public
             event_list=org.event_list_public
             orgalias_list=org.orgalias_list_public
+
+        note_list, note_count = org.note_list_filtered(
+            note_search=note_search,
+            note_order=note_order,
+            note_offset=note_offset,
+            all_visible=self.deep_visible,
+            )
 
         address_list = [address.obj(public=public) for address in address_list]
         orgtag_list = [orgtag.obj(public=public) for orgtag in orgtag_list]
@@ -241,6 +247,7 @@ class OrgHandler(BaseOrgHandler):
             address_obj_list=address_list,
             orgtag_obj_list=orgtag_list,
             note_obj_list=note_list,
+            note_count=note_count,
             event_obj_list=event_list,
             orgalias_obj_list=orgalias_list,
             )
@@ -253,6 +260,7 @@ class OrgHandler(BaseOrgHandler):
                 obj=obj,
                 note_search=note_search,
                 note_order=note_order,
+                note_offset=note_offset,
                 )
 
     @authenticated

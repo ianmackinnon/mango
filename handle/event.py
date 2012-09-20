@@ -196,6 +196,7 @@ class EventHandler(BaseEventHandler):
     def get(self, event_id_string):
         note_search = self.get_argument("note_search", None)
         note_order = self.get_argument_order("note_order", None)
+        note_offset = self.get_argument_int("note_offset", None)
 
         public = bool(self.current_user)
 
@@ -205,12 +206,17 @@ class EventHandler(BaseEventHandler):
             org_list=event.org_list
             address_list=event.address_list
             eventtag_list=event.eventtag_list
-            note_list=event.note_list
         else:
             org_list=event.org_list_public
             address_list=event.address_list_public
             eventtag_list=event.eventtag_list_public
-            note_list=event.note_list_public
+
+        note_list, note_count = event.note_list_filtered(
+            note_search=note_search,
+            note_order=note_order,
+            note_offset=note_offset,
+            all_visible=self.deep_visible,
+            )
 
         org_list = [org.obj(public=public) for org in org_list]
         address_list = [address.obj(public=public) for address in address_list]
@@ -223,6 +229,7 @@ class EventHandler(BaseEventHandler):
             address_obj_list=address_list,
             eventtag_obj_list=eventtag_list,
             note_obj_list=note_list,
+            note_count=note_count,
             )
 
         if self.accept_type("json"):
@@ -233,6 +240,7 @@ class EventHandler(BaseEventHandler):
                 obj=obj,
                 note_search=note_search,
                 note_order=note_order,
+                note_offset=note_offset,
                 )
 
 

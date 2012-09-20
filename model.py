@@ -141,7 +141,10 @@ class NotableEntity(object):
         return object_session(self) \
             .query(Note).with_parent(self, "note_list")
 
-    def note_list_query_filtered(self, note_search=None, note_order=None):
+    def note_list_filtered(self,
+                           note_search=None, note_order=None,
+                           all_visible=None,
+                           note_offset=None):
         query = self.note_list_query
         if note_search:
             query = query \
@@ -153,7 +156,12 @@ class NotableEntity(object):
                         "desc":Note.a_time.desc(),
                         "asc":Note.a_time.asc(),
                         }[note_order])
-        return query
+        if note_offset is not None:
+            query = query.offset(note_offset)
+
+        count = query.count()
+        query = query.limit(10).all()
+        return query, count
     
     
 
@@ -443,7 +451,8 @@ class Org(Base, NotableEntity):
         return unicode(self).encode("utf8")
 
     def obj(self, public=False,
-            note_obj_list=None, address_obj_list=None,
+            note_obj_list=None, note_count=None,
+            address_obj_list=None,
             orgtag_obj_list=None, event_obj_list=None,
             orgalias_obj_list=None, alias=None,
             ):
@@ -457,6 +466,8 @@ class Org(Base, NotableEntity):
             obj["public"] = self.public
         if note_obj_list is not None:
             obj["note_list"] = note_obj_list
+        if note_count is not None:
+            obj["note_count"] = note_count
         if address_obj_list is not None:
             obj["address_list"] = address_obj_list
         if orgtag_obj_list is not None:
@@ -698,7 +709,8 @@ class Event(Base, NotableEntity):
         return unicode(self).encode("utf8")
 
     def obj(self, public=False,
-            note_obj_list=None, address_obj_list=None,
+            note_obj_list=None, note_count=None,
+            address_obj_list=None,
             eventtag_obj_list=None, org_obj_list=None,
             ):
         obj = {
@@ -716,6 +728,8 @@ class Event(Base, NotableEntity):
             obj["public"] = self.public
         if note_obj_list is not None:
             obj["note_list"] = note_obj_list
+        if note_count is not None:
+            obj["note_count"] = note_count
         if address_obj_list is not None:
             obj["address_list"] = address_obj_list
         if eventtag_obj_list is not None:
@@ -851,7 +865,8 @@ class Address(Base, NotableEntity):
                 (self.latitude, self.longitude) = coords
 
     def obj(self, public=False,
-            note_obj_list=None, org_obj_list=None, event_obj_list=None):
+            note_obj_list=None, note_count=None,
+            org_obj_list=None, event_obj_list=None):
         obj = {
             "id": self.address_id,
             "url": self.url,
@@ -869,6 +884,8 @@ class Address(Base, NotableEntity):
             obj["public"] = self.public
         if note_obj_list is not None:
             obj["note_list"] = note_obj_list
+        if note_count is not None:
+            obj["note_count"] = note_count
         if org_obj_list is not None:
             obj["org_list"] = org_obj_list
             obj["entity_list"] = obj.get("entity_list", []) + org_obj_list
@@ -1029,7 +1046,8 @@ class Orgtag(Base, NotableEntity):
         return unicode(self).encode("utf8")
 
     def obj(self, public=False,
-            note_obj_list=None, org_obj_list=None,
+            note_obj_list=None, note_count=None,
+            org_obj_list=None,
             org_len=None):
         obj = {
             "id": self.orgtag_id,
@@ -1043,6 +1061,8 @@ class Orgtag(Base, NotableEntity):
             obj["public"] = self.public
         if note_obj_list is not None:
             obj["note_list"] = note_obj_list
+        if note_count is not None:
+            obj["note_count"] = note_count
         if org_obj_list is not None:
             obj["org_list"] = org_obj_list
         if org_len is not None:
@@ -1134,7 +1154,8 @@ class Eventtag(Base, NotableEntity):
         return unicode(self).encode("utf8")
 
     def obj(self, public=False,
-            note_obj_list=None, event_obj_list=None,
+            note_obj_list=None, note_count=None,
+            event_obj_list=None,
             event_len=None):
         obj = {
             "id": self.eventtag_id,
@@ -1148,6 +1169,8 @@ class Eventtag(Base, NotableEntity):
             obj["public"] = self.public
         if note_obj_list is not None:
             obj["note_list"] = note_obj_list
+        if note_count is not None:
+            obj["note_count"] = note_count
         if event_obj_list is not None:
             obj["event_list"] = event_obj_list
         if event_len is not None:

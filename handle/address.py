@@ -56,6 +56,7 @@ class AddressHandler(BaseAddressHandler):
     def get(self, address_id_string):
         note_search = self.get_argument("note_search", None)
         note_order = self.get_argument_order("note_order", None)
+        note_offset = self.get_argument_int("note_offset", None)
 
         public = bool(self.current_user)
 
@@ -64,11 +65,16 @@ class AddressHandler(BaseAddressHandler):
         if self.deep_visible():
             org_list=address.org_list
             event_list=address.event_list
-            note_list=address.note_list
         else:
             org_list=address.org_list_public
             event_list=address.event_list_public
-            note_list=address.note_list_public
+
+        note_list, note_count = address.note_list_filtered(
+            note_search=note_search,
+            note_order=note_order,
+            note_offset=note_offset,
+            all_visible=self.deep_visible,
+            )
 
         org_list = [org.obj(public=public) for org in org_list]
         event_list = [event.obj(public=public) for event in event_list]
@@ -79,6 +85,7 @@ class AddressHandler(BaseAddressHandler):
             org_obj_list=org_list,
             event_obj_list=event_list,
             note_obj_list=note_list,
+            note_count=note_count,
             )
 
         if self.accept_type("json"):
@@ -89,6 +96,7 @@ class AddressHandler(BaseAddressHandler):
                 obj=obj,
                 note_search=note_search,
                 note_order=note_order,
+                note_offset=note_offset,
                 entity_list="entity_list",
                 )
 

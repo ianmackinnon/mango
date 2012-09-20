@@ -171,6 +171,7 @@ class EventtagHandler(BaseEventtagHandler):
     def get(self, eventtag_id_string):
         note_search = self.get_argument("note_search", None)
         note_order = self.get_argument_order("note_order", None)
+        note_offset = self.get_argument_int("note_offset", None)
 
         public = bool(self.current_user)
 
@@ -178,10 +179,15 @@ class EventtagHandler(BaseEventtagHandler):
 
         if self.deep_visible():
             event_list=eventtag.event_list
-            note_list=eventtag.note_list
         else:
             event_list=eventtag.event_list_public
-            note_list=eventtag.note_list_public
+
+        note_list, note_count = eventtag.note_list_filtered(
+            note_search=note_search,
+            note_order=note_order,
+            note_offset=note_offset,
+            all_visible=self.deep_visible,
+            )
 
         event_list = [event.obj(public=public) for event in event_list]
         note_list = [note.obj(public=public) for note in note_list]
@@ -190,6 +196,7 @@ class EventtagHandler(BaseEventtagHandler):
             public=public,
             event_obj_list=event_list,
             note_obj_list=note_list,
+            note_count=note_count,
             )
 
         if self.accept_type("json"):
@@ -200,6 +207,7 @@ class EventtagHandler(BaseEventtagHandler):
                 obj=obj,
                 note_search=note_search,
                 note_order=note_order,
+                note_offset=note_offset,
                 type_title="Event",
                 type_title_plural="Events",
                 type_url="event",
