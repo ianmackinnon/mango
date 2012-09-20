@@ -233,7 +233,7 @@ class OrgHandler(BaseOrgHandler):
             note_search=note_search,
             note_order=note_order,
             note_offset=note_offset,
-            all_visible=self.deep_visible,
+            all_visible=self.deep_visible(),
             )
 
         address_list = [address.obj(public=public) for address in address_list]

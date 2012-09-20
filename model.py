@@ -146,21 +146,26 @@ class NotableEntity(object):
                            all_visible=None,
                            note_offset=None):
         query = self.note_list_query
+        if not all_visible:
+            query = query \
+                .filter(Note.public==True)
         if note_search:
             query = query \
                 .join((note_fts, note_fts.c.docid == Note.note_id)) \
                 .filter(note_fts.c.content.match(note_search))
-        if note_order:
-            query = query \
-                .order_by({
-                        "desc":Note.a_time.desc(),
-                        "asc":Note.a_time.asc(),
+        if not note_order:
+            note_order = 'desc'
+        query = query \
+            .order_by({
+                "desc":Note.a_time.desc(),
+                "asc":Note.a_time.asc(),
                         }[note_order])
-        if note_offset is not None:
-            query = query.offset(note_offset)
+            
+#        if note_offset is not None:
+#            query = query.offset(note_offset)
 
         count = query.count()
-        query = query.limit(10).all()
+#        query = query.limit(30).all()
         return query, count
     
     

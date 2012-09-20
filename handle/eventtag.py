@@ -186,7 +186,7 @@ class EventtagHandler(BaseEventtagHandler):
             note_search=note_search,
             note_order=note_order,
             note_offset=note_offset,
-            all_visible=self.deep_visible,
+            all_visible=self.deep_visible(),
             )
 
         event_list = [event.obj(public=public) for event in event_list]

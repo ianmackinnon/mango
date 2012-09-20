@@ -185,7 +185,7 @@ class OrgtagHandler(BaseOrgtagHandler):
             note_search=note_search,
             note_order=note_order,
             note_offset=note_offset,
-            all_visible=self.deep_visible,
+            all_visible=self.deep_visible()
             )
 
         org_list = [org.obj(public=public) for org in org_list]
