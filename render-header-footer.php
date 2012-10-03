@@ -1,9 +1,9 @@
 <?php
 // YOU MUST FILL THESE VALUES IN AND KEEP THEM UPDATED!
-$pagetitle = "CAAT Mapping Application";
+$pagetitle = "Map of the arms trade";
 $pagecreated = "2 August 2012";
 $author = "CAAT";
-$pagedescription = "CAAT Mapping Application";
+$pagedescription = "Expose and challenge the arms trade on your doorstep with CAAT's map of the arms trade.";
 $keywords = "mapping";
 $pageupdated = "";
 
