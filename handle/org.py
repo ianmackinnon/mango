@@ -532,7 +532,7 @@ class OrgListTaskAddressHandler(BaseOrgHandler, BaseOrgtagHandler):
         else:
             address_list_name = "address_list_public"
 
-        org_list, org_count, geobox, latlon = self._get_org_list_search(
+        org_and_alias_list, org_count, geobox, latlon = self._get_org_list_search(
             name=name,
             name_search=name_search,
             tag_name_list=tag_name_list,
@@ -554,9 +554,10 @@ class OrgListTaskAddressHandler(BaseOrgHandler, BaseOrgtagHandler):
         if offset is not None:
             org_packet["offset"] = offset
 
-        for org in org_list:
+        for org, alias in org_and_alias_list:
             obj = org.obj(
                 public=bool(self.current_user),
+                alias=(alias or None)
                 )
             org_packet["org_list"].append(obj);
 

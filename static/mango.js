@@ -263,6 +263,25 @@ var m = {
 	  "org":value,
 	})
       });
+    },
+
+    "eventtag_packet": function(tag_list_id, eventtag_packet) {
+      var tag_list = $(tag_list_id);
+      tag_list.empty();
+
+      $.each(eventtag_packet, function(index, value) {
+	var tag_li = $(tmpl("tag_li", {
+	  "tag":value,
+	  "org":true,
+	  "note":true,
+          "parameters":m.parameters,
+	}));
+	tag_list.append(tag_li);
+	tag_list.append(" ");
+	var t = tmpl("visibility_bar", {
+	  "org":value,
+	})
+      });
     }
   },
 
@@ -370,10 +389,12 @@ var m = {
       }
       var data = m.filter_object_true({
 	"name_search": name_search.input.val(),
-	"lookup": lookup.input.val(),
 	"tag": tag_values(),
         "offset": offset || 0,
       });
+      if (!!lookup) {
+        data["lookup"] = lookup.input.val()
+      }
       if (past) {
         console.log(past.input.attr("checked") && past.input.val());
 	data["past"] = past.input.attr("checked") && past.input.val();
@@ -402,7 +423,9 @@ var m = {
       throbber.show()
     }
     m.on_change(name_search.input, "name_search", change, 500);
-    m.on_change(lookup.input, "lookup", change, 500);
+    if (!!lookup) {
+      m.on_change(lookup.input, "lookup", change, 500);
+    }
     m.on_change(tag, "tag", change, 500);
     if (past) {
       m.on_change(past.input, "past", change, 500);
@@ -530,6 +553,54 @@ var m = {
 	"data": data,
 	"success": function(data, textStatus, jqXHR) {
 	  m.process.orgtag_packet("#tag_list", data);
+	  throbber.hide();
+	},
+	"error": function(jqXHR, textStatus, errorThrown) {
+	  if (textStatus == "abort") {
+	    return;
+	  }
+	  console.log("error");
+	  console.log(jqXHR);
+	  console.log(textStatus);
+	  console.log(errorThrown);
+	  throbber.hide();
+	}
+      });
+      throbber.show()
+    }
+
+    m.on_change(search.input, id + "_" + field, change, 500);
+    visibility.change(change);
+  },
+
+  "init_eventtag_search": function(id, field) {
+    var form = $("#" + id)
+    var search = m.get_field(form, field);
+    var visibility = form.find("input[name='visibility']")
+    var throbber = $("<img>").attr({
+      "src": m.url_root + "static/image/throbber.gif",
+      "class": "throbber"
+    }).hide();
+    form.append(throbber);
+    var xhr = null;
+
+    var change = function(value) {
+
+      if(xhr && xhr.readyState != 4) {
+	xhr.abort();
+      }
+      var data = {
+	"search": search.input.val()
+      }
+      if (visibility.length) {
+	data["visibility"] = visibility.val()
+	console.log(data);
+      }
+      xhr = $.ajax(m.url_root + "event-tag", {
+	"dataType": "json",
+	"data": data,
+	"success": function(data, textStatus, jqXHR) {
+	  m.process.eventtag_packet("#tag_list", data);
 	  throbber.hide();
 	},
 	"error": function(jqXHR, textStatus, errorThrown) {
@@ -947,9 +1018,6 @@ var m = {
       m.build_map();
       m.all_addresses();
     }],
-    [/^\/home$/, function() {
-      m.build_map();
-    }],
     [/^\/note\/new$/, function() {
       m.note_markdown();
     }],
@@ -959,13 +1027,16 @@ var m = {
     [/^\/organisation$/, function() {
       m.build_map();
       m.init_org_search();
+      m.visibility();
     }],
     [/^\/event$/, function() {
       m.build_map();
       m.init_event_search();
+      m.visibility();
     }],
     [/^\/task\/address$/, function() {
       m.init_org_search();
+      m.visibility();
     }],
     [/^\/organisation\/([1-9][0-9]*)$/, function() {
       m.build_map();
@@ -1007,8 +1078,9 @@ var m = {
     }],
 
     [/^\/organisation-tag$/, function() {
-      m.init_orgtag_search("orgtag-search", "search");
+      m.init_orgtag_search("tag-search", "search");
       $("#orgtag-search input[name='search']").focus();
+      m.visibility();
     }],
     [/^\/organisation-tag\/([1-9][0-9]*)$/, function() {
       m.init_orgtag_search("orgtag-form", "name");
@@ -1020,7 +1092,24 @@ var m = {
     }],
     [/^\/organisation-tag\/([1-9][0-9]*)\/note$/, function() {
       m.note_markdown();
-    }]
+    }],
+
+    [/^\/event-tag$/, function() {
+      m.init_eventtag_search("tag-search", "search");
+      $("#eventtag-search input[name='search']").focus();
+      m.visibility();
+    }],
+    [/^\/event-tag\/([1-9][0-9]*)$/, function() {
+      m.init_eventtag_search("eventtag-form", "name");
+      $("#eventtag-form input[name='name']").focus();
+    }],
+    [/^\/event-tag\/new$/, function() {
+      m.init_eventtag_search("eventtag-form", "name");
+      $("#eventtag-form input[name='name']").focus();
+    }],
+    [/^\/event-tag\/([1-9][0-9]*)\/note$/, function() {
+      m.note_markdown();
+    }],
   ],
   
   "handle": function() {
@@ -1085,5 +1174,4 @@ var m = {
 $(document).ready(function(){
   $.ajaxSetup({ "traditional": true });
   m.handle();
-  m.visibility();
 });

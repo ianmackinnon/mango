@@ -298,8 +298,6 @@ class Application(tornado.web.Application):
             login_url=self.url_root + "auth/login",
             )
 
-        print settings
-
         if options.database == "mysql":
             (database,
              app_username, app_password,
@@ -352,6 +350,8 @@ class Application(tornado.web.Application):
         settings["xsrf_cookies"] = False
         
         tornado.web.Application.__init__(self, self.handler_list, **settings)
+
+        print "CAAT Mapping Application running on port %d" % options.port
         
 
 
