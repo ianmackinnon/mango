@@ -547,25 +547,30 @@ if not parameters:
 
 <%def name="visibility_input(entity=None, default='pending')">
 <%
-    options = ["pending", "public", "private"]
+    options = {
+        "null":"Pending",
+        "true":"Public",
+        "false":"Private",
+    }
+
     selected = {}
-    for option in options:
+    for option in options.keys():
         selected[option] = ""
     if entity:
         if entity.get("public", None) is True:
-            selected["public"] = "selected='selected'"
+            selected["true"] = "selected='selected'"
         elif entity.get("public") is False:
-            selected["private"] = "selected='selected'"
+            selected["false"] = "selected='selected'"
         else:
-            selected["pending"] = "selected='selected'"
+            selected["null"] = "selected='selected'"
     else:
         selected[default] = "selected='selected'"
 %>
     <div class="action-bar no-border section">
       <h3>Visibility</h3>
       <select name="public">
-	%for option in options:
-	<option value="${option}" ${selected[option]}>${option.title()}</option>
+	%for option, title in options.items():
+	<option value="${option}" ${selected[option]}>${title}</option>
 	%endfor
       </select>
     </div>

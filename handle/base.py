@@ -343,7 +343,7 @@ class BaseHandler(tornado.web.RequestHandler):
         return self.get_argument_restricted(
             name,
             lambda value: test(value, allowed),
-            "Value must be in the format 'YYYY-MM-DD",
+            "'%s' value is not in the allowed set (%s)." % (name, [repr(v) for v in allowed]),
             default,
             json)
 
@@ -351,7 +351,7 @@ class BaseHandler(tornado.web.RequestHandler):
         return self.get_argument_restricted(
             name,
             lambda value: datetime.datetime.strptime(value, "%Y-%m-%d").date(),
-            "Value must be in the format 'YYYY-MM-DD, eg. 2012-02-17",
+            "Value must be in the format 'YYYY-MM-DD', eg. 2012-02-17",
             default,
             json)
 
@@ -370,9 +370,12 @@ class BaseHandler(tornado.web.RequestHandler):
 
     def get_argument_public(self, name="public", default=_ARG_DEFAULT_MANGO, json=False):
         table = {
-            "pending": None,
-            "public": True, 
-            "private": False,
+            "null": None,
+            "true": True, 
+            "false": False,
+            None: None,
+            True: True, 
+            False: False,
             }
         value = self.get_argument_allowed(
             name, table.keys(), default,

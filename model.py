@@ -491,6 +491,7 @@ class Org(Base, NotableEntity):
         orgalias = Orgalias.get(session, other.name, self, moderation_user, other.public)
         for alias in other.orgalias_list:
             alias.org = self
+        self.note_list = list(set(self.note_list + other.note_list))
         self.address_list = list(set(self.address_list + other.address_list))
         self.orgtag_list = list(set(self.orgtag_list + other.orgtag_list))
         self.event_list = list(set(self.event_list + other.event_list))

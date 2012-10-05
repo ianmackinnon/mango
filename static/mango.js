@@ -376,12 +376,6 @@ var m = {
     form.append(throbber);
     var xhr = null;
 
-    if (!!m.map) {
-      google.maps.event.addListener(m.map, 'dragend', function() {
-	console.log(m.map.getBounds());
-      });
-    }
-
     var change;  // change passes itself
     change = function(value, offset) {
       if(xhr && xhr.readyState != 4) {
@@ -396,7 +390,6 @@ var m = {
         data["lookup"] = lookup.input.val()
       }
       if (past) {
-        console.log(past.input.attr("checked") && past.input.val());
 	data["past"] = past.input.attr("checked") && past.input.val();
       }
       if (visibility.length) {
@@ -507,13 +500,21 @@ var m = {
 
   },
 
-  "init_org_search": function() {
-    m.init_entity_search(
-      "#org-search",
-      orgtag_list,
-      m.process.org_packet,
-      org_packet
-    )
+  "initOrgSearch": function() {
+    orgCollection = new OrgCollection();
+    orgCollection.fetch({
+      success: function(collection, response){
+        console.log(orgCollection.size());
+        var $orgColumn = $("#org_list").find(".column");
+        m.oc = orgCollection;
+        m.ocv = new OrgCollectionView({collection:m.oc});
+        $orgColumn.replaceWith(m.ocv.render().el);
+      },
+      error: function(collection, response){
+	console.log("error");
+	console.log(collection, response);
+      }
+    });
   },
 
   "init_event_search": function() {
@@ -546,7 +547,6 @@ var m = {
       }
       if (visibility.length) {
 	data["visibility"] = visibility.val()
-	console.log(data);
       }
       xhr = $.ajax(m.url_root + "organisation-tag", {
 	"dataType": "json",
@@ -594,7 +594,6 @@ var m = {
       }
       if (visibility.length) {
 	data["visibility"] = visibility.val()
-	console.log(data);
       }
       xhr = $.ajax(m.url_root + "event-tag", {
 	"dataType": "json",
@@ -848,9 +847,7 @@ var m = {
       var position = new google.maps.LatLng(
 	latitude, longitude);
       var z_index;
-      console.log("alpha", alpha);
       letter = String.fromCharCode(alpha + 65);
-      console.log("letter", letter);
       if (color == "red") {
 	color = "ee6666";
 	z_index = 200;
@@ -863,7 +860,6 @@ var m = {
       }
       var pin_url = m.url_root + "static/image/map/marker/pin-" + color + "-" + letter + ".png"
       var circle_url = m.url_root + "static/image/map/marker/circle-" + color + "-" + letter + ".png"
-      console.log(pin_url);
       
       var marker = new google.maps.Marker({
 	position: position,
@@ -1024,9 +1020,10 @@ var m = {
     [/^\/note\/([1-9][0-9]*)$/, function() {
       m.note_markdown();
     }],
+
     [/^\/organisation$/, function() {
-      m.build_map();
-      m.init_org_search();
+//      m.build_map();
+      m.initOrgSearch();
       m.visibility();
     }],
     [/^\/event$/, function() {
@@ -1035,7 +1032,7 @@ var m = {
       m.visibility();
     }],
     [/^\/task\/address$/, function() {
-      m.init_org_search();
+      m.initOrgSearch();
       m.visibility();
     }],
     [/^\/organisation\/([1-9][0-9]*)$/, function() {
@@ -1171,7 +1168,37 @@ var m = {
 
 
 
+var Mango = {
+  urlRoot: "/",
+  Template: function(name) {
+    var deferred = null;
+    var url = Mango.urlRoot + "static/template/" + name;
+    
+    this.string = function() {
+      if (deferred == null) {
+        deferred = $.Deferred();
+        $.ajax({
+          url: url,
+          success: function(response) {
+            deferred.resolve("<!-- " + url + " -->\n" + response);
+          },
+          error: function(xhr, ajaxOptions, error) {
+            console.log("error", xhr, ajaxOptions, error);
+            deferred.resolve(null);
+          }
+        });      
+      }
+      return deferred.promise();
+    };
+    
+  }
+};
+
+
+
 $(document).ready(function(){
   $.ajaxSetup({ "traditional": true });
   m.handle();
 });
+
+
