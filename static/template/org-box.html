@@ -1,3 +1,5 @@
+<%= m.template("visibility-bar.html", {obj: org}) %>
+  
 <div class="org_name">
   <a
      href="<%= m.url_rewrite(org["url"], parameters) %>"
@@ -7,3 +9,60 @@
   <% } %>
 </div>
  
+  <% if (tag && org.tag_list) { %>
+  <ul class="tag_list">
+    <% for (t in org["tag_list"]) { %>
+    <% var tag = org["tag_list"][t]; %>
+    <li class="orgtag">
+      <a
+         href="<%= m.url_rewrite(tag["url"], parameters) %>"
+         ><%=m.filter.h(tag["name"])%></a>
+    </li>
+    <% } %>
+  </ul>
+  <% } %>
+
+  <% if (org.address_list) { %>
+  <div class="org_address_list">
+    <% for (a in org["address_list"]) { %>
+    <% var address = org["address_list"][a]; %>
+    <% if (!m.geo.in_(address["latitude"], address["longitude"], geobox)) continue; %>
+    <div class="address-row">
+      <div class="pin"
+	   <%
+	      var short_names = new Array();
+	      for (t in org["tag"]) {
+	      short_names.push(org["tag"][t]["short"]);
+	      }
+              if ($.inArray("arms-trade", short_names) >= 0) {%>
+	color="red"
+	<% } else if ($.inArray("peace-group", short_names) >= 0) { %>
+	color="green"
+	<% } else { %>
+	color="<%=short_names%>"
+	<% } %>
+	all="<%=short_names%>"
+	source="mini.py"
+        <%if (address["latitude"]) { %>
+        latitude="<%=m.filter.h(address["latitude"])%>"
+        longitude="<%=m.filter.h(address["longitude"])%>"
+        <% } %>
+        >
+        &nbsp;
+      </div>
+      <div class="address">
+        <%= m.template("visibility-bar.html", {obj: address}) %>
+        <a
+           href="<%= m.url_rewrite(address["url"], parameters) %>"
+           ><%=m.filter.newline_comma(m.filter.h(address["postal"]))%></a>
+      </div>
+    </div>
+    <% } %>
+  </div>
+  <% } %>
+
+  <% if (note && org.note_list) { %>
+  <div class="note_len">
+    <%=org["note_list"].length%>
+  </div>
+  <% } %>

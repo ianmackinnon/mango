@@ -1,0 +1,7 @@
+<% if (obj.hasOwnProperty("public")) { %>
+  <div class="visibility
+              <%= obj.public == null ? "pending" : {"true":"public", "false":"private"}[obj.public.toString()] %>
+              ">
+    <%= obj.public == null ? "Pending" : {"true":"Public", "false":"Private"}[obj.public.toString()] %>
+  </div>
+<% } %>

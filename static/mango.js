@@ -2,6 +2,39 @@ var m = {
 
   "parameters": null,
 
+  templateCache: {},
+  template: function(name, data) {
+    var url = "/static/template/" + name;
+    
+    if (!(name in m.templateCache)) {
+      m.templateCache[name] = false;
+    }
+    if (m.templateCache[name] == false) {
+      m.templateCache[name] = true;
+      $.ajax({
+        url: url,
+        async: false,
+        success: function(response) {
+          m.templateCache[name] = "<!-- " + url + " -->\n" + response;
+        },
+        error: function(xhr, ajaxOptions, error) {
+          console.log("error", xhr, ajaxOptions, error);
+          m.templateCache[name] = null;
+        }
+      });
+    }
+    if (m.templateCache[name] == true) {
+      var interval = setInterval(function(){
+        if (m.templateCache[name] != true) {
+          clearInterval(interval);
+        }
+      }, 100);
+    }
+    return _.template(m.templateCache[name], data);
+  },
+
+
+
   "filter": {
     "h": function(text) {
       return String(text)
@@ -52,7 +85,7 @@ var m = {
   },
 
   "geo": {
-    "in": function(latitude, longitude, geobox) {
+    "in_": function(latitude, longitude, geobox) {
       if (geobox == null) {
 	return true;
       }
@@ -503,6 +536,9 @@ var m = {
   "initOrgSearch": function() {
     orgCollection = new OrgCollection();
     orgCollection.fetch({
+      data: {
+        unique: Math.random()
+      },
       success: function(collection, response){
         console.log(orgCollection.size());
         var $orgColumn = $("#org_list").find(".column");
@@ -1128,77 +1164,18 @@ var m = {
 
 
 
-// Simple JavaScript Templating
-// John Resig - http://ejohn.org/ - MIT Licensed
-(function(){
-  var cache = {};
-  
-  this.tmpl = function tmpl(str, data){
-    // Figure out if we're getting a template, or if we need to
-    // load the template - and be sure to cache the result.
-
-    if (!/\W/.test(str)) {
-      var fn = cache[str] = cache[str] || tmpl(document.getElementById(str).innerHTML);
-    } else {
-      // Generate a reusable function that will serve as a template
-      // generator (and which will be cached).
-      var functionText = "var p=[],print=function(){p.push.apply(p,arguments);};" +
-                            
-      // Introduce the data as local variables using with(){}
-      "with(obj){p.push('" +
-        
-      // Convert the template into pure JavaScript
-      str
-        .replace(/[\r\t\n]/g, " ")
-        .split("<%").join("\t")
-        .replace(/((^|%>)[^\t]*)'/g, "$1\r")
-	.replace(/\t=(.*?)%>/g, "',$1,'")
-	.split("\t").join("');")
-	.split("%>").join("p.push('")
-	.split("\r").join("\\'")
-	+ "');}return p.join('');";
-
-      var fn = new Function("obj", functionText);
-    }
-    
-    // Provide some basic currying to the user
-    return data ? fn( data ) : fn;
-  };
-})();
-
-
-
-var Mango = {
-  urlRoot: "/",
-  Template: function(name) {
-    var deferred = null;
-    var url = Mango.urlRoot + "static/template/" + name;
-    
-    this.string = function() {
-      if (deferred == null) {
-        deferred = $.Deferred();
-        $.ajax({
-          url: url,
-          success: function(response) {
-            deferred.resolve("<!-- " + url + " -->\n" + response);
-          },
-          error: function(xhr, ajaxOptions, error) {
-            console.log("error", xhr, ajaxOptions, error);
-            deferred.resolve(null);
-          }
-        });      
-      }
-      return deferred.promise();
-    };
-    
-  }
-};
-
-
-
 $(document).ready(function(){
   $.ajaxSetup({ "traditional": true });
   m.handle();
 });
 
 
+
+
+test = function(obj, _) {
+
+
+
+
+
+}

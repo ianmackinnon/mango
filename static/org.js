@@ -2,17 +2,17 @@
 
 /*globals jQuery */
 /*globals Backbone */
-/*globals Mango */
+/*globals m */
 /*jslint indent: 2 */
 
 (function ($) {
 
   window.Org = Backbone.Model.extend({
-    urlRoot: Mango.urlRoot + "organisation"
+    urlRoot: m.urlRoot + "organisation"
   });
 
   window.OrgCollection = Backbone.Collection.extend({
-    url: Mango.urlRoot + "organisation",
+    url: m.urlRoot + "organisation",
     parse: function(resp, xhr) {
       if (!!resp) {
         self.geobox = resp["geobox"];
@@ -29,19 +29,15 @@
   window.OrgViewBox = Backbone.View.extend({
     tagName: "div",
     className: "org-box",
-    template: new Mango.Template("org-box.html"),
+    templateName: "org-box.html",
     render: function() {
-      var view = this;
-      this.template.string().done(function(result) {
-        if (result == null) return;
-        $(view.el).html(_.template(result, {
-          org: view.model.toJSON(),
-          m: m,
-          parameters: m.parameters,
-          geobox: view.model.collection.geobox,
-          note: false
-        }));
-      });
+      $(this.el).html(m.template(this.templateName, {
+        org: this.model.toJSON(),
+        m: m,
+        parameters: m.parameters,
+        geobox: this.model.collection.geobox,
+        note: false,
+      }));
       return this;
     }
   });
