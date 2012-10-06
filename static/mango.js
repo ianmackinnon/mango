@@ -533,24 +533,24 @@ var m = {
 
   },
 
+  "fetchError": function(collection, response) {
+    console.log("error", collection, response);
+  },
+
   "initOrgSearch": function() {
-    orgCollection = new OrgCollection();
-    orgCollection.fetch({
-      data: {
-        unique: Math.random()
-      },
-      success: function(collection, response){
-        console.log(orgCollection.size());
-        var $orgColumn = $("#org_list").find(".column");
-        m.oc = orgCollection;
-        m.ocv = new OrgCollectionView({collection:m.oc});
-        $orgColumn.replaceWith(m.ocv.render().el);
-      },
-      error: function(collection, response){
-	console.log("error");
-	console.log(collection, response);
-      }
+    orgSearch = new OrgSearch({
+      nameSearch: "BAE",
+      lookup: "Preston",
+      tags: [
+        "warships"
+      ]
     });
+    orgSearchView = new OrgSearchView({
+      model: orgSearch,
+      $orgColumn: $("#org_list").find(".column")
+    });
+    var $orgSearch = $("#org-search");
+    $orgSearch.replaceWith(orgSearchView.render().el);
   },
 
   "init_event_search": function() {

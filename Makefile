@@ -65,3 +65,5 @@ seed :
 	if [ -e seed.bash ]; then ./seed.bash; fi
 
 
+lint :
+	jslint --indent=2 --nomen --vars static/org.js
