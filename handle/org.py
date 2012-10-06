@@ -130,7 +130,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
     def get(self):
         is_json = self.content_type("application/json")
         name = self.get_argument("name", None, json=is_json)
-        name_search = self.get_argument("name_search", None, json=is_json)
+        name_search = self.get_argument("nameSearch", None, json=is_json)
         tag_name_list = self.get_arguments("tag", json=is_json)
         offset = self.get_argument_int("offset", None, json=is_json)
 
@@ -523,7 +523,7 @@ class OrgListTaskAddressHandler(BaseOrgHandler, BaseOrgtagHandler):
     def get(self):
         is_json = self.content_type("application/json")
         name = self.get_argument("name", None, json=is_json)
-        name_search = self.get_argument("name_search", None, json=is_json)
+        name_search = self.get_argument("nameSearch", None, json=is_json)
         tag_name_list = self.get_arguments("tag", json=is_json)
         offset = self.get_argument_int("offset", None, json=is_json)
 

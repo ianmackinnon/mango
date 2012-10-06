@@ -1,36 +1,37 @@
 var m = {
 
-  "parameters": null,
+  parameters: null,
 
-  templateCache: {},
+  _templateCache: {},
+
   template: function(name, data) {
     var url = "/static/template/" + name;
     
-    if (!(name in m.templateCache)) {
-      m.templateCache[name] = false;
+    if (!(name in m._templateCache)) {
+      m._templateCache[name] = false;
     }
-    if (m.templateCache[name] == false) {
-      m.templateCache[name] = true;
+    if (m._templateCache[name] == false) {
+      m._templateCache[name] = true;
       $.ajax({
         url: url,
         async: false,
         success: function(response) {
-          m.templateCache[name] = "<!-- " + url + " -->\n" + response;
+          m._templateCache[name] = response;
         },
         error: function(xhr, ajaxOptions, error) {
           console.log("error", xhr, ajaxOptions, error);
-          m.templateCache[name] = null;
+          m._templateCache[name] = null;
         }
       });
     }
-    if (m.templateCache[name] == true) {
+    if (m._templateCache[name] == true) {
       var interval = setInterval(function(){
-        if (m.templateCache[name] != true) {
+        if (m._templateCache[name] != true) {
           clearInterval(interval);
         }
       }, 100);
     }
-    return _.template(m.templateCache[name], data);
+    return _.template(m._templateCache[name], data);
   },
 
 
@@ -533,24 +534,12 @@ var m = {
 
   },
 
-  "fetchError": function(collection, response) {
-    console.log("error", collection, response);
-  },
-
   "initOrgSearch": function() {
-    orgSearch = new OrgSearch({
-      nameSearch: "BAE",
-      lookup: "Preston",
-      tags: [
-        "warships"
-      ]
-    });
     orgSearchView = new OrgSearchView({
-      model: orgSearch,
+      model: new OrgSearch(),
+      $source: $("#org-search"),
       $orgColumn: $("#org_list").find(".column")
     });
-    var $orgSearch = $("#org-search");
-    $orgSearch.replaceWith(orgSearchView.render().el);
   },
 
   "init_event_search": function() {

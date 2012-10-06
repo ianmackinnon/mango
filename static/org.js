@@ -71,14 +71,18 @@
   window.OrgSearch = Backbone.Model.extend({
     save: function (data, callback) {
       var orgCollection = new window.OrgCollection();
+      var searchId = Math.random();
       orgCollection.fetch({
         data: _.extend(data, {
-          unique: Math.random()
+          searchId: searchId
         }),
         success: function (collection, response) {
           callback(orgCollection);
         },
-        error: m.fetchError
+        error:   function(collection, response) {
+          console.log("error", collection, response);
+          callback(null);
+        }
       });
 
     }
@@ -92,6 +96,12 @@
 
     initialize: function () {
       this.$orgColumn = this.options.$orgColumn;
+      this.activeSearches = 0;
+      if ("$source" in this.options) {
+        var data = this.serialize(this.options.$source);
+        this.model.set(data);
+        this.options.$source.replaceWith(this.render().el);
+      }
     },
     render: function () {
       $(this.el).html(m.template(this.templateName, this.model.toJSON()));
@@ -99,22 +109,31 @@
     },
     submit: function (event) {
       event.preventDefault();
-      this.save();
+      this.send();
     },
-    save: function () {
-      var arr = this.$el.serializeArray();
-      var data = _(arr).reduce(function (acc, field) {
+    serialize: function($el) {
+      var arr = $el.serializeArray();
+      return _(arr).reduce(function (acc, field) {
         acc[field.name] = field.value;
         return acc;
       }, {});
+    },
+    send: function () {
+      var data = this.serialize(this.$el);
       var orgSearchView = this;
 
+      orgSearchView.activeSearches++;
+      console.log(orgSearchView.activeSearches);
       this.model.save(data, function (orgCollection) {
+        orgSearchView.activeSearches--;
+        console.log(orgSearchView.activeSearches);
+        if (!orgCollection) return;
         var orgCollectionView = new window.OrgCollectionView({
           collection: orgCollection
         });
-        orgSearchView.$orgColumn.replaceWith(orgCollectionView.render().el);
-        orgSearchView.$orgColumn = orgCollectionView.render().$el;
+        var rendered = orgCollectionView.render();
+        orgSearchView.$orgColumn.replaceWith(rendered.el);
+        orgSearchView.$orgColumn = rendered.$el;
       });
     }
   });
