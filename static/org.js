@@ -79,7 +79,7 @@
         success: function (collection, response) {
           callback(orgCollection);
         },
-        error:   function(collection, response) {
+        error:   function (collection, response) {
           console.log("error", collection, response);
           callback(null);
         }
@@ -97,37 +97,66 @@
     initialize: function () {
       this.$orgColumn = this.options.$orgColumn;
       this.activeSearches = 0;
-      if ("$source" in this.options) {
+      if (this.options.hasOwnProperty("$source")) {
         var data = this.serialize(this.options.$source);
         this.model.set(data);
-        this.options.$source.replaceWith(this.render().el);
+        var rendered = this.render();
+        this.options.$source.replaceWith(rendered.el);
+
+        m.getOrgtagDictionary(function (error, orgtags) {
+          var orgtagKeys = m.arrayKeys(orgtags);
+          var input = rendered.$el.find("input[name='tag']");
+          input.tagit({
+            tagSource: function (search, showChoices) {
+              var values = m.filterStartFirst(search.term, orgtagKeys);
+              var choices = [];
+              _(values).each(function (value) {
+                choices.push({
+                  value: value,
+                  label: value + " (" + orgtags[value] + ")"
+                });
+              });
+              showChoices(choices);
+            }
+          });
+
+        });
       }
     },
+
     render: function () {
-      $(this.el).html(m.template(this.templateName, this.model.toJSON()));
+      $(this.el).html(m.template(this.templateName, {
+        currentUser: m.currentUser,
+        orgSearch: this.model.toJSON()
+      }));
       return this;
     },
+
     submit: function (event) {
       event.preventDefault();
       this.send();
     },
-    serialize: function($el) {
+
+    serialize: function ($el) {
       var arr = $el.serializeArray();
       return _(arr).reduce(function (acc, field) {
         acc[field.name] = field.value;
         return acc;
       }, {});
     },
+
     send: function () {
       var data = this.serialize(this.$el);
       var orgSearchView = this;
 
-      orgSearchView.activeSearches++;
+      orgSearchView.activeSearches += 1;
       console.log(orgSearchView.activeSearches);
       this.model.save(data, function (orgCollection) {
-        orgSearchView.activeSearches--;
+        orgSearchView.activeSearches -= 1;
         console.log(orgSearchView.activeSearches);
-        if (!orgCollection) return;
+        if (!orgCollection) {
+          return;
+        }
         var orgCollectionView = new window.OrgCollectionView({
           collection: orgCollection
         });

@@ -16,10 +16,14 @@
 #mango,
 #mango textarea,
 #mango input[type="submit"],
-#mango input[type="button"]
+#mango input[type="button"],
+#mango .ui-widget,
+#mango .tagit-label,
+.ui-widget
 {
     font-size: 12px;
     font-family: helvetica;
+    font-weight: normal;
 }
 
 #mango a.action,
@@ -228,7 +232,7 @@
 
 /* forms */
 
-#mango label
+form.mango label
 {
     float: left;
     display: block;
@@ -239,8 +243,8 @@
     margin-bottom: 4px;
     padding: 2px;
 }
-#mango input,
-#mango textarea
+form.mango input,
+form.mango textarea
 {
     margin: -2px;
     margin-top: 1px;
@@ -251,29 +255,29 @@
     border-bottom-right-radius: 3px;
     padding: 2px;
 }
-#mango input
+form.mango input
 {
     width: 384px;
 }
-#mango textarea
+form.mango textarea
 {
     resize: none;
     height: 100px;
     width: 187px;
 }
-#mango label.textarea
+form.mango label.textarea
 {
     width: 187px;
 }
-#mango input[type="button"],
-#mango input[type="submit"]
+form.mango input[type="button"],
+form.mango input[type="submit"]
 {
     width: 390px;
     margin: 0px;
     padding: 2px 4px;
     margin-bottom: 4px;
 }
-#mango span.checkbox
+form.mango span.checkbox
 {
     margin: 0 2px;
     border: 1px solid #ccc;
@@ -281,13 +285,13 @@
     padding: 2px;
     padding-top: 3px;
 }
-#mango input[type="checkbox"]
+form.mango input[type="checkbox"]
 {
     position: relative;
     top: 2px;
     
 }
-#mango img.throbber
+form.mango img.throbber
 {
     position: relative;
     top: 4px;

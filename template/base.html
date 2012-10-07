@@ -6,14 +6,12 @@ ${header1.replace("/render-header-footer.php", uri) | n}
 
 <head>
   <meta charset=utf-8 />
-  <script type="text/javascript" src="${url_root}static/jquery.min.js"></script>
-  <script type="text/javascript" src="${url_root}static/jquery-ui/jquery-ui.min.js"></script>
   <link rel="stylesheet" type="text/css" href="${url_root}static/jquery-ui/jquery-ui.css" />
 %endif
 
   <title>${self.title()}</title>
-  <script type="text/javascript" src="${url_root}static/tag-it.js"></script>
   <link rel="stylesheet" type="text/css" href="${url_root}static/tag-it.css" />
+  <link rel="stylesheet" type="text/css" href="${url_root}static/style.css" />
  
 %if header2:
 ${header2.replace("/render-header-footer.php", uri) | n}
@@ -111,6 +109,9 @@ ${parameters.get("visibility", "public")=="all" and " selected" or "" | n}"
 
 </div>
 
+<script type="text/javascript" src="${url_root}static/jquery.min.js"></script>
+<script type="text/javascript" src="${url_root}static/jquery-ui/jquery-ui.min.js"></script>
+<script type="text/javascript" src="${url_root}static/tag-it.js"></script>
 <script type="text/javascript" src="${url_root}static/underscore-min.js"></script>
 <script type="text/javascript" src="${url_root}static/backbone-min.js"></script>
 <script type="text/javascript" src="${url_root}static/markdown.js"></script>

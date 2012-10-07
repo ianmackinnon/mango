@@ -1,26 +1,28 @@
-VISIBILITY
+<%= m.template("visibility-search-input.html", {
+    visibility: null,
+    currentUser: currentUser
+    }) %>
 <input type="hidden" name="offset" value="0">
 <label name="nameSearch">
   <span>Name</span>
   <input
      name="nameSearch"
-     value="<%= nameSearch || "" %>"
+     value="<%= orgSearch.nameSearch || "" %>"
      placeholder="Eg. BAE Systems">
 </label>
 <label name="lookup">
   <span>Location</span>
   <input
      name="lookup"
-     value="<%= lookup || "" %>"
+     value="<%= orgSearch.lookup || "" %>"
      placeholder="Eg. NW1">
 </label>
 <label name="tag">
   <span>Tags</span>
-  <div class="dropdown">
-    <ul class="dropdown">
-    </ul>
-  </div>
-  TAG
+  <input
+     name="tag"
+     value="<%= orgSearch.tag || "" %>"
+     placeholder="Eg. missiles, tanks">
 </label>
 
 <input type="submit">
