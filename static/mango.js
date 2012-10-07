@@ -18,8 +18,8 @@ var m = {
         success: function(response) {
           m._templateCache[name] = response;
         },
-        error: function(xhr, ajaxOptions, error) {
-          console.log("error", xhr, ajaxOptions, error);
+        error: function(jqXHR, textStatus, errorThrown) {
+          m.ajaxError(jqXHR, textStatus, errorThrown);
           m._templateCache[name] = null;
         }
       });
@@ -434,18 +434,11 @@ var m = {
 	"data": data,
 	"success": function(data, textStatus, jqXHR) {
           process(data, change);
-	  throbber.hide();
 	},
-	"error": function(jqXHR, textStatus, errorThrown) {
-	  if (textStatus == "abort") {
-	    return;
-	  }
-	  console.log("error");
-	  console.log(jqXHR);
-	  console.log(textStatus);
-	  console.log(errorThrown);
+	"error": m.ajaxError,
+        "complete": function(jqXHR, textStatus) {
 	  throbber.hide();
-	}
+        }
       });
       throbber.show()
     }
@@ -507,16 +500,10 @@ var m = {
           m.map.setZoom(5);
         });
       },
-      "error": function(jqXHR, textStatus, errorThrown) {
-	if (textStatus == "abort") {
-	  return;
-	}
-	console.log("error");
-	console.log(jqXHR);
-	console.log(textStatus);
-	console.log(errorThrown);
+      "error": m.ajaxError,
+      "complete": function(jqXHR, textStatus) {
 	throbber.hide();
-      },
+      }
     });
 
     var manual_control = $("<div class='caption'>");
@@ -535,11 +522,49 @@ var m = {
   },
 
   "initOrgSearch": function() {
-    orgSearchView = new OrgSearchView({
+    var orgSearchView = new OrgSearchView({
       model: new OrgSearch(),
       $source: $("#org-search"),
       $orgColumn: $("#org_list").find(".column")
     });
+
+    $.ajax({
+      url: m.url_root + "organisation-tag",
+      dataType: 'json',
+      success: function(data, textStatus, jqXHR) {
+        var orgtags = {};
+        _(data).each(function(orgtag) {
+          orgtags[orgtag.short] = orgtag.name;
+        });
+        window.orgtags = orgtags;
+        var orgtagKeys = $.map(orgtags, function(value, key) {
+          return key;
+        });
+        $("#myTags").tagit({
+          tagSource: function(search, showChoices) {
+            var filter = search.term.toLowerCase();
+            var start = $.grep(orgtagKeys, function(element) {
+              return (element.toLowerCase().indexOf(filter) === 0);
+            });
+            var middle = $.grep(orgtagKeys, function(element) {
+              return (element.toLowerCase().indexOf(filter) > 0);
+            });
+            var values = start.concat(middle);
+            var choices = [];
+            _(values).each(function(value) {
+              choices.push({
+                value: value,
+                label: value + " (" + orgtags[value] + ")"
+              });
+            });
+            showChoices(choices);
+          }
+        });
+      },
+      error: m.ajaxError
+    });
+
+
   },
 
   "init_event_search": function() {
@@ -549,6 +574,13 @@ var m = {
       m.process.event_packet,
       event_packet
     )
+  },
+
+  "ajaxError": function(jqXHR, textStatus, errorThrown) {
+    if (textStatus == "abort") {
+      return;
+    }
+    console.log("error", jqXHR, textStatus, errorThrown);
   },
 
   "init_orgtag_search": function(id, field) {
@@ -578,18 +610,11 @@ var m = {
 	"data": data,
 	"success": function(data, textStatus, jqXHR) {
 	  m.process.orgtag_packet("#tag_list", data);
-	  throbber.hide();
 	},
-	"error": function(jqXHR, textStatus, errorThrown) {
-	  if (textStatus == "abort") {
-	    return;
-	  }
-	  console.log("error");
-	  console.log(jqXHR);
-	  console.log(textStatus);
-	  console.log(errorThrown);
+	"error": m.ajaxError,
+        "complete": function(jqXHR, textStatus) {
 	  throbber.hide();
-	}
+        }
       });
       throbber.show()
     }
@@ -625,18 +650,11 @@ var m = {
 	"data": data,
 	"success": function(data, textStatus, jqXHR) {
 	  m.process.eventtag_packet("#tag_list", data);
-	  throbber.hide();
 	},
-	"error": function(jqXHR, textStatus, errorThrown) {
-	  if (textStatus == "abort") {
-	    return;
-	  }
-	  console.log("error");
-	  console.log(jqXHR);
-	  console.log(textStatus);
-	  console.log(errorThrown);
+	"error": m.ajaxError,
+        "complete": function(jqXHR, textStatus) {
 	  throbber.hide();
-	}
+        }
       });
       throbber.show()
     }
@@ -821,9 +839,7 @@ var m = {
 	  m.map.setCenter(position);
 	  m.map.setZoom(10);
 	},
-	"error": function(jqXHR, textStatus, errorThrown) {
-	  console.log("error");
-	}
+	"error": m.ajaxError
       });
     }
     
