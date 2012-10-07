@@ -10,15 +10,8 @@ clean : clean-database
 database: mysql
 clean-database: clean-mysql
 
-vendor : vendor/backbone-min.js vendor/underscore-min.js
-
-vendor/backbone-min.js :
-	wget https://raw.github.com/documentcloud/backbone/master/backbone-min.js -O vendor/backbone-min.js
-
-vendor/underscore-min.js :
-	wget https://raw.github.com/documentcloud/underscore/master/underscore-min.js -O vendor/underscore-min.js
-
-
+vendor:
+	$(MAKE) -C vendor
 
 .xsrf :
 	head -c 32 /dev/urandom | base64 > .xsrf
