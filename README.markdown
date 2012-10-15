@@ -14,6 +14,38 @@ Mapping Application for NGOs
       
     sudo npm install -g jslint
 
+Download jQuery and jQuery-UI including at least the modules:
+
+-   Autocomplete
+-   Blind
+
+Expand and link
+    
+    mkdir vendor
+
+    unzip jquery-ui-*.custom.zip -d vendor
+
+    set $(ls vendor/jquery-ui*.custom/js/jquery-[0-9]*.js | grep -o '[0-9.]*[0-9]')
+    jquiv=$1; echo $jquiv;
+    jqv=$2; echo $jqv;
+
+    wget -P vendor http://code.jquery.com/jquery-${jqv}.min.js
+
+    mkdir -p static/jquery-ui
+
+    pushd static
+    ln -sf ../vendor/jquery-${jqv}.min.js jquery.min.js
+    ln -sf ../vendor/jquery-ui-${jquiv}.custom/js/jquery-${jqv}.js jquery.js
+    cd jquery-ui
+    ln -sf ../../vendor/jquery-ui-${jquiv}.custom/js/jquery-ui-${jquiv}.custom.min.js jquery-ui.min.js
+    ln -sf ../../vendor/jquery-ui-${jquiv}.custom/js/jquery-ui-${jquiv}.custom.js jquery-ui.js
+    ln -sf ../../vendor/jquery-ui-${jquiv}.custom/css/*/jquery-ui-${jquiv}.custom.css jquery-ui.css
+    ln -sf ../../vendor/jquery-ui-${jquiv}.custom/css/*/images
+    popd
+    
+    
+Now make:
+
     make
 
     ./mango.py

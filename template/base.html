@@ -7,6 +7,10 @@ ${header1.replace("/render-header-footer.php", uri) | n}
 <head>
   <meta charset=utf-8 />
   <link rel="stylesheet" type="text/css" href="${url_root}static/jquery-ui/jquery-ui.css" />
+  <script type="text/javascript"
+          src="${url_root}static/jquery.min.js"></script>
+  <script type="text/javascript"
+          src="${url_root}static/jquery-ui/jquery-ui.js"></script>
 %endif
 
   <title>${self.title()}</title>
@@ -109,8 +113,6 @@ ${parameters.get("visibility", "public")=="all" and " selected" or "" | n}"
 
 </div>
 
-<script type="text/javascript" src="${url_root}static/jquery.min.js"></script>
-<script type="text/javascript" src="${url_root}static/jquery-ui/jquery-ui.min.js"></script>
 <script type="text/javascript" src="${url_root}static/tag-it.js"></script>
 <script type="text/javascript" src="${url_root}static/underscore-min.js"></script>
 <script type="text/javascript" src="${url_root}static/backbone-min.js"></script>

@@ -90,7 +90,7 @@
 
   window.OrgSearchView = Backbone.View.extend({
     tagName: "form",
-    className: "org-search",
+    id: "org-search",
     templateName: "org-search.html",
     events: {'submit': 'submit'},
 
@@ -100,13 +100,18 @@
       if (this.options.hasOwnProperty("$source")) {
         var data = this.serialize(this.options.$source);
         this.model.set(data);
-        var rendered = this.render();
-        this.options.$source.replaceWith(rendered.el);
+        this.render();
+        var $el = this.$el;
+        this.options.$source.replaceWith($el);
 
         m.getOrgtagDictionary(function (error, orgtags) {
           var orgtagKeys = m.arrayKeys(orgtags);
-          var input = rendered.$el.find("input[name='tag']");
-          input.tagit({
+          var $input = $el.find("input[name='tag']");
+
+          window.$input = $input;
+
+          $input.tagit({
+            placeholderText: $input.attr("placeholder"),
             tagSource: function (search, showChoices) {
               var values = m.filterStartFirst(search.term, orgtagKeys);
               var choices = [];

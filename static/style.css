@@ -2,12 +2,12 @@
 
 #mango
 {
-    width: 800px;
+    width: 775px;
 }
 
 #caat-page-links
 {
-    width: 800px;
+    width: 775px;
     margin-bottom: 10px;
     text-align: center;
     font-size: 80%;
@@ -15,11 +15,12 @@
 
 #mango,
 #mango textarea,
+#mango input[type="text"],
+#mango input:not([type]),
 #mango input[type="submit"],
 #mango input[type="button"],
 #mango .ui-widget,
-#mango .tagit-label,
-.ui-widget
+#mango .tagit-label
 {
     font-size: 12px;
     font-family: helvetica;
@@ -27,19 +28,19 @@
 }
 
 #mango a.action,
-#mango input[type="submit"],
-#mango input[type="button"]
+form.mango input[type="submit"],
+form.mango input[type="button"]
 {
     border: 1px solid #ccc;
-    border-radius: 3px;
+    border-radius: 2px;
     padding: 2px 4px;
 
     color: #333;
     background: #f8f8f8;
 }
 #mango a.action:hover,
-#mango input[type="submit"]:hover,
-#mango input[type="button"]:hover
+form.mango input[type="submit"]:hover,
+form.mango input[type="button"]:hover
 {
     text-decoration: none;
     color: #333;
@@ -47,8 +48,8 @@
     cursor: pointer;
 }
 #mango a.action:active,
-#mango input[type="submit"]:active,
-#mango input[type="button"]:active
+form.mango input[type="submit"]:active,
+form.mango input[type="button"]:active
 {
     color: #666;
     border-color: #ccc;
@@ -86,26 +87,26 @@
     line-height: 22px;
 }
 
-#mango label
+form.mango label
 {
     border: 1px solid #aaa;
-    border-radius: 3px;
+    border-radius: 2px;
     background: #ddd;
 }
 
-#mango label[status="bad"]
+form.mango label[status="bad"]
 {
     border-color: #caa;
     background: #fcc;
 }
 
-#mango label[status="good"]
+form.mango label[status="good"]
 {
     border-color: #aca;
     background: #cfc;
 }
 
-#mango input[disabled="disabled"]
+form.mango input[disabled="disabled"]
 {
     opacity: .5;
 }
@@ -130,14 +131,14 @@
 
     margin: 2px;
     border: 1px solid #ccc;
-    border-radius: 3px;
+    border-radius: 2px;
     padding: 2px;
 }
 
 #mango div.box.full
 {
     float: left;
-    width: 790px;
+    width: 765px;
 }
 
 #mango div.box.left
@@ -175,7 +176,7 @@
     display: inline-block;
     margin: 2px;
     border: 1px solid #ccc;
-    border-radius: 3px;
+    border-radius: 2px;
     padding: 0px 6px;
     line-height: 23px;
 }
@@ -192,14 +193,14 @@
 }
 #mango nav .nav-group a:first-of-type
 {
-    border-top-left-radius: 3px;
-    border-bottom-left-radius: 3px;
+    border-top-left-radius: 2px;
+    border-bottom-left-radius: 2px;
     margin-left: 2px;
 }
 #mango nav .nav-group a:last-of-type
 {
-    border-top-right-radius: 3px;
-    border-bottom-right-radius: 3px;
+    border-top-right-radius: 2px;
+    border-bottom-right-radius: 2px;
     margin-right: 2px;
     border-right: 1px solid #ccc;
 }
@@ -251,8 +252,8 @@ form.mango textarea
     margin-bottom: -5px;
     border: 0px;
     border-top: 1px solid #ccc;
-    border-bottom-left-radius: 3px;
-    border-bottom-right-radius: 3px;
+    border-bottom-left-radius: 2px;
+    border-bottom-right-radius: 2px;
     padding: 2px;
 }
 form.mango input
@@ -281,7 +282,7 @@ form.mango span.checkbox
 {
     margin: 0 2px;
     border: 1px solid #ccc;
-    border-radius: 3px;
+    border-radius: 2px;
     padding: 2px;
     padding-top: 3px;
 }
@@ -301,25 +302,14 @@ form.mango img.throbber
 
 /* action */
 
-#mango .action-bar form
-{
-    display: inline;
-}
-
-#mango .action-bar input[type='text'],
-#mango .action-bar input:not([type])
-{
-    width: 146px;
-}
-
 #mango .action-bar
 {
     border: 1px solid #ccc;
-    border-radius: 3px;
+    border-radius: 2px;
     overflow: visible;
     margin: 2px;
     margin-bottom: 12px;
-    padding: 4px;
+    padding: 0px;
     line-height: 26px;
 }
 #mango .action-bar.no-border
@@ -332,48 +322,102 @@ form.mango img.throbber
     text-align: right;
 }
 
-#mango .action-bar *
+#mango .action-bar > *,
+#mango .action-bar form > *
 {
-    display: inline;
-    margin: auto;
-    padding: auto;
-    width: auto;
+    margin: 0;
+    padding: 0;
+}
+
+#mango .action-bar form
+{
+}
+
+#mango .action-bar form:before,
+#mango .action-bar form:after
+{
+    content: "";
+    display: table;
+}
+#mango .action-bar form:after
+{
+    clear: both;
+}
+
+#mango .action-bar h3
+{
+    float: left;
+    width: 70px;
+    line-height: 26px;
+    padding: 0 4px;
+}
+#mango .action-bar form .inputs
+{
+    float: left;
+}
+#mango .action-bar form .actions
+{
+    margin: 0;
+    float: right;
+    text-align: right;
+    width: 70px;
+    padding: 0 0px;
+    line-height: 26px;
 }
 
 #mango .action-bar label
 {
-    float: none;
-    border: none;
+    display: inline-block;
+    min-height: 26px;
+    padding: 0;
     background: inherit;
 }
-#mango .action-bar input
+
+#mango .action-bar label > span
 {
+    padding: 0 4px;
+}
+
+#mango .action-bar label > input,
+#mango .action-bar .actions input[type='submit']
+{
+    margin: 2px 0;
     border: 1px solid #ccc;
-    border-radius: 3px;
+    padding: 0 4px;
+    height: 20px;
+    line-height: 20px;
+    border-radius: 2px;
+    vertical-align: bottom;
 }
-#mango .action-bar input[type='submit']
+
+#mango .action-bar .actions input[type='submit']
 {
-    margin-bottom: 0px;
-    padding-top: 3px;
-    width: auto;
+    margin: 2px;
+    height: 22px;
 }
-#mango .actions
+
+#mango .action-bar input[type='text'],
+#mango .action-bar input:not([type])
+{
+    display: inline-block;
+    width: 146px;
+}
+
+#mango .tagit-choice
+{
+    line-height: 18px;
+    padding: 0 4px;
+    padding-right: 20px;
+    border-radius: 4px;
+}
+#mango .action-bar > .actions
 {
     float: right;
     margin: auto;
     text-align: right;
     line-height: 22px;
 }
-#mango .action-bar.home
-{
-    margin: auto;
-    width: 240px;
-    text-align: center;
-}
-#mango .action-bar.section
-{
-    clear: both;
-}
+
 
 /* Home */
 
@@ -426,7 +470,7 @@ form.mango img.throbber
     margin-top: 2px;
     border: 1px solid #aaa;
     padding: 2px;
-    border-radius: 3px;
+    border-radius: 2px;
 }
 #mango div.org_name,
 #mango div.event_name
@@ -443,7 +487,7 @@ form.mango img.throbber
 
     margin: 2px;
     border: 1px solid #ccc;
-    border-radius: 3px;
+    border-radius: 2px;
     padding: 2px;
 }
 
@@ -451,6 +495,61 @@ form.mango img.throbber
 #event-form label[name="description"] textarea
 {
     width: 384px;
+}
+
+
+
+#org-search .inputs
+{
+    width: 613px;
+}
+#org-search label[name="tag"]
+{
+    display: inline-block;
+    width: 605px; /* -4 * 2 */
+}
+#org-search .inputs > label[name="tag"] > span,
+#org-search .inputs > label[name="nameSearch"] > span
+{
+    display: inline-block;
+    width: 40px;
+}
+#org-search label[name="tag"] ul
+{
+    display: inline-block;
+    margin: 2px 0;
+    border: 1px solid #ccc;
+    padding: 0;
+    width: auto;
+    min-width: 154px;
+    max-width: 552px;
+    min-height: 20px;
+    vertical-align: bottom;
+    border-radius: 2px;
+}
+#org-search label[name="tag"] li
+{
+    margin: 0;
+}
+#org-search label[name="tag"] li.tagit-new
+{
+    padding: 0;
+    border: 0;
+    margin: 0;
+    line-height: 18px;
+}
+#org-search label[name="tag"] li.tagit-new input
+{
+    margin: 1px 0;
+    border: 0;
+    padding: 0 4px;
+    line-height: 18px;
+    width: 154px;
+    vertical-align: bottom;
+}
+.ui-autocomplete
+{
+    border: 1px solid #ccc;
 }
 
 /* address */
@@ -474,7 +573,7 @@ form.mango img.throbber
     width: auto;
     border: 1px solid #aaa;
     padding: 2px;
-    border-radius: 3px;
+    border-radius: 2px;
 }
 
 #mango div.address-box
@@ -482,7 +581,7 @@ form.mango img.throbber
     margin-top: 2px;
     border: 1px solid #aaa;
     padding: 2px;
-    border-radius: 3px;
+    border-radius: 2px;
 }
 #mango div.address-row
 {
@@ -535,7 +634,7 @@ form.mango img.throbber
     margin: 2px;
     border: 1px solid #ccc;
     padding: 2px 4px;
-    border-radius: 3px;
+    border-radius: 2px;
     background: #f8f8f8;
 }
 #mango ul.alias_list input,
@@ -636,15 +735,15 @@ form.mango img.throbber
 {
     float: left;
 
-    width: 394px;
+    width: 369px;
 
     margin: 2px;
     border: 1px solid #ccc;
-    border-radius: 3px;
+    border-radius: 2px;
 }
 #mango-map-canvas
 {
-    width: 394px;
+    width: 369px;
     height: 294px;
 }
 #mango-map-box div.caption
@@ -664,40 +763,6 @@ form.mango img.throbber
 {
     padding: 0 20px;
 }
-
-/* dropdown */
-
-#mango div.dropdown
-{
-    position: relative;
-    width: 0;
-    height: 0;
-}
-
-#mango ul.dropdown
-{
-    display: none;
-    position: absolute;
-    top: 18px;
-    width: 174px;
-    background: white;
-    border: 1px solid #ccc;
-    margin: 0;
-    padding: 0;
-    z-index: 20;
-}
-#mango ul.dropdown li
-{
-    padding: 4px;
-    margin: 0;
-    display: block;
-    line-height: 16px;
-}
-#mango ul.dropdown li:hover
-{
-    background: #eee;
-}
-
 
 /* Event markdown */
 
