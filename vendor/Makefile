@@ -9,8 +9,8 @@ underscore-min.js:
 	wget https://raw.github.com/documentcloud/underscore/master/underscore-min.js -O $@ || rm -f $@
 
 tag-it.js:
-	wget https://raw.github.com/aehlke/tag-it/master/js/tag-it.js -O $@ || rm -f $@
+	wget https://raw.github.com/ianmackinnon/tag-it/master/js/tag-it.js -O $@ || rm -f $@
 
 tag-it.css:
-	wget https://raw.github.com/aehlke/tag-it/master/css/jquery.tagit.css -O $@ || rm -f $@
+	wget https://raw.github.com/ianmackinnon/tag-it/master/css/jquery.tagit.css -O $@ || rm -f $@
 

@@ -541,10 +541,13 @@ form.mango input[type="checkbox"]
     line-height: 18px;
 }
 
-#org-search label[name="tag"] input,
-#org-search label[name="tag"] li.tagit-new input
+#org-search label[name="tag"] input
 {
     width: 524px;
+}
+#org-search label[name="tag"] li.tagit-new input
+{
+    width: 146px;
 }
 #mango #org-search label[name="tag"] li.tagit-new input
 {

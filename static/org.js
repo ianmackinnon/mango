@@ -92,7 +92,13 @@
     tagName: "form",
     id: "org-search",
     templateName: "org-search.html",
-    events: {'submit': 'submit'},
+    events: {
+      'submit': 'submit',
+      'change input[name="visibility"]': 'formChange',
+      'change input[name="nameSearch"]': 'formChange',
+      'change input[name="lookup"]': 'formChange',
+      'change label > input[name="tag"]': 'formChange'
+    },
 
     initialize: function () {
       this.$orgColumn = this.options.$orgColumn;
@@ -123,7 +129,13 @@
                 });
               });
               showChoices(choices);
-            }
+            },
+            onTagAddedAfter: function (event, tag) {
+              $input.trigger("change");
+            },
+            onTagRemovedAfter: function (event, tag) {
+              $input.trigger("change");
+            },
           });
 
           view.addThrobber();
@@ -145,6 +157,9 @@
     },
 
     serialize: function ($el) {
+      if ($el === undefined) {
+        $el = this.$el;
+      }
       var arr = $el.serializeArray();
       return _(arr).reduce(function (acc, field) {
         acc[field.name] = field.value;
@@ -153,7 +168,7 @@
     },
 
     send: function () {
-      var data = this.serialize(this.$el);
+      var data = this.serialize();
       var orgSearchView = this;
 
       orgSearchView.searchStartHook();
@@ -193,7 +208,11 @@
       this.$throbber = $('<img class="throbber" width="16px" height="16px" alt="Loading." src="/static/image/throbber.gif" style="display: none;">');
       this.$el.find(".actions").prepend(this.$throbber);
       return this.$throbber;
-    }
+    },
+
+    formChange: function (event) {
+      this.send();
+    },
 
   });
 
