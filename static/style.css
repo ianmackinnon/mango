@@ -292,7 +292,7 @@ form.mango input[type="checkbox"]
     top: 2px;
     
 }
-form.mango img.throbber
+#mango img.throbber
 {
     position: relative;
     top: 4px;
@@ -347,7 +347,7 @@ form.mango img.throbber
 #mango .action-bar h3
 {
     float: left;
-    width: 70px;
+    width: 80px;
     line-height: 26px;
     padding: 0 4px;
 }
@@ -360,7 +360,7 @@ form.mango img.throbber
     margin: 0;
     float: right;
     text-align: right;
-    width: 70px;
+    width: 80px;
     padding: 0 0px;
     line-height: 26px;
 }
@@ -400,7 +400,6 @@ form.mango img.throbber
 #mango .action-bar input:not([type])
 {
     display: inline-block;
-    width: 146px;
 }
 
 #mango .tagit-choice
@@ -501,12 +500,17 @@ form.mango img.throbber
 
 #org-search .inputs
 {
-    width: 613px;
+    width: 593px;
+}
+#org-search input[type="text"],
+#org-search input:not([type])
+{
+    width: 180px;
 }
 #org-search label[name="tag"]
 {
     display: inline-block;
-    width: 605px; /* -4 * 2 */
+    width: 585px; /* -4 * 2 */
 }
 #org-search .inputs > label[name="tag"] > span,
 #org-search .inputs > label[name="nameSearch"] > span
@@ -520,9 +524,7 @@ form.mango img.throbber
     margin: 2px 0;
     border: 1px solid #ccc;
     padding: 0;
-    width: auto;
-    min-width: 154px;
-    max-width: 552px;
+    width: 532px;
     min-height: 20px;
     vertical-align: bottom;
     border-radius: 2px;
@@ -538,13 +540,18 @@ form.mango img.throbber
     margin: 0;
     line-height: 18px;
 }
+
+#org-search label[name="tag"] input,
 #org-search label[name="tag"] li.tagit-new input
+{
+    width: 524px;
+}
+#mango #org-search label[name="tag"] li.tagit-new input
 {
     margin: 1px 0;
     border: 0;
     padding: 0 4px;
     line-height: 18px;
-    width: 154px;
     vertical-align: bottom;
 }
 .ui-autocomplete

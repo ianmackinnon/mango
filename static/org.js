@@ -102,6 +102,7 @@
         this.model.set(data);
         this.render();
         var $el = this.$el;
+        var view = this;
         this.options.$source.replaceWith($el);
 
         m.getOrgtagDictionary(function (error, orgtags) {
@@ -125,6 +126,7 @@
             }
           });
 
+          view.addThrobber();
         });
       }
     },
@@ -154,11 +156,9 @@
       var data = this.serialize(this.$el);
       var orgSearchView = this;
 
-      orgSearchView.activeSearches += 1;
-      console.log(orgSearchView.activeSearches);
+      orgSearchView.searchStartHook();
       this.model.save(data, function (orgCollection) {
-        orgSearchView.activeSearches -= 1;
-        console.log(orgSearchView.activeSearches);
+        orgSearchView.searchEndHook();
         if (!orgCollection) {
           return;
         }
@@ -169,7 +169,32 @@
         orgSearchView.$orgColumn.replaceWith(rendered.el);
         orgSearchView.$orgColumn = rendered.$el;
       });
+    },
+
+    searchStartHook: function () {
+      this.activeSearches += 1;
+      this.searchUpdateHook();
+    },
+
+    searchEndHook: function () {
+      this.activeSearches -= 1;
+      this.searchUpdateHook();
+    },
+
+    searchUpdateHook: function () {
+      if (this.activeSearches > 0) {
+        this.$throbber.show();
+      } else {
+        this.$throbber.hide();
+      }
+    },
+
+    addThrobber: function () {
+      this.$throbber = $('<img class="throbber" width="16px" height="16px" alt="Loading." src="/static/image/throbber.gif" style="display: none;">');
+      this.$el.find(".actions").prepend(this.$throbber);
+      return this.$throbber;
     }
+
   });
 
 }(jQuery));
