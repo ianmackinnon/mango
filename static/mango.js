@@ -445,7 +445,7 @@ var m = {
   "init_orgtag_search": function (id, field) {
     var form = $("#" + id);
     var search = m.get_field(form, field);
-    var visibility = form.find("input[name='visibility']")
+    var visibility = form.find("input[name='visibility']");
     var throbber = $("<img>").attr({
       "src": m.url_root + "static/image/throbber.gif",
       "class": "throbber"
@@ -460,9 +460,9 @@ var m = {
       }
       var data = {
         "search": search.input.val()
-      }
+      };
       if (visibility.length) {
-        data.visibility = visibility.val()
+        data.visibility = visibility.val();
       }
       xhr = $.ajax(m.url_root + "organisation-tag", {
         "dataType": "json",
@@ -475,17 +475,17 @@ var m = {
           throbber.hide();
         }
       });
-      throbber.show()
-    }
+      throbber.show();
+    };
 
     m.on_change(search.input, id + "_" + field, change, 500);
     visibility.change(change);
   },
 
   "init_eventtag_search": function (id, field) {
-    var form = $("#" + id)
+    var form = $("#" + id);
     var search = m.get_field(form, field);
-    var visibility = form.find("input[name='visibility']")
+    var visibility = form.find("input[name='visibility']");
     var throbber = $("<img>").attr({
       "src": m.url_root + "static/image/throbber.gif",
       "class": "throbber"
@@ -500,9 +500,9 @@ var m = {
       }
       var data = {
         "search": search.input.val()
-      }
+      };
       if (visibility.length) {
-        data.visibility = visibility.val()
+        data.visibility = visibility.val();
       }
       xhr = $.ajax(m.url_root + "event-tag", {
         "dataType": "json",
@@ -515,8 +515,8 @@ var m = {
           throbber.hide();
         }
       });
-      throbber.show()
-    }
+      throbber.show();
+    };
 
     m.on_change(search.input, id + "_" + field, change, 500);
     visibility.change(change);
@@ -535,22 +535,25 @@ var m = {
         featureType: "all",
         elementType: "all",
         stylers: [
-          { gamma:1.3 },
-          { saturation:-50 }
+          { gamma: 1.3 },
+          { saturation: -50 }
         ]
       }
     ];
 
     var styledMapOptions = {
       name: "Grey"
-    }
+    };
 
     var greyMapType = new google.maps.StyledMapType(
-      mapStyles, styledMapOptions);
+      mapStyles,
+      styledMapOptions
+    );
 
     m.map = new google.maps.Map(
-      document.getElementById("mango-map-canvas"),
-      mapOptions);
+      window.document.getElementById("mango-map-canvas"),
+      mapOptions
+    );
 
     m.map.mapTypes.set('grey', greyMapType);
     m.map.setMapTypeId('grey');
@@ -566,21 +569,25 @@ var m = {
     return {
       "label": label,
       "input": input
-    }
+    };
   },
 
   "init_address_form": function (id) {
     var form = $("#" + id).find("form");
+    var latitude = null;
+    var longitude = null;
     if (!form.length) {
       var $span = $("span[latitude]");
       if (!$span.length) {
         return;
       }
-      var latitude = $span.attr("latitude")
-      var longitude = $span.attr("longitude")
+      latitude = $span.attr("latitude");
+      longitude = $span.attr("longitude");
       m.clear_points();
       var position = new google.maps.LatLng(
-            latitude, longitude);
+        latitude,
+        longitude
+      );
       var marker = new google.maps.Marker({
         position: position,
         map: m.map
@@ -589,10 +596,10 @@ var m = {
       return;
     }
     var search = $("<input>").attr({
-      "type":"button",
-      "value":"Find address on map"
-    })
-    var submit = form.find("input[type='submit']")
+      "type": "button",
+      "value": "Find address on map"
+    });
+    var submit = form.find("input[type='submit']");
     form.find("label[name='source']").before(search);
     var postal = m.get_field(form, "postal");
     var lookup = m.get_field(form, "lookup");
@@ -600,26 +607,24 @@ var m = {
 
     var manual_latitude = form.find("[name='manual_latitude']");
     var manual_longitude = form.find("[name='manual_longitude']");
-    var latitude = form.find("[name='latitude']");
-    var longitude = form.find("[name='longitude']");
+    latitude = form.find("[name='latitude']");
+    longitude = form.find("[name='longitude']");
 
     var validate = function () {
-      var x = form.find("[status='bad']")
+      var x = form.find("[status='bad']");
       if (x.length) {
         submit.attr('disabled', 'disabled');
-      }
-      else {
+      } else {
         submit.removeAttr('disabled');
       }
 
       if (postal.input.val().length || lookup.input.val().length) {
         search.removeAttr('disabled');
-      }
-      else {
+      } else {
         search.attr('disabled', 'disabled');
       }
 
-    }
+    };
 
     var manual_control = $("<div class='caption'>");
     var manual_control_hint = $("<span>").text("The address could not be found automatically. You may wish to check the address for accuracy, consider adding a machine-friendly 'Lookup' address, or click the map to set the position manually.").hide();
@@ -639,7 +644,7 @@ var m = {
       manual_control_span1.hide();
       manual_control_span2.show();
       manual_control_button.show();
-    }
+    };
 
     var clear_manual_position = function () {
       manual_latitude.val(null);
@@ -648,12 +653,12 @@ var m = {
       manual_control_span1.show();
       manual_control_span2.hide();
       manual_control_button.hide();
-    }
+    };
 
     manual_control_button.click(function () {
       m.clear_points();
       clear_manual_position();
-    })
+    });
 
     var set_marker = function (position, title) {
       m.clear_points();
@@ -668,7 +673,7 @@ var m = {
         set_manual_position(pos);
       });
       m.markers.push(marker);
-    }
+    };
 
     google.maps.event.addListener(m.map, 'click', function (event) {
       var pos = event.latLng;
@@ -686,13 +691,15 @@ var m = {
         "success": function (data, textStatus, jqXHR) {
           if (!data.latitude) {
             m.clear_points();
-            clear_manual_position()
+            clear_manual_position();
             manual_control_hint.show();
             manual_control_span1.hide();
             return;
           }
           var position = new google.maps.LatLng(
-            data.latitude, data.longitude);
+            data.latitude,
+            data.longitude
+          );
           set_marker(position, data.postal);
           clear_manual_position();
           m.map.setCenter(position);
@@ -700,7 +707,7 @@ var m = {
         },
         "error": m.ajaxError
       });
-    }
+    };
 
     search.click(address_search);
 
@@ -722,7 +729,9 @@ var m = {
     if (latitude.length) {
       if (latitude.val().length && longitude.val().length) {
         var pos = new google.maps.LatLng(
-          latitude.val(), longitude.val());
+          latitude.val(),
+          longitude.val()
+        );
         set_marker(pos, postal.input.val());
         m.map.setCenter(pos);
         m.map.setZoom(10);
@@ -745,9 +754,11 @@ var m = {
       var longitude = pin.attr("longitude");
       var color = pin.attr("color");
       var position = new google.maps.LatLng(
-        latitude, longitude);
+        latitude,
+        longitude
+      );
       var z_index;
-      letter = String.fromCharCode(alpha + 65);
+      var letter = String.fromCharCode(alpha + 65);
       if (color === "red") {
         color = "ee6666";
         z_index = 200;
@@ -758,8 +769,8 @@ var m = {
         color = "ddddff";
         z_index = 100;
       }
-      var pin_url = m.url_root + "static/image/map/marker/pin-" + color + "-" + letter + ".png"
-      var circle_url = m.url_root + "static/image/map/marker/circle-" + color + "-" + letter + ".png"
+      var pin_url = m.url_root + "static/image/map/marker/pin-" + color + "-" + letter + ".png";
+      var circle_url = m.url_root + "static/image/map/marker/circle-" + color + "-" + letter + ".png";
 
       var marker = new google.maps.Marker({
         position: position,
@@ -767,7 +778,7 @@ var m = {
         icon: pin_url,
         zIndex: z_index
       });
-      circle = $("<img>").attr({
+      var circle = $("<img>").attr({
         "src": circle_url,
         "alt": "Map location of address is unknown."
       });
@@ -780,9 +791,10 @@ var m = {
       }
       m.markers.push(marker);
     });
-    circle = $("<img>").attr(
+    var circle = $("<img>").attr(
       "src",
-      m.url_root + "static/circleUnknown.png");
+      m.url_root + "static/circleUnknown.png"
+    );
     $(".pin:not([latitude])").empty().append(circle);
   },
 
@@ -794,9 +806,15 @@ var m = {
   },
 
   "has_link_parent": function (node) {
-    if (!$(node).parent().length) return false;
-    if (!$(node).parent()[0].tagName) return false;
-    if ($(node).parent()[0].tagName.toLowerCase() === "a") return true;
+    if (!$(node).parent().length) {
+      return false;
+    }
+    if (!$(node).parent()[0].tagName) {
+      return false;
+    }
+    if ($(node).parent()[0].tagName.toLowerCase() === "a") {
+      return true;
+    }
     return m.has_link_parent($(node).parent()[0]);
   },
 
@@ -806,10 +824,10 @@ var m = {
         return $("<span>" + this.textContent + "</span>");
       }
       var html = this.textContent.replace(
-          /(?:(https?:\/\/)|(www\.))([\S]+\.[^\s<>\"\']+)/g,
+        /(?:(https?:\/\/)|(www\.))([\S]+\.[^\s<>\"\']+)/g,
         "<a href='http://$2$3'>$1$2$3</a>"
       );
-      var html = "<span>" + html + "</span>";
+      html = "<span>" + html + "</span>";
       var node = $(html);
       return node;
     });
@@ -817,7 +835,7 @@ var m = {
   },
 
   "note_markdown": function () {
-    var form = $("#note-form")
+    var form = $("#note-form");
     var text = m.get_field(form, "text");
     var source = m.get_field(form, "source");
     m.on_change(text.input, "note-form" + "_" + "text", function (value) {
@@ -833,7 +851,7 @@ var m = {
   },
 
   "event_markdown": function () {
-    var form = $("#event-form")
+    var form = $("#event-form");
     var text = m.get_field(form, "description");
     m.on_change(text.input, "event-form" + "_" + "text", function (value) {
       text.label.attr("status", !!value ? "good" : "bad");
@@ -858,7 +876,7 @@ var m = {
       var href = $el.attr("href");
       var visibility = "visibility=" + value;
       if ($el.attr("href").toLowerCase().indexOf("visibility=") >= 0) {
-        href = href.replace(/visibility=[\w-]*/gi, visibility)
+        href = href.replace(/visibility=[\w\-]*/gi, visibility);
       } else {
         if ($el.attr("href").indexOf("?") >= 0) {
           href = href + "&" + visibility;
@@ -1028,7 +1046,7 @@ var m = {
 
 
 
-$(document).ready(function () {
+$(window.document).ready(function () {
   $.ajaxSetup({ "traditional": true });
   m.currentUser = $("#account").find("a").length === 2;
   m.handle();
