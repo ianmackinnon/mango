@@ -427,12 +427,22 @@ var m = {
     });
   },
 
-  initOrgSearch: function () {
+  initMap: function () {
+    var mapView = new window.MapView();
+    $("#mango-map-box").replaceWith(mapView.$el);
+    return mapView;
+  },
+
+  initOrgSearch: function (mapView) {
+    var orgSearch = new window.OrgSearch();
     var orgSearchView = new window.OrgSearchView({
-      model: new window.OrgSearch(),
+      model: orgSearch,
       $source: $("#org-search"),
-      $orgColumn: $("#org_list").find(".column")
+      $orgColumn: $("#org_list").find(".column"),
+      mapView: mapView
     });
+    $("#org-search").replaceWith(orgSearchView.$el);
+    return orgSearch;
   },
 
   "ajaxError": function (jqXHR, textStatus, errorThrown) {
@@ -520,44 +530,6 @@ var m = {
 
     m.on_change(search.input, id + "_" + field, change, 500);
     visibility.change(change);
-  },
-
-  "build_map": function () {
-    var mapOptions = {
-      zoom: 6,
-      center: new google.maps.LatLng(51.498772, -0.1309738),
-      mapTypeControl: false,
-      streetViewControl: false
-    };
-
-    var mapStyles = [
-      {
-        featureType: "all",
-        elementType: "all",
-        stylers: [
-          { gamma: 1.3 },
-          { saturation: -50 }
-        ]
-      }
-    ];
-
-    var styledMapOptions = {
-      name: "Grey"
-    };
-
-    var greyMapType = new google.maps.StyledMapType(
-      mapStyles,
-      styledMapOptions
-    );
-
-    m.map = new google.maps.Map(
-      window.document.getElementById("mango-map-canvas"),
-      mapOptions
-    );
-
-    m.map.mapTypes.set('grey', greyMapType);
-    m.map.setMapTypeId('grey');
-
   },
 
   "get_field": function (form, name) {
@@ -746,58 +718,6 @@ var m = {
 
   },
 
-  "add_pins": function () {
-    var alpha = 0;
-    $(".pin[latitude]").each(function (index, pin) {
-      pin = $(pin);
-      var latitude = pin.attr("latitude");
-      var longitude = pin.attr("longitude");
-      var color = pin.attr("color");
-      var position = new google.maps.LatLng(
-        latitude,
-        longitude
-      );
-      var z_index;
-      var letter = String.fromCharCode(alpha + 65);
-      if (color === "red") {
-        color = "ee6666";
-        z_index = 200;
-      } else if (color === "green") {
-        color = "D06800";
-        z_index = 300;
-      } else {
-        color = "ddddff";
-        z_index = 100;
-      }
-      var pin_url = m.url_root + "static/image/map/marker/pin-" + color + "-" + letter + ".png";
-      var circle_url = m.url_root + "static/image/map/marker/circle-" + color + "-" + letter + ".png";
-
-      var marker = new google.maps.Marker({
-        position: position,
-        map: m.map,
-        icon: pin_url,
-        zIndex: z_index
-      });
-      var circle = $("<img>").attr({
-        "src": circle_url,
-        "alt": "Map location of address is unknown."
-      });
-      pin.empty().append(circle);
-      alpha = (alpha + 1);
-      if (alpha === 26) {
-        alpha = 32;
-      } else if (alpha === 58) {
-        alpha = 0;
-      }
-      m.markers.push(marker);
-    });
-    var circle = $("<img>").attr(
-      "src",
-      m.url_root + "static/circleUnknown.png"
-    );
-    $(".pin:not([latitude])").empty().append(circle);
-  },
-
   "text_children": function (el) {
     // http://stackoverflow.com/a/4399718/201665
     return $(el).find(":not(iframe)").andSelf().contents().filter(function () {
@@ -929,7 +849,6 @@ var m = {
 
   "route": [
     [/^\/$/, function () {
-      m.build_map();
       m.all_addresses();
     }],
     [/^\/note\/new$/, function () {
@@ -940,12 +859,12 @@ var m = {
     }],
 
     [/^\/organisation$/, function () {
-//      m.build_map();
-      m.initOrgSearch();
+      var mapView = m.initMap();
+      window.mapView = mapView;
+      m.initOrgSearch(mapView);
       m.visibility();
     }],
     [/^\/event$/, function () {
-      m.build_map();
       m.init_event_search();
       m.visibility();
     }],
@@ -954,13 +873,11 @@ var m = {
       m.visibility();
     }],
     [/^\/organisation\/([1-9][0-9]*)$/, function () {
-      m.build_map();
       m.clear_points();
       m.add_pins();
       m.fit_map();
     }],
     [/^\/organisation\/([1-9][0-9]*)\/address$/, function () {
-      m.build_map();
       m.init_address_form("address-form");
       $("#address-form textarea[name='postal']").focus();
     }],
@@ -968,14 +885,12 @@ var m = {
       m.note_markdown();
     }],
     [/^\/event\/([1-9][0-9]*)$/, function () {
-      m.build_map();
       m.clear_points();
       m.add_pins();
       m.fit_map();
       m.event_markdown();
     }],
     [/^\/event\/([1-9][0-9]*)\/address$/, function () {
-      m.build_map();
       m.init_address_form("address-form");
       $("#address-form textarea[name='postal']").focus();
     }],
@@ -984,7 +899,6 @@ var m = {
     }],
 
     [/^\/address\/([1-9][0-9]*)$/, function () {
-      m.build_map();
       m.init_address_form("address-form");
       $("#address-form textarea[name='postal']").focus();
     }],
