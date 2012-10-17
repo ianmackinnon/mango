@@ -442,6 +442,7 @@ var m = {
       mapView: mapView
     });
     $("#org-search").replaceWith(orgSearchView.$el);
+    orgSearchView.send();
     return orgSearch;
   },
 
@@ -961,6 +962,7 @@ var m = {
 
 
 $(window.document).ready(function () {
+  window.document.cookie = 'j=1';
   $.ajaxSetup({ "traditional": true });
   m.currentUser = $("#account").find("a").length === 2;
   m.handle();

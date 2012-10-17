@@ -159,6 +159,8 @@
 
   window.OrgSearch = Backbone.Model.extend({
     save: function (data, callback) {
+      data = data || {};
+      console.log(data);
       var orgCollection = new window.OrgCollection();
       var searchId = Math.random();
       orgCollection.fetch({
@@ -166,11 +168,15 @@
           searchId: searchId
         }),
         success: function (collection, response) {
-          callback(orgCollection);
+          if (!!callback) {
+            callback(orgCollection);
+          }
         },
         error:   function (collection, response) {
           console.log("error", collection, response);
-          callback(null);
+          if (!!callback) {
+            callback(null);
+          }
         }
       });
 
@@ -287,10 +293,8 @@
     },
 
     searchUpdateHook: function () {
-      if (this.activeSearches > 0) {
-        this.$throbber.show();
-      } else {
-        this.$throbber.hide();
+      if (this.$throbber) {
+        this.$throbber.toggle(!!this.activeSearches);
       }
     },
 

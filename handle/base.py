@@ -135,6 +135,7 @@ class BaseHandler(tornado.web.RequestHandler):
         self.messages = []
         self.scripts = []
         tornado.web.RequestHandler.__init__(self, *args, **kwargs)
+        self.has_javascript = bool(self.get_cookie("j"))
         self.set_parameters()
         self.next = self.get_argument("next", None)
 

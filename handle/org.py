@@ -134,6 +134,15 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
         tag_name_list = self.get_arguments("tag", json=is_json)
         offset = self.get_argument_int("offset", None, json=is_json)
 
+        if self.has_javascript and not self.accept_type("json"):
+            self.render(
+                'organisation_list.html',
+                name_search=name_search,
+                tag_name_list=tag_name_list,
+                lookup=self.get_argument("lookup", None),
+                )
+            return;
+
         if self.deep_visible():
             address_list_name = "address_list"
         else:
