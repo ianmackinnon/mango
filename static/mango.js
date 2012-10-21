@@ -89,6 +89,52 @@ var m = {
     return arr2;
   },
 
+  shrinkGeobox: function (geobox) {
+    var other = {
+      south: geobox.south * .8 + geobox.north * .2,
+      north: geobox.south * .2 + geobox.north * .8,
+      west: geobox.west * .8 + geobox.east * .2,
+      east: geobox.west * .2 + geobox.east * .8,
+    }
+    return other;
+  },
+
+  mapBoundsToGeobox: function (bounds) {
+    var southWest = bounds.getSouthWest();
+    var northEast = bounds.getNorthEast();
+    var geobox = {
+      south: southWest.lat(),
+      north: northEast.lat(),
+      west: southWest.lng(),
+      east: northEast.lng()
+    }
+    return geobox;
+  },
+
+  geoboxToString: function (geobox) {
+    return geobox.south + ", " + geobox.north +
+      ", " + geobox.west + ", " + geobox.east;
+  },
+
+  geoboxArea: function (geobox) {
+    var radiusOfEarth = 6378.1;
+    var circumferenceOfEarth = 40075;
+    var areaOfEarth = 510072000;
+
+    var east = geobox.east + 360 * (geobox.east < geobox.west);
+
+    var height = (
+      Math.sin(geobox.north * Math.PI / 180) - 
+      Math.sin(geobox.south * Math.PI / 180)
+    );
+
+    var segmentArea = 2 * Math.PI * radiusOfEarth * height * radiusOfEarth;
+
+    var sliceArea = segmentArea * (east - geobox.west) / 360;
+
+    return sliceArea;
+  },
+
   "geo": {
     "in_": function (latitude, longitude, geobox) {
       if (geobox === null) {

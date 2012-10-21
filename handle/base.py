@@ -289,20 +289,38 @@ class BaseHandler(tornado.web.RequestHandler):
                     )
         self.finish()
 
+
+
+    # Arguments
+
     _ARG_DEFAULT_MANGO = []
 
     def get_argument_restricted(self, name, fn, message,
-                                  default=_ARG_DEFAULT_MANGO, json=False):
+                                default=_ARG_DEFAULT_MANGO, json=False):
         value = self.get_argument(name, default, json)
+
         if value == default:
             if default is self._ARG_DEFAULT_MANGO:
                 raise tornado.web.HTTPError(400, "Missing argument %s" % name)
             return value
+
         try:
             value = fn(value)
         except ValueError:
             raise tornado.web.HTTPError(400, message)
         return value
+
+    def get_argument_allowed(self, name, allowed, default=_ARG_DEFAULT_MANGO, json=False):
+        def test(value, allowed):
+            if not value in allowed:
+                raise ValueError
+            return value
+        return self.get_argument_restricted(
+            name,
+            lambda value: test(value, allowed),
+            "'%s' value is not in the allowed set (%s)." % (name, [repr(v) for v in allowed]),
+            default,
+            json)
 
     def get_argument_int(self, name, default=_ARG_DEFAULT_MANGO, json=False):
         return self.get_argument_restricted(
@@ -333,18 +351,6 @@ class BaseHandler(tornado.web.RequestHandler):
             name,
             lambda value: int(value),
             "Value must be a floating point number",
-            default,
-            json)
-
-    def get_argument_allowed(self, name, allowed, default=_ARG_DEFAULT_MANGO, json=False):
-        def test(value, allowed):
-            if not value in allowed:
-                raise ValueError
-            return value
-        return self.get_argument_restricted(
-            name,
-            lambda value: test(value, allowed),
-            "'%s' value is not in the allowed set (%s)." % (name, [repr(v) for v in allowed]),
             default,
             json)
 
@@ -388,53 +394,33 @@ class BaseHandler(tornado.web.RequestHandler):
             return None
         return self.get_argument_allowed(
             "visibility", ("pending", "all", "private", "public"), None, json)
-        
 
-    def get_argument_geobox(self, name="geobox", default=_ARG_DEFAULT_MANGO, json=False):
+    def get_argument_geobox(self, name, default=_ARG_DEFAULT_MANGO, json=False):
         value = self.get_argument(name, default, json)
+
         if value == default:
             if default is self._ARG_DEFAULT_MANGO:
                 raise tornado.web.HTTPError(400, "Missing argument %s" % name)
             return value
-        
-        parts = value.split(",")
-        if not len(parts) == 4:
-            raise tornado.web.HTTPError(
-                400,
-                "Argument %s should be 4 comma-separated floating point numbers." % name
-                )
-        try:
-            parts = [float(part) for part in parts]
-        except ValueError as e:
-            raise tornado.web.HTTPError(
-                400,
-                "Argument %s should be 4 comma-separated floating point numbers." % name
-                )
-        
-        return dict(zip(["latmin", "latmax", "lonmin", "lonmax"], parts))
 
-    def get_argument_latlon(self, name="latlon", default=_ARG_DEFAULT_MANGO, json=False):
-        value = self.get_argument(name, default, json)
-        if value == default:
-            if default is self._ARG_DEFAULT_MANGO:
-                raise tornado.web.HTTPError(400, "Missing argument %s" % name)
-            return value
-        
-        parts = value.split(",")
-        if not len(parts) == 2:
-            raise tornado.web.HTTPError(
-                400,
-                "Argument %s should be 2 comma-separated floating point numbers." % name
-                )
         try:
-            parts = [float(part) for part in parts]
-        except ValueError as e:
-            raise tornado.web.HTTPError(
-                400,
-                "Argument %s should be 2 comma-separated floating point numbers." % name
-                )
-        
-        return parts
+            return geo.Geobox(value)
+        except ValueError:
+            pass
+
+        try:
+            return geo.bounds(value)
+        except ValueError:
+            pass
+
+        raise tornado.web.HTTPError(400, "Could not decode %s value %s" % (name, value))
+
+
+
+    # End arguments
+
+
+
 
     def get_json_data(self):
         if hasattr(self, "json_data") and self.json_data:
@@ -479,11 +465,17 @@ class BaseHandler(tornado.web.RequestHandler):
     def get_arguments_int(self, name):
         return [int(value) for value in self.get_arguments(name)]
 
+
+
+
     def dump_json(self, obj):
         return json.dumps(obj, indent=2)
 
     def write_json(self, obj):
         self.write(self.dump_json(obj))
+
+    
+
 
     def has_geo_arguments(self):
         self.lookup = self.get_argument("lookup", None)

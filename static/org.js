@@ -35,6 +35,23 @@
     }
   });
 
+  var AddressViewDot = Backbone.View.extend({
+    initialize: function () {
+      this.mapView = this.options.mapView;
+    },
+
+    render: function () {
+      var view = this;
+
+      view.mapView.addDot(
+        this.model.get("latitude"),
+        this.model.get("longitude")
+      );
+
+      return this;
+    }
+  })
+
   var AddressCollectionViewRows = Backbone.View.extend({
     tagName: "div",
     className: "org_address_list",
@@ -43,10 +60,26 @@
       var view = this;
 
       view.mapView = this.options.mapView;
+      view.letters = this.options.letters;
 
       this._modelViews = [];
+      var bounds = view.mapView.map.getBounds();
       this.collection.each(function (model) {
-        view._modelViews.push(new AddressViewRow({
+        if (view.letters.length) {
+          var point = new google.maps.LatLng(
+            model.get("latitude"),
+            model.get("longitude")
+          );
+          if (bounds.contains(point)) {
+            view._modelViews.push(new AddressViewRow({
+              model: model,
+              mapView: view.mapView,
+              letter: view.letters.shift()
+            }));
+            return;
+          }
+        }
+        view._modelViews.push(new AddressViewDot({
           model: model,
           mapView: view.mapView
         }));
@@ -84,26 +117,34 @@
 
     initialize: function () {
       this.mapView = this.options.mapView;
+      this.letters = this.options.letters;
     },
 
     render: function () {
       var view = this;
 
-      $(this.el).html(m.template(this.templateName, {
-        org: this.model.toJSON(),
-        m: m,
-        parameters: m.parameters,
-        geobox: this.model.collection.geobox,
-        note: false,
-      }));
+      if (!!this.letters.length) {
+        $(this.el).html(m.template(this.templateName, {
+          org: this.model.toJSON(),
+          m: m,
+          parameters: m.parameters,
+          geobox: this.model.collection.geobox,
+          note: false,
+        }));
+      }
 
       var addressCollectionView = new AddressCollectionViewRows({
         collection: this.model.addressCollection,
-        mapView: this.mapView
+        mapView: this.mapView,
+        letters: this.letters
       });
       addressCollectionView.render();
-      this.$el.find(".org_address_list").replaceWith(addressCollectionView.$el);
-      return this;
+
+      var $addressList = this.$el.find(".org_address_list");
+      if ($addressList.length) {
+        this.$el.find(".org_address_list").replaceWith(addressCollectionView.$el);
+        return this;
+      }
     }
   });
 
@@ -116,9 +157,8 @@
 
     parse: function (resp, xhr) {
       if (!!resp) {
-        this.geobox = resp.geobox;
-        this.latlon = resp.latlon;
-        this.count = resp.org_count;
+        this.org_address_count = resp.org_address_count;
+        this.location = resp.location;
         return resp.org_list;
       }
       return resp;
@@ -128,18 +168,43 @@
   window.OrgCollectionView = Backbone.View.extend({
     tagName: "div",
     className: "column",
+    letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
 
     initialize: function () {
       var view = this;
-
+      
       view.mapView = this.options.mapView;
 
       this._modelViews = [];
+      this._addressModelViews = [];
+      if (this.collection.org_address_count > 26 * 3) {
+        this.initializeMany();
+      } else {
+        this.initializeFew();
+      }
+    },
+
+    initializeFew: function() {
+      var view = this;
+      var letters = this.letters.slice(0);
       this.collection.each(function (model) {
         view._modelViews.push(new window.OrgViewBox({
           model: model,
-          mapView: view.mapView
+          mapView: view.mapView,
+          letters: letters
         }));
+      });
+    },
+
+    initializeMany: function() {
+      var view = this;
+      this.collection.each(function (model) {
+        model.addressCollection.each(function (addressModel) {
+          view._modelViews.push(new AddressViewDot({
+            model: addressModel,
+            mapView: view.mapView
+          }));
+        });
       });
     },
 
@@ -147,8 +212,15 @@
       var view = this;
       $(this.el).empty();
       view.mapView.clearMarkers();
+      
       _(this._modelViews).each(function (modelView) {
-        $(view.el).append(modelView.render().el);
+        var viewRendered = modelView.render();
+        if (!!viewRendered) {
+          $(view.el).append(viewRendered.$el);
+        }
+      });
+      _(this._addressModelViews).each(function (addressModelView) {
+        addressModelView.render();
       });
       return this;
     }
@@ -160,7 +232,6 @@
   window.OrgSearch = Backbone.Model.extend({
     save: function (data, callback) {
       data = data || {};
-      console.log(data);
       var orgCollection = new window.OrgCollection();
       var searchId = Math.random();
       orgCollection.fetch({
@@ -191,7 +262,7 @@
       'submit': 'submit',
       'change input[name="visibility"]': 'formChange',
       'change input[name="nameSearch"]': 'formChange',
-      'change input[name="lookup"]': 'formChange',
+      'change input[name="location"]': 'formChange',
       'change label > input[name="tag"]': 'formChange'
     },
 
@@ -206,6 +277,27 @@
         var $el = this.$el;
         var view = this;
 
+        this.ignoreMapMove = true;
+        this.mapIdleListener = google.maps.event.addListener(
+          this.mapView.map,
+          'idle',
+          function () {
+            if (view.ignoreMapMove) {
+              view.ignoreMapMove = false;
+              return;
+            }
+            var bounds = view.mapView.map.getBounds();
+            var geobox = m.mapBoundsToGeobox(bounds);
+
+            if (m.geoboxArea(geobox) > 50000) {
+              $el.find("input[name='location']").val("");
+            } else {
+              $el.find("input[name='location']").val(m.geoboxToString(geobox));
+            }
+            view.send();
+          }
+        );
+        
         m.getOrgtagDictionary(function (error, orgtags) {
           var orgtagKeys = m.arrayKeys(orgtags);
           var $input = $el.find("input[name='tag']");
@@ -272,6 +364,13 @@
         if (!orgCollection) {
           return;
         }
+        
+        if (orgCollection.location) {
+          var shrunk = m.shrinkGeobox(orgCollection.location);
+          orgSearchView.ignoreMapMove = true;
+          orgSearchView.mapView.setBounds(shrunk);
+        }
+
         var orgCollectionView = new window.OrgCollectionView({
           collection: orgCollection,
           mapView: orgSearchView.mapView

@@ -39,91 +39,124 @@ class BaseOrgHandler(BaseHandler):
 
         return org
 
-    def _get_org_list_search(self, name=None, name_search=None,
-                             tag_name_list=None, visibility=None,
-                             address_list_name=None, geo=True, address=True, limit=10, offset=0):
-        org_list = self.orm.query(Org)
+    
+    def _get_org_packet_search(self, name=None, name_search=None,
+                        tag_name_list=None, location=None,
+                        visibility=None,
+                        address_list_name=None):
 
-        org_list = self.filter_visibility(org_list, Org, visibility)
+        org_alias_query = self._get_org_alias_search_query(
+            name=name,
+            name_search=name_search,
+            tag_name_list=tag_name_list,
+            visibility=visibility,
+            )
+
+        org_alias_address_query = org_alias_query \
+            .join(Org.address_list) \
+            .add_entity(Address)
+
+        org_alias_address_query = self.filter_visibility(
+            org_alias_address_query, Address, visibility)
+
+        if location:
+            org_alias_address_query = org_alias_address_query \
+                .filter(and_(
+                    Address.latitude != None,
+                    Address.latitude >= location.south,
+                    Address.latitude <= location.north,
+                    Address.longitude != None,
+                    Address.longitude >= location.west,
+                    Address.longitude <= location.east,
+                    ))
+
+#        org_alias_address_query = org_alias_address_query.offset()
+
+        orgs = {}
+
+        for org, alias, address in org_alias_address_query:
+            if not org.org_id in orgs:
+                orgs[org.org_id] = {
+                    "org": org,
+                    "alias": alias,
+                    "address_obj_list": [],
+                    }
+            orgs[org.org_id]["address_obj_list"].append(address.obj(
+                    public=bool(self.current_user)
+                    ))
+
+        org_packet = {
+            "org_list": [],
+            "org_address_count": org_alias_address_query.count(),
+            "location": location and location.to_obj(),
+            }
+
+        for org_id, data in orgs.items():
+            org_packet["org_list"].append(data["org"].obj(
+                    public=bool(self.current_user),
+                    address_obj_list=data["address_obj_list"],
+                    alias=data["alias"],
+                    ))
+
+        return org_packet
+        
+
+
+    def _get_org_alias_search_query(
+        self, name=None, name_search=None,
+        tag_name_list=None, visibility=None):
+                                   
+        org_query = self.orm.query(Org)
+
+        org_query = self.filter_visibility(org_query, Org, visibility) \
 
         if name:
-            org_list = org_list \
-                .join(Orgalias) \
-                .add_columns(
-                func.min(func.coalesce(
-                        func.if_(
-                            Org.name == name,
-                            "",
-                            None,
-                            ),
-                        Orgalias.name,
-                        )).label('alias'),
-                ) \
-                .filter(or_(
-                    Org.name == name,
-                    Orgalias.name == name,
-                    ))
-        elif name_search:
-            org_list = org_list \
-                .outerjoin(Orgalias) \
-                .add_columns(
-                func.min(func.coalesce(
-                        func.if_(
-                            Org.name.contains(name_search),
-                            "",
-                            None,
-                            ),
-                        Orgalias.name,
-                        )).label('alias'),
-                ) \
-                .filter(or_(
-                    Org.name.contains(name_search),
-                    Orgalias.name.contains(name_search),
-                    ))
-        else:
-            org_list = org_list \
-                .add_columns(literal(None).label('alias'))
+            org_query = org_query \
+                .filter(Org.name==name)
+
+            alias_query = self.orm.query(Org, Orgalias.name) \
+                .filter(Orgalias.org_id==Org.org_id)
+
+            org_id_list = [org.org_id for org in org_query.all()]
             
+            alias_query = self.filter_visibility(alias_query, Org, visibility)
+            alias_query = self.filter_visibility(alias_query, Orgalias, visibility)
+            alias_query = alias_query \
+                .filter(Orgalias.name==name_search) \
+                .filter(~Org.org_id.in_(org_id_list))
+            
+            org_query = org_query.add_columns(literal(None).label('alias'))
+
+            org_alias_query = org_query.union(alias_query)
+        elif name_search:
+            org_query = org_query \
+                .filter(Org.name.contains(name_search))
+
+            alias_query = self.orm.query(Org, Orgalias.name) \
+                .filter(Orgalias.org_id==Org.org_id)
+
+            org_id_list = [org.org_id for org in org_query.all()]
+            
+            alias_query = self.filter_visibility(alias_query, Org, visibility)
+            alias_query = self.filter_visibility(alias_query, Orgalias, visibility)
+            alias_query = alias_query \
+                .filter(Orgalias.name.contains(name_search)) \
+                .filter(~Org.org_id.in_(org_id_list))
+            
+            org_query = org_query.add_columns(literal(None).label('alias'))
+
+            org_alias_query = org_query.union(alias_query)
+        else:
+            org_alias_query = org_query.add_columns(literal(None).label('alias'))
+
 
         if tag_name_list:
-            org_list = org_list.join((Orgtag, Org.orgtag_list)) \
+            # To do.  Only public
+            org_alias_query = org_alias_query.join((Orgtag, Org.orgtag_list)) \
                 .filter(Orgtag.short.in_(tag_name_list))
 
-        if address:
-            assert address_list_name in [
-                "address_list",
-                "address_list_public",
-                ]
-            
-            org_list = org_list \
-                .outerjoin((Address, getattr(Org, address_list_name))) \
-                .options(joinedload(address_list_name))
-        else:
-            org_list = org_list \
-                .filter(~exists().where(org_address.c.org_id == Org.org_id))
+        return org_alias_query
 
-        geobox = None
-        latlon = None
-        if address and geo and self.has_geo_arguments():
-            org_list, geobox, latlon = self.filter_geo(org_list, limit)
-            org_list = org_list.all()
-            org_count = len(org_list)
-        else:
-            if name_search:
-                org_list = org_list \
-                    .order_by(Org.name.startswith(name_search).desc(), Org.name)
-            else:
-                org_list = org_list.order_by(Org.name)
-            org_list = org_list.group_by(Org.org_id)
-            org_count = self.orm.query(org_list.subquery().c.org_id.distinct()).count()
-            if offset:
-                org_list = org_list.offset(offset);
-            if limit:
-                org_list = org_list.limit(limit)
-            org_list = org_list.all()
-
-        return org_list, org_count, geobox, latlon
-    
 
 
 class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
@@ -132,69 +165,37 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
         name = self.get_argument("name", None, json=is_json)
         name_search = self.get_argument("nameSearch", None, json=is_json)
         tag_name_list = self.get_arguments("tag", json=is_json)
+        location = self.get_argument_geobox("location", None, json=is_json)
         offset = self.get_argument_int("offset", None, json=is_json)
 
         if self.has_javascript and not self.accept_type("json"):
             self.render(
                 'organisation_list.html',
+                name=name,
                 name_search=name_search,
                 tag_name_list=tag_name_list,
-                lookup=self.get_argument("lookup", None),
+                location=location,
                 )
             return;
 
-        if self.deep_visible():
-            address_list_name = "address_list"
-        else:
-            address_list_name = "address_list_public"
-
-        org_and_alias_list, org_count, geobox, latlon = self._get_org_list_search(
+        org_packet = self._get_org_packet_search(
             name=name,
             name_search=name_search,
             tag_name_list=tag_name_list,
+            location=location,
             visibility=self.parameters["visibility"],
-            address_list_name=address_list_name,
-            offset=offset,
             )
-
-        if self.has_geo_arguments():
-            offset = None
-
-        org_packet = {
-            "org_list": [],
-            "org_count": org_count,
-            "geobox": geobox,
-            "latlon": latlon,
-            }
-
-        if offset is not None:
-            org_packet["offset"] = offset
-
-        for org, alias in org_and_alias_list:
-            if self.deep_visible():
-                address_list = org.address_list
-            else:
-                address_list = org.address_list_public
-            address_list = [address.obj(public=bool(self.current_user)) \
-                                for address in address_list]
-            obj = org.obj(
-                public=bool(self.current_user),
-                address_obj_list=address_list,
-                alias=(alias or None)
-                )
-            org_packet["org_list"].append(obj);
 
         if self.accept_type("json"):
             self.write_json(org_packet)
         else:
-            full_orgtag_list = BaseOrgtagHandler._get_full_orgtag_list(self)
             self.render(
                 'organisation_list.html',
                 org_packet=org_packet,
+                name=name,
                 name_search=name_search,
                 tag_name_list=tag_name_list,
-                lookup=self.lookup,
-                orgtag_list_json=json.dumps(full_orgtag_list),
+                location=location,
                 )
 
     def post(self):

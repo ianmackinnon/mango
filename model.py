@@ -924,6 +924,18 @@ class Address(Base, NotableEntity):
         return ""
  
     @staticmethod
+    def in_geobox(latitude, longitude, geobox):
+        if latitude > geobox["latmax"]:
+            return False
+        if latitude < geobox["latmin"]:
+            return False
+        if longitude > geobox["lonmax"]:
+            return False
+        if longitude < geobox["lonmin"]:
+            return False
+        return True
+
+    @staticmethod
     def geobox(latitude, longitude, distance):
         # Cheap
         r = 6378.1
