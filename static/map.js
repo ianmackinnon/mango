@@ -71,6 +71,16 @@
       return this;
     },
 
+    contains: function (latitude, longitude) {
+      var bounds = this.map.getBounds();
+      var point = new google.maps.LatLng(latitude, longitude);
+      return bounds.contains(point);
+    },
+
+    addMapListener: function (name, callback) {
+      return google.maps.event.addListener(this.map, name, callback);
+    },
+
     setBounds: function (geobox) {
       var sw = new google.maps.LatLng(geobox.south, geobox.west);
       var ne = new google.maps.LatLng(geobox.north, geobox.east);

@@ -91,11 +91,11 @@ var m = {
 
   shrinkGeobox: function (geobox) {
     var other = {
-      south: geobox.south * .8 + geobox.north * .2,
-      north: geobox.south * .2 + geobox.north * .8,
-      west: geobox.west * .8 + geobox.east * .2,
-      east: geobox.west * .2 + geobox.east * .8,
-    }
+      south: geobox.south * 0.8 + geobox.north * 0.2,
+      north: geobox.south * 0.2 + geobox.north * 0.8,
+      west: geobox.west * 0.8 + geobox.east * 0.2,
+      east: geobox.west * 0.2 + geobox.east * 0.8
+    };
     return other;
   },
 
@@ -107,7 +107,7 @@ var m = {
       north: northEast.lat(),
       west: southWest.lng(),
       east: northEast.lng()
-    }
+    };
     return geobox;
   },
 
@@ -124,7 +124,7 @@ var m = {
     var east = geobox.east + 360 * (geobox.east < geobox.west);
 
     var height = (
-      Math.sin(geobox.north * Math.PI / 180) - 
+      Math.sin(geobox.north * Math.PI / 180) -
       Math.sin(geobox.south * Math.PI / 180)
     );
 
@@ -485,6 +485,7 @@ var m = {
       model: orgSearch,
       $source: $("#org-search"),
       $orgColumn: $("#org_list").find(".column"),
+      $orgPaging: $("#org_list").find(".counts"),
       mapView: mapView
     });
     $("#org-search").replaceWith(orgSearchView.$el);

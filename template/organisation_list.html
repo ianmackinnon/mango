@@ -10,7 +10,7 @@
   <form id="org-search">
     <h3>Filter</h3>
     ${self.mini.visibility_search_input(parameters.get("visibility", None), current_user)}
-    <input type="hidden" name="offset" value="0">
+    <input type="hidden" name="offset" value="${offset or 0}">
     <div class="inputs">
       <label name="nameSearch">
         <span>Name</span>
@@ -18,7 +18,18 @@
       </label>
       <label name="location">
         <span>Location</span>
-        <input name="location" value="${location or ""}" placeholder="Eg. NW1">
+<%
+value = ""
+if location:
+    if 'name' in location:
+        value = location["name"]
+    else:
+        value = location.south + ", " + location.north + ", " + location.west + ", " + location.east
+%>
+        <input
+           name="location"
+           value="${value}"
+           placeholder="Eg. NW1">
       </label>
       <label name="tag">
         <span>Tags</span>

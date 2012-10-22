@@ -2,10 +2,13 @@
 
 import json
 
+from collections import OrderedDict
+
 from sqlalchemy import distinct, or_, and_
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, aliased
 from sqlalchemy.sql import exists, func, literal
+from sqlalchemy.sql.expression import case
 from tornado.web import HTTPError
 
 from base import BaseHandler, authenticated
@@ -40,10 +43,89 @@ class BaseOrgHandler(BaseHandler):
         return org
 
     
+    def _get_name_search_query(self, name=None, name_search=None,
+                               visibility=None):
+
+        org_name_query = self.orm.query(
+            Org.name.label("name"),
+            Org.org_id.label("org_id"),
+            literal(None).label('orgalias_id')
+            )
+        orgalias_name_query = self.orm.query(
+            Orgalias.name.label("name"),
+            Org.org_id.label("org_id"),
+            Orgalias.orgalias_id.label('orgalias_id')
+            ) \
+            .join(Orgalias.org)
+        name_subquery = org_name_query.union_all(orgalias_name_query).subquery()
+
+        name_query = self.orm.query(
+            name_subquery.c.org_id,
+            case(
+                [(
+                        func.count("*") > func.count(name_subquery.c.orgalias_id),
+                        literal(None),
+                        ),],
+                else_=func.min(name_subquery.c.orgalias_id),
+                ).label("orgalias_id")
+            )
+
+        if name:
+            name_query = name_query \
+                .filter(name_subquery.c.name==name)
+        elif name_search:
+            name_query = name_query \
+                .filter(name_subquery.c.name.contains(name_search)) \
+                .order_by(
+                name_subquery.c.name.startswith(name_search).desc(),
+                name_subquery.c.name
+                )
+        else:
+            name_query = name_query \
+                .order_by(name_subquery.c.name)
+
+        name_query = name_query \
+            .group_by(name_subquery.c.org_id)
+
+        return name_query
+
+
+
+    def _get_org_alias_search_query(
+        self, name=None, name_search=None,
+        tag_name_list=None, visibility=None):
+
+        name_query = self._get_name_search_query(name, name_search, visibility)
+        name_subquery = name_query.subquery()
+
+        # print "name_query"
+        # for org_id, orgalias_id in name_query:
+        #     print org_id, orgalias_id
+
+        org_alias_query = self.orm.query(Org, Orgalias) \
+            .join(name_subquery, Org.org_id==name_subquery.c.org_id) \
+            .outerjoin(Orgalias, Orgalias.orgalias_id==name_subquery.c.orgalias_id)
+        
+        # print "org_alias_query"
+        # for org, alias in org_alias_query:
+        #     print org, alias
+
+        if tag_name_list:
+            org_alias_query = org_alias_query \
+                .join((Orgtag, Org.orgtag_list)) \
+                .filter(Orgtag.short.in_(tag_name_list))
+
+        # print "org_alias_query tagged"
+        # for org, alias in org_alias_query:
+        #     print org, alias
+
+        return org_alias_query
+
+
+
     def _get_org_packet_search(self, name=None, name_search=None,
                         tag_name_list=None, location=None,
-                        visibility=None,
-                        address_list_name=None):
+                        visibility=None, offset=None):
 
         org_alias_query = self._get_org_alias_search_query(
             name=name,
@@ -70,15 +152,20 @@ class BaseOrgHandler(BaseHandler):
                     Address.longitude <= location.east,
                     ))
 
-#        org_alias_address_query = org_alias_address_query.offset()
+        print "offset: ", offset
+        if offset:
+            org_alias_address_query = org_alias_address_query \
+                .offset(offset)
 
-        orgs = {}
+        orgs = OrderedDict()
 
+        print "org_alias_address_query"
         for org, alias, address in org_alias_address_query:
+            print org, alias, address
             if not org.org_id in orgs:
                 orgs[org.org_id] = {
                     "org": org,
-                    "alias": alias,
+                    "alias": alias and alias.name,
                     "address_obj_list": [],
                     }
             orgs[org.org_id]["address_obj_list"].append(address.obj(
@@ -87,7 +174,6 @@ class BaseOrgHandler(BaseHandler):
 
         org_packet = {
             "org_list": [],
-            "org_address_count": org_alias_address_query.count(),
             "location": location and location.to_obj(),
             }
 
@@ -99,63 +185,6 @@ class BaseOrgHandler(BaseHandler):
                     ))
 
         return org_packet
-        
-
-
-    def _get_org_alias_search_query(
-        self, name=None, name_search=None,
-        tag_name_list=None, visibility=None):
-                                   
-        org_query = self.orm.query(Org)
-
-        org_query = self.filter_visibility(org_query, Org, visibility) \
-
-        if name:
-            org_query = org_query \
-                .filter(Org.name==name)
-
-            alias_query = self.orm.query(Org, Orgalias.name) \
-                .filter(Orgalias.org_id==Org.org_id)
-
-            org_id_list = [org.org_id for org in org_query.all()]
-            
-            alias_query = self.filter_visibility(alias_query, Org, visibility)
-            alias_query = self.filter_visibility(alias_query, Orgalias, visibility)
-            alias_query = alias_query \
-                .filter(Orgalias.name==name_search) \
-                .filter(~Org.org_id.in_(org_id_list))
-            
-            org_query = org_query.add_columns(literal(None).label('alias'))
-
-            org_alias_query = org_query.union(alias_query)
-        elif name_search:
-            org_query = org_query \
-                .filter(Org.name.contains(name_search))
-
-            alias_query = self.orm.query(Org, Orgalias.name) \
-                .filter(Orgalias.org_id==Org.org_id)
-
-            org_id_list = [org.org_id for org in org_query.all()]
-            
-            alias_query = self.filter_visibility(alias_query, Org, visibility)
-            alias_query = self.filter_visibility(alias_query, Orgalias, visibility)
-            alias_query = alias_query \
-                .filter(Orgalias.name.contains(name_search)) \
-                .filter(~Org.org_id.in_(org_id_list))
-            
-            org_query = org_query.add_columns(literal(None).label('alias'))
-
-            org_alias_query = org_query.union(alias_query)
-        else:
-            org_alias_query = org_query.add_columns(literal(None).label('alias'))
-
-
-        if tag_name_list:
-            # To do.  Only public
-            org_alias_query = org_alias_query.join((Orgtag, Org.orgtag_list)) \
-                .filter(Orgtag.short.in_(tag_name_list))
-
-        return org_alias_query
 
 
 
@@ -168,13 +197,16 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
         location = self.get_argument_geobox("location", None, json=is_json)
         offset = self.get_argument_int("offset", None, json=is_json)
 
+        print offset
+
         if self.has_javascript and not self.accept_type("json"):
             self.render(
                 'organisation_list.html',
                 name=name,
                 name_search=name_search,
                 tag_name_list=tag_name_list,
-                location=location,
+                location=location.to_obj(),
+                offset=offset,
                 )
             return;
 
@@ -184,6 +216,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
             tag_name_list=tag_name_list,
             location=location,
             visibility=self.parameters["visibility"],
+            offset=offset,
             )
 
         if self.accept_type("json"):
@@ -195,7 +228,8 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
                 name=name,
                 name_search=name_search,
                 tag_name_list=tag_name_list,
-                location=location,
+                location=location.to_obj(),
+                offset=offset,
                 )
 
     def post(self):
