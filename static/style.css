@@ -311,6 +311,7 @@ form.mango input[type="checkbox"]
     margin-bottom: 12px;
     padding: 0px;
     line-height: 26px;
+    min-height: 26px;
 }
 #mango .action-bar.no-border
 {
@@ -415,6 +416,20 @@ form.mango input[type="checkbox"]
     margin: auto;
     text-align: right;
     line-height: 22px;
+}
+#mango ul.pageList
+{
+    display: inline;
+    margin: 0;
+    padding: 0;
+}
+
+#mango span.resultCount,
+#mango ul.pageList > li
+{
+    display: inline-block;
+    margin: 0;
+    padding: 0 6px;
 }
 
 

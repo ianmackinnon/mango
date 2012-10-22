@@ -64,11 +64,11 @@
 
       this._modelViews = [];
       this.collection.each(function (model) {
-        if (view.limit.offset <= 0 && view.limit.limit > 0) {
-          if (view.mapView.contains(
-              model.get("latitude"),
-              model.get("longitude")
-            )) {
+        if (view.mapView.contains(
+          model.get("latitude"),
+          model.get("longitude")
+        )) {
+          if (view.limit.offset <= 0 && view.limit.limit > 0) {
             view._modelViews.push(new AddressViewRow({
               model: model,
               mapView: view.mapView,
@@ -76,12 +76,17 @@
             view.limit.limit -= 1;
             return;
           }
+          view._modelViews.push(new AddressViewDot({
+            model: model,
+            mapView: view.mapView
+          }));
+          view.limit.offset -= 1;
+          return;
         }
         view._modelViews.push(new AddressViewDot({
-          model: model,
+            model: model,
           mapView: view.mapView
         }));
-        view.limit.offset -= 1;
       });
     },
 
@@ -188,7 +193,7 @@
       this._modelViews = [];
       this._addressModelViews = [];
       view.many = null;
-      if (this.collection.org_address_count > 26 * 3) {
+      if (this.collection.addressLength() > view.limit * 3) {
         // Just dots if there are more than 3 pages
         view.many = true;
         this.collection.each(function (model) {
@@ -246,22 +251,39 @@
       this.lastRequest = null;
       this.lastResult = null;
     },
+
+    big: function () {
+      var geobox = m.stringToGeobox(this.get("location"));
+      if (geobox) {
+        return  m.geoboxArea(geobox) > 50000;
+      }
+      return false;
+    },
     
-    save: function (data, callback) {
+    save: function (callback) {
       var model = this;
-      var sendData = _.extend(data || {}, {
-        json: true,
-        offset: 0
+      var sendData = _.extend(_.clone(model.attributes) || {}, {
+        json: true,  // Prevent browser caching result in HTML page history.
+        offset: 0,
       });
 
+      if (this.big()) {
+        sendData.location = null;  // Cache big searches.
+      }
+
+      console.log("save", sendData);
+
       if (JSON.stringify(sendData) == JSON.stringify(model.lastRequest)) {
+        console.log("cache hit");
         callback(model.lastResult);
         return;
       }
 
-      model.lastRequest = sendData;
+      console.log("cache miss");
+      model.lastRequest = _.clone(sendData);
 
       var orgCollection = new window.OrgCollection();
+      console.log("fetching");
       orgCollection.fetch({
         data: sendData,
         success: function (collection, response) {
@@ -293,28 +315,38 @@
       'change input[name="location"]': 'formChange',
       'change label > input[name="tag"]': 'formChange'
     },
-    limit: 26,
+    limit: 26,  // Number of letters in the alphabet for map markers.
 
-    initialize: function () {
-      _.bindAll(this, "render");
-      this.model.bind("change", this.render);
-
-      this.$orgColumn = this.options.$orgColumn;
-      this.$orgPaging = this.options.$orgPaging;
-      if (this.options.hasOwnProperty("$source")) {
-        this.initializeSource();
+    changeOffset: function () {
+      var $input = this.$el.find("input[name='offset']");
+      if ($input.val() != this.model.get("offset")) {
+        $input.val(this.model.get("offset"));
       }
     },
 
-    initializeSource: function () {
-      this.activeSearches = 0;
-      var data = this.serialize(this.options.$source);
-      this.model.set(data);
+    changeLocation: function () {
+      var $input = this.$el.find("input[name='location']");
+      if ($input.val() != this.model.get("location")) {
+        $input.val(this.model.get("location"));
+      }
+    },
+
+    initialize: function () {
+      _.bindAll(this, "render", "changeLocation", "changeOffset");
+      this.model.bind("change:location", this.changeLocation);
+      this.model.bind("change:offset", this.changeOffset);
+
+      this.$orgColumn = this.options.$orgColumn;
+      this.$orgPaging = this.options.$orgPaging;
       this.mapView = this.options.mapView;
-      this.render();
-      var $el = this.$el;
+
+      console.log("initialize", this.serialize(this.options.$source));
+      this.model.set(this.serialize(this.options.$source));
+
+      this.activeSearches = 0;
+
       var view = this;
-      
+
       this.ignoreMapMove = true;
       this.mapIdleListener = this.mapView.addMapListener("idle", function () {
         if (view.ignoreMapMove) {
@@ -323,42 +355,45 @@
         }
         var bounds = view.mapView.map.getBounds();
         var geobox = m.mapBoundsToGeobox(bounds);
-        if (m.geoboxArea(geobox) > 50000) {
-          view.model.set("location", "");
-        } else {
-          view.model.set("location", m.geoboxToString(geobox));
-        }
+        view.model.set({
+          location: m.geoboxToString(geobox),
+          offset: 0
+        });
         view.send();
       });
       
-      m.getOrgtagDictionary(function (error, orgtags) {
-        var orgtagKeys = m.arrayKeys(orgtags);
-        var $input = $el.find("input[name='tag']");
-        
-        window.$input = $input;
-        
-        $input.tagit({
-          placeholderText: $input.attr("placeholder"),
-          tagSource: function (search, showChoices) {
-            var values = m.filterStartFirst(search.term, orgtagKeys);
-            var choices = [];
-            _(values).each(function (value) {
-              choices.push({
-                value: value,
-                label: value + " (" + orgtags[value] + ")"
-              });
-            });
-            showChoices(choices);
-          },
-          onTagAddedAfter: function (event, tag) {
-            $input.trigger("change");
-          },
-          onTagRemovedAfter: function (event, tag) {
-            $input.trigger("change");
-          },
-        });
-        
-        view.addThrobber();
+      this.orgtagCollection = new window.OrgtagCollection();
+      this.orgtagCollection.fetch().complete(this.render);
+    },
+
+    setupTagInput: function () {
+      if (!this.orgtagCollection) {
+        return;
+      }
+      var view = this;
+
+      var $input = view.$el.find("input[name='tag']");
+      $input.tagit({
+        placeholderText: $input.attr("placeholder"),
+        tagSource: function (search, showChoices) {
+          var start = [];
+          var middle = [];
+          view.orgtagCollection.each(function(orgtag) {
+            var index = orgtag.get("short").toLowerCase().indexOf(search.term);
+            if (index === 0) {
+              start.push(orgtag.toAutocomplete());
+            } else if (index > 0) {
+              middle.push(orgtag.toAutocomplete());
+            }
+          });
+          showChoices(start.concat(middle));
+        },
+        onTagAddedAfter: function (event, tag) {
+          $input.trigger("change");
+        },
+        onTagRemovedAfter: function (event, tag) {
+          $input.trigger("change");
+        },
       });
     },
 
@@ -367,6 +402,8 @@
         currentUser: m.currentUser,
         orgSearch: this.model.toJSON()
       }));
+      this.setupTagInput();
+      this.addThrobber();
       return this;
     },
 
@@ -387,17 +424,17 @@
     },
 
     send: function () {
-      var data = this.serialize();
+      this.model.set(this.serialize());
       var orgSearchView = this;
 
       orgSearchView.searchStartHook();
-      this.model.save(data, function (orgCollection) {
+      this.model.save(function (orgCollection) {
         orgSearchView.searchEndHook();
         if (!orgCollection) {
           return;
         }
 
-        if (orgCollection.location) {
+        if (orgCollection.location && orgCollection.location.name) {
           var shrunk = m.shrinkGeobox(orgCollection.location);
           orgSearchView.ignoreMapMove = true;
           orgSearchView.mapView.setBounds(shrunk);
@@ -413,31 +450,53 @@
         orgSearchView.$orgColumn.replaceWith(rendered.el);
         orgSearchView.$orgColumn = rendered.$el;
 
-        var count = 0;
-        var length = orgCollection.addressLength();
-
-        orgSearchView.$orgPaging.empty();
-        var $count = $("<span>").text(length + " results");
-        orgSearchView.$orgPaging.append($count);
-
-        var helper = function(page) {
-          return function (e) {
-            if (e.which !== 1 || e.metaKey || e.shiftKey) {
-              return;
-            }
-            e.preventDefault();
-            orgSearchView.model.set("offset", page * orgSearchView.limit);
-            orgSearchView.send();
-          };
-        }
-
-        for (var page = 0; page < length / orgSearchView.limit; page += 1) {
-          var $pageLink = $("<span>").text("page " + (page + 1));
-          $pageLink.bind("click", helper(page));
-          orgSearchView.$orgPaging.append($pageLink);
-        }
-
+        orgSearchView.renderPages(orgCollection, orgCollectionView.many);
       });
+    },
+
+    renderPages: function (orgCollection, many) {
+      var orgSearchView = this;
+      var length = orgCollection.addressLength();
+
+      orgSearchView.$orgPaging.empty();
+      
+      if (many) {
+        return;
+      }
+      
+      if (length <= orgSearchView.limit) {
+        return;
+      }
+
+      var $count = $("<span class='resultCount'>").text(length + " results");
+      orgSearchView.$orgPaging.append($count);
+
+      var $pages = $("<ul class='pageList'>");
+
+      var helper = function(page) {
+        return function (e) {
+          if (e.which !== 1 || e.metaKey || e.shiftKey) {
+            return;
+          }
+          e.preventDefault();
+          orgSearchView.model.set("offset", page * orgSearchView.limit);
+          orgSearchView.send();
+        };
+      }
+
+      for (var page = 0; page < length / orgSearchView.limit; page += 1) {
+        var text = "page " + (page + 1);
+        if (page * orgSearchView.limit == orgSearchView.model.get("offset")) {
+          var $pageSpan = $("<span>").text(text);
+          $pages.append($("<li>").append($pageSpan));
+        } else {
+          var href = "/";
+          var $pageLink = $("<a>").attr("href", href).text(text);
+          $pageLink.bind("click", helper(page));
+          $pages.append($("<li>").append($pageLink));
+        }
+      }
+      orgSearchView.$orgPaging.append($pages);
     },
 
     searchStartHook: function () {
@@ -463,6 +522,8 @@
     },
 
     formChange: function (event) {
+      console.log("formchange", this.serialize());
+      this.model.set(this.serialize());
       this.send();
     },
 

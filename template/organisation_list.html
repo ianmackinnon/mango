@@ -51,7 +51,7 @@ if location:
 
 <div class="box right" id="org_list">
 <div class="action-bar">
-  <div class="counts">
+  <span class="counts">
     %if org_packet:
     ${self.mini.counts(
       org_packet["org_list"],
@@ -60,7 +60,7 @@ if location:
       not lookup and query_rewrite(dict(parameters, **{"offset": org_packet.get("offset", 0) + len(org_packet["org_list"])}))
       )}
     %endif
-  </div>
+  </span>
 
   %if current_user:
   <ul class="actions">

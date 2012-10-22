@@ -99,6 +99,28 @@ var m = {
     return other;
   },
 
+  latitude: function(value) {
+    value = parseFloat(value);
+    if (value > 90) {
+      return NaN;
+    }
+    if (value < -90) {
+      return NaN;
+    }
+    return value;
+  },
+
+  longitude: function(value) {
+    value = parseFloat(value);
+    if (value > 180) {
+      return NaN;
+    }
+    if (value < -180) {
+      return NaN;
+    }
+    return value;
+  },
+
   mapBoundsToGeobox: function (bounds) {
     var southWest = bounds.getSouthWest();
     var northEast = bounds.getNorthEast();
@@ -108,6 +130,29 @@ var m = {
       west: southWest.lng(),
       east: northEast.lng()
     };
+    return geobox;
+  },
+
+  stringToGeobox: function (string) {
+    var coords = string.split(",");
+    if (coords.length != 4) {
+      return null;
+    }
+    var geobox = {};
+    var points = ["south", "north", "west", "east"];
+    for (var c = 0; c < 4; c += 1) {
+      var value;
+      if (c < 2) {
+        value = m.latitude(coords[c]);
+      } else {
+        value = m.longitude(coords[c]);
+      }
+      if (isNaN(value)) {
+        return null;
+      }
+      geobox[points[c]] = value;
+    }
+    console.log("geobox", geobox);
     return geobox;
   },
 
@@ -438,41 +483,6 @@ var m = {
 
   },
 
-  filterStartFirst: function (needle, haystack) {
-    needle = needle.toLowerCase();
-    var start = $.grep(haystack, function (element) {
-      return (element.toLowerCase().indexOf(needle) === 0);
-    });
-    var middle = $.grep(haystack, function (element) {
-      return (element.toLowerCase().indexOf(needle) > 0);
-    });
-    return start.concat(middle);
-  },
-
-  arrayKeys: function (array) {
-    return $.map(array, function (value, key) {
-      return key;
-    });
-  },
-
-  getOrgtagDictionary: function (callback) {
-    $.ajax({
-      url: m.url_root + "organisation-tag",
-      dataType: 'json',
-      success: function (data, textStatus, jqXHR) {
-        var orgtags = {};
-        _(data).each(function (orgtag) {
-          orgtags[orgtag.short] = orgtag.name;
-        });
-        callback(null, orgtags);
-      },
-      error: function (jqXHR, textStatus, errorThrown) {
-        m.ajaxError(jqXHR, textStatus, errorThrown);
-        callback(errorThrown, null);
-      }
-    });
-  },
-
   initMap: function () {
     var mapView = new window.MapView();
     $("#mango-map-box").replaceWith(mapView.$el);
@@ -489,7 +499,7 @@ var m = {
       mapView: mapView
     });
     $("#org-search").replaceWith(orgSearchView.$el);
-    orgSearchView.send();
+//    orgSearchView.send();
     return orgSearch;
   },
 

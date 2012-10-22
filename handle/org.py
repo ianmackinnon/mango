@@ -205,7 +205,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
                 name=name,
                 name_search=name_search,
                 tag_name_list=tag_name_list,
-                location=location.to_obj(),
+                location=location and location.to_obj(),
                 offset=offset,
                 )
             return;
@@ -228,7 +228,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
                 name=name,
                 name_search=name_search,
                 tag_name_list=tag_name_list,
-                location=location.to_obj(),
+                location=location and location.to_obj(),
                 offset=offset,
                 )
 
