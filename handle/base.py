@@ -3,6 +3,7 @@
 import re
 import json
 import codecs
+import hashlib
 import markdown
 import datetime
 import tornado.web
@@ -22,6 +23,14 @@ from model import Session, Address
 md_safe = markdown.Markdown(
     safe_mode=True,
     )
+
+
+
+def sha1_concat(*parts):
+    sha1 = hashlib.sha1()
+    for part in parts:
+        sha1.update(part)
+    return sha1.hexdigest()
 
 
 

@@ -6,7 +6,6 @@ import re
 import sys
 import errno
 import urllib
-import hashlib
 import logging
 import memcache
 
@@ -29,7 +28,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 import mysql.mysql_init
 
-from handle.base import BaseHandler, authenticated
+from handle.base import BaseHandler, authenticated, sha1_concat
 from handle.generate import GenerateMarkerHandler
 from handle.auth import AuthLoginHandler, AuthLoginLocalHandler, \
     AuthLoginGoogleHandler, AuthLogoutHandler
@@ -62,14 +61,6 @@ define("root", default='', help="URL root", type=str)
 define("caat", default=False, help="CAAT header", type=bool)
 define("database", default="sqlite", help="sqlite or mysql", type=str)
 define("conf", default=".mango.conf", help="eg. .mango.conf", type=str)
-
-
-
-def sha1_concat(*parts):
-    sha1 = hashlib.sha1()
-    for part in parts:
-        sha1.update(part)
-    return sha1.hexdigest()
 
 
 
@@ -351,7 +342,9 @@ class Application(tornado.web.Application):
         
         tornado.web.Application.__init__(self, self.handler_list, **settings)
 
-        print "CAAT Mapping Application running on port %d" % options.port
+        print """CAAT Mapping Application running.
+  Port: %d
+  Cache namespace: %s""" % (options.port, cache_namespace)
         
 
 
