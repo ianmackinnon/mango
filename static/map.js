@@ -113,7 +113,6 @@
       var circleIconUrl;
 
       if (latitude && longitude) {
-        console.log(latitude, longitude);
         var position = new google.maps.LatLng(
           latitude,
           longitude

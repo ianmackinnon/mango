@@ -432,6 +432,16 @@
       }, {});
     },
 
+    queryString: function (data) {
+      data = data ? _.clone(data) : {};
+
+      var serialized = this.serialize();
+      
+      serialized = _.extend(serialized, data);
+      
+      return $.param(serialized);
+    },
+
     send: function (cache) {
       if (cache === undefined) {
         cache = true;
@@ -485,7 +495,7 @@
 
       var $pages = $("<ul class='pageList'>");
 
-      var helper = function(page) {
+      var clickHelper = function(page) {
         return function (e) {
           if (e.which !== 1 || e.metaKey || e.shiftKey) {
             return;
@@ -502,9 +512,12 @@
           var $pageSpan = $("<span>").text(text);
           $pages.append($("<li>").append($pageSpan));
         } else {
-          var href = "/";
+          var query = orgSearchView.queryString({
+            offset: page * orgSearchView.limit
+          });
+          var href = m.urlRoot + "organisation?" + query
           var $pageLink = $("<a>").attr("href", href).text(text);
-          $pageLink.bind("click", helper(page));
+          $pageLink.bind("click", clickHelper(page));
           $pages.append($("<li>").append($pageLink));
         }
       }
