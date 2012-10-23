@@ -152,7 +152,6 @@ var m = {
       }
       geobox[points[c]] = value;
     }
-    console.log("geobox", geobox);
     return geobox;
   },
 

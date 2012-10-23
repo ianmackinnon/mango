@@ -125,12 +125,12 @@ def clean_address(address):
 
 
 
-def location(address, cache=True):
+def coords(address, cache=True):
     global wait
 
     address = clean_address(address)
 
-    key = "geo:location:%s" % md5(address).hexdigest()
+    key = "geo:coords:%s" % md5(address).hexdigest()
 
     if cache:
         value = None

@@ -862,11 +862,11 @@ class Address(Base, NotableEntity):
             return
         
         if self.lookup:
-            coords = geo.geocode(self.lookup)
+            coords = geo.coords(self.lookup)
             if coords:
                 (self.latitude, self.longitude) = coords
         else:
-            coords = geo.geocode(self.postal)
+            coords = geo.coords(self.postal)
             if coords:
                 (self.latitude, self.longitude) = coords
 

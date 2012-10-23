@@ -51,12 +51,20 @@ class BaseOrgHandler(BaseHandler):
             Org.org_id.label("org_id"),
             literal(None).label('orgalias_id')
             )
+        org_name_query = self.filter_visibility(
+            org_name_query, Org, visibility)
         orgalias_name_query = self.orm.query(
             Orgalias.name.label("name"),
             Org.org_id.label("org_id"),
             Orgalias.orgalias_id.label('orgalias_id')
             ) \
             .join(Orgalias.org)
+        # Non-private orgaliases are not for the site, only robots
+        orgalias_name_query = self.filter_visibility(
+            orgalias_name_query, Orgalias, True)
+        # Orgs get filtered on visibility just the same
+        orgalias_name_query = self.filter_visibility(
+            orgalias_name_query, Org, visibility)
         name_subquery = org_name_query.union_all(orgalias_name_query).subquery()
 
         name_query = self.orm.query(
@@ -114,6 +122,8 @@ class BaseOrgHandler(BaseHandler):
             org_alias_query = org_alias_query \
                 .join((Orgtag, Org.orgtag_list)) \
                 .filter(Orgtag.short.in_(tag_name_list))
+            org_alias_query = self.filter_visibility(
+                org_alias_query, Orgtag, visibility, secondary=True)
 
         # print "org_alias_query tagged"
         # for org, alias in org_alias_query:
@@ -137,9 +147,8 @@ class BaseOrgHandler(BaseHandler):
         org_alias_address_query = org_alias_query \
             .join(Org.address_list) \
             .add_entity(Address)
-
         org_alias_address_query = self.filter_visibility(
-            org_alias_address_query, Address, visibility)
+            org_alias_address_query, Address, visibility, secondary=True)
 
         if location:
             org_alias_address_query = org_alias_address_query \

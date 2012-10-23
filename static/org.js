@@ -260,7 +260,10 @@
       return false;
     },
     
-    save: function (callback) {
+    save: function (callback, cache) {
+      if (cache === undefined) {
+        cache = true;
+      }
       var model = this;
       var sendData = _.extend(_.clone(model.attributes) || {}, {
         json: true,  // Prevent browser caching result in HTML page history.
@@ -273,17 +276,16 @@
 
       console.log("save", sendData);
 
-      if (JSON.stringify(sendData) == JSON.stringify(model.lastRequest)) {
-        console.log("cache hit");
-        callback(model.lastResult);
-        return;
+      if (cache) {
+        if (JSON.stringify(sendData) == JSON.stringify(model.lastRequest)) {
+          callback(model.lastResult);
+          return;
+        }
       }
 
-      console.log("cache miss");
       model.lastRequest = _.clone(sendData);
 
       var orgCollection = new window.OrgCollection();
-      console.log("fetching");
       orgCollection.fetch({
         data: sendData,
         success: function (collection, response) {
@@ -409,7 +411,7 @@
 
     submit: function (event) {
       event.preventDefault();
-      this.send();
+      this.send(false);
     },
 
     serialize: function ($el) {
@@ -423,7 +425,10 @@
       }, {});
     },
 
-    send: function () {
+    send: function (cache) {
+      if (cache === undefined) {
+        cache = true;
+      }
       this.model.set(this.serialize());
       var orgSearchView = this;
 
@@ -451,7 +456,7 @@
         orgSearchView.$orgColumn = rendered.$el;
 
         orgSearchView.renderPages(orgCollection, orgCollectionView.many);
-      });
+      }, cache);
     },
 
     renderPages: function (orgCollection, many) {
