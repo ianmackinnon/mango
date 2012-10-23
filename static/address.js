@@ -11,6 +11,10 @@
   });
 
   window.AddressCollection = Backbone.Collection.extend({
+    initialize: function (models, options) {
+      options = options ? _.clone(options) : {};
+      this.org = options.org;
+    }
   });
 
 

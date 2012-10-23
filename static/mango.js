@@ -498,7 +498,7 @@ var m = {
       mapView: mapView
     });
     $("#org-search").replaceWith(orgSearchView.$el);
-//    orgSearchView.send();
+    orgSearchView.send();
     return orgSearch;
   },
 

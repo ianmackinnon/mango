@@ -43,9 +43,17 @@
     render: function () {
       var view = this;
 
+      var onClick = function (event) {
+        var href=view.model.collection.org.get("url");
+        window.document.location.href=href;
+      };
+
       view.mapView.addDot(
         this.model.get("latitude"),
-        this.model.get("longitude")
+        this.model.get("longitude"),
+        undefined,
+        this.model.collection.org.get("name"),
+        onClick
       );
 
       return this;
@@ -115,7 +123,12 @@
     urlRoot: m.urlRoot + "organisation",
 
     parse: function (resp, xhr) {
-      this.addressCollection = new window.AddressCollection(resp.address_list);
+      this.addressCollection = new window.AddressCollection(
+        resp.address_list,
+        {
+          org: this
+        }
+      );
       delete resp.address_list;
       return resp;
     }
@@ -363,12 +376,7 @@
 
       var view = this;
 
-      this.ignoreMapMove = true;
-      this.mapIdleListener = this.mapView.addMapListener("idle", function () {
-        if (view.ignoreMapMove) {
-          view.ignoreMapMove = false;
-          return;
-        }
+      this.mapView.addMapListener("dragend", function () {
         var bounds = view.mapView.map.getBounds();
         var geobox = m.mapBoundsToGeobox(bounds);
         view.model.set({
@@ -486,9 +494,8 @@
           return;
         }
 
-        if (orgCollection.location && orgCollection.location.name) {
+        if (orgCollection.location) {
           var shrunk = m.shrinkGeobox(orgCollection.location);
-          orgSearchView.ignoreMapMove = true;
           orgSearchView.mapView.setBounds(shrunk);
         }
 
@@ -500,9 +507,15 @@
         });
         var rendered = orgCollectionView.render();
         orgSearchView.$orgColumn.replaceWith(rendered.el);
-        orgSearchView.$orgColumn = rendered.$el;
 
         orgSearchView.renderPages(orgCollection, orgCollectionView.many);
+        orgSearchView.$orgColumn = rendered.$el;
+        
+        if (orgCollectionView.many) {
+          var text = "Zoom in or refine search to see results in detail.";
+          var $span = $("<p>").addClass("results-hint").text(text)
+          orgSearchView.$orgColumn.append($span);
+        }
       }, cache);
     },
 
@@ -512,6 +525,9 @@
 
       orgSearchView.$orgPaging.empty();
       
+      var $count = $("<span class='resultCount'>").text(length + " results");
+      orgSearchView.$orgPaging.append($count);
+
       if (many) {
         return;
       }
@@ -519,9 +535,6 @@
       if (length <= orgSearchView.limit) {
         return;
       }
-
-      var $count = $("<span class='resultCount'>").text(length + " results");
-      orgSearchView.$orgPaging.append($count);
 
       var $pages = $("<ul class='pageList'>");
 

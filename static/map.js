@@ -141,26 +141,27 @@
       return $circle;
     },
 
-    addDot: function (latitude, longitude, color) {
+    addDot: function (latitude, longitude, color, title, onClick) {
       color = color || "ee6666";
 
       var position = new google.maps.LatLng(
         latitude,
         longitude
       );
+
       var dotIconUrl = this.dotIconUrl(color);
       var marker = new google.maps.Marker({
         position: position,
         map: this.map,
         icon: dotIconUrl,
-        title: "Title"
+        title: title
       });
 
       marker.setZIndex(-(this.markers.length + this.dots.length));
 
-      var helper = function () {};
-
-      google.maps.event.addListener(marker, 'click', helper());
+      if (onClick) {
+        google.maps.event.addListener(marker, 'click', onClick);
+      }
       this.dots.push(marker);
     }
   });
