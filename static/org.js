@@ -64,6 +64,13 @@
 
       this._modelViews = [];
       this.collection.each(function (model) {
+        if (!model.get("latitude")) {
+          view._modelViews.push(new AddressViewRow({
+            model: model,
+            mapView: view.mapView,
+          }));
+          return;
+        }
         if (view.mapView.contains(
           model.get("latitude"),
           model.get("longitude")

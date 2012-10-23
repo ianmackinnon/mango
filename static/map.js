@@ -110,23 +110,31 @@
     addMarker: function (latitude, longitude, color) {
       color = color || "ee6666";
 
-      var position = new google.maps.LatLng(
-        latitude,
-        longitude
-      );
-      var letter = alpha(this.markers.length);
-      var pinIconUrl = this.markerIconUrl("pin", color, letter);
-      var marker = new google.maps.Marker({
-        position: position,
-        map: this.map,
-        icon: pinIconUrl,
-      });
+      var circleIconUrl;
 
-      marker.setZIndex(-(this.markers.length + this.dots.length));
+      if (latitude && longitude) {
+        console.log(latitude, longitude);
+        var position = new google.maps.LatLng(
+          latitude,
+          longitude
+        );
+        var letter = alpha(this.markers.length);
+        var pinIconUrl = this.markerIconUrl("pin", color, letter);
+        var marker = new google.maps.Marker({
+          position: position,
+          map: this.map,
+          icon: pinIconUrl,
+        });
 
-      this.markers.push(marker);
+        marker.setZIndex(-(this.markers.length + this.dots.length));
 
-      var circleIconUrl = this.markerIconUrl("circle", color, letter);
+        this.markers.push(marker);
+
+        circleIconUrl = this.markerIconUrl("circle", color, letter);
+      } else {
+        circleIconUrl = this.markerIconUrl("circle", "dddddd", "%3F");
+      }
+
       var $circle = $("<img>").attr({
         src: circleIconUrl,
         "class": "map-marker-circle"

@@ -1,9 +1,9 @@
 <h3>Filter</h3>
 <%= m.template("visibility-search-input.html", {
-    visibility: null,
+    visibility: orgSearch.visibility,
     currentUser: currentUser
     }) %>
-<input type="text" name="offset" value="<%= orgSearch.offset || 0 %>">
+<input type="hidden" name="offset" value="<%= orgSearch.offset || 0 %>">
 <div class="inputs">
   <label name="nameSearch">
     <span>Name</span>
