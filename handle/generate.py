@@ -141,7 +141,11 @@ class GenerateMarkerHandler(GenerateHandler):
         else:
             raise HTTPError(404)
 
-        cmd = ["convert", "-background", "none", "svg:-", abspath]
-        process = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        # Using stdout, because convert does odd things with a question
+        #   mark in the output filename.
+        f = open(abspath, "wb")
+        cmd = ["convert", "-background", "none", "svg:-", "png:-"]
+        process = Popen(cmd, stdin=PIPE, stdout=f, stderr=PIPE)
         (stdout, stderr) = process.communicate(svg)
+        f.close()
         return
