@@ -341,9 +341,16 @@
     },
 
     initialize: function () {
-      _.bindAll(this, "render", "changeLocation", "changeOffset");
+      _.bindAll(
+        this,
+        "render",
+        "changeLocation",
+        "changeOffset",
+        "changeVisibility"
+      );
       this.model.bind("change:location", this.changeLocation);
       this.model.bind("change:offset", this.changeOffset);
+      this.model.bind("change:visibility", this.changeVisibility);
 
       this.$orgColumn = this.options.$orgColumn;
       this.$orgPaging = this.options.$orgPaging;
@@ -370,9 +377,42 @@
         });
         view.send();
       });
-      
+
       this.orgtagCollection = new window.OrgtagCollection();
-      this.orgtagCollection.fetch().complete(this.render);
+      this.fetchOrgtagList().complete(this.render);
+    },
+    
+    render: function () {
+      $(this.el).html(m.template(this.templateName, {
+        currentUser: m.currentUser,
+        orgSearch: this.model.toJSON()
+      }));
+      this.setupTagInput();
+      this.addThrobber();
+      return this;
+    },
+
+    changeVisibility: function () {
+      this.fetchOrgtagList();
+    },
+
+    fetchOrgtagList: function () {
+      if (!this.orgtagCollection) {
+        return;
+      }
+      var visibility = this.model.get("visibility");
+      if (visibility === 'private' || visibility === 'pending') {
+        visibility = 'all';
+      }
+      if (visibility === this.lastVisibility) {
+        return;
+      }
+      this.lastVisibility = visibility;
+      return this.orgtagCollection.fetch({
+        data: {
+          visibility: visibility
+        }
+      });
     },
 
     setupTagInput: function () {
@@ -404,16 +444,6 @@
           $input.trigger("change");
         },
       });
-    },
-
-    render: function () {
-      $(this.el).html(m.template(this.templateName, {
-        currentUser: m.currentUser,
-        orgSearch: this.model.toJSON()
-      }));
-      this.setupTagInput();
-      this.addThrobber();
-      return this;
     },
 
     submit: function (event) {
