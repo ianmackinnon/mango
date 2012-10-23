@@ -11,7 +11,7 @@ from sqlalchemy.sql import exists, func, literal
 from sqlalchemy.sql.expression import case
 from tornado.web import HTTPError
 
-from base import BaseHandler, authenticated
+from base import BaseHandler, authenticated, sha1_concat
 from note import BaseNoteHandler
 from orgtag import BaseOrgtagHandler
 from address import BaseAddressHandler
@@ -183,6 +183,16 @@ class BaseOrgHandler(BaseHandler):
 
 
 class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
+    @staticmethod
+    def _cache_key(name_search, tag_name_list, visibility):
+        if not visibility:
+            visibility = "public"
+        return sha1_concat(json.dumps({
+                "nameSearch": name_search,
+                "tag": tuple(set(tag_name_list)),
+                "visibility": visibility,
+                }))
+    
     def get(self):
         is_json = self.content_type("application/json")
         name = self.get_argument("name", None, json=is_json)
@@ -202,6 +212,16 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
                 )
             return;
 
+        cache_key = None
+        if self.accept_type("json") and not location and not offset:
+            cache_key = self._cache_key(name_search, tag_name_list,
+                                        self.parameters["visibility"])
+            value = self.cache.get(cache_key)
+            if value:
+                self.write(value)
+                self.finish()
+                return
+
         org_packet = self._get_org_packet_search(
             name=name,
             name_search=name_search,
@@ -210,6 +230,9 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
             visibility=self.parameters["visibility"],
             offset=offset,
             )
+
+        if cache_key:
+            self.cache.set(cache_key, json.dumps(org_packet))
 
         if self.accept_type("json"):
             self.write_json(org_packet)
