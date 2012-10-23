@@ -306,23 +306,33 @@
       model.lastRequest = _.clone(sendData);
 
       var orgCollection = new window.OrgCollection();
-      orgCollection.fetch({
+      
+      if (model.request) {
+        model.request.abort();
+      }
+      model.request = orgCollection.fetch({
         data: sendData,
         success: function (collection, response) {
           if (!!callback) {
             model.lastResult = collection;
+            model.request = null;
+            model.trigger("request", model.request);
             callback(orgCollection);
           }
         },
         error:   function (collection, response) {
-          console.log("error", collection, response);
+          if (response.statusText !== "abort") {
+            console.log("error", collection, response);
+          }
           if (!!callback) {
             model.lastResult = null;
+            model.request = null;
+            model.trigger("request", model.request);
             callback(null);
           }
         }
       });
-
+      this.trigger("request", this.request);
     }
   });
 
@@ -359,11 +369,13 @@
         "render",
         "changeLocation",
         "changeOffset",
-        "changeVisibility"
+        "changeVisibility",
+        "onModelRequest"
       );
       this.model.bind("change:location", this.changeLocation);
       this.model.bind("change:offset", this.changeOffset);
       this.model.bind("change:visibility", this.changeVisibility);
+      this.model.bind("request", this.onModelRequest);
 
       this.$orgColumn = this.options.$orgColumn;
       this.$orgPaging = this.options.$orgPaging;
@@ -487,9 +499,7 @@
       this.model.set(this.serialize());
       var orgSearchView = this;
 
-      orgSearchView.searchStartHook();
       this.model.save(function (orgCollection) {
-        orgSearchView.searchEndHook();
         if (!orgCollection) {
           return;
         }
@@ -567,19 +577,9 @@
       orgSearchView.$orgPaging.append($pages);
     },
 
-    searchStartHook: function () {
-      this.activeSearches += 1;
-      this.searchUpdateHook();
-    },
-
-    searchEndHook: function () {
-      this.activeSearches -= 1;
-      this.searchUpdateHook();
-    },
-
-    searchUpdateHook: function () {
+    onModelRequest: function (request) {
       if (this.$throbber) {
-        this.$throbber.toggle(!!this.activeSearches);
+        this.$throbber.toggle(!!request);
       }
     },
 
