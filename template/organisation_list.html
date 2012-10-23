@@ -24,7 +24,10 @@ if location:
     if 'name' in location:
         value = location["name"]
     else:
-        value = location.south + ", " + location.north + ", " + location.west + ", " + location.east
+        value = str(location["south"]) + ", " + \
+            str(location["north"]) + ", " + \
+            str(location["west"]) + ", " + \
+            str(location["east"])
 %>
         <input
            name="location"
