@@ -179,6 +179,17 @@ var m = {
     return sliceArea;
   },
 
+  geoboxDifference: function(g1, g2) {
+    if (!(g1 && g2)) {
+      return true;
+    }
+    var latitude = Math.abs(g1.south - g2.south) + Math.abs(g1.north - g2.north);
+    var longitude = Math.abs(g1.west - g2.west) + Math.abs(g1.east - g2.east);
+    latitude /= (Math.abs(g1.south - g1.north) + Math.abs(g2.south - g2.north));
+    longitude /= (Math.abs(g1.west - g1.east) + Math.abs(g2.west - g2.east));
+    return latitude + longitude;
+  },
+
   "geo": {
     "in_": function (latitude, longitude, geobox) {
       if (geobox === null) {

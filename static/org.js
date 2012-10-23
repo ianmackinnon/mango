@@ -388,11 +388,17 @@
 
       var view = this;
 
-      this.mapView.addMapListener("dragend", function () {
+      this.mapView.addMapListener("idle", function () {
         var bounds = view.mapView.map.getBounds();
-        var geobox = m.mapBoundsToGeobox(bounds);
+        var mapGeobox = m.mapBoundsToGeobox(bounds);
+        var location = view.model.get("location");
+        var modelGeobox = m.stringToGeobox(location);
+        var difference = m.geoboxDifference(mapGeobox, modelGeobox);
+        if (difference < 0.05) {
+          return;
+        }
         view.model.set({
-          location: m.geoboxToString(geobox),
+          location: m.geoboxToString(mapGeobox),
           offset: 0
         });
         view.send();
