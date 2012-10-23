@@ -455,9 +455,9 @@ class BaseHandler(tornado.web.RequestHandler):
         self.get_json_data()
         return self.json_data.get(name)
 
-    def get_arguments_multi(self, name, delimiter):
+    def get_arguments_multi(self, name, delimiter=",", json=False):
         ret = []
-        args = self.get_arguments(name)
+        args = self.get_arguments(name, strip=True, json=json)
         for arg in args:
             ret += [value.strip() for value in arg.split(delimiter)]
         return ret

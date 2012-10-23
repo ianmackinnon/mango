@@ -106,28 +106,16 @@ class BaseOrgHandler(BaseHandler):
         name_query = self._get_name_search_query(name, name_search, visibility)
         name_subquery = name_query.subquery()
 
-        # print "name_query"
-        # for org_id, orgalias_id in name_query:
-        #     print org_id, orgalias_id
-
         org_alias_query = self.orm.query(Org, Orgalias) \
             .join(name_subquery, Org.org_id==name_subquery.c.org_id) \
             .outerjoin(Orgalias, Orgalias.orgalias_id==name_subquery.c.orgalias_id)
         
-        # print "org_alias_query"
-        # for org, alias in org_alias_query:
-        #     print org, alias
-
         if tag_name_list:
             org_alias_query = org_alias_query \
                 .join((Orgtag, Org.orgtag_list)) \
                 .filter(Orgtag.short.in_(tag_name_list))
             org_alias_query = self.filter_visibility(
                 org_alias_query, Orgtag, visibility, secondary=True)
-
-        # print "org_alias_query tagged"
-        # for org, alias in org_alias_query:
-        #     print org, alias
 
         return org_alias_query
 
@@ -161,16 +149,13 @@ class BaseOrgHandler(BaseHandler):
                     Address.longitude <= location.east,
                     ))
 
-        print "offset: ", offset
         if offset:
             org_alias_address_query = org_alias_address_query \
                 .offset(offset)
 
         orgs = OrderedDict()
 
-        print "org_alias_address_query"
         for org, alias, address in org_alias_address_query:
-            print org, alias, address
             if not org.org_id in orgs:
                 orgs[org.org_id] = {
                     "org": org,
@@ -202,11 +187,9 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
         is_json = self.content_type("application/json")
         name = self.get_argument("name", None, json=is_json)
         name_search = self.get_argument("nameSearch", None, json=is_json)
-        tag_name_list = self.get_arguments("tag", json=is_json)
+        tag_name_list = self.get_arguments_multi("tag", json=is_json)
         location = self.get_argument_geobox("location", None, json=is_json)
         offset = self.get_argument_int("offset", None, json=is_json)
-
-        print offset
 
         if self.has_javascript and not self.accept_type("json"):
             self.render(
