@@ -317,7 +317,7 @@
             model.lastResult = collection;
             model.request = null;
             model.trigger("request", model.request);
-            callback(orgCollection);
+            callback(orgCollection, sendData);
           }
         },
         error:   function (collection, response) {
@@ -370,7 +370,8 @@
         "changeLocation",
         "changeOffset",
         "changeVisibility",
-        "onModelRequest"
+        "onModelRequest",
+        "popstate"
       );
       this.model.bind("change:location", this.changeLocation);
       this.model.bind("change:offset", this.changeOffset);
@@ -510,10 +511,23 @@
           return;
         }
 
-        if (orgCollection.location) {
-          var shrunk = m.shrinkGeobox(orgCollection.location);
-          orgSearchView.mapView.setBounds(shrunk);
+        var search = window.location.search;
+        var target = "?" + orgSearchView.queryString();
+        console.log(search);
+        console.log(target);
+        if (target != search) {
+          console.log("pushState", target);
+          window.history.pushState(
+            null,
+            null,
+            m.urlRoot + "organisation" + target
+          );
         }
+
+        // if (orgCollection.location) {
+        //   var shrunk = m.shrinkGeobox(orgCollection.location);
+        //   orgSearchView.mapView.setBounds(shrunk);
+        // }
 
         var orgCollectionView = new window.OrgCollectionView({
           collection: orgCollection,
@@ -600,6 +614,51 @@
       this.model.set(this.serialize());
       this.send();
     },
+
+    popstate: function (event) {
+      console.log("popstate");
+      var search = window.location.search;
+      if (search.indexOf("?") !== 0) {
+        return;
+      }
+      search = search.substr(1);
+      var params = search.split("&");
+      var defaults = {
+        "nameSearch": "",
+        "location": "",
+        "offset": 0,
+        "tag": "",
+        "visibility": ""
+      };
+      var expect = {
+        "nameSearch": null,
+        "location": null,
+        "offset": null,
+        "tag": m.argumentMulti,
+        "visibility": null
+      };
+      var data = {};
+      _.each(params, function(param) {
+        var index = param.indexOf("=");
+        if (index <= 0) {
+          return;
+        }
+        var name = param.slice(0, index);
+        if (!expect.hasOwnProperty(name)) {
+          return;
+        }
+        var value = decodeURIComponent(param.slice(index + 1));
+        if (expect[name]) {
+          data[name] = expect[name](value, data[name]);
+        } else {
+          data[name] = value;
+        }
+      });
+      data = _.extend(defaults, data);
+      console.log("popstate", data);
+      this.model.set(data);
+      this.send();
+    }
 
   });
 

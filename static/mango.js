@@ -510,6 +510,9 @@ var m = {
     });
     $("#org-search").replaceWith(orgSearchView.$el);
     orgSearchView.send();
+
+    window.addEventListener("popstate", orgSearchView.popstate);
+
     return orgSearch;
   },
 
@@ -849,6 +852,13 @@ var m = {
 
   },
 
+  argumentMulti: function(valueNew, valueOld) {
+    if (!!valueOld) {
+      return (valueOld + "," + valueNew).replace(/\s/g, "");
+    }
+    return valueNew.replace(/\s/g, "");
+  },
+
   "set_visibility": function (value) {
     $("a").each(function () {
       var $el = $(this);
@@ -928,9 +938,9 @@ var m = {
 
     [/^\/organisation$/, function () {
       var mapView = m.initMap();
-      window.mapView = mapView;
       m.initOrgSearch(mapView);
       m.visibility();
+      window.mapView = mapView;
     }],
     [/^\/event$/, function () {
       m.init_event_search();
