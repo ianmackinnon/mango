@@ -10,7 +10,7 @@
   <form id="org-search">
     <h3>Filter</h3>
     ${self.mini.visibility_search_input(parameters.get("visibility", None), current_user)}
-    <input type="hidden" name="offset" value="${offset or 0}">
+    <input type="hidden" name="offset" value="${offset or ""}">
     <div class="inputs">
       <label name="nameSearch">
         <span>Name</span>

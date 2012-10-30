@@ -3,7 +3,7 @@
     visibility: orgSearch.visibility,
     currentUser: currentUser
     }) %>
-<input type="hidden" name="offset" value="<%= orgSearch.offset || 0 %>">
+<input type="hidden" name="offset" value="<%= orgSearch.offset || "" %>">
 <div class="inputs">
   <label name="nameSearch">
     <span>Name</span>
@@ -16,7 +16,7 @@
     <span>Location</span>
     <input
        name="location"
-       value="<%= orgSearch.location || "" %>"
+       value="<%= orgSearch.location ? orgSearch.location.toText() : "" %>"
        placeholder="Eg. NW1">
   </label>
   <label name="tag">

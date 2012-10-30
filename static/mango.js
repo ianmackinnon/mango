@@ -89,16 +89,6 @@ var m = {
     return arr2;
   },
 
-  shrinkGeobox: function (geobox) {
-    var other = {
-      south: geobox.south * 0.8 + geobox.north * 0.2,
-      north: geobox.south * 0.2 + geobox.north * 0.8,
-      west: geobox.west * 0.8 + geobox.east * 0.2,
-      east: geobox.west * 0.2 + geobox.east * 0.8
-    };
-    return other;
-  },
-
   latitude: function(value) {
     value = parseFloat(value);
     if (value > 90) {
@@ -119,75 +109,6 @@ var m = {
       return NaN;
     }
     return value;
-  },
-
-  mapBoundsToGeobox: function (bounds) {
-    var southWest = bounds.getSouthWest();
-    var northEast = bounds.getNorthEast();
-    var geobox = {
-      south: southWest.lat(),
-      north: northEast.lat(),
-      west: southWest.lng(),
-      east: northEast.lng()
-    };
-    return geobox;
-  },
-
-  stringToGeobox: function (string) {
-    var coords = string.split(",");
-    if (coords.length != 4) {
-      return null;
-    }
-    var geobox = {};
-    var points = ["south", "north", "west", "east"];
-    for (var c = 0; c < 4; c += 1) {
-      var value;
-      if (c < 2) {
-        value = m.latitude(coords[c]);
-      } else {
-        value = m.longitude(coords[c]);
-      }
-      if (isNaN(value)) {
-        return null;
-      }
-      geobox[points[c]] = value;
-    }
-    return geobox;
-  },
-
-  geoboxToString: function (geobox) {
-    return geobox.south + ", " + geobox.north +
-      ", " + geobox.west + ", " + geobox.east;
-  },
-
-  geoboxArea: function (geobox) {
-    var radiusOfEarth = 6378.1;
-    var circumferenceOfEarth = 40075;
-    var areaOfEarth = 510072000;
-
-    var east = geobox.east + 360 * (geobox.east < geobox.west);
-
-    var height = (
-      Math.sin(geobox.north * Math.PI / 180) -
-      Math.sin(geobox.south * Math.PI / 180)
-    );
-
-    var segmentArea = 2 * Math.PI * radiusOfEarth * height * radiusOfEarth;
-
-    var sliceArea = segmentArea * (east - geobox.west) / 360;
-
-    return sliceArea;
-  },
-
-  geoboxDifference: function(g1, g2) {
-    if (!(g1 && g2)) {
-      return true;
-    }
-    var latitude = Math.abs(g1.south - g2.south) + Math.abs(g1.north - g2.north);
-    var longitude = Math.abs(g1.west - g2.west) + Math.abs(g1.east - g2.east);
-    latitude /= (Math.abs(g1.south - g1.north) + Math.abs(g2.south - g2.north));
-    longitude /= (Math.abs(g1.west - g1.east) + Math.abs(g2.west - g2.east));
-    return latitude + longitude;
   },
 
   "geo": {
@@ -503,15 +424,18 @@ var m = {
     var orgSearch = new window.OrgSearch();
     var orgSearchView = new window.OrgSearchView({
       model: orgSearch,
-      $source: $("#org-search"),
-      $orgColumn: $("#org_list").find(".column"),
-      $orgPaging: $("#org_list").find(".counts"),
+      $form: $("#org-search"),
+      $results: $("#org_list").find(".column"),
+      $paging: $("#org_list").find(".counts"),
       mapView: mapView
     });
     $("#org-search").replaceWith(orgSearchView.$el);
+    console.log("initial send", orgSearch.attributes);
     orgSearchView.send();
 
     window.addEventListener("popstate", orgSearchView.popstate);
+
+    window.orgSearch = orgSearch;
 
     return orgSearch;
   },
@@ -853,10 +777,60 @@ var m = {
   },
 
   argumentMulti: function(valueNew, valueOld) {
-    if (!!valueOld) {
-      return (valueOld + "," + valueNew).replace(/\s/g, "");
+    var collection = valueOld ? _.clone(valueOld) : [];
+    var values;
+    if (_.isArray(valueNew)) {
+      values = valueNew;
+    } else {
+      values = [valueNew];
     }
-    return valueNew.replace(/\s/g, "");
+    return _.union(collection, values);
+  },
+
+  argumentVisibility: function(value) {
+    if (_.contains(["public", "private", "pending", "all"], value)) {
+      return value;
+    }
+    return null
+  },
+
+  compareUnsortedList: function(a, b) {
+    if (!a && !b) {
+      return false;
+    }
+    if (!a || !b) {
+      return true;
+    }
+    return _.difference(a, b).length > 0;
+  },
+
+  compareLowercase: function(a, b) {
+    if (!a && !b) {
+      return false;
+    }
+    if (!a || !b) {
+      return true;
+    }
+    return a.toLowerCase() != b.toLowerCase();
+  },
+
+  compareGeobox: function(a, b) {
+    if (!a && !b) {
+      return false;
+    }
+    if (!a || !b) {
+      return true;
+    }
+    var difference = a.difference(b);
+    if (difference === true || difference === false) {
+      return difference;
+    }
+    console.log(this, other, difference);
+    return difference > 0.05;
+  },
+
+  multiToString: function(multi) {
+    return multi.join(", ");
   },
 
   "set_visibility": function (value) {

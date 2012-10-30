@@ -266,18 +266,120 @@
   //   location area is too big, search whole world
   //     (won't reload results on map move).
 
+  var geoboxFactory = function (value) {
+    return new window.Geobox(value);
+  };
+
+  var geoboxToString = function (geobox) {
+    return geobox.toText();
+  };
+
   window.OrgSearch = Backbone.Model.extend({
+    // constructor, multiConstructor, compare, default, toString
+    expectedParameters: {
+      "nameSearch": [null, false, m.compareLowercase, "", null],
+      "location": [geoboxFactory, false, m.compareGeobox, new window.Geobox({
+        "south":49.829,
+        "north":58.988,
+        "west":-12.304,
+        "east":3.912
+      }), geoboxToString],
+      "offset": [parseInt, false, null, 0, null],
+      "tag": [m.argumentMulti, m.argumentMulti, m.compareUnsortedList, [], m.multiToString],
+      "visibility": [m.argumentVisibility, false, null, "public", null]
+    },
+
     initialize: function () {
       this.lastRequest = null;
       this.lastResult = null;
     },
 
-    big: function () {
-      var geobox = m.stringToGeobox(this.get("location"));
-      if (geobox) {
-        return  m.geoboxArea(geobox) > 50000;
+    typedAttributes: function (attributes) {
+      var model = this;
+
+      attributes = attributes ? _.clone(attributes) : {};
+
+      _.each(attributes, function(value, key) {
+        if (!_.has(model.expectedParameters, key)) {
+          delete attributes[key];
+          return;
+        }
+        if (value === null) {
+          return;
+        }
+
+        var constructor = model.expectedParameters[key][0];
+        if (constructor) {
+          value = constructor(value);
+        }
+
+        var comparison = model.expectedParameters[key][2];
+        var defaultValue = model.expectedParameters[key][3];
+        if (!!comparison) {
+          if (!comparison(value, defaultValue)) {
+            console.log("Defaultish value: ", value, defaultValue);
+            value = null;
+          }
+        } else {
+          if (value === defaultValue) {
+            console.log("Default value: ", value);
+            value = null;
+          }
+        }
+        attributes[key] = value;
+      });
+      return attributes;
+    },
+
+    differentAttributes: function (attributes) {
+      var model = this;
+
+      attributes = attributes ? _.clone(attributes) : {};
+
+      attributes = this.typedAttributes(attributes);
+
+      console.log("set 2", _.clone(attributes));
+
+      _.each(attributes, function(value, key) {
+        if (model.get(key) === undefined || model.get(key) === null) {
+          return;
+        }
+        var comparison = model.expectedParameters[key][2];
+        if (!!comparison) {
+          if (!comparison(model.get(key), attributes[key])) {
+            delete attributes[key];
+            return;
+          }
+        } else {
+          if (model.get(key) === attributes[key]) {
+            delete attributes[key];
+            return;
+          }
+        }
+      });
+      return attributes;
+    },
+
+    set: function (attributes, options) {
+      if (attributes === null) {
+        return this;
       }
-      return false;
+
+      if (!_.isObject(attributes)) {
+        var key = attributes;
+        (attributes = {})[key] = options;
+        options = arguments[2];
+      }
+
+      if (_.isEmpty(attributes)) {
+        return this;
+      }
+
+      console.log("set 1", _.clone(attributes));
+      attributes = this.differentAttributes(attributes);
+      console.log("set 3", _.clone(attributes));
+
+      return Backbone.Model.prototype.set.call(this, attributes, options);
     },
     
     save: function (callback, cache) {
@@ -285,22 +387,34 @@
         cache = true;
       }
       var model = this;
+
+      var modelData = _.clone(model.attributes);
+
       var sendData = _.extend(_.clone(model.attributes) || {}, {
         json: true,  // Prevent browser caching result in HTML page history.
-        offset: 0,
+        offset: null,
       });
 
-      if (this.big()) {
+      if (sendData.location.area > 50000) {  // Km
+        console.log("Large area (" + sendData.location.area + "Km)");
         sendData.location = null;  // Cache big searches.
       }
+
+      _.each(sendData, function(value, key) {
+        if (_.isNull(value)) {
+          delete sendData[key];
+        }
+      });
 
       console.log("save", sendData);
 
       if (cache) {
         if (JSON.stringify(sendData) == JSON.stringify(model.lastRequest)) {
+          console.log("cache hit");
           callback(model.lastResult);
           return;
         }
+        console.log("cache miss");
       }
 
       model.lastRequest = _.clone(sendData);
@@ -313,6 +427,16 @@
       model.request = orgCollection.fetch({
         data: sendData,
         success: function (collection, response) {
+          // Only add successful page loads to history.
+          console.log("success", modelData);
+          var queryString = model.toQueryString(modelData);
+          var url = m.urlRoot + "organisation";
+          if (queryString) {
+            url += "?" + queryString;
+          }
+          console.log("pushState", queryString);
+          window.history.pushState(null, null, url);
+
           if (!!callback) {
             model.lastResult = collection;
             model.request = null;
@@ -320,7 +444,7 @@
             callback(orgCollection, sendData);
           }
         },
-        error:   function (collection, response) {
+        error: function (collection, response) {
           if (response.statusText !== "abort") {
             console.log("error", collection, response);
           }
@@ -333,6 +457,71 @@
         }
       });
       this.trigger("request", this.request);
+    },
+
+    toQueryString: function (attributes) {
+      attributes = attributes ? _.clone(attributes) : model.attributes;
+
+      var model = this;
+
+      var params = [];
+      _.each(attributes, function(value, key) {
+        var defaultValue = model.expectedParameters[key][3];
+        var toString = model.expectedParameters[key][4];
+        
+        if (!_.has(model.expectedParameters, key)) {
+          return;
+        }
+        if (value === null) {
+          return;
+        }
+        if (!!toString) {
+          value = toString(value);
+        }
+        params.push(encodeURIComponent(key) + "=" + encodeURIComponent(value));
+      });
+
+      return params.length ? params.join("&") : null;
+    },
+
+    attributesFromQueryString: function (query) {
+      query = query || window.location.search;
+
+      var model = this;
+
+      var query = window.location.search;
+      if (query.indexOf("?") !== 0) {
+        return {};
+      }
+      query = query.substr(1);
+
+      var params = query.split("&");
+
+      var data = {};
+      _.each(params, function(param) {
+        var index = param.indexOf("=");
+        if (index <= 0) {
+          return;
+        }
+        var key = param.slice(0, index);
+        if (!_.has(model.expectedParameters, key)) {
+          return;
+        }
+
+        var value = decodeURIComponent(param.slice(index + 1));
+        var constructor = model.expectedParameters[key][0];
+        var multiConstructor = model.expectedParameters[key][1];
+        
+        if (!!multiConstructor) {
+          data[key] = multiConstructor(value, data[key]);
+        } else if (!!constructor) {
+          data[key] = constructor(value);
+        } else {
+          data[key] = value;
+        }
+      });
+      
+      return data;
     }
   });
 
@@ -357,9 +546,12 @@
     },
 
     changeLocation: function () {
+      console.log("change location", this.model.get("location"));
       var $input = this.$el.find("input[name='location']");
-      if ($input.val() != this.model.get("location")) {
-        $input.val(this.model.get("location"));
+      var location = this.model.get("location");
+      location = location ? location.toText() : "";
+      if ($input.val() !== location) {
+        $input.val(location);
       }
     },
 
@@ -378,12 +570,13 @@
       this.model.bind("change:visibility", this.changeVisibility);
       this.model.bind("request", this.onModelRequest);
 
-      this.$orgColumn = this.options.$orgColumn;
-      this.$orgPaging = this.options.$orgPaging;
+      this.$results = this.options.$results;
+      this.$paging = this.options.$paging;
       this.mapView = this.options.mapView;
 
-      console.log("initialize", this.serialize(this.options.$source));
-      this.model.set(this.serialize(this.options.$source));
+      var data = this.serializeForm(this.options.$form);
+      console.log("set initialize from form", data);
+      this.model.set(data);
 
       this.activeSearches = 0;
 
@@ -391,17 +584,20 @@
 
       this.mapView.addMapListener("idle", function () {
         var bounds = view.mapView.map.getBounds();
-        var mapGeobox = m.mapBoundsToGeobox(bounds);
+        console.log(bounds);
+        var mapGeobox = new Geobox(bounds);
         var location = view.model.get("location");
-        var modelGeobox = m.stringToGeobox(location);
-        var difference = m.geoboxDifference(mapGeobox, modelGeobox);
+        var modelGeobox = new Geobox(location);
+        var difference = mapGeobox.coordsDifference(modelGeobox);
         if (difference < 0.05) {
           return;
         }
-        view.model.set({
-          location: m.geoboxToString(mapGeobox),
+        var data = {
+          location: mapGeobox.toText(),
           offset: 0
-        });
+        };
+        console.log("set map idle", data);
+        view.model.set(data);
         view.send();
       });
 
@@ -478,56 +674,33 @@
       this.send(false);
     },
 
-    serialize: function ($el) {
+    serializeForm: function ($el) {
       if ($el === undefined) {
         $el = this.$el;
       }
       var arr = $el.serializeArray();
       return _(arr).reduce(function (acc, field) {
         acc[field.name] = field.value;
+        if (!field.value) {
+          acc[field.name] = null;
+        }
         return acc;
       }, {});
-    },
-
-    queryString: function (data) {
-      data = data ? _.clone(data) : {};
-
-      var serialized = this.serialize();
-      
-      serialized = _.extend(serialized, data);
-      
-      return $.param(serialized);
     },
 
     send: function (cache) {
       if (cache === undefined) {
         cache = true;
       }
-      this.model.set(this.serialize());
+
+      console.log("Send", this.model.attributes);
+
       var orgSearchView = this;
 
       this.model.save(function (orgCollection) {
         if (!orgCollection) {
           return;
         }
-
-        var search = window.location.search;
-        var target = "?" + orgSearchView.queryString();
-        console.log(search);
-        console.log(target);
-        if (target != search) {
-          console.log("pushState", target);
-          window.history.pushState(
-            null,
-            null,
-            m.urlRoot + "organisation" + target
-          );
-        }
-
-        // if (orgCollection.location) {
-        //   var shrunk = m.shrinkGeobox(orgCollection.location);
-        //   orgSearchView.mapView.setBounds(shrunk);
-        // }
 
         var orgCollectionView = new window.OrgCollectionView({
           collection: orgCollection,
@@ -536,15 +709,15 @@
           limit: orgSearchView.limit
         });
         var rendered = orgCollectionView.render();
-        orgSearchView.$orgColumn.replaceWith(rendered.el);
+        orgSearchView.$results.replaceWith(rendered.el);
 
         orgSearchView.renderPages(orgCollection, orgCollectionView.many);
-        orgSearchView.$orgColumn = rendered.$el;
+        orgSearchView.$results = rendered.$el;
         
         if (orgCollectionView.many) {
           var text = "Zoom in or refine search to see results in detail.";
           var $span = $("<p>").addClass("results-hint").text(text)
-          orgSearchView.$orgColumn.append($span);
+          orgSearchView.$results.append($span);
         }
       }, cache);
     },
@@ -553,10 +726,10 @@
       var orgSearchView = this;
       var length = orgCollection.addressLength();
 
-      orgSearchView.$orgPaging.empty();
+      orgSearchView.$paging.empty();
       
       var $count = $("<span class='resultCount'>").text(length + " results");
-      orgSearchView.$orgPaging.append($count);
+      orgSearchView.$paging.append($count);
 
       if (many) {
         return;
@@ -568,13 +741,17 @@
 
       var $pages = $("<ul class='pageList'>");
 
-      var clickHelper = function(page) {
+      var pageClickHelper = function(page) {
         return function (e) {
           if (e.which !== 1 || e.metaKey || e.shiftKey) {
             return;
           }
           e.preventDefault();
-          orgSearchView.model.set("offset", page * orgSearchView.limit);
+          var data = {
+            offset: page * orgSearchView.limit
+          }
+          console.log("set page", data);
+          orgSearchView.model.set(data);
           orgSearchView.send();
         };
       }
@@ -585,16 +762,16 @@
           var $pageSpan = $("<span>").text(text);
           $pages.append($("<li>").append($pageSpan));
         } else {
-          var query = orgSearchView.queryString({
+          var query = orgSearchView.model.toQueryString({
             offset: page * orgSearchView.limit
           });
           var href = m.urlRoot + "organisation?" + query
           var $pageLink = $("<a>").attr("href", href).text(text);
-          $pageLink.bind("click", clickHelper(page));
+          $pageLink.bind("click", pageClickHelper(page));
           $pages.append($("<li>").append($pageLink));
         }
       }
-      orgSearchView.$orgPaging.append($pages);
+      orgSearchView.$paging.append($pages);
     },
 
     onModelRequest: function (request) {
@@ -610,52 +787,15 @@
     },
 
     formChange: function (event) {
-      console.log("formchange", this.serialize());
-      this.model.set(this.serialize());
+      throw "serialize form"
+      console.log("set formchange", data);
+      this.model.set(data);
       this.send();
     },
 
     popstate: function (event) {
-      console.log("popstate");
-      var search = window.location.search;
-      if (search.indexOf("?") !== 0) {
-        return;
-      }
-      search = search.substr(1);
-      var params = search.split("&");
-      var defaults = {
-        "nameSearch": "",
-        "location": "",
-        "offset": 0,
-        "tag": "",
-        "visibility": ""
-      };
-      var expect = {
-        "nameSearch": null,
-        "location": null,
-        "offset": null,
-        "tag": m.argumentMulti,
-        "visibility": null
-      };
-      var data = {};
-      _.each(params, function(param) {
-        var index = param.indexOf("=");
-        if (index <= 0) {
-          return;
-        }
-        var name = param.slice(0, index);
-        if (!expect.hasOwnProperty(name)) {
-          return;
-        }
-        var value = decodeURIComponent(param.slice(index + 1));
-        if (expect[name]) {
-          data[name] = expect[name](value, data[name]);
-        } else {
-          data[name] = value;
-        }
-      });
-      data = _.extend(defaults, data);
-      console.log("popstate", data);
+      var data = this.model.attributesFromQueryString();
+      console.log("set popstate", data);
       this.model.set(data);
       this.send();
     }
