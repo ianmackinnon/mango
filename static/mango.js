@@ -6,6 +6,17 @@ var m = {
 
   parameters: null,
 
+  debug: false,
+
+  log: {
+    debug: function () {
+      if (!m.debug) {
+        return;
+      }
+      console.log.apply(console, arguments);
+    }
+  },
+
   _templateCache: {},
 
   template: function (name, data) {

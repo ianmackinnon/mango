@@ -376,6 +376,8 @@
 
       attributes = _.clone(attributes);
 
+      console.log("s1", attributes);
+
       attributes = this.differentAttributes(attributes);
       
       if (!_.isEmpty(attributes) &&
@@ -384,6 +386,8 @@
          ) {
         attributes["offset"] = null;
       }
+
+      console.log("s4", _.clone(attributes));
 
       return Backbone.Model.prototype.set.call(this, attributes, options);
     },
@@ -574,6 +578,8 @@
       var locationVal = location ? location.toText() : "";
       var $input = this.$el.find("input[name='location']");
 
+      console.log(location, locationVal, $input.val());
+
       if ($input.val() !== locationVal) {
         $input.val(locationVal);
       }
@@ -601,6 +607,7 @@
       this.mapView = this.options.mapView;
 
       var data = this.serializeForm(this.options.$form);
+      m.log.debug("set serializeForm", data);
       this.model.set(data);
 
       this.activeSearches = 0;
@@ -644,12 +651,13 @@
         var data = {
           location: mapGeobox
         };
+        m.log.debug("set mapIdle", data);
         view.model.set(data);
         view.send();
       });
 
       this.render();
-      
+
       this.orgtagCollection = new window.OrgtagCollection();
       var orgtagListRequest = this.fetchOrgtagList();
       if (orgtagListRequest) {
@@ -675,7 +683,9 @@
       if (!this.orgtagCollection) {
         return;
       }
-      var visibility = this.model.get("visibility");
+
+      var visibility = this.model.get("visibility") || null;
+
       if (visibility === 'private' || visibility === 'pending') {
         visibility = 'all';
       }
@@ -756,6 +766,7 @@
           var data = {
             location: new Geobox(orgCollection.location)
           }
+          m.log.debug("set receive", data);
           orgSearchView.model.set(data);
         }
 
@@ -807,6 +818,7 @@
           var data = {
             offset: page * orgSearchView.limit
           }
+          m.log.debug("set pageclick", data);
           orgSearchView.model.set(data);
           orgSearchView.send();
         };
@@ -845,12 +857,14 @@
 
     formChange: function (event) {
       var data = this.serializeForm();
+      m.log.debug("set formChange", data);
       this.model.set(data);
       this.send();
     },
 
     popstate: function (event) {
       var data = this.model.attributesFromQueryString();
+      m.log.debug("set popstate", data);
       this.model.set(data);
       this.send();
     }

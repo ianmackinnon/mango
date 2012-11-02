@@ -320,12 +320,16 @@
     },
 
     setGeobox: function (geobox) {
+      if (!geobox.hasCoords()) {
+        return;
+      }
       if (geobox.south > geobox.north) {
         throw "Inverted bounds";
       }
       var sw = new google.maps.LatLng(geobox.south, geobox.west);
       var ne = new google.maps.LatLng(geobox.north, geobox.east);
       var bounds = new google.maps.LatLngBounds(sw, ne);
+      m.log.debug("setGeobox", geobox, bounds);
       this.map.fitBounds(bounds);
       this.target = geobox;
     },
