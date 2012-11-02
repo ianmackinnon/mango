@@ -275,16 +275,18 @@
     return geobox.toText();
   };
 
+  var ukGeobox = new window.Geobox({
+    "south":49.829,
+    "north":58.988,
+    "west":-12.304,
+    "east":3.912
+  });
+
   window.OrgSearch = Backbone.Model.extend({
     // constructor, multiConstructor, compare, default, toString
     expectedParameters: {
       "nameSearch": [null, false, m.compareLowercase, "", null],
-      "location": [geoboxFactory, false, m.compareGeobox, new window.Geobox({
-        "south":49.829,
-        "north":58.988,
-        "west":-12.304,
-        "east":3.912
-      }), geoboxToString],
+      "location": [geoboxFactory, false, m.compareGeobox, ukGeobox, geoboxToString],
       "offset": [parseInt, false, null, 0, null],
       "tag": [m.argumentMulti, m.argumentMulti, m.compareUnsortedList, [], m.multiToString],
       "visibility": [m.argumentVisibility, false, null, "public", null]
@@ -550,10 +552,8 @@
       if (!this.mapView.mapReady) {
         return;
       }
-      
-      if (!location || !location.hasCoords()) {
-        return;
-      }
+
+      location = location || ukGeobox;
 
       var mapGeobox = this.mapView.getGeobox();
 
@@ -648,8 +648,13 @@
         view.send();
       });
 
+      this.render();
+      
       this.orgtagCollection = new window.OrgtagCollection();
-      this.fetchOrgtagList().complete(this.render);
+      var orgtagListRequest = this.fetchOrgtagList();
+      if (orgtagListRequest) {
+        orgtagListRequest.complete(this.render);
+      }
     },
     
     render: function () {
