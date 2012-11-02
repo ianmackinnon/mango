@@ -292,6 +292,14 @@
       "visibility": [m.argumentVisibility, false, null, "public", null]
     },
 
+    defaultParameters: function () {
+      var defaults = {};
+      _.each(this.expectedParameters, function(value, key) {
+        defaults[key] = value[3];
+      });
+      return defaults;
+    },
+
     initialize: function () {
       this.lastRequest = null;
       this.lastResult = null;
@@ -339,6 +347,8 @@
 
       attributes = this.typedAttributes(attributes);
 
+      m.log.debug("s2", _.clone(attributes));
+
       _.each(attributes, function(value, key) {
         if (model.get(key) === undefined || model.get(key) === null) {
           return;
@@ -376,10 +386,12 @@
 
       attributes = _.clone(attributes);
 
-      console.log("s1", attributes);
+      m.log.debug("s1", _.clone(attributes));
 
       attributes = this.differentAttributes(attributes);
       
+      m.log.debug("s3", _.clone(attributes));
+
       if (!_.isEmpty(attributes) &&
           !attributes.hasOwnProperty("offset") &&
           !!this.get("offset")
@@ -387,7 +399,7 @@
         attributes["offset"] = null;
       }
 
-      console.log("s4", _.clone(attributes));
+      m.log.debug("s4", _.clone(this.attributes), "to", _.clone(attributes));
 
       return Backbone.Model.prototype.set.call(this, attributes, options);
     },
@@ -439,6 +451,7 @@
           if (window.location.search != queryString) {
             var url = m.urlRoot + "organisation";
             url += queryString;
+            m.log.debug("pushState", queryString);
             window.history.pushState(null, null, url);
           }
 
@@ -468,6 +481,8 @@
       var data = this.attributes ? _.clone(this.attributes) : {};
       attributes = attributes ? _.clone(attributes) : {};
       _.extend(data, attributes);
+
+      m.log.debug("toQueryString", _.clone(this.attributes), _.clone(attributes), data);
 
       var model = this;
 
@@ -552,6 +567,54 @@
       }
     },
 
+    changeNameSearch: function () {
+      var value = this.model.get("nameSearch");
+      var text = value || "";
+      var $input = this.$el.find("input[name='nameSearch']");
+
+      if ($input.val() !== text) {
+        $input.val(text);
+      }
+    },
+
+    changeLocation: function () {
+      var location = this.model.get("location");
+      var locationVal = location ? location.toText() : "";
+      var $input = this.$el.find("input[name='location']");
+
+      if ($input.val() !== locationVal) {
+        $input.val(locationVal);
+      }
+
+      this.setMapLocation(location);
+    },
+
+    changeTag: function () {
+      var value = this.model.get("tag");
+      var text = value && value.toString() || "";
+      var $input = this.$el.find("input[name='tag']");
+
+      if (!this.tagReady) {
+        return;
+      }
+
+      if ($input.val() !== text) {
+        $input.val(text);
+        var data = $.data($input[0]);
+        data.tagit.removeAllQuiet();
+        _.each(value, function(tagName) {
+          data.tagit.createTag(tagName);
+        });
+      }
+
+    },
+
+    changeVisibility: function () {
+      var visibility = this.model.get("visibility") || "public";
+      m.set_visibility(visibility);
+      this.fetchOrgtagList();
+    },
+
     setMapLocation: function (location) {
       if (!this.mapView.mapReady) {
         return;
@@ -573,31 +636,21 @@
       google.maps.event.trigger(this.mapView, "idle");
     },
 
-    changeLocation: function () {
-      var location = this.model.get("location");
-      var locationVal = location ? location.toText() : "";
-      var $input = this.$el.find("input[name='location']");
-
-      console.log(location, locationVal, $input.val());
-
-      if ($input.val() !== locationVal) {
-        $input.val(locationVal);
-      }
-
-      this.setMapLocation(location);
-    },
-
     initialize: function () {
       _.bindAll(
         this,
         "render",
+        "changeNameSearch",
         "changeLocation",
+        "changeTag",
         "changeOffset",
         "changeVisibility",
         "onModelRequest",
         "popstate"
       );
+      this.model.bind("change:nameSearch", this.changeNameSearch);
       this.model.bind("change:location", this.changeLocation);
+      this.model.bind("change:tag", this.changeTag);
       this.model.bind("change:offset", this.changeOffset);
       this.model.bind("change:visibility", this.changeVisibility);
       this.model.bind("request", this.onModelRequest);
@@ -675,10 +728,6 @@
       return this;
     },
 
-    changeVisibility: function () {
-      this.fetchOrgtagList();
-    },
-
     fetchOrgtagList: function () {
       if (!this.orgtagCollection) {
         return;
@@ -707,6 +756,7 @@
       var view = this;
 
       var $input = view.$el.find("input[name='tag']");
+      this.tagReady = false;
       $input.tagit({
         placeholderText: $input.attr("placeholder"),
         tagSource: function (search, showChoices) {
@@ -723,12 +773,19 @@
           showChoices(start.concat(middle));
         },
         onTagAddedAfter: function (event, tag) {
+          if (!view.tagReady) {
+            return;
+          }
           $input.trigger("change");
         },
         onTagRemovedAfter: function (event, tag) {
+          if (!view.tagReady) {
+            return;
+          }
           $input.trigger("change");
         },
       });
+      this.tagReady = true;
     },
 
     submit: function (event) {
@@ -863,7 +920,9 @@
     },
 
     popstate: function (event) {
-      var data = this.model.attributesFromQueryString();
+      var data = {};
+      data = _.extend(data, this.model.defaultParameters());
+      data = _.extend(data, this.model.attributesFromQueryString());
       m.log.debug("set popstate", data);
       this.model.set(data);
       this.send();

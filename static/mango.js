@@ -788,11 +788,17 @@ var m = {
 
   argumentMulti: function(valueNew, valueOld) {
     var collection = valueOld ? _.clone(valueOld) : [];
+    if (!valueNew) {
+      return collection;
+    }
     var values;
     if (_.isArray(valueNew)) {
       values = valueNew;
     } else {
-      values = [valueNew];
+      values = [];
+      _.each(valueNew.split(","), function (value) {
+        values.push(value.replace(/^\s+|\s+$/g, ""));
+      });
     }
     return _.union(collection, values);
   },
@@ -811,7 +817,8 @@ var m = {
     if (!a || !b) {
       return true;
     }
-    return _.difference(a, b).length > 0;
+    var difference = _.union(_.difference(a, b), _.difference(b, a));
+    return difference.length > 0;
   },
 
   compareLowercase: function(a, b) {
