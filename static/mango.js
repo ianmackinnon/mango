@@ -430,7 +430,6 @@ var m = {
       mapView: mapView
     });
     $("#org-search").replaceWith(orgSearchView.$el);
-    console.log("initial send", orgSearch.attributes);
     orgSearchView.send();
 
     window.addEventListener("popstate", orgSearchView.popstate);
@@ -825,7 +824,6 @@ var m = {
     if (difference === true || difference === false) {
       return difference;
     }
-    console.log(this, other, difference);
     return difference > 0.05;
   },
 

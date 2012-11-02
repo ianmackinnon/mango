@@ -153,6 +153,19 @@
     return "";
   };
 
+  Geobox.prototype.toString = function () {
+    return this.toText();
+  };
+
+  Geobox.prototype.toCoords = function () {
+    return {
+      south: this.south,
+      north: this.north,
+      west: this.west,
+      east: this.east
+    }
+  };
+
   Geobox.prototype.coordsDifference = function (g2) {
     var g1 = this;
     if (!g1.hasCoords() && !g2.hasCoords()) {
@@ -181,15 +194,43 @@
     // var circumferenceOfEarth = 40075;
     // var areaOfEarth = 510072000;
 
-    var east = geobox.east + 360 * (geobox.east < geobox.west);
+    var east = this.east + 360 * (this.east < this.west);
     var height = (
-      Math.sin(geobox.north * Math.PI / 180) -
-      Math.sin(geobox.south * Math.PI / 180)
+      Math.sin(this.north * Math.PI / 180) -
+      Math.sin(this.south * Math.PI / 180)
     );
     var segmentArea = 2 * Math.PI * radiusOfEarth * height * radiusOfEarth;
-    var sliceArea = segmentArea * (east - geobox.west) / 360;
+    var sliceArea = segmentArea * (east - this.west) / 360;
     return sliceArea;
-  }
+  };
+
+  Geobox.prototype.scale = function (scale) {
+    if (!this.hasCoords()) {
+      return this;
+    }
+    var move = (1 - Math.max(0, scale)) / 2;
+    var latitude = (this.north - this.south);
+    var longitude = this.east - this.west + 360 * (this.east < this.west);
+    this.south = Math.max(-90, Math.min(90, this.south + latitude * move));
+    this.north = Math.max(-90, Math.min(90, this.north - latitude * move));
+    this.west = Math.max(-180, Math.min(180, this.west + longitude * move));
+    this.east = Math.max(-180, Math.min(180, this.east - longitude * move));
+    return this;
+  };
+
+  Geobox.prototype.contains = function (other) {
+    var south = this.south <= other.south;
+    var north = this.north >= other.north;
+    var west = this.west <= other.west;
+    var east = this.east >= other.east;
+    return south && north && west && east;
+  };
+
+  Geobox.prototype.matchesTarget = function (target) {
+    var contains = this.contains(target);
+    var bigEnough = target.area() > this.area() / 8;  // Estimate
+    return contains && bigEnough;
+  };
 
   window.Geobox = Geobox;
 
@@ -254,6 +295,8 @@
         this.$canvas[0],
         mapOptions
       );
+
+      this.mapReady = false;
       
       var map = this.map;
 
@@ -265,6 +308,9 @@
 
     contains: function (latitude, longitude) {
       var bounds = this.map.getBounds();
+      if (!bounds) {
+        return false;
+      }
       var point = new google.maps.LatLng(latitude, longitude);
       return bounds.contains(point);
     },
@@ -273,11 +319,23 @@
       return google.maps.event.addListener(this.map, name, callback);
     },
 
-    setBounds: function (geobox) {
+    setGeobox: function (geobox) {
+      if (geobox.south > geobox.north) {
+        throw "Inverted bounds";
+      }
       var sw = new google.maps.LatLng(geobox.south, geobox.west);
       var ne = new google.maps.LatLng(geobox.north, geobox.east);
       var bounds = new google.maps.LatLngBounds(sw, ne);
       this.map.fitBounds(bounds);
+      this.target = geobox;
+    },
+
+    getGeobox: function () {
+      if (!this.mapReady) {
+        return null;
+      }
+      var geobox = new Geobox(this.map.getBounds());
+      return geobox;
     },
 
     clearMarkers: function (latitude, longitude) {

@@ -191,11 +191,12 @@
     },
 
     parse: function (resp, xhr) {
-      if (!!resp) {
-        this.location = resp.location;
-        return resp.org_list;
+      if (!resp) {
+        return resp;
       }
-      return resp;
+
+      this.location = resp.location;
+      return resp.org_list;
     }
   });
 
@@ -317,12 +318,10 @@
         var defaultValue = model.expectedParameters[key][3];
         if (!!comparison) {
           if (!comparison(value, defaultValue)) {
-            console.log("Defaultish value: ", value, defaultValue);
             value = null;
           }
         } else {
           if (value === defaultValue) {
-            console.log("Default value: ", value);
             value = null;
           }
         }
@@ -337,8 +336,6 @@
       attributes = attributes ? _.clone(attributes) : {};
 
       attributes = this.typedAttributes(attributes);
-
-      console.log("set 2", _.clone(attributes));
 
       _.each(attributes, function(value, key) {
         if (model.get(key) === undefined || model.get(key) === null) {
@@ -375,9 +372,16 @@
         return this;
       }
 
-      console.log("set 1", _.clone(attributes));
+      attributes = _.clone(attributes);
+
       attributes = this.differentAttributes(attributes);
-      console.log("set 3", _.clone(attributes));
+      
+      if (!_.isEmpty(attributes) &&
+          !attributes.hasOwnProperty("offset") &&
+          !!this.get("offset")
+         ) {
+        attributes["offset"] = null;
+      }
 
       return Backbone.Model.prototype.set.call(this, attributes, options);
     },
@@ -395,9 +399,8 @@
         offset: null,
       });
 
-      if (sendData.location.area > 50000) {  // Km
-        console.log("Large area (" + sendData.location.area + "Km)");
-        sendData.location = null;  // Cache big searches.
+      if (sendData.location && sendData.location.area > 50000) {  // Km
+        sendData.location = null;  // Avoid large area searches.
       }
 
       _.each(sendData, function(value, key) {
@@ -406,15 +409,11 @@
         }
       });
 
-      console.log("save", sendData);
-
       if (cache) {
         if (JSON.stringify(sendData) == JSON.stringify(model.lastRequest)) {
-          console.log("cache hit");
           callback(model.lastResult);
           return;
         }
-        console.log("cache miss");
       }
 
       model.lastRequest = _.clone(sendData);
@@ -428,14 +427,14 @@
         data: sendData,
         success: function (collection, response) {
           // Only add successful page loads to history.
-          console.log("success", modelData);
           var queryString = model.toQueryString(modelData);
-          var url = m.urlRoot + "organisation";
-          if (queryString) {
-            url += "?" + queryString;
+          queryString = queryString ? "?" + queryString : "";
+
+          if (window.location.search != queryString) {
+            var url = m.urlRoot + "organisation";
+            url += queryString;
+            window.history.pushState(null, null, url);
           }
-          console.log("pushState", queryString);
-          window.history.pushState(null, null, url);
 
           if (!!callback) {
             model.lastResult = collection;
@@ -460,12 +459,14 @@
     },
 
     toQueryString: function (attributes) {
-      attributes = attributes ? _.clone(attributes) : model.attributes;
+      var data = this.attributes ? _.clone(this.attributes) : {};
+      attributes = attributes ? _.clone(attributes) : {};
+      _.extend(data, attributes);
 
       var model = this;
 
       var params = [];
-      _.each(attributes, function(value, key) {
+      _.each(data, function(value, key) {
         var defaultValue = model.expectedParameters[key][3];
         var toString = model.expectedParameters[key][4];
         
@@ -545,14 +546,39 @@
       }
     },
 
-    changeLocation: function () {
-      console.log("change location", this.model.get("location"));
-      var $input = this.$el.find("input[name='location']");
-      var location = this.model.get("location");
-      location = location ? location.toText() : "";
-      if ($input.val() !== location) {
-        $input.val(location);
+    setMapLocation: function (location) {
+      if (!this.mapView.mapReady) {
+        return;
       }
+      
+      if (!location || !location.hasCoords()) {
+        return;
+      }
+
+      var mapGeobox = this.mapView.getGeobox();
+
+      if (!m.compareGeobox(location, mapGeobox)) {
+        return;
+      }
+
+      var scaled = new Geobox(location);
+      scaled.scale(.75);
+      this.mapView.setGeobox(scaled);
+
+      // In case the map has already moved, but not updated.
+      google.maps.event.trigger(this.mapView, "idle");
+    },
+
+    changeLocation: function () {
+      var location = this.model.get("location");
+      var locationVal = location ? location.toText() : "";
+      var $input = this.$el.find("input[name='location']");
+
+      if ($input.val() !== locationVal) {
+        $input.val(locationVal);
+      }
+
+      this.setMapLocation(location);
     },
 
     initialize: function () {
@@ -575,7 +601,6 @@
       this.mapView = this.options.mapView;
 
       var data = this.serializeForm(this.options.$form);
-      console.log("set initialize from form", data);
       this.model.set(data);
 
       this.activeSearches = 0;
@@ -583,20 +608,42 @@
       var view = this;
 
       this.mapView.addMapListener("idle", function () {
-        var bounds = view.mapView.map.getBounds();
-        console.log(bounds);
-        var mapGeobox = new Geobox(bounds);
-        var location = view.model.get("location");
-        var modelGeobox = new Geobox(location);
-        var difference = mapGeobox.coordsDifference(modelGeobox);
-        if (difference < 0.05) {
+
+        if (!view.mapView.mapReady) {
+          // Set map from object.
+          view.mapView.mapReady = true;
+          view.setMapLocation(view.model.get("location"));
+          view.send();
+          return;
+        }
+
+        var mapGeobox = view.mapView.getGeobox();
+        var modelGeobox = new Geobox(view.model.get("location"));
+        var target = view.mapView.target;
+        view.mapView.target = null;
+
+        if (mapGeobox && target && mapGeobox.matchesTarget(target)) {
+          // Matches target. Do nothing.
+          return;
+        }
+
+        // Set object from map.
+
+        if (false && modelGeobox.hasCoords()) {
+          view.mapView.addDot(modelGeobox.south, modelGeobox.west, "ddddff", "south west", null);
+          view.mapView.addDot(modelGeobox.north, modelGeobox.east, "ddddff", "north east", null);
+          var scaled = new Geobox(modelGeobox);
+          scaled.scale(.75);
+          view.mapView.addDot(scaled.south, scaled.west, "ddddff", "south west", null);
+          view.mapView.addDot(scaled.north, scaled.east, "ddddff", "north east", null);
+        }
+
+        if (!m.compareGeobox(mapGeobox, modelGeobox)) {
           return;
         }
         var data = {
-          location: mapGeobox.toText(),
-          offset: 0
+          location: mapGeobox
         };
-        console.log("set map idle", data);
         view.model.set(data);
         view.send();
       });
@@ -693,13 +740,18 @@
         cache = true;
       }
 
-      console.log("Send", this.model.attributes);
-
       var orgSearchView = this;
 
       this.model.save(function (orgCollection) {
         if (!orgCollection) {
           return;
+        }
+
+        if (orgCollection.location) {
+          var data = {
+            location: new Geobox(orgCollection.location)
+          }
+          orgSearchView.model.set(data);
         }
 
         var orgCollectionView = new window.OrgCollectionView({
@@ -750,7 +802,6 @@
           var data = {
             offset: page * orgSearchView.limit
           }
-          console.log("set page", data);
           orgSearchView.model.set(data);
           orgSearchView.send();
         };
@@ -758,7 +809,8 @@
 
       for (var page = 0; page < length / orgSearchView.limit; page += 1) {
         var text = "page " + (page + 1);
-        if (page * orgSearchView.limit == orgSearchView.model.get("offset")) {
+        var currentPage = orgSearchView.model.get("offset") || 0;
+        if (page * orgSearchView.limit == currentPage) {
           var $pageSpan = $("<span>").text(text);
           $pages.append($("<li>").append($pageSpan));
         } else {
@@ -787,15 +839,13 @@
     },
 
     formChange: function (event) {
-      throw "serialize form"
-      console.log("set formchange", data);
+      var data = this.serializeForm();
       this.model.set(data);
       this.send();
     },
 
     popstate: function (event) {
       var data = this.model.attributesFromQueryString();
-      console.log("set popstate", data);
       this.model.set(data);
       this.send();
     }
