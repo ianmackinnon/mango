@@ -20,6 +20,11 @@ from model import Org, Note, Address, Orgalias, Orgtag, org_orgtag, org_address
 
 
 
+max_address_per_page = 26
+max_address_pages = 3
+
+
+
 class BaseOrgHandler(BaseHandler):
     def _get_org(self, org_id_string, options=None):
         org_id = int(org_id_string)
@@ -153,30 +158,39 @@ class BaseOrgHandler(BaseHandler):
             org_alias_address_query = org_alias_address_query \
                 .offset(offset)
 
-        orgs = OrderedDict()
-
-        for org, alias, address in org_alias_address_query:
-            if not org.org_id in orgs:
-                orgs[org.org_id] = {
-                    "org": org,
-                    "alias": alias and alias.name,
-                    "address_obj_list": [],
-                    }
-            orgs[org.org_id]["address_obj_list"].append(address.obj(
-                    public=bool(self.current_user)
-                    ))
-
         org_packet = {
-            "org_list": [],
             "location": location and location.to_obj(),
             }
 
-        for org_id, data in orgs.items():
-            org_packet["org_list"].append(data["org"].obj(
-                    public=bool(self.current_user),
-                    address_obj_list=data["address_obj_list"],
-                    alias=data["alias"],
-                    ))
+        if (org_alias_address_query.count() > max_address_per_page * max_address_pages):
+            org_packet["marker_list"] = []
+            for org, alias, address in org_alias_address_query:
+                org_packet["marker_list"].append({
+                        "name": org.name,
+                        "url": org.url,
+                        "latitude": address.latitude,
+                        "longitude": address.longitude,
+                        })
+        else:
+            orgs = OrderedDict()
+            for org, alias, address in org_alias_address_query:
+                if not org.org_id in orgs:
+                    orgs[org.org_id] = {
+                        "org": org,
+                        "alias": alias and alias.name,
+                        "address_obj_list": [],
+                        }
+                orgs[org.org_id]["address_obj_list"].append(address.obj(
+                        public=bool(self.current_user)
+                        ))
+
+            org_packet["org_list"] = []
+            for org_id, data in orgs.items():
+                org_packet["org_list"].append(data["org"].obj(
+                        public=bool(self.current_user),
+                        address_obj_list=data["address_obj_list"],
+                        alias=data["alias"],
+                        ))
 
         return org_packet
 

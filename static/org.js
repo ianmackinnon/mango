@@ -4,6 +4,35 @@
 
 (function ($) {
 
+  // Marker
+
+  var Marker = Backbone.Model.extend();
+
+  var MarkerViewDot = Backbone.View.extend({
+    initialize: function () {
+      this.mapView = this.options.mapView;
+    },
+
+    render: function () {
+      var view = this;
+
+      var onClick = function (event) {
+        var href=view.model.get("url");
+        window.document.location.href=href;
+      };
+
+      view.mapView.addDot(
+        this.model.get("latitude"),
+        this.model.get("longitude"),
+        undefined,
+        this.model.get("name"),
+        onClick
+      );
+
+      return this;
+    }
+  });
+
   // Address
 
   var AddressViewRow = Backbone.View.extend({
@@ -187,6 +216,9 @@
           sum += 1;
         });
       });
+      if (this.markerList) {
+        sum += this.markerList.length;
+      }
       return sum;
     },
 
@@ -196,6 +228,7 @@
       }
 
       this.location = resp.location;
+      this.markerList = resp.marker_list;
       return resp.org_list;
     }
   });
@@ -214,7 +247,16 @@
       this._modelViews = [];
       this._addressModelViews = [];
       view.many = null;
-      if (this.collection.addressLength() > view.limit * 3) {
+      if (this.collection.markerList) {
+        view.many = true;
+        _.each(this.collection.markerList, function (model) {
+          view._modelViews.push(new MarkerViewDot({
+            model: new Marker(model),
+            mapView: view.mapView
+          }));
+        });
+        
+      } else if (this.collection.addressLength() > view.limit * 3) {
         // Just dots if there are more than 3 pages
         view.many = true;
         this.collection.each(function (model) {
