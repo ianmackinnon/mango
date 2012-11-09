@@ -28,8 +28,8 @@
 }
 
 #mango a.action,
-form.mango input[type="submit"],
-form.mango input[type="button"]
+#mango input[type="submit"],
+#mango input[type="button"]
 {
     border: 1px solid #ccc;
     border-radius: 2px;
@@ -39,8 +39,8 @@ form.mango input[type="button"]
     background: #f8f8f8;
 }
 #mango a.action:hover,
-form.mango input[type="submit"]:hover,
-form.mango input[type="button"]:hover
+mango input[type="submit"]:hover,
+#mango input[type="button"]:hover
 {
     text-decoration: none;
     color: #333;
@@ -48,8 +48,8 @@ form.mango input[type="button"]:hover
     cursor: pointer;
 }
 #mango a.action:active,
-form.mango input[type="submit"]:active,
-form.mango input[type="button"]:active
+#mango input[type="submit"]:active,
+#mango input[type="button"]:active
 {
     color: #666;
     border-color: #ccc;
@@ -441,7 +441,7 @@ form.mango input[type="checkbox"]
     display: inline-block;
     width: 100px;
 }
-#mango .home-inline div
+#mango .home-inline *
 {
     display: inline;
 }

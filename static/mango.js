@@ -431,6 +431,27 @@ var m = {
     return mapView;
   },
 
+  initHome: function (mapView) {
+    $("#mango-map-box").append(m.template("home-map-legend.html"));
+    var orgCollection = new window.OrgCollection();
+    var orgCollectionView = new window.OrgCollectionView({
+      collection: orgCollection,
+      mapView: mapView
+    });
+    orgCollection.fetch({
+      success: function(collection, response) {
+        console.log("success");
+        orgCollectionView.initialize();
+        orgCollectionView.render();
+      },
+      error: function (collection, response) {
+        if (response.statusText !== "abort") {
+          console.log("error", collection, response);
+        }
+      }
+    });
+  },
+
   initOrgSearch: function (mapView) {
     var orgSearch = new window.OrgSearch();
     var orgSearchView = new window.OrgSearchView({
@@ -917,7 +938,10 @@ var m = {
 
   "route": [
     [/^\/$/, function () {
-      m.all_addresses();
+      var mapView = m.initMap();
+      m.initHome(mapView);
+      m.visibility();
+      window.mapView = mapView;
     }],
     [/^\/note\/new$/, function () {
       m.note_markdown();
