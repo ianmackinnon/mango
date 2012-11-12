@@ -13,7 +13,9 @@ var m = {
       if (!m.debug) {
         return;
       }
-      console.log.apply(console, arguments);
+      // Translation for Internet Explorer of
+      //   console.log.apply(console, arguments);
+      Function.prototype.apply.call(console.log, console, arguments);
     }
   },
 
@@ -269,9 +271,11 @@ var m = {
     });
     $("#org-search").replaceWith(orgSearchView.$el);
     orgSearchView.send();
-
-    window.addEventListener("popstate", orgSearchView.popstate);
-
+    
+    if (window.History.enabled) {
+      History.Adapter.bind(window, "statechange", orgSearchView.popstate);
+    }
+    
     window.orgSearch = orgSearch;
 
     return orgSearch;

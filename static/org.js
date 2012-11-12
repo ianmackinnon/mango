@@ -487,7 +487,9 @@
             var url = m.urlRoot + "organisation";
             url += queryString;
             m.log.debug("pushState", queryString);
-            window.history.pushState(null, null, url);
+            if (window.History.enabled) {
+              window.History.pushState(null, null, url);
+            }
           }
 
           if (!!callback) {
@@ -546,7 +548,6 @@
 
       var model = this;
 
-      var query = window.location.search;
       if (query.indexOf("?") !== 0) {
         return {};
       }
@@ -954,10 +955,16 @@
       this.send();
     },
 
-    popstate: function (event) {
+    popstate: function () {
+      var State = History.getState();
+      var search = "";
+      var index = State.url.indexOf("?");
+      if (index >= 0) {
+        search = State.url.substr(index);
+      }
       var data = {};
       data = _.extend(data, this.model.defaultParameters());
-      data = _.extend(data, this.model.attributesFromQueryString());
+      data = _.extend(data, this.model.attributesFromQueryString(search));
       m.log.debug("set popstate", data);
       this.model.set(data);
       this.send();
