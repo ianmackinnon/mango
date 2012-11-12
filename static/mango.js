@@ -17,6 +17,13 @@ var m = {
     }
   },
 
+  ukGeobox: new window.Geobox({
+    "south":49.829,
+    "north":58.988,
+    "west":-12.304,
+    "east":3.912
+  }),
+
   _templateCache: {},
 
   template: function (name, data) {
@@ -100,26 +107,38 @@ var m = {
     return arr2;
   },
 
-  latitude: function(value) {
-    value = parseFloat(value);
-    if (value > 90) {
-      return NaN;
-    }
-    if (value < -90) {
-      return NaN;
-    }
-    return value;
-  },
+  "process": {
+    "orgtag_packet": function(tag_list_id, orgtag_packet) {
+      var tag_list = $(tag_list_id);
+      tag_list.empty();
 
-  longitude: function(value) {
-    value = parseFloat(value);
-    if (value > 180) {
-      return NaN;
+      $.each(orgtag_packet, function(index, value) {
+	var tag_li = $(m.template("tag-li.html", {
+	  "tag":value,
+	  "org":true,
+	  "note":true,
+          "parameters":m.parameters,
+	}));
+	tag_list.append(tag_li);
+	tag_list.append(" ");
+      });
+    },
+
+    "eventtag_packet": function(tag_list_id, eventtag_packet) {
+      var tag_list = $(tag_list_id);
+      tag_list.empty();
+
+      $.each(eventtag_packet, function(index, value) {
+	var tag_li = $(m.template("tag-li.html", {
+	  "tag":value,
+	  "org":true,
+	  "note":true,
+          "parameters":m.parameters,
+	}));
+	tag_list.append(tag_li);
+	tag_list.append(" ");
+      });
     }
-    if (value < -180) {
-      return NaN;
-    }
-    return value;
   },
 
   "geo": {
@@ -137,12 +156,9 @@ var m = {
     }
   },
 
-  "map": null,
-  "markers": [],
-  "positions": [],
-
   "timers": {},
   "last_values": {},
+
   "on_change": function (input, name, callback, ms) {
     m.last_values[name] = m.values(input);
     m.timers[name] = null;
@@ -163,45 +179,6 @@ var m = {
     input.click(delay);
     input.change(delay);
     change();
-  },
-
-  "clear_points": function () {
-    $.each(m.markers, function (index, marker) {
-      marker.setMap(null);
-    });
-    m.markers = [];
-    m.positions = [];
-  },
-
-  "fit_map": function (callback) {
-    m.fit_map_delay();
-    google.maps.event.addListener(m.map, 'idle', function () {
-      m.fit_map_delay();
-      google.maps.event.clearListeners(m.map, 'idle');
-      if (callback) {
-        callback();
-      }
-    });
-  },
-
-  "fit_map_delay": function () {
-    var bounds = null;
-    $.each(m.markers, function (index, marker) {
-      if (!bounds) {
-        bounds = new google.maps.LatLngBounds();
-      }
-      bounds.extend(marker.position);
-    });
-    $.each(m.positions, function (index, position) {
-      if (!bounds) {
-        bounds = new google.maps.LatLngBounds();
-      }
-      bounds.extend(position);
-    });
-    if (bounds) {
-      m.map.fitBounds(bounds);
-      m.map.setZoom(Math.min(m.map.getZoom(), 16));
-    }
   },
 
   "url_rewrite": function (path, parameters) {
@@ -242,189 +219,6 @@ var m = {
     return input.val() || null;
   },
 
-  "init_entity_search": function (searchId, tagList, process, packet) {
-    var form = $(searchId);
-    var name_search = m.get_field(form, "name_search");
-    var lookup = m.get_field(form, "lookup");
-    var tag = form.find("input[name='tag']");
-    var past = m.get_field(form, "past");
-    var visibility = form.find("input[name='visibility']");
-    var dropdown = form.find("ul.dropdown");
-    var throbber = $("<img>").attr({
-      "src": m.url_root + "static/image/throbber.gif",
-      "class": "throbber"
-    }).hide();
-
-    var change;  // change passes itself
-
-    var tag_values = function () {
-      var text = tag.val();
-      var parts = text.split(",");
-      _(parts).each(function (p) {
-        parts[p] = parts[p]
-          .replace(/(^\s|\s$)+/g, '')
-          .replace(/\s+/g, '-');
-      });
-      return parts;
-    };
-
-    var tag_search_term = function () {
-      var parts = tag_values();
-      return (!!parts && parts[parts.length - 1]) || null;
-    };
-
-    var tag_replace_last = function (term) {
-      var parts = tag_values();
-      parts.pop();
-      parts.push(term);
-      tag.val(parts.join(", ") + ((parts && ", ") || ""));
-      change();
-    };
-
-    var update_dropdown = function () {
-      dropdown.empty();
-      var term = tag_search_term();
-      var tags = (term && tagList.filter(function (element, index, array) {
-        return element.short.substring(0, term.length) === term;
-      })) || [];
-      var helper = function (name) {
-        return function () {
-          tag_replace_last(name);
-        };
-      };
-      var i;
-      for (i = 0; i < Math.min(10, tags.length); i += 1) {
-        var tag = tags[i];
-        var li = $("<li>" + tag.short + "</li>");
-        li.click(helper(tag.short));
-        dropdown.append(li);
-      }
-    };
-
-    tag.focus(function () {
-      update_dropdown();
-      dropdown.show();
-    });
-
-    tag.blur(function () {
-      dropdown.fadeOut(100, function () {
-        if (tag.is(":focus")) {
-          dropdown.show();
-        }
-      });
-    });
-
-    tag.keyup(update_dropdown);
-
-    form.append(throbber);
-    var xhr = null;
-
-    change = function (value, offset) {
-      if (xhr && xhr.readyState !== 4) {
-        xhr.abort();
-      }
-      var data = m.filter_object_true({
-        "name_search": name_search.input.val(),
-        "tag": tag_values(),
-        "offset": offset || 0,
-      });
-      if (!!lookup) {
-        data.lookup = lookup.input.val();
-      }
-      if (past) {
-        data.past = past.input.attr("checked") && past.input.val();
-      }
-      if (visibility.length) {
-        data.visibility = visibility.val();
-      }
-      xhr = $.ajax(window.location.pathname, {
-        "dataType": "json",
-        "data": data,
-        "success": function (data, textStatus, jqXHR) {
-          process(data, change);
-        },
-        "error": m.ajaxError,
-        "complete": function (jqXHR, textStatus) {
-          throbber.hide();
-        }
-      });
-      throbber.show();
-    };
-    m.on_change(name_search.input, "name_search", change, 500);
-    if (!!lookup) {
-      m.on_change(lookup.input, "lookup", change, 500);
-    }
-    m.on_change(tag, "tag", change, 500);
-    if (past) {
-      m.on_change(past.input, "past", change, 500);
-    }
-    visibility.change(change);
-    process(packet, change);
-  },
-
-  "all_addresses": function () {
-    var data = {};
-    if (m.parameters.visibility) {
-      data.visibility = m.parameters.visibility;
-    }
-    $.ajax(m.url_root + "address", {
-      "dataType": "json",
-      "data": data,
-      "success": function (data, textStatus, jqXHR) {
-        m.clear_points();
-        $.each(data, function (i, result) {
-          var position = new google.maps.LatLng(result.latitude, result.longitude);
-          var color;
-          if (result.entity === "org") {
-            color = "ff7755";
-          } else {
-            color = "5577ff";
-          }
-          var pin_url = m.url_root + "static/image/map/marker/dot-" + color + ".png";
-          var marker = new google.maps.Marker({
-            position: position,
-            map: m.map,
-            icon: pin_url,
-            title: result.name,
-          });
-          if (result.entity === "event") {
-            marker.setZIndex(500);
-          }
-          var helper = function () {
-            return function () {
-              window.location.replace(m.url_root + "address/" + result.address_id);
-            };
-          };
-          google.maps.event.addListener(marker, 'click', helper());
-          m.markers.push(marker);
-
-        });
-        m.fit_map(function () {
-          m.map.setCenter(new google.maps.LatLng(
-            54.12667879191665,
-            -2.8131760625000224
-          ));
-          m.map.setZoom(5);
-        });
-      },
-      "error": m.ajaxError
-    });
-
-    var manual_control = $("<div class='caption'>");
-    var img1 = $("<img>").attr("src", m.url_root + "static/image/map/marker/dot-ff7755.png");
-    var img2 = $("<img>").attr("src", m.url_root + "static/image/map/marker/dot-5577ff.png");
-    var manual_control_hint = $("<ul>");
-    var li1 = $("<li>").text(" Arms company");
-    var li2 = $("<li>").text(" Future action/event");
-    li1.prepend(img1);
-    li2.prepend(img2);
-    manual_control_hint.append(li1);
-    manual_control_hint.append(li2);
-    manual_control.append(manual_control_hint);
-    $("#mango-map-box").append(manual_control);
-
-  },
-
   initMap: function () {
     var mapView = new window.MapView();
     $("#mango-map-box").replaceWith(mapView.$el);
@@ -450,6 +244,18 @@ var m = {
         }
       }
     });
+  },
+
+  initOrg: function (mapView) {
+    $("div.address-row div.pin").each(function(i) {
+      var $pin = $(this);
+      var $circle = mapView.addMarker(
+        $pin.attr("latitude"),
+        $pin.attr("longitude")
+      );
+      $pin.append($circle);
+    });
+    mapView.fit();
   },
 
   initOrgSearch: function (mapView) {
@@ -570,29 +376,20 @@ var m = {
     };
   },
 
-  "init_address_form": function (id) {
-    var form = $("#" + id).find("form");
-    var latitude = null;
-    var longitude = null;
+  initAddressForm: function (mapView) {
+    var form = $("#address-form").find("form");
     if (!form.length) {
       var $span = $("span[latitude]");
       if (!$span.length) {
         return;
       }
-      latitude = $span.attr("latitude");
-      longitude = $span.attr("longitude");
-      m.clear_points();
-      var position = new google.maps.LatLng(
-        latitude,
-        longitude
+      mapView.addMarker(
+        $span.attr("latitude"),
+        $span.attr("longitude")
       );
-      var marker = new google.maps.Marker({
-        position: position,
-        map: m.map
-      });
-      m.markers.push(marker);
       return;
     }
+
     var search = $("<input>").attr({
       "type": "button",
       "value": "Find address on map"
@@ -605,8 +402,8 @@ var m = {
 
     var manual_latitude = form.find("[name='manual_latitude']");
     var manual_longitude = form.find("[name='manual_longitude']");
-    latitude = form.find("[name='latitude']");
-    longitude = form.find("[name='longitude']");
+    var latitude = form.find("[name='latitude']");
+    var longitude = form.find("[name='longitude']");
 
     var validate = function () {
       var x = form.find("[status='bad']");
@@ -621,7 +418,6 @@ var m = {
       } else {
         search.attr('disabled', 'disabled');
       }
-
     };
 
     var manual_control = $("<div class='caption'>");
@@ -629,19 +425,22 @@ var m = {
     var manual_control_span1 = $("<span>").text("Click on the map or drag a marker to set position manually.").hide();
     var manual_control_span2 = $("<span>").text("Map position has been set manually.").hide();
     var manual_control_button = $("<input type='button' id='manual_position_clear' value='Remove'>").hide();
+    var manual_control_span3 = $("<p>").text("Map position has not yet been saved.").hide();
     $("#mango-map-box").append(manual_control);
     manual_control.append(manual_control_hint);
     manual_control.append(manual_control_span1);
     manual_control.append(manual_control_span2);
     manual_control.append(manual_control_button);
+    manual_control.append(manual_control_span3);
 
-    var set_manual_position = function (position) {
-      manual_latitude.val(position.lat());
-      manual_longitude.val(position.lng());
+    var set_manual_position = function (lat, lng) {
+      manual_latitude.val(lat);
+      manual_longitude.val(lng);
       manual_control_hint.hide();
       manual_control_span1.hide();
       manual_control_span2.show();
       manual_control_button.show();
+      manual_control_span3.show();
     };
 
     var clear_manual_position = function () {
@@ -651,33 +450,16 @@ var m = {
       manual_control_span1.show();
       manual_control_span2.hide();
       manual_control_button.hide();
+      manual_control_span3.hide();
     };
 
     manual_control_button.click(function () {
-      m.clear_points();
+      updateMarker();
       clear_manual_position();
+      address_search();
     });
 
-    var set_marker = function (position, title) {
-      m.clear_points();
-      var marker = new google.maps.Marker({
-        position: position,
-        title: title,
-        draggable: true,
-        map: m.map
-      });
-      google.maps.event.addListener(marker, 'drag', function () {
-        var pos = marker.getPosition();
-        set_manual_position(pos);
-      });
-      m.markers.push(marker);
-    };
-
-    google.maps.event.addListener(m.map, 'click', function (event) {
-      var pos = event.latLng;
-      set_marker(pos, postal.input.val());
-      set_manual_position(pos);
-    });
+    var updateMarker = mapView.clickDraggableMarker(set_manual_position);
 
     var address_search = function () {
       $.ajax(m.url_root + "address/lookup", {
@@ -688,20 +470,14 @@ var m = {
         },
         "success": function (data, textStatus, jqXHR) {
           if (!data.latitude) {
-            m.clear_points();
             clear_manual_position();
             manual_control_hint.show();
             manual_control_span1.hide();
             return;
           }
-          var position = new google.maps.LatLng(
-            data.latitude,
-            data.longitude
-          );
-          set_marker(position, data.postal);
+          updateMarker(data.latitude, data.longitude);
           clear_manual_position();
-          m.map.setCenter(position);
-          m.map.setZoom(10);
+          mapView.fit();
         },
         "error": m.ajaxError
       });
@@ -709,6 +485,7 @@ var m = {
 
     search.click(address_search);
 
+    var id = "address-form";
     m.on_change(postal.input, id + "_postal", function (value) {
       postal.label.attr("status", !!value ? "good" : "bad");
       validate();
@@ -726,13 +503,8 @@ var m = {
 
     if (latitude.length) {
       if (latitude.val().length && longitude.val().length) {
-        var pos = new google.maps.LatLng(
-          latitude.val(),
-          longitude.val()
-        );
-        set_marker(pos, postal.input.val());
-        m.map.setCenter(pos);
-        m.map.setZoom(10);
+        updateMarker(latitude.val(), longitude.val());
+        mapView.fit();
       }
     }
     if (manual_latitude.val().length && manual_longitude.val().length) {
@@ -740,8 +512,10 @@ var m = {
       manual_control_span1.hide();
       manual_control_span2.show();
       manual_control_button.show();
+      manual_control_span3.hide();
     }
 
+    $("#address-form textarea[name='postal']").focus();
   },
 
   "text_children": function (el) {
@@ -941,8 +715,8 @@ var m = {
       var mapView = m.initMap();
       m.initHome(mapView);
       m.visibility();
-      window.mapView = mapView;
     }],
+
     [/^\/note\/new$/, function () {
       m.note_markdown();
     }],
@@ -954,45 +728,44 @@ var m = {
       var mapView = m.initMap();
       m.initOrgSearch(mapView);
       m.visibility();
-      window.mapView = mapView;
     }],
     [/^\/event$/, function () {
-      m.init_event_search();
+      var mapView = m.initMap();
+      //m.initEventSearch(mapView);
       m.visibility();
     }],
     [/^\/task\/address$/, function () {
-      m.initOrgSearch();
+      var mapView = m.initMap();
+      m.initOrgSearch(mapView);
       m.visibility();
     }],
     [/^\/organisation\/([1-9][0-9]*)$/, function () {
-      m.clear_points();
-      m.add_pins();
-      m.fit_map();
+      var mapView = m.initMap();
+      m.initOrg(mapView);
     }],
     [/^\/organisation\/([1-9][0-9]*)\/address$/, function () {
-      m.init_address_form("address-form");
-      $("#address-form textarea[name='postal']").focus();
+      var mapView = m.initMap();
+      m.initAddressForm(mapView);
     }],
     [/^\/organisation\/([1-9][0-9]*)\/note$/, function () {
       m.note_markdown();
     }],
     [/^\/event\/([1-9][0-9]*)$/, function () {
-      m.clear_points();
-      m.add_pins();
-      m.fit_map();
-      m.event_markdown();
+      var mapView = m.initMap();
+      // m.initEvent(mapView);
+      m.visibility();
     }],
     [/^\/event\/([1-9][0-9]*)\/address$/, function () {
-      m.init_address_form("address-form");
-      $("#address-form textarea[name='postal']").focus();
+      var mapView = m.initMap();
+      m.initAddressForm(mapView);
     }],
     [/^\/event\/([1-9][0-9]*)\/note$/, function () {
       m.note_markdown();
     }],
 
     [/^\/address\/([1-9][0-9]*)$/, function () {
-      m.init_address_form("address-form");
-      $("#address-form textarea[name='postal']").focus();
+      var mapView = m.initMap();
+      m.initAddressForm(mapView);
     }],
     [/^\/address\/([1-9][0-9]*)\/note$/, function () {
       m.note_markdown();
@@ -1004,11 +777,11 @@ var m = {
       m.visibility();
     }],
     [/^\/organisation-tag\/([1-9][0-9]*)$/, function () {
-      m.init_orgtag_search("orgtag-form", "name");
+      m.init_orgtag_search("tag-form", "name");
       $("#orgtag-form input[name='name']").focus();
     }],
     [/^\/organisation-tag\/new$/, function () {
-      m.init_orgtag_search("orgtag-form", "name");
+      m.init_orgtag_search("tag-form", "name");
       $("#orgtag-form input[name='name']").focus();
     }],
     [/^\/organisation-tag\/([1-9][0-9]*)\/note$/, function () {
@@ -1021,11 +794,11 @@ var m = {
       m.visibility();
     }],
     [/^\/event-tag\/([1-9][0-9]*)$/, function () {
-      m.init_eventtag_search("eventtag-form", "name");
+      m.init_eventtag_search("tag-form", "name");
       $("#eventtag-form input[name='name']").focus();
     }],
     [/^\/event-tag\/new$/, function () {
-      m.init_eventtag_search("eventtag-form", "name");
+      m.init_eventtag_search("tag-form", "name");
       $("#eventtag-form input[name='name']").focus();
     }],
     [/^\/event-tag\/([1-9][0-9]*)\/note$/, function () {

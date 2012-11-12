@@ -29,8 +29,8 @@
        action="${url_rewrite("/organisation", parameters)}"
        method="get"
        >
-      <label name="lookup">
-	<input name="lookup" value="${lookup or ""}" placeholder="Eg. NW1">
+      <label name="location">
+	<input name="location" value="" placeholder="Eg. NW1">
       </label>
       <div class="actions">
         <input type="submit">
@@ -46,8 +46,8 @@
        action="${url_rewrite("/organisation", parameters)}"
        method="get"
        >
-      <label name="name_search">
-	<input name="name_search" value="${name_search or ""}" placeholder="Eg. BAE Systems">
+      <label name="nameSearch">
+	<input name="nameSearch" value="" placeholder="Eg. BAE Systems">
       </label>
       <div class="actions">
         <input type="submit">
@@ -65,8 +65,8 @@
        action="${url_rewrite("/event", parameters)}"
        method="get"
        >
-      <label name="lookup">
-	<input name="lookup" value="${lookup or ""}" placeholder="Eg. London">
+      <label name="location">
+	<input name="location" value="" placeholder="Eg. London">
       </label>
       <div class="actions">
         <input type="submit">

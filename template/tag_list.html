@@ -13,14 +13,16 @@
       <input name="search" value="${search or ''}">
     </label>
     ${self.mini.visibility_search_input(visibility, current_user)}
-    <input type="submit">
+    <div class="actions">
+      <input type="submit">
+    </div>
   </form>
-  <ul class="actions">
+  <div class="actions">
     <a
        class="action"
        href="${url_rewrite("/%s-tag/new" % type_url, parameters)}"
        >Create a tag</a>
-  </ul>
+  </div>
 </div>
 
 <ul id="tag_list" class="tag_list">
@@ -32,13 +34,5 @@
     visibility=True, parameters=parameters)}
   %endfor
 </ul>
-
-<script type="text/html" id="tag_li">\
-${mini.tag_li | n}\
-</script>
-
-<script type="text/html" id="visibility_bar">\
-${mini.visibility_bar | n}\
-</script>
 
 </%def>

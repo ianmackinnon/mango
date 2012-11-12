@@ -317,18 +317,11 @@
     return geobox.toText();
   };
 
-  var ukGeobox = new window.Geobox({
-    "south":49.829,
-    "north":58.988,
-    "west":-12.304,
-    "east":3.912
-  });
-
   window.OrgSearch = Backbone.Model.extend({
     // constructor, multiConstructor, compare, default, toString
     expectedParameters: {
       "nameSearch": [null, false, m.compareLowercase, "", null],
-      "location": [geoboxFactory, false, m.compareGeobox, ukGeobox, geoboxToString],
+      "location": [geoboxFactory, false, m.compareGeobox, m.ukGeobox, geoboxToString],
       "offset": [parseInt, false, null, 0, null],
       "tag": [m.argumentMulti, m.argumentMulti, m.compareUnsortedList, [], m.multiToString],
       "visibility": [m.argumentVisibility, false, null, "public", null]
@@ -662,7 +655,7 @@
         return;
       }
 
-      location = location || ukGeobox;
+      location = location || m.ukGeobox;
 
       var mapGeobox = this.mapView.getGeobox();
 

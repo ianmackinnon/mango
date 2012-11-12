@@ -358,7 +358,7 @@ class BaseHandler(tornado.web.RequestHandler):
     def get_argument_float(self, name, default=_ARG_DEFAULT_MANGO, json=False):
         return self.get_argument_restricted(
             name,
-            lambda value: int(value),
+            lambda value: float(value),
             "Value must be a floating point number",
             default,
             json)

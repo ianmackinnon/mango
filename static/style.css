@@ -34,6 +34,7 @@
     border: 1px solid #ccc;
     border-radius: 2px;
     padding: 2px 4px;
+    line-height: 22px;
 
     color: #333;
     background: #f8f8f8;
@@ -148,6 +149,7 @@ form.mango input[disabled="disabled"]
 
 #mango div.box.right
 {
+    width: 365px;
     float: right;
 }
 
@@ -356,13 +358,13 @@ form.mango input[type="checkbox"]
 {
     float: left;
 }
-#mango .action-bar form .actions
+#mango .action-bar .actions
 {
     margin: 0;
     float: right;
     text-align: right;
     width: 80px;
-    padding: 0 0px;
+    padding: 0 2px;
     line-height: 26px;
 }
 
@@ -415,7 +417,7 @@ form.mango input[type="checkbox"]
     float: right;
     margin: auto;
     text-align: right;
-    line-height: 22px;
+    line-height: 26px;
 }
 #mango ul.pageList
 {
@@ -692,6 +694,16 @@ form.mango input[type="checkbox"]
 {
     text-decoration: underline;
 }
+#mango #tag-search
+{
+    float: left;
+    width: 350px;
+}
+#mango #tag-search input[name='search']
+{
+    width: 200px;
+}
+
 #mango .has-notes
 {
     background: #fff;
