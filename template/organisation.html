@@ -26,6 +26,7 @@
     
     %if current_user:
     <form
+       class="mango"
        action="${url_rewrite(obj and obj["url"] or '/organisation', parameters)}"
        method="post"
        >
@@ -48,6 +49,7 @@
     %if obj:
     %if current_user:
     <form
+       class="mango"
        action="${url_rewrite(obj["url"], parameters)}"
        method="post"
        >

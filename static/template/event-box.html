@@ -1,0 +1,46 @@
+<%= m.template("visibility-bar.html", {obj: event}) %>
+
+<div class="event_name">
+  <a
+     href="<%= m.url_rewrite(event["url"], parameters) %>"
+     ><%=m.filter.h(event["name"])%></a>
+</div>
+
+<div class="event_name">
+  <span class="start_date"><%= m.filter.pageDate(event["start_date"]) %></span>
+  <% if (event["start_time"]) { %>
+  <span class="time"><%= event["start_time"] %></span>
+  <% } %>
+  -
+  <% if (event["end_date"] != event["start_date"]) { %>
+  <span class="end_date"><%= m.filter.pageDate(event["start_date"]) %></span>
+  <% } %>
+  <% if (event["end_time"]) { %>
+  <span class="time"><%= event["end_time"] %></span>
+  <% } %>
+</div>
+
+<% if (tag && event.tag_list) { %>
+<ul class="tag_list">
+  <% for (t in event["tag_list"]) { %>
+  <% var tag = event["tag_list"][t]; %>
+  <li class="eventtag">
+    <a
+       href="<%= m.url_rewrite(tag["url"], parameters) %>"
+       ><%=m.filter.h(tag["name"])%></a>
+  </li>
+  <% } %>
+</ul>
+<% } %>
+
+<div class="event_address_list">
+</div>
+
+<div class="address-row">
+</div>
+
+<% if (note && event.note_list) { %>
+<div class="note_len">
+  <%=event["note_list"].length%>
+</div>
+<% } %>

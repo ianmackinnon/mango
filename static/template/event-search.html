@@ -1,0 +1,37 @@
+<h3>Filter</h3>
+<%= m.template("visibility-search-input.html", {
+    visibility: eventSearch.visibility,
+    currentUser: currentUser
+    }) %>
+<input type="hidden" name="offset" value="<%= eventSearch.offset || "" %>">
+<div class="inputs">
+  <label name="nameSearch">
+    <span>Name</span>
+    <input
+       name="nameSearch"
+       value="<%= eventSearch.nameSearch || "" %>"
+       placeholder="Eg. BAE Systems">
+  </label>
+  <label name="location">
+    <span>Location</span>
+    <input
+       name="location"
+       value="<%= eventSearch.location ? eventSearch.location.toText() : "" %>"
+       placeholder="Eg. NW1">
+  </label>
+  <label name="past">
+    <span>Show past</span>
+    <input type="checkbox" name="past" value="1"<%=eventSearch.past ? ' checked="checked"' : ''%>>
+  </label>
+  <label name="tag">
+    <span>Tags</span>
+    <input
+       name="tag"
+       value="<%= eventSearch.tag || "" %>"
+       placeholder="Eg. missiles, tanks">
+  </label>
+</div>
+<div class="actions">
+  <input type="submit">
+</div>
+

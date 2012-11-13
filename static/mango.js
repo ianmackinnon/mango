@@ -236,7 +236,6 @@ var m = {
     });
     orgCollection.fetch({
       success: function(collection, response) {
-        console.log("success");
         orgCollectionView.initialize();
         orgCollectionView.render();
       },
@@ -279,6 +278,27 @@ var m = {
     window.orgSearch = orgSearch;
 
     return orgSearch;
+  },
+
+  initEventSearch: function (mapView) {
+    var eventSearch = new window.EventSearch();
+    var eventSearchView = new window.EventSearchView({
+      model: eventSearch,
+      $form: $("#event-search"),
+      $results: $("#event_list").find(".column"),
+      $paging: $("#event_list").find(".counts"),
+      mapView: mapView
+    });
+    $("#event-search").replaceWith(eventSearchView.$el);
+    eventSearchView.send();
+    
+    if (window.History.enabled) {
+      History.Adapter.bind(window, "statechange", eventSearchView.popstate);
+    }
+    
+    window.eventSearch = eventSearch;
+
+    return eventSearch;
   },
 
   "ajaxError": function (jqXHR, textStatus, errorThrown) {
@@ -735,7 +755,7 @@ var m = {
     }],
     [/^\/event$/, function () {
       var mapView = m.initMap();
-      //m.initEventSearch(mapView);
+      m.initEventSearch(mapView);
       m.visibility();
     }],
     [/^\/task\/address$/, function () {
@@ -743,6 +763,7 @@ var m = {
       m.initOrgSearch(mapView);
       m.visibility();
     }],
+
     [/^\/organisation\/([1-9][0-9]*)$/, function () {
       var mapView = m.initMap();
       m.initOrg(mapView);
@@ -756,8 +777,7 @@ var m = {
     }],
     [/^\/event\/([1-9][0-9]*)$/, function () {
       var mapView = m.initMap();
-      // m.initEvent(mapView);
-      m.visibility();
+      m.initEvent(mapView);
     }],
     [/^\/event\/([1-9][0-9]*)\/address$/, function () {
       var mapView = m.initMap();

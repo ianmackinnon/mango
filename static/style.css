@@ -523,27 +523,34 @@ form.mango input[type="checkbox"]
 
 
 
-#org-search .inputs
+#org-search .inputs,
+#event-search .inputs
 {
     width: 593px;
 }
 #org-search input[type="text"],
-#org-search input:not([type])
+#org-search input:not([type]),
+#event-search input[type="text"],
+#event-search input:not([type])
 {
     width: 180px;
 }
+#event-search label[name="tag"],
 #org-search label[name="tag"]
 {
     display: inline-block;
     width: 585px; /* -4 * 2 */
 }
 #org-search .inputs > label[name="tag"] > span,
-#org-search .inputs > label[name="nameSearch"] > span
+#org-search .inputs > label[name="nameSearch"] > span,
+#event-search .inputs > label[name="tag"] > span,
+#event-search .inputs > label[name="nameSearch"] > span
 {
     display: inline-block;
     width: 40px;
 }
-#org-search label[name="tag"] ul
+#org-search label[name="tag"] ul,
+#event-search label[name="tag"] ul
 {
     display: inline-block;
     margin: 2px 0;
@@ -554,11 +561,13 @@ form.mango input[type="checkbox"]
     vertical-align: bottom;
     border-radius: 2px;
 }
-#org-search label[name="tag"] li
+#org-search label[name="tag"] li,
+#event-search label[name="tag"] li
 {
     margin: 0;
 }
-#org-search label[name="tag"] li.tagit-new
+#org-search label[name="tag"] li.tagit-new,
+#event-search label[name="tag"] li.tagit-new
 {
     padding: 0;
     border: 0;
@@ -566,15 +575,18 @@ form.mango input[type="checkbox"]
     line-height: 18px;
 }
 
-#org-search label[name="tag"] input
+#org-search label[name="tag"] input,
+#event-search label[name="tag"] input
 {
     width: 524px;
 }
-#org-search label[name="tag"] li.tagit-new input
+#org-search label[name="tag"] li.tagit-new input,
+#event-search label[name="tag"] li.tagit-new input
 {
     width: 146px;
 }
-#mango #org-search label[name="tag"] li.tagit-new input
+#mango #org-search label[name="tag"] li.tagit-new input,
+#mango #event-search label[name="tag"] li.tagit-new input
 {
     margin: 1px 0;
     border: 0;

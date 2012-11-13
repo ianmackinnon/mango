@@ -1,5 +1,5 @@
 <%= m.template("visibility-bar.html", {obj: org}) %>
-  
+
 <div class="org_name">
   <a
      href="<%= m.url_rewrite(org["url"], parameters) %>"
@@ -8,28 +8,28 @@
   (<%=org.alias%>)
   <% } %>
 </div>
- 
-  <% if (tag && org.tag_list) { %>
-  <ul class="tag_list">
-    <% for (t in org["tag_list"]) { %>
-    <% var tag = org["tag_list"][t]; %>
-    <li class="orgtag">
-      <a
-         href="<%= m.url_rewrite(tag["url"], parameters) %>"
-         ><%=m.filter.h(tag["name"])%></a>
-    </li>
-    <% } %>
-  </ul>
+
+<% if (tag && org.tag_list) { %>
+<ul class="tag_list">
+  <% for (t in org["tag_list"]) { %>
+  <% var tag = org["tag_list"][t]; %>
+  <li class="orgtag">
+    <a
+       href="<%= m.url_rewrite(tag["url"], parameters) %>"
+       ><%=m.filter.h(tag["name"])%></a>
+  </li>
   <% } %>
+</ul>
+<% } %>
 
-  <div class="org_address_list">
-  </div>
+<div class="org_address_list">
+</div>
 
-  <div class="address-row">
-  </div>
+<div class="address-row">
+</div>
 
-  <% if (note && org.note_list) { %>
-  <div class="note_len">
-    <%=org["note_list"].length%>
-  </div>
-  <% } %>
+<% if (note && org.note_list) { %>
+<div class="note_len">
+  <%=org["note_list"].length%>
+</div>
+<% } %>

@@ -17,7 +17,7 @@ Mapping Application for NGOs
 Download jQuery and jQuery-UI including at least the modules:
 
 -   Autocomplete
--   Blind
+-   Date Picker
 
 Expand and link
     

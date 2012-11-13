@@ -14,7 +14,10 @@
     <div class="inputs">
       <label name="nameSearch">
         <span>Name</span>
-        <input name="nameSearch" value="${name_search or ""}" placeholder="Eg. BAE Systems">
+        <input
+           name="nameSearch"
+           value="${name_search or ""}"
+           placeholder="Eg. BAE Systems">
       </label>
       <label name="location">
         <span>Location</span>
@@ -39,7 +42,7 @@ if location:
         <input
            name="tag"
            value="${tag_name_list and ", ".join([short for short in tag_name_list]) or ""}"
-           placeholder="Eg. missiles, tanks">
+           placeholder="Eg. vigil, march">
       </label>
     </div>
     <div class="actions">

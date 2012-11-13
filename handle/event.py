@@ -3,17 +3,26 @@
 import json
 import datetime
 
+from collections import OrderedDict
+
+from sqlalchemy import distinct, or_, and_
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.orm import joinedload
-from sqlalchemy.sql import exists
+from sqlalchemy.orm import joinedload, aliased
+from sqlalchemy.sql import exists, func, literal
+from sqlalchemy.sql.expression import case
 from tornado.web import HTTPError
 
-from base import BaseHandler, authenticated
+from base import BaseHandler, authenticated, sha1_concat
 from note import BaseNoteHandler
 from eventtag import BaseEventtagHandler
 from address import BaseAddressHandler
 
 from model import Event, Note, Address, Eventtag, event_eventtag, event_address
+
+
+
+max_address_per_page = 26
+max_address_pages = 3
 
 
 
@@ -39,128 +48,170 @@ class BaseEventHandler(BaseHandler):
 
         return event
 
-    def _get_event_list_search(self, name=None, name_search=None,
-                             tag_name_list=None, past=False, visibility=None,
-                             address_list_name=None, geo=True, address=True, limit=10, offset=0):
-        event_list = self.orm.query(Event)
+    def _get_event_packet_search(self, name=None, name_search=None,
+                                 past=False,
+                                 tag_name_list=None,
+                                 location=None,
+                                 visibility=None,
+                                 offset=None):
+        event_query = self.orm.query(Event)
 
-        if not past:
-            today = datetime.datetime.now().date()
-            event_list = event_list.filter(Event.start_date >= today)
+        date_start = None
+        date_end = None
+        today = datetime.datetime.today().date()
+        if past:
+            date_start = today
+        else:
+            date_end = today
 
-        event_list = self.filter_visibility(event_list, Event, visibility)
+        if date_start:
+            event_query = event_query.filter(Event.start_date >= date_start)
+        if date_end:
+            event_query = event_query.filter(Event.end_date <= date_end)
+
+        event_query = self.filter_visibility(event_query, Event, visibility)
 
         if name:
-            event_list = event_list.filter_by(name=name)
+            event_query = event_query.filter_by(name=name)
         elif name_search:
-            event_list = event_list\
+            event_query = event_query\
                 .filter(Event.name.contains(name_search))
 
         if tag_name_list:
-            event_list = event_list.join((Eventtag, Event.eventtag_list)) \
+            event_query = event_query.join((Eventtag, Event.eventtag_list)) \
                 .filter(Eventtag.short.in_(tag_name_list))
 
-        if address:
-            assert address_list_name in [
-                "address_list",
-                "address_list_public",
-                ]
-            
-            event_list = event_list \
-                .outerjoin((Address, getattr(Event, address_list_name))) \
-                .options(joinedload(address_list_name))
-        else:
-            event_list = event_list \
-                .filter(~exists().where(event_address.c.event_id == Event.event_id))
+        event_address_query = event_query \
+            .join(Event.address_list) \
+            .add_entity(Address)
+        event_address_query = self.filter_visibility(
+            event_address_query, Address, visibility, secondary=True)
 
-        geobox = None
-        latlon = None
-        if address and geo and self.has_geo_arguments():
-            event_list, geobox, latlon = self.filter_geo(event_list, limit)
-            event_list = event_list.all()
-            event_count = len(event_list)
-        else:
-            if name_search:
-                event_list = event_list \
-                    .order_by(Event.name.startswith(name_search).desc(),
-                              Event.start_date, Event.start_time)
-            else:
-                event_list = event_list.order_by(Event.start_date,
-                                                 Event.start_time)
-            event_count = self.orm.query(
-                event_list.subquery().c.event_id.distinct()).count()
-            if offset:
-                event_list = event_list.offset(offset);
-            if limit:
-                event_list = event_list.limit(limit)
-            event_list = event_list.all()
+        if location:
+            event_address_query = event_address_query \
+                .filter(and_(
+                    Address.latitude != None,
+                    Address.latitude >= location.south,
+                    Address.latitude <= location.north,
+                    Address.longitude != None,
+                    Address.longitude >= location.west,
+                    Address.longitude <= location.east,
+                    ))
 
-        return event_list, event_count, geobox, latlon
-    
+        if past:
+            event_address_query = event_address_query \
+                .order_by(Event.start_date.asc())
+        else:
+            event_address_query = event_address_query \
+                .order_by(Event.end_date.desc())
+
+        if offset:
+            event_address_query = event_address_query \
+                .offset(offset)
+
+        event_packet = {
+            "location": location and location.to_obj(),
+            }
+
+        if (event_address_query.count() > max_address_per_page * max_address_pages):
+            event_packet["marker_list"] = []
+            for event, address in event_address_query:
+                event_packet["marker_list"].append({
+                        "name": event.name,
+                        "url": event.url,
+                        "latitude": address.latitude,
+                        "longitude": address.longitude,
+                        })
+        else:
+            events = OrderedDict()
+            for event, address in event_address_query:
+                if not event.event_id in events:
+                    events[event.event_id] = {
+                        "event": event,
+                        "address_obj_list": [],
+                        }
+                events[event.event_id]["address_obj_list"].append(address.obj(
+                        public=bool(self.current_user)
+                        ))
+
+            event_packet["event_list"] = []
+            for event_id, data in events.items():
+                event_packet["event_list"].append(data["event"].obj(
+                        public=bool(self.current_user),
+                        address_obj_list=data["address_obj_list"],
+                        ))
+
+        return event_packet
+        
 
 
 class EventListHandler(BaseEventHandler, BaseEventtagHandler):
+    @staticmethod
+    def _cache_key(name_search, past, tag_name_list, visibility):
+        if not visibility:
+            visibility = "public"
+        return sha1_concat(json.dumps({
+                "nameSearch": name_search,
+                "past": past,
+                "tag": tuple(set(tag_name_list)),
+                "visibility": visibility,
+                }))
+    
     def get(self):
         is_json = self.content_type("application/json")
         name = self.get_argument("name", None, json=is_json)
         name_search = self.get_argument("name_search", None, json=is_json)
         past = self.get_argument_bool("past", None, json=is_json)
         tag_name_list = self.get_arguments("tag", json=is_json)
+        location = self.get_argument_geobox("location", None, json=is_json)
         offset = self.get_argument_int("offset", None, json=is_json)
 
-        if self.deep_visible():
-            address_list_name = "address_list"
-        else:
-            address_list_name = "address_list_public"
+        if self.has_javascript and not self.accept_type("json"):
+            self.render(
+                'event_list.html',
+                name=name,
+                name_search=name_search,
+                past=past,
+                tag_name_list=tag_name_list,
+                location=location and location.to_obj(),
+                offset=offset,
+                )
+            return;
 
-        event_list, event_count, geobox, latlon = self._get_event_list_search(
+        cache_key = None
+        if self.accept_type("json") and not location and not offset:
+            cache_key = self._cache_key(name_search, past, tag_name_list,
+                                        self.parameters["visibility"])
+            value = self.cache.get(cache_key)
+            if value:
+                self.write(value)
+                self.finish()
+                return
+
+        event_packet = self._get_event_packet_search(
             name=name,
             name_search=name_search,
             tag_name_list=tag_name_list,
-            past=past,
+            location=location,
             visibility=self.parameters["visibility"],
-            address_list_name=address_list_name,
             offset=offset,
             )
 
-        if self.has_geo_arguments():
-            offset = None
-
-        event_packet = {
-            "event_list": [],
-            "event_count": event_count,
-            "geobox": geobox,
-            "latlon": latlon,
-            }
-
-        if offset is not None:
-            event_packet["offset"] = offset
-
-        for event in event_list:
-            if self.deep_visible():
-                address_list = event.address_list
-            else:
-                address_list = event.address_list_public
-            address_list = [address.obj(public=bool(self.current_user)) \
-                                for address in address_list]
-            obj = event.obj(
-                public=bool(self.current_user),
-                address_obj_list=address_list,
-                )
-            event_packet["event_list"].append(obj);
+        if cache_key:
+            self.cache.set(cache_key, json.dumps(event_packet))
 
         if self.accept_type("json"):
             self.write_json(event_packet)
         else:
-            full_eventtag_list = BaseEventtagHandler._get_full_eventtag_list(self)
             self.render(
                 'event_list.html',
                 event_packet=event_packet,
+                name=name,
                 name_search=name_search,
-                tag_name_list=tag_name_list,
-                lookup=self.lookup,
                 past=past,
-                eventtag_list_json=json.dumps(full_eventtag_list),
+                tag_name_list=tag_name_list,
+                location=location and location.to_obj(),
+                offset=offset,
                 )
 
     def post(self):

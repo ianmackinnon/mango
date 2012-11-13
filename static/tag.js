@@ -4,11 +4,9 @@
 
 (function ($) {
 
-  // Orgtag
+  // Tag
 
-  window.Orgtag = Backbone.Model.extend({
-    urlRoot: m.urlRoot + "organisation-tag",
-
+  window.Tag = Backbone.Model.extend({
     toAutocomplete: function () {
       return {
         value: this.get("short"),
@@ -17,9 +15,22 @@
     }
   });
 
+  window.Orgtag = window.Tag.extend({
+    urlRoot: m.urlRoot + "organisation-tag",
+  });
+
+  window.Eventtag = window.Tag.extend({
+    urlRoot: m.urlRoot + "event-tag",
+  });
+
   window.OrgtagCollection = Backbone.Collection.extend({
     url: m.urlRoot + "organisation-tag",
     model: window.Orgtag
+  });
+
+  window.EventtagCollection = Backbone.Collection.extend({
+    url: m.urlRoot + "event-tag",
+    model: window.Eventtag
   });
 
 }(jQuery));

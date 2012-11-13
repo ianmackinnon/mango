@@ -46,7 +46,6 @@ class BaseOrgHandler(BaseHandler):
             raise HTTPError(404, "%d: No such org" % org_id)
 
         return org
-
     
     def _get_name_search_query(self, name=None, name_search=None,
                                visibility=None):
@@ -127,8 +126,9 @@ class BaseOrgHandler(BaseHandler):
 
 
     def _get_org_packet_search(self, name=None, name_search=None,
-                        tag_name_list=None, location=None,
-                        visibility=None, offset=None):
+                               tag_name_list=None, location=None,
+                               visibility=None,
+                               offset=None):
 
         org_alias_query = self._get_org_alias_search_query(
             name=name,
