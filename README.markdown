@@ -42,9 +42,7 @@ Expand and link
     ln -sf ../../vendor/jquery-ui-${jquiv}.custom/js/jquery-ui-${jquiv}.custom.min.js jquery-ui.min.js
     ln -sf ../../vendor/jquery-ui-${jquiv}.custom/js/jquery-ui-${jquiv}.custom.js jquery-ui.js
     ln -sf ../../vendor/jquery-ui-${jquiv}.custom/css/*/jquery-ui-${jquiv}.custom.css jquery-ui.css
-    popd
-    pushd image
-    ln -sf ../../vendor/jquery-ui-${jquiv}.custom/css/*/images jquery-ui
+    ln -sf ../../vendor/jquery-ui-${jquiv}.custom/css/*/images images
     popd
     popd
     
