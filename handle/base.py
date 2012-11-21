@@ -10,6 +10,7 @@ import tornado.web
 
 from urllib import urlencode
 from bs4 import BeautifulSoup
+from sqlalchemy import or_, not_
 from sqlalchemy.orm.exc import NoResultFound
 from mako import exceptions
 
@@ -549,21 +550,27 @@ class BaseHandler(tornado.web.RequestHandler):
         geobox = dict(zip(["latmin", "latmax", "lonmin", "lonmax"], values))
         return Address.filter_geobox(address_list, geobox), geobox, latlon
 
-    def filter_visibility(self, query, Entity, visibility=None, secondary=False):
+    def filter_visibility(self, query, Entity, visibility=None,
+                          secondary=False, null_column=False):
         if secondary:
             if visibility in ["pending", "private"]:
                 visibility = "all"
+        filter_args = []
+        if null_column:
+            filter_args.append(null_column==None)
         if self.current_user and visibility:
             if visibility == "pending":
-                query = query.filter(Entity.public==None)
+                filter_args.append(Entity.public==None)
             elif visibility == "all":
-                query = query
+                filter_args = []
             elif visibility == "private":
-                query = query.filter(Entity.public==False)
+                filter_args.append(Entity.public==False)
             else:
-                query = query.filter(Entity.public==True)
+                filter_args.append(Entity.public==True)
         else:
-            query = query.filter(Entity.public==True)
+            filter_args.append(Entity.public==True)
+        if filter_args:
+            return query.filter(or_(*filter_args))
         return query
 
     def set_parameters(self):

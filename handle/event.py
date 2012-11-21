@@ -81,11 +81,18 @@ class BaseEventHandler(BaseHandler):
             event_query = event_query.join((Eventtag, Event.eventtag_list)) \
                 .filter(Eventtag.short.in_(tag_name_list))
 
-        event_address_query = event_query \
-            .join(Event.address_list) \
+        if location:
+            event_address_query = event_query \
+                .join(Event.address_list)
+        else:
+            event_address_query = event_query \
+                .outerjoin(Event.address_list)
+            
+        event_address_query = event_address_query \
             .add_entity(Address)
         event_address_query = self.filter_visibility(
-            event_address_query, Address, visibility, secondary=True)
+            event_address_query, Address, visibility,
+            secondary=True, null_column=Address.address_id)
 
         if location:
             event_address_query = event_address_query \
@@ -119,8 +126,8 @@ class BaseEventHandler(BaseHandler):
                 event_packet["marker_list"].append({
                         "name": event.name,
                         "url": event.url,
-                        "latitude": address.latitude,
-                        "longitude": address.longitude,
+                        "latitude": address and address.latitude,
+                        "longitude": address and address.longitude,
                         })
         else:
             events = OrderedDict()
@@ -130,9 +137,10 @@ class BaseEventHandler(BaseHandler):
                         "event": event,
                         "address_obj_list": [],
                         }
-                events[event.event_id]["address_obj_list"].append(address.obj(
-                        public=bool(self.current_user)
-                        ))
+                if address:
+                    events[event.event_id]["address_obj_list"].append(address.obj(
+                            public=bool(self.current_user)
+                            ))
 
             event_packet["event_list"] = []
             for event_id, data in events.items():

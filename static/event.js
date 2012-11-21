@@ -180,7 +180,6 @@
         event: this.model.toJSON(),
         m: m,
         parameters: m.parameters,
-        geobox: this.model.collection.geobox,
         note: false,
       }));
 
@@ -196,9 +195,9 @@
         if (addressCollectionView.$el.find(".address-row").length) {
           this.$el.find(".event_address_list")
             .replaceWith(addressCollectionView.$el);
-          return this;
         }
       }
+      return this;
     }
   });
 
@@ -255,7 +254,6 @@
             mapView: view.mapView
           }));
         });
-        
       } else if (this.collection.addressLength() > view.limit * 3) {
         // Just dots if there are more than 3 pages
         view.many = true;

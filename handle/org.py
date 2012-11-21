@@ -137,11 +137,19 @@ class BaseOrgHandler(BaseHandler):
             visibility=visibility,
             )
 
-        org_alias_address_query = org_alias_query \
-            .join(Org.address_list) \
+        if location:
+            org_alias_address_query = org_alias_query \
+                .join(Org.address_list)
+        else:
+            org_alias_address_query = org_alias_query \
+                .outerjoin(Org.address_list)
+            
+
+        org_alias_address_query = org_alias_address_query \
             .add_entity(Address)
         org_alias_address_query = self.filter_visibility(
-            org_alias_address_query, Address, visibility, secondary=True)
+            org_alias_address_query, Address, visibility,
+            secondary=True, null_column=Address.address_id)
 
         if location:
             org_alias_address_query = org_alias_address_query \
@@ -168,8 +176,8 @@ class BaseOrgHandler(BaseHandler):
                 org_packet["marker_list"].append({
                         "name": org.name,
                         "url": org.url,
-                        "latitude": address.latitude,
-                        "longitude": address.longitude,
+                        "latitude": address and address.latitude,
+                        "longitude": address and address.longitude,
                         })
         else:
             orgs = OrderedDict()
@@ -180,9 +188,10 @@ class BaseOrgHandler(BaseHandler):
                         "alias": alias and alias.name,
                         "address_obj_list": [],
                         }
-                orgs[org.org_id]["address_obj_list"].append(address.obj(
-                        public=bool(self.current_user)
-                        ))
+                if address:
+                    orgs[org.org_id]["address_obj_list"].append(address.obj(
+                            public=bool(self.current_user)
+                            ))
 
             org_packet["org_list"] = []
             for org_id, data in orgs.items():

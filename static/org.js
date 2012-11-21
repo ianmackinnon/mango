@@ -180,7 +180,6 @@
         org: this.model.toJSON(),
         m: m,
         parameters: m.parameters,
-        geobox: this.model.collection.geobox,
         note: false,
       }));
 
@@ -196,9 +195,9 @@
         if (addressCollectionView.$el.find(".address-row").length) {
           this.$el.find(".org_address_list")
             .replaceWith(addressCollectionView.$el);
-          return this;
         }
       }
+      return this;
     }
   });
 
