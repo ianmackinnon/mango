@@ -60,9 +60,9 @@ class BaseEventHandler(BaseHandler):
         date_end = None
         today = datetime.datetime.today().date()
         if past:
-            date_start = today
-        else:
             date_end = today
+        else:
+            date_start = today
 
         if date_start:
             event_query = event_query.filter(Event.start_date >= date_start)
@@ -100,10 +100,10 @@ class BaseEventHandler(BaseHandler):
 
         if past:
             event_address_query = event_address_query \
-                .order_by(Event.start_date.asc())
+                .order_by(Event.start_date.desc())
         else:
             event_address_query = event_address_query \
-                .order_by(Event.end_date.desc())
+                .order_by(Event.end_date.asc())
 
         if offset:
             event_address_query = event_address_query \
@@ -191,6 +191,7 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler):
         event_packet = self._get_event_packet_search(
             name=name,
             name_search=name_search,
+            past=past,
             tag_name_list=tag_name_list,
             location=location,
             visibility=self.parameters["visibility"],
@@ -314,8 +315,6 @@ class EventHandler(BaseEventHandler):
         start_time = self.get_argument_time("start_time", None, json=is_json)
         end_time = self.get_argument_time("end_time", None, json=is_json)
         public = self.get_argument_public("public", json=is_json)
-
-        print start_time
 
         if event.name == name and \
                 event.start_date == start_date and \

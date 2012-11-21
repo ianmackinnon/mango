@@ -77,8 +77,6 @@
         window.document.location.href=href;
       };
 
-      console.log(this.model.collection);
-
       view.mapView.addDot(
         this.model.get("latitude"),
         this.model.get("longitude"),
@@ -324,7 +322,7 @@
     expectedParameters: {
       "nameSearch": [null, false, m.compareLowercase, "", null],
       "location": [geoboxFactory, false, m.compareGeobox, m.ukGeobox, geoboxToString],
-      "past": [parseInt, false, null, 0, null],
+      "past": [m.argumentCheckbox, false, null, 0, m.checkboxToString],
       "offset": [parseInt, false, null, 0, null],
       "tag": [m.argumentMulti, m.argumentMulti, m.compareUnsortedList, [], m.multiToString],
       "visibility": [m.argumentVisibility, false, null, "public", null]
@@ -528,17 +526,22 @@
 
       var params = [];
       _.each(data, function(value, key) {
-        var defaultValue = model.expectedParameters[key][3];
-        var toString = model.expectedParameters[key][4];
+        var defaultValue;
+        var toString;
         
         if (!_.has(model.expectedParameters, key)) {
           return;
         }
+        defaultValue = model.expectedParameters[key][3];
+        toString = model.expectedParameters[key][4];
         if (value === null) {
           return;
         }
         if (!!toString) {
           value = toString(value);
+        }
+        if (value === null) {
+          return;
         }
         params.push(encodeURIComponent(key) + "=" + encodeURIComponent(value));
       });
@@ -581,7 +584,6 @@
           data[key] = value;
         }
       });
-      
       return data;
     }
   });
@@ -629,6 +631,16 @@
       this.setMapLocation(location);
     },
 
+    changePast: function () {
+      var past = this.model.get("past");
+      var pastVal = !!past;
+      var $input = this.$el.find("input[name='past']");
+
+      if ($input.prop('checked') !== pastVal) {
+        $input.prop('checked', pastVal);
+      }
+    },
+
     changeTag: function () {
       var value = this.model.get("tag");
       var text = value && value.toString() || "";
@@ -646,7 +658,6 @@
           data.tagit.createTag(tagName);
         });
       }
-
     },
 
     changeVisibility: function () {
@@ -682,6 +693,7 @@
         "render",
         "changeNameSearch",
         "changeLocation",
+        "changePast",
         "changeTag",
         "changeOffset",
         "changeVisibility",
@@ -690,6 +702,7 @@
       );
       this.model.bind("change:nameSearch", this.changeNameSearch);
       this.model.bind("change:location", this.changeLocation);
+      this.model.bind("change:past", this.changePast);
       this.model.bind("change:tag", this.changeTag);
       this.model.bind("change:offset", this.changeOffset);
       this.model.bind("change:visibility", this.changeVisibility);
@@ -840,13 +853,17 @@
         $el = this.$el;
       }
       var arr = $el.serializeArray();
-      return _(arr).reduce(function (acc, field) {
+      var data = _(arr).reduce(function (acc, field) {
         acc[field.name] = field.value;
         if (!field.value) {
           acc[field.name] = null;
         }
         return acc;
       }, {});
+      if (!data.hasOwnProperty("past")) {
+        data["past"] = false;
+      }
+      return data;
     },
 
     send: function (cache) {

@@ -605,6 +605,18 @@ var m = {
 
   },
 
+  argumentCheckbox: function(value) {
+    if (value === true || value === false) {
+      return value;
+    }
+    return !!parseInt(value);
+  },
+
+  checkboxToString: function(value) {
+    value = m.argumentCheckbox(value);
+    return value && "1" || null;
+  },
+
   argumentMulti: function(valueNew, valueOld) {
     var collection = valueOld ? _.clone(valueOld) : [];
     if (!valueNew) {
