@@ -36,6 +36,7 @@
     
     %if current_user:
     <form
+       class="mango"
        action="${url_rewrite(obj and obj["url"] or '/event', parameters)}"
        method="post"
        >
@@ -110,6 +111,7 @@
 
     %if obj:
     <form
+       class="mango"
        action="${url_rewrite(obj["url"], parameters)}"
        method="post"
        >

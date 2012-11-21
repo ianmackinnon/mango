@@ -160,7 +160,7 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler):
     def get(self):
         is_json = self.content_type("application/json")
         name = self.get_argument("name", None, json=is_json)
-        name_search = self.get_argument("name_search", None, json=is_json)
+        name_search = self.get_argument("nameSearch", None, json=is_json)
         past = self.get_argument_bool("past", None, json=is_json)
         tag_name_list = self.get_arguments("tag", json=is_json)
         location = self.get_argument_geobox("location", None, json=is_json)
