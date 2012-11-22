@@ -384,7 +384,8 @@
       m.log.debug("s2", _.clone(attributes));
 
       _.each(attributes, function(value, key) {
-        if (model.get(key) === undefined || model.get(key) === null) {
+        var c;
+        if (model.get(key) === undefined) {
           return;
         }
         var comparison = model.expectedParameters[key][2];
@@ -437,6 +438,25 @@
 
       return Backbone.Model.prototype.set.call(this, attributes, options);
     },
+
+    testStateChange: function(modelData) {
+      var queryString = this.toQueryString(modelData);
+      queryString = queryString ? "?" + queryString : "";
+      
+      if (m.searchString() != queryString) {
+        var url = m.urlRoot + "organisation";
+        url += queryString;
+        m.log.debug("pushState", queryString);
+        if (window.History.enabled) {
+          window.History.pushState(null, null, url);
+        }
+      }
+    },
+
+    isBig: function (geobox) {
+      geobox = geobox || this.get("location");
+      return !!geobox && geobox.area() > 500000;  // Km
+    },
     
     save: function (callback, cache) {
       if (cache === undefined) {
@@ -451,7 +471,7 @@
         offset: null,
       });
 
-      if (sendData.location && sendData.location.area > 50000) {  // Km
+      if (this.isBig(sendData.location)) {
         sendData.location = null;  // Avoid large area searches.
       }
 
@@ -463,6 +483,7 @@
 
       if (cache) {
         if (JSON.stringify(sendData) == JSON.stringify(model.lastRequest)) {
+          model.testStateChange(modelData);
           callback(model.lastResult);
           return;
         }
@@ -479,17 +500,7 @@
         data: sendData,
         success: function (collection, response) {
           // Only add successful page loads to history.
-          var queryString = model.toQueryString(modelData);
-          queryString = queryString ? "?" + queryString : "";
-
-          if (window.location.search != queryString) {
-            var url = m.urlRoot + "event";
-            url += queryString;
-            m.log.debug("pushState", queryString);
-            if (window.History.enabled) {
-              window.History.pushState(null, null, url);
-            }
-          }
+          model.testStateChange(modelData);
 
           if (!!callback) {
             model.lastResult = collection;
@@ -548,7 +559,7 @@
     },
 
     attributesFromQueryString: function (query) {
-      query = query || window.location.search;
+      query = query || m.searchString();
 
       var model = this;
 
@@ -582,6 +593,7 @@
           data[key] = value;
         }
       });
+      
       return data;
     }
   });
@@ -656,6 +668,7 @@
           data.tagit.createTag(tagName);
         });
       }
+
     },
 
     changeVisibility: function () {
@@ -709,8 +722,6 @@
       this.$results = this.options.$results;
       this.$paging = this.options.$paging;
       this.mapView = this.options.mapView;
-
-      this.$results.css("background", "red");
 
       var data = this.serializeForm(this.options.$form);
       m.log.debug("set serializeForm", data);
@@ -977,12 +988,7 @@
     },
 
     popstate: function () {
-      var State = History.getState();
-      var search = "";
-      var index = State.url.indexOf("?");
-      if (index >= 0) {
-        search = State.url.substr(index);
-      }
+      var search = m.searchString();
       var data = {};
       data = _.extend(data, this.model.defaultParameters());
       data = _.extend(data, this.model.attributesFromQueryString(search));

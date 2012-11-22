@@ -254,7 +254,6 @@
             mapView: view.mapView
           }));
         });
-        
       } else if (this.collection.addressLength() > view.limit * 3) {
         // Just dots if there are more than 3 pages
         view.many = true;
@@ -384,7 +383,8 @@
       m.log.debug("s2", _.clone(attributes));
 
       _.each(attributes, function(value, key) {
-        if (model.get(key) === undefined || model.get(key) === null) {
+        var c;
+        if (model.get(key) === undefined) {
           return;
         }
         var comparison = model.expectedParameters[key][2];
@@ -437,6 +437,25 @@
 
       return Backbone.Model.prototype.set.call(this, attributes, options);
     },
+
+    testStateChange: function(modelData) {
+      var queryString = this.toQueryString(modelData);
+      queryString = queryString ? "?" + queryString : "";
+      
+      if (m.searchString() != queryString) {
+        var url = m.urlRoot + "organisation";
+        url += queryString;
+        m.log.debug("pushState", queryString);
+        if (window.History.enabled) {
+          window.History.pushState(null, null, url);
+        }
+      }
+    },
+
+    isBig: function (geobox) {
+      geobox = geobox || this.get("location");
+      return !!geobox && geobox.area() > 500000;  // Km
+    },
     
     save: function (callback, cache) {
       if (cache === undefined) {
@@ -451,7 +470,7 @@
         offset: null,
       });
 
-      if (sendData.location && sendData.location.area > 50000) {  // Km
+      if (this.isBig(sendData.location)) {
         sendData.location = null;  // Avoid large area searches.
       }
 
@@ -463,6 +482,7 @@
 
       if (cache) {
         if (JSON.stringify(sendData) == JSON.stringify(model.lastRequest)) {
+          model.testStateChange(modelData);
           callback(model.lastResult);
           return;
         }
@@ -479,17 +499,7 @@
         data: sendData,
         success: function (collection, response) {
           // Only add successful page loads to history.
-          var queryString = model.toQueryString(modelData);
-          queryString = queryString ? "?" + queryString : "";
-
-          if (window.location.search != queryString) {
-            var url = m.urlRoot + "organisation";
-            url += queryString;
-            m.log.debug("pushState", queryString);
-            if (window.History.enabled) {
-              window.History.pushState(null, null, url);
-            }
-          }
+          model.testStateChange(modelData);
 
           if (!!callback) {
             model.lastResult = collection;
@@ -524,17 +534,22 @@
 
       var params = [];
       _.each(data, function(value, key) {
-        var defaultValue = model.expectedParameters[key][3];
-        var toString = model.expectedParameters[key][4];
+        var defaultValue;
+        var toString;
         
         if (!_.has(model.expectedParameters, key)) {
           return;
         }
+        defaultValue = model.expectedParameters[key][3];
+        toString = model.expectedParameters[key][4];
         if (value === null) {
           return;
         }
         if (!!toString) {
           value = toString(value);
+        }
+        if (value === null) {
+          return;
         }
         params.push(encodeURIComponent(key) + "=" + encodeURIComponent(value));
       });
@@ -543,7 +558,7 @@
     },
 
     attributesFromQueryString: function (query) {
-      query = query || window.location.search;
+      query = query || m.searchString();
 
       var model = this;
 
@@ -955,12 +970,7 @@
     },
 
     popstate: function () {
-      var State = History.getState();
-      var search = "";
-      var index = State.url.indexOf("?");
-      if (index >= 0) {
-        search = State.url.substr(index);
-      }
+      var search = m.searchString();
       var data = {};
       data = _.extend(data, this.model.defaultParameters());
       data = _.extend(data, this.model.attributesFromQueryString(search));

@@ -26,6 +26,16 @@ var m = {
     "east":3.912
   }),
 
+  searchString: function () {
+    var State = History.getState();
+    var search = "";
+    var index = State.url.indexOf("?");
+    if (index >= 0) {
+      search = State.url.substr(index);
+    }
+    return search;
+  },
+
   _templateCache: {},
 
   template: function (name, data) {
@@ -663,12 +673,19 @@ var m = {
   },
 
   compareGeobox: function(a, b) {
+    // a = old, b = new
     if (!a && !b) {
       return false;
     }
     if (!a || !b) {
       return true;
     }
+    console.log("CG", !!a.name, a.name === b.name, a.hasCoords(), !b.hasCoords());
+    // if new has the same name but lacks coords don't remove the coords
+    if (!!a.name && a.name === b.name && a.hasCoords() && !b.hasCoords()) {
+      return false;
+    }
+
     var difference = a.difference(b);
     if (difference === true || difference === false) {
       return difference;
