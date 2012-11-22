@@ -101,39 +101,32 @@
 
       this._modelViews = [];
       this.collection.each(function (model) {
-        if (!model.get("latitude")) {
-          view._modelViews.push(new AddressViewRow({
-            model: model,
-            mapView: view.mapView,
-          }));
-          return;
-        }
-        if (view.mapView.contains(
+        if (!!model.get("latitude") && !view.mapView.contains(
           model.get("latitude"),
           model.get("longitude")
         )) {
-          if (view.limit.offset <= 0 && view.limit.limit > 0) {
-            view._modelViews.push(new AddressViewRow({
-              model: model,
-              mapView: view.mapView,
-            }));
-            view.limit.limit -= 1;
-            return;
-          }
           view._modelViews.push(new AddressViewDot({
             model: model,
             mapView: view.mapView
+          }));
+          return;
+        }
+        if (view.limit.offset <= 0 && view.limit.offset > -view.limit.limit) {
+          view._modelViews.push(new AddressViewRow({
+            model: model,
+            mapView: view.mapView,
           }));
           view.limit.offset -= 1;
           return;
         }
         view._modelViews.push(new AddressViewDot({
-            model: model,
+          model: model,
           mapView: view.mapView
         }));
+        view.limit.offset -= 1;
       });
     },
-
+    
     render: function () {
       var view = this;
       view.$el.empty();
@@ -176,19 +169,36 @@
     render: function () {
       var view = this;
 
-      $(this.el).html(m.template(this.templateName, {
+      var $this = $(m.template(this.templateName, {
         org: this.model.toJSON(),
         m: m,
         parameters: m.parameters,
         note: false,
       }));
 
+      var insert = true;
+
+      if (this.limit.offset < -view.limit.limit ) {
+        insert = false;
+      }
+
       var addressCollectionView = new AddressCollectionViewRows({
         collection: this.model.addressCollection,
         mapView: this.mapView,
         limit: this.limit
       });
+
       addressCollectionView.render();
+
+      if (this.limit.offset >= 0) {
+        insert = false;
+      }
+
+      if (!insert) {
+        return;
+      }
+
+      $(this.el).empty().append($this);
 
       var $addressList = this.$el.find(".org_address_list");
       if ($addressList.length) {
@@ -197,6 +207,7 @@
             .replaceWith(addressCollectionView.$el);
         }
       }
+
       return this;
     }
   });

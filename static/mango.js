@@ -680,12 +680,10 @@ var m = {
     if (!a || !b) {
       return true;
     }
-    console.log("CG", !!a.name, a.name === b.name, a.hasCoords(), !b.hasCoords());
     // if new has the same name but lacks coords don't remove the coords
     if (!!a.name && a.name === b.name && a.hasCoords() && !b.hasCoords()) {
       return false;
     }
-
     var difference = a.difference(b);
     if (difference === true || difference === false) {
       return difference;
