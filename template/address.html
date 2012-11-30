@@ -91,9 +91,9 @@ elif entity_list in obj and len(obj[entity_list]) == 1:
 	     value="${obj and obj.get("latitude", "") or ""}">
       <input name="longitude" type="hidden"
 	     value="${obj and obj.get("longitude", "") or ""}">
-      <input name="manual_latitude" type="text"
+      <input name="manual_latitude" type="hidden"
 	     value="${obj and obj.get("manual_latitude", "") or ""}">
-      <input name="manual_longitude" type="text"
+      <input name="manual_longitude" type="hidden"
 	     value="${obj and obj.get("manual_latitude", "") or ""}">
       <label name="source"
 	     status="${obj and obj.get("source", "") and 'good' or 'bad'}"

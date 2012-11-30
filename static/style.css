@@ -275,7 +275,7 @@ form.mango label.textarea
 form.mango input[type="button"],
 form.mango input[type="submit"]
 {
-    width: 390px;
+    width: 365px;
     margin: 0px;
     padding: 2px 4px;
     margin-bottom: 4px;
@@ -609,10 +609,15 @@ form.mango input[type="checkbox"]
 {
     float: right;
 }
+#address-form label[name="lookup"],
+#address-form label[name="lookup"] textarea
+{
+    width: 163px;
+}
 #address-form label[name="source"],
 #address-form label[name="source"] textarea
 {
-    width: 384px;
+    width: 359px;
 }
 #manual_position_clear
 {
