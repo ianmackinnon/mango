@@ -279,8 +279,8 @@
       } else {
         view.many = false;
         var limit = {
-          "offset": view.offset,
-          "limit": view.limit
+          offset: view.offset,
+          limit: view.limit
         };
         this.collection.each(function (model) {
           view._modelViews.push(new window.OrgViewBox({
@@ -292,10 +292,14 @@
       }
     },
 
-    render: function () {
+    render: function (append) {
       var view = this;
+
       $(this.el).empty();
-      view.mapView.clearMarkers();
+
+      if (!append) {
+        view.mapView.clearMarkers();
+      }
 
       _(this._modelViews).each(function (modelView) {
         var viewRendered = modelView.render();
@@ -751,12 +755,16 @@
         // Set object from map.
 
         if (false && modelGeobox.hasCoords()) {
-          view.mapView.addDot(modelGeobox.south, modelGeobox.west, "ddddff", "south west", null);
-          view.mapView.addDot(modelGeobox.north, modelGeobox.east, "ddddff", "north east", null);
+          view.mapView.addDot(modelGeobox.south, modelGeobox.west,
+                              "ddddff", "south west", null);
+          view.mapView.addDot(modelGeobox.north, modelGeobox.east,
+                              "ddddff", "north east", null);
           var scaled = new Geobox(modelGeobox);
           scaled.scale(.75);
-          view.mapView.addDot(scaled.south, scaled.west, "ddddff", "south west", null);
-          view.mapView.addDot(scaled.north, scaled.east, "ddddff", "north east", null);
+          view.mapView.addDot(scaled.south, scaled.west,
+                              "ddddff", "south west", null);
+          view.mapView.addDot(scaled.north, scaled.east,
+                              "ddddff", "north east", null);
         }
 
         if (!m.compareGeobox(mapGeobox, modelGeobox)) {

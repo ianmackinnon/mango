@@ -179,7 +179,7 @@
         var marker = new google.maps.Marker({
           position: position,
           map: this.map,
-          icon: pinIconUrl,
+          icon: pinIconUrl
         });
 
         marker.setZIndex(-(this.markers.length + this.dots.length));

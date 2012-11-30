@@ -126,9 +126,11 @@ class BaseOrgHandler(BaseHandler):
 
 
     def _get_org_packet_search(self, name=None, name_search=None,
-                               tag_name_list=None, location=None,
+                               tag_name_list=None,
+                               location=None,
                                visibility=None,
-                               offset=None):
+                               offset=None,
+                               view="org"):
 
         org_alias_query = self._get_org_alias_search_query(
             name=name,
@@ -170,7 +172,9 @@ class BaseOrgHandler(BaseHandler):
             "location": location and location.to_obj(),
             }
 
-        if (org_alias_address_query.count() > max_address_per_page * max_address_pages):
+        if (view == "marker" or
+            org_alias_address_query.count() > max_address_per_page * max_address_pages
+            ):
             org_packet["marker_list"] = []
             for org, alias, address in org_alias_address_query:
                 org_packet["marker_list"].append({
@@ -207,13 +211,14 @@ class BaseOrgHandler(BaseHandler):
 
 class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
     @staticmethod
-    def _cache_key(name_search, tag_name_list, visibility):
+    def _cache_key(name_search, tag_name_list, view, visibility):
         if not visibility:
             visibility = "public"
         return sha1_concat(json.dumps({
                 "nameSearch": name_search,
                 "tag": tuple(set(tag_name_list)),
                 "visibility": visibility,
+                "view": view,
                 }))
     
     def get(self):
@@ -223,6 +228,8 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
         tag_name_list = self.get_arguments_multi("tag", json=is_json)
         location = self.get_argument_geobox("location", None, json=is_json)
         offset = self.get_argument_int("offset", None, json=is_json)
+        view = self.get_argument_allowed("view", ["org", "marker"],
+                                         default="org", json=is_json)
 
         if self.has_javascript and not self.accept_type("json"):
             self.render(
@@ -237,7 +244,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
 
         cache_key = None
         if self.accept_type("json") and not location and not offset:
-            cache_key = self._cache_key(name_search, tag_name_list,
+            cache_key = self._cache_key(name_search, tag_name_list, view,
                                         self.parameters["visibility"])
             value = self.cache.get(cache_key)
             if value:
@@ -252,6 +259,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
             location=location,
             visibility=self.parameters["visibility"],
             offset=offset,
+            view=view,
             )
 
         if cache_key:

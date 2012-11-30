@@ -239,15 +239,42 @@ var m = {
 
   initHome: function (mapView) {
     $("#mango-map-box").append(m.template("home-map-legend.html"));
-    var orgCollection = new window.OrgCollection();
-    var orgCollectionView = new window.OrgCollectionView({
-      collection: orgCollection,
+
+    // Z-index fails on Google Maps markers, event with optimization
+    // disabled. Rendering orgs after events seems to make them render
+    // below.
+
+    var eventCollection = new window.EventCollection();
+    var eventCollectionView = new window.EventCollectionView({
+      collection: eventCollection,
       mapView: mapView
     });
-    orgCollection.fetch({
+    eventCollection.fetch({
+      data: {
+        view: "marker"
+      },
       success: function(collection, response) {
-        orgCollectionView.initialize();
-        orgCollectionView.render();
+        eventCollectionView.initialize();
+        eventCollectionView.render(true);
+        var orgCollection = new window.OrgCollection();
+        var orgCollectionView = new window.OrgCollectionView({
+          collection: orgCollection,
+          mapView: mapView
+        });
+        orgCollection.fetch({
+          data: {
+            view: "marker"
+          },
+          success: function(collection, response) {
+            orgCollectionView.initialize();
+            orgCollectionView.render(true);
+          },
+          error: function (collection, response) {
+            if (response.statusText !== "abort") {
+              console.log("error", collection, response);
+            }
+          }
+        });
       },
       error: function (collection, response) {
         if (response.statusText !== "abort") {
