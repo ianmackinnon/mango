@@ -178,7 +178,7 @@
 
       var insert = true;
 
-      if (this.limit.offset < -view.limit.limit ) {
+      if (this.limit.offset < -this.limit.limit ) {
         insert = false;
       }
 
@@ -190,7 +190,7 @@
 
       addressCollectionView.render();
 
-      if (this.limit.offset >= 0) {
+      if (this.limit.offset > 0 || this.limit.offset === 0) {
         insert = false;
       }
 

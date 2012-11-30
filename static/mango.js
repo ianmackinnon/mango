@@ -290,6 +290,18 @@ var m = {
     return orgSearch;
   },
 
+  initEvent: function (mapView) {
+    $("div.address-row div.pin").each(function(i) {
+      var $pin = $(this);
+      var $circle = mapView.addMarker(
+        $pin.attr("latitude"),
+        $pin.attr("longitude")
+      );
+      $pin.append($circle);
+    });
+    mapView.fit();
+  },
+
   initEventSearch: function (mapView) {
     var eventSearch = new window.EventSearch();
     var eventSearchView = new window.EventSearchView({
