@@ -501,6 +501,14 @@ form.mango input[type="checkbox"]
 {
     padding-bottom: 4px;
 }
+#mango div.event_description
+{
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-left: 8px;
+    padding-bottom: 4px;
+}
 
 #org-form,
 #event-form
@@ -830,6 +838,4 @@ form.mango input[type="checkbox"]
 
 #mango .description.markdown-preview
 {
-    height: 300px;
-    overflow-y: auto;
 }

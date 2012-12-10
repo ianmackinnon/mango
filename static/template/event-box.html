@@ -20,6 +20,10 @@
      ><%=m.filter.h(event["name"])%></a>
 </div>
 
+<div class="event_description">
+  <%=m.filter.markdownPlain(event["description"] || "")%>
+</div>
+
 <% if (tag && event.tag_list) { %>
 <ul class="tag_list">
   <% for (t in event["tag_list"]) { %>

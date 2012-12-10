@@ -100,6 +100,10 @@ var m = {
       return !!text ? markdown.toHTML(text) : '';
     },
 
+    "markdownPlain": function (text) {
+      return $(m.filter.markdown(text)).text();
+    },
+
     pageTime: function (time) {
       return time;
     },
@@ -338,6 +342,15 @@ var m = {
     });
     $("input[name='start_time']").timepicker();
     $("input[name='end_time']").timepicker();
+
+
+    var title = $("<h3>").text("Description Preview");
+    var preview = $("<div>").addClass("description markdown-preview");
+    $("#mango-map-box").append(title);
+    $("#mango-map-box").append(preview);
+    
+    m.event_markdown();
+
   },
 
   initEventSearch: function (mapView) {
@@ -657,12 +670,14 @@ var m = {
   "event_markdown": function () {
     var form = $("#event-form");
     var text = m.get_field(form, "description");
-    m.on_change(text.input, "event-form" + "_" + "text", function (value) {
+    var preview = $(".description.markdown-preview");
+    var on_change = function (value) {
       text.label.attr("status", !!value ? "good" : "bad");
-      $(".description.markdown-preview").html(m.filter.markdown(value));
+      preview.html(m.filter.markdown(value));
       m.convert_inline_links($(".description.markdown-preview"));
-    }, 500);
-
+    };
+    m.on_change(text.input, "event-form" + "_" + "text", on_change, 500);
+    on_change(text.input.val());
   },
 
   argumentCheckbox: function(value) {
