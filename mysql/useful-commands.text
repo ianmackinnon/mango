@@ -1,0 +1,9 @@
+
+
+# Delete addresses with unmatched parentheses
+
+select org_id, address_id from org_address where address_id in (select address_id from address where postal like "%)%" and postal not like "%(%");
+select address_id, postal from address where postal like "%)%" and postal not like "%(%";
+
+delete from org_address where address_id in (select address_id from address where postal like "%)%" and postal not like "%(%");
+delete from address where postal like "%)%" and postal not like "%(%";
