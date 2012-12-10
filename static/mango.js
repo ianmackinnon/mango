@@ -327,6 +327,17 @@ var m = {
       $pin.append($circle);
     });
     mapView.fit();
+
+    $("input[name='start_date']").datepicker({
+      dateFormat: "yy-mm-dd",
+      numberOfMonths: 2
+    });
+    $("input[name='end_date']").datepicker({
+      dateFormat: "yy-mm-dd",
+      numberOfMonths: 2
+    });
+    $("input[name='start_time']").timepicker();
+    $("input[name='end_time']").timepicker();
   },
 
   initEventSearch: function (mapView) {

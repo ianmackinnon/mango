@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-all : backbone-min.js underscore-min.js tag-it.js tag-it.css jquery.history.js
+all : backbone-min.js underscore-min.js tag-it.js tag-it.css jquery.history.js jquery.ui.timepicker.js jquery.ui.timepicker.css
 
 backbone-min.js:
 	wget https://raw.github.com/documentcloud/backbone/master/backbone-min.js -O $@ || rm -f $@
@@ -17,3 +17,8 @@ tag-it.css:
 jquery.history.js:
 	wget https://raw.github.com/balupton/history.js/master/scripts/bundled/html4+html5/jquery.history.js -O $@ || rm -f $@
 
+jquery.ui.timepicker.js:
+	wget https://raw.github.com/fgelinas/timepicker/master/$@ -O $@ || rm -f $@
+
+jquery.ui.timepicker.css:
+	wget https://raw.github.com/fgelinas/timepicker/master/$@ -O $@ || rm -f $@

@@ -142,7 +142,8 @@ class BaseEventHandler(BaseHandler):
                         }
                 if address:
                     events[event.event_id]["address_obj_list"].append(address.obj(
-                            public=bool(self.current_user)
+                            public=bool(self.current_user),
+                            general=True,
                             ))
 
             event_packet["event_list"] = []

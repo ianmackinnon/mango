@@ -830,9 +830,9 @@ class Address(Base, NotableEntity):
                  longitude=None, latitude=None,
                  moderation_user=None, public=None):
 
-        self.postal = postal
+        self.postal = postal # and self.sanitise_address(postal)
         self.source = source
-        self.lookup = lookup
+        self.lookup = lookup # and self.sanitise_address(lookup)
         self.manual_longitude = manual_longitude
         self.manual_latitude = manual_latitude
         self.longitude = longitude
@@ -872,7 +872,9 @@ class Address(Base, NotableEntity):
 
     def obj(self, public=False,
             note_obj_list=None, note_count=None,
-            org_obj_list=None, event_obj_list=None):
+            org_obj_list=None, event_obj_list=None,
+            general=None):
+
         obj = {
             "id": self.address_id,
             "url": self.url,
@@ -898,6 +900,8 @@ class Address(Base, NotableEntity):
         if event_obj_list is not None:
             obj["event_list"] = event_obj_list
             obj["entity_list"] = obj.get("entity_list", []) + event_obj_list
+        if general:
+            obj["general"] = self.general(self.postal)
         return obj
 
     @property
@@ -913,6 +917,31 @@ class Address(Base, NotableEntity):
         if self.address_id is None:
             return None
         return "/address/%d" % self.address_id
+
+    @staticmethod
+    def sanitise_address(address, allow_commas=True):
+        address = re.sub("(\r|\n)+", "\n", address)
+        address = re.sub("(^|\n)[\s,]+", "\n", address)
+        address = re.sub("[\s,]+($|\n)", "\n", address)
+        if (not allow_commas) or (not "\n" in address):
+            address = re.sub("(,|\n)+", "\n", address)
+            address = re.sub("(^|\n)[\s,]+", "\n", address)
+            address = re.sub("[\s,]+($|\n)", "\n", address)
+        address = re.sub("[ \t]+", " ", address).strip()
+        return address
+
+    @staticmethod
+    def general(address):
+        parts = Address.parts(address)
+        for part in reversed(parts):
+            if re.search("[\d]", part):
+                continue
+            return part
+        return address
+
+    @staticmethod
+    def parts(address):
+        return address.split("\n")
 
     @staticmethod
     def repr_coordinates(longitude, latitude):

@@ -17,7 +17,7 @@
         <input
            name="nameSearch"
            value="${name_search or ""}"
-           placeholder="Eg. BAE Systems">
+           placeholder="Eg. Arms fair">
       </label>
       <label name="location">
         <span>Location</span>
@@ -46,7 +46,7 @@ if location:
         <input
            name="tag"
            value="${tag_name_list and ", ".join([short for short in tag_name_list]) or ""}"
-           placeholder="Eg. missiles, tanks">
+           placeholder="Eg. protest, vigil, meeting">
       </label>
     </div>
     <div class="actions">
@@ -62,11 +62,11 @@ if location:
 <div class="box right" id="event_list">
 <div class="action-bar">
   <span class="counts">
-    %if event_packet:
+    %if event_packet and 0:
     ${self.mini.counts(
       event_packet["event_list"],
       event_packet.get("offset", 0),
-      event_packet["event_count"],
+      event_packet["event_len"],
       not lookup and query_rewrite(dict(parameters, **{"offset": event_packet.get("offset", 0) + len(event_packet["event_list"])}))
       )}
     %endif
@@ -83,7 +83,7 @@ if location:
 </div>
 
 <div class="column">
-  %if event_packet:
+  %if event_packet and 0:
   %for event in event_packet["event_list"]:
   ${self.mini.event_box(event, geobox=event_packet["geobox"], parameters=parameters) | n}
   %endfor

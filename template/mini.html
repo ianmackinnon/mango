@@ -101,14 +101,14 @@ if not parameters:
 <div class="event-box">
   ${visibility_bar(event)}
   
+  <div class="event_time">
+    ${event | n, page_period}
+  </div>
+
   <div class="event_name">
     <a
        href="${url_rewrite(event["url"], parameters)}"
        >${event["name"]}</a>
-  </div>
-
-  <div class="event_time">
-    ${event | n, page_period}
   </div>
 
   %if "address_list" in event:
