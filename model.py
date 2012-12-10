@@ -830,9 +830,9 @@ class Address(Base, NotableEntity):
                  longitude=None, latitude=None,
                  moderation_user=None, public=None):
 
-        self.postal = postal # and self.sanitise_address(postal)
+        self.postal = postal and self.sanitise_address(postal)
         self.source = source
-        self.lookup = lookup # and self.sanitise_address(lookup)
+        self.lookup = lookup and self.sanitise_address(lookup)
         self.manual_longitude = manual_longitude
         self.manual_latitude = manual_latitude
         self.longitude = longitude
