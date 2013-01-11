@@ -21,6 +21,10 @@ end $$
 create trigger org_insert_before before insert on org
 for each row begin
     set new.a_time = UNIX_TIMESTAMP();
+end $$
+
+create trigger org_insert_after after insert on org
+for each row begin
     insert into org_v (
         org_id,
         moderation_user_id, a_time, public, existence,
@@ -69,6 +73,10 @@ end $$
 create trigger orgalias_insert_before before insert on orgalias
 for each row begin
     set new.a_time = UNIX_TIMESTAMP();
+end $$
+
+create trigger orgalias_insert_after after insert on orgalias
+for each row begin
     insert into orgalias_v (
         orgalias_id,
         moderation_user_id, a_time, public, existence,
@@ -117,6 +125,10 @@ end $$
 create trigger event_insert_before before insert on event
 for each row begin
     set new.a_time = UNIX_TIMESTAMP();
+end $$
+
+create trigger event_insert_after after insert on event
+for each row begin
     insert into event_v (
         event_id,
         moderation_user_id, a_time, public, existence,
@@ -163,6 +175,10 @@ end $$
 create trigger address_insert_before before insert on address
 for each row begin
     set new.a_time = UNIX_TIMESTAMP();
+end $$
+
+create trigger address_insert_after after insert on address
+for each row begin
     insert into address_v (
         address_id,
         moderation_user_id, a_time, public, existence,
@@ -221,7 +237,10 @@ end $$
 create trigger note_insert_before before insert on note
 for each row begin
     set new.a_time = UNIX_TIMESTAMP();
+end $$
     
+create trigger note_insert_after after insert on note
+for each row begin
     insert into note_fts (docid, content) values (new.note_id, new.text);
 
     insert into note_v (
@@ -276,6 +295,10 @@ end $$
 create trigger orgtag_insert_before before insert on orgtag
 for each row begin
     set new.a_time = UNIX_TIMESTAMP();
+end $$
+
+create trigger orgtag_insert_after after insert on orgtag
+for each row begin
     insert into orgtag_v (
         orgtag_id,
         moderation_user_id, a_time, public, existence,
@@ -322,6 +345,10 @@ end $$
 create trigger eventtag_insert_before before insert on eventtag
 for each row begin
     set new.a_time = UNIX_TIMESTAMP();
+end $$
+
+create trigger eventtag_insert_after after insert on eventtag
+for each row begin
     insert into eventtag_v (
         eventtag_id,
         moderation_user_id, a_time, public, existence,
@@ -368,7 +395,10 @@ end $$
 create trigger org_address_insert_before before insert on org_address
 for each row begin
     set new.a_time = UNIX_TIMESTAMP();
+end $$
 
+create trigger org_address_insert_after after insert on org_address
+for each row begin
     insert into org_address_v (org_id, address_id, a_time, existence)
       values (
 	new.org_id, new.address_id, UNIX_TIMESTAMP(), 1);
@@ -387,7 +417,7 @@ create trigger org_address_delete_before before delete on org_address
 for each row begin
     insert into org_address_v (org_id, address_id, a_time, existence)
       values (
-	old.org_id, old.address_id, UNIX_TIMESTAMP(), 1);
+	old.org_id, old.address_id, UNIX_TIMESTAMP(), 0);
 end $$
 
 -- org_note
@@ -395,7 +425,10 @@ end $$
 create trigger org_note_insert_before before insert on org_note
 for each row begin
     set new.a_time = UNIX_TIMESTAMP();
+end $$
 
+create trigger org_note_insert_after after insert on org_note
+for each row begin
     insert into org_note_v (org_id, note_id, a_time, existence)
       values (
 	new.org_id, new.note_id, UNIX_TIMESTAMP(), 1);
@@ -414,7 +447,7 @@ create trigger org_note_delete_before before delete on org_note
 for each row begin
     insert into org_note_v (org_id, note_id, a_time, existence)
       values (
-	old.org_id, old.note_id, UNIX_TIMESTAMP(), 1);
+	old.org_id, old.note_id, UNIX_TIMESTAMP(), 0);
 end $$
 
 -- org_orgtag
@@ -422,7 +455,10 @@ end $$
 create trigger org_orgtag_insert_before before insert on org_orgtag
 for each row begin
     set new.a_time = UNIX_TIMESTAMP();
+end $$
 
+create trigger org_orgtag_insert_after after insert on org_orgtag
+for each row begin
     insert into org_orgtag_v (org_id, orgtag_id, a_time, existence)
       values (
 	new.org_id, new.orgtag_id, UNIX_TIMESTAMP(), 1);
@@ -441,7 +477,7 @@ create trigger org_orgtag_delete_before before delete on org_orgtag
 for each row begin
     insert into org_orgtag_v (org_id, orgtag_id, a_time, existence)
       values (
-	old.org_id, old.orgtag_id, UNIX_TIMESTAMP(), 1);
+	old.org_id, old.orgtag_id, UNIX_TIMESTAMP(), 0);
 end $$
 
 -- orgtag_note
@@ -449,7 +485,10 @@ end $$
 create trigger orgtag_note_insert_before before insert on orgtag_note
 for each row begin
     set new.a_time = UNIX_TIMESTAMP();
+end $$
 
+create trigger orgtag_note_insert_after after insert on orgtag_note
+for each row begin
     insert into orgtag_note_v (orgtag_id, note_id, a_time, existence)
       values (
 	new.orgtag_id, new.note_id, UNIX_TIMESTAMP(), 1);
@@ -468,7 +507,7 @@ create trigger orgtag_note_delete_before before delete on orgtag_note
 for each row begin
     insert into orgtag_note_v (orgtag_id, note_id, a_time, existence)
       values (
-	old.orgtag_id, old.note_id, UNIX_TIMESTAMP(), 1);
+	old.orgtag_id, old.note_id, UNIX_TIMESTAMP(), 0);
 end $$
 
 -- event_address
@@ -476,7 +515,10 @@ end $$
 create trigger event_address_insert_before before insert on event_address
 for each row begin
     set new.a_time = UNIX_TIMESTAMP();
+end $$
 
+create trigger event_address_insert_after after insert on event_address
+for each row begin
     insert into event_address_v (event_id, address_id, a_time, existence)
       values (
 	new.event_id, new.address_id, UNIX_TIMESTAMP(), 1);
@@ -495,7 +537,7 @@ create trigger event_address_delete_before before delete on event_address
 for each row begin
     insert into event_address_v (event_id, address_id, a_time, existence)
       values (
-	old.event_id, old.address_id, UNIX_TIMESTAMP(), 1);
+	old.event_id, old.address_id, UNIX_TIMESTAMP(), 0);
 end $$
 
 -- event_note
@@ -503,7 +545,10 @@ end $$
 create trigger event_note_insert_before before insert on event_note
 for each row begin
     set new.a_time = UNIX_TIMESTAMP();
+end $$
 
+create trigger event_note_insert_after after insert on event_note
+for each row begin
     insert into event_note_v (event_id, note_id, a_time, existence)
       values (
 	new.event_id, new.note_id, UNIX_TIMESTAMP(), 1);
@@ -522,7 +567,7 @@ create trigger event_note_delete_before before delete on event_note
 for each row begin
     insert into event_note_v (event_id, note_id, a_time, existence)
       values (
-	old.event_id, old.note_id, UNIX_TIMESTAMP(), 1);
+	old.event_id, old.note_id, UNIX_TIMESTAMP(), 0);
 end $$
 
 -- event_eventtag
@@ -530,7 +575,10 @@ end $$
 create trigger event_eventtag_insert_before before insert on event_eventtag
 for each row begin
     set new.a_time = UNIX_TIMESTAMP();
+end $$
 
+create trigger event_eventtag_insert_after after insert on event_eventtag
+for each row begin
     insert into event_eventtag_v (event_id, eventtag_id, a_time, existence)
       values (
 	new.event_id, new.eventtag_id, UNIX_TIMESTAMP(), 1);
@@ -549,7 +597,7 @@ create trigger event_eventtag_delete_before before delete on event_eventtag
 for each row begin
     insert into event_eventtag_v (event_id, eventtag_id, a_time, existence)
       values (
-	old.event_id, old.eventtag_id, UNIX_TIMESTAMP(), 1);
+	old.event_id, old.eventtag_id, UNIX_TIMESTAMP(), 0);
 end $$
 
 -- eventtag_note
@@ -557,7 +605,10 @@ end $$
 create trigger eventtag_note_insert_before before insert on eventtag_note
 for each row begin
     set new.a_time = UNIX_TIMESTAMP();
+end $$
 
+create trigger eventtag_note_insert_after after insert on eventtag_note
+for each row begin
     insert into eventtag_note_v (eventtag_id, note_id, a_time, existence)
       values (
 	new.eventtag_id, new.note_id, UNIX_TIMESTAMP(), 1);
@@ -576,7 +627,7 @@ create trigger eventtag_note_delete_before before delete on eventtag_note
 for each row begin
     insert into eventtag_note_v (eventtag_id, note_id, a_time, existence)
       values (
-	old.eventtag_id, old.note_id, UNIX_TIMESTAMP(), 1);
+	old.eventtag_id, old.note_id, UNIX_TIMESTAMP(), 0);
 end $$
 
 -- address_note
@@ -584,7 +635,10 @@ end $$
 create trigger address_note_insert_before before insert on address_note
 for each row begin
     set new.a_time = UNIX_TIMESTAMP();
+end $$
 
+create trigger address_note_insert_after after insert on address_note
+for each row begin
     insert into address_note_v (address_id, note_id, a_time, existence)
       values (
 	new.address_id, new.note_id, UNIX_TIMESTAMP(), 1);
@@ -603,7 +657,7 @@ create trigger address_note_delete_before before delete on address_note
 for each row begin
     insert into address_note_v (address_id, note_id, a_time, existence)
       values (
-	old.address_id, old.note_id, UNIX_TIMESTAMP(), 1);
+	old.address_id, old.note_id, UNIX_TIMESTAMP(), 0);
 end $$
 
 -- org_event
@@ -611,7 +665,10 @@ end $$
 create trigger org_event_insert_before before insert on org_event
 for each row begin
     set new.a_time = UNIX_TIMESTAMP();
+end $$
 
+create trigger org_event_insert_after after insert on org_event
+for each row begin
     insert into org_event_v (org_id, event_id, a_time, existence)
       values (
 	new.org_id, new.event_id, UNIX_TIMESTAMP(), 1);
@@ -630,7 +687,7 @@ create trigger org_event_delete_before before delete on org_event
 for each row begin
     insert into org_event_v (org_id, event_id, a_time, existence)
       values (
-	old.org_id, old.event_id, UNIX_TIMESTAMP(), 1);
+	old.org_id, old.event_id, UNIX_TIMESTAMP(), 0);
 end $$
 
 delimiter ;
