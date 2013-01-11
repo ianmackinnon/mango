@@ -307,7 +307,10 @@ class Application(tornado.web.Application):
             database_namespace,
             )
     
-        engine = create_engine(connection_url)
+        engine = create_engine(
+            connection_url,
+            #echo=True,
+            )
 
         self.orm = scoped_session(sessionmaker(
                 bind=engine,

@@ -381,14 +381,38 @@ class Org(Base, NotableEntity):
 
     moderation_user = relationship(User, backref='moderation_org_list')
     
+    orgalias_list = relationship(
+        "Orgalias",
+        backref='org',
+        cascade="all, delete, delete-orphan",
+        )
     note_list = relationship(
-        "Note", secondary=org_note, backref='org_list')
+        "Note",
+        secondary=org_note,
+        backref='org_list',
+        single_parent=True,
+        cascade="all, delete, delete-orphan",
+        )
     address_list = relationship(
-        "Address", secondary=org_address, backref='org_list')
+        "Address",
+        secondary=org_address,
+        backref='org_list',
+        single_parent=True,
+        cascade="all, delete, delete-orphan",
+        )
     orgtag_list = relationship(
-        "Orgtag", secondary=org_orgtag, backref='org_list')
+        "Orgtag",
+        secondary=org_orgtag,
+        backref='org_list',
+        single_parent=True,
+        cascade="all, delete, delete-orphan",
+        )
     event_list = relationship(
-        "Event", secondary=org_event, backref='org_list')
+        "Event",
+        secondary=org_event,
+        backref='org_list',
+        cascade="save-update",
+        )
 
     orgalias_list_public = relationship(
         "Orgalias",
@@ -396,6 +420,7 @@ class Org(Base, NotableEntity):
             "and_(Orgalias.org_id == Org.org_id, "
             "Orgalias.public==True)"
             ),
+        passive_deletes=True,
         )
     note_list_public = relationship(
         "Note",
@@ -556,9 +581,6 @@ class Orgalias(Base):
 
     moderation_user = relationship(User, backref='moderation_orgalias_list')
 
-    org = relationship(
-        "Org", backref='orgalias_list')
-
     def __init__(self, name, org, moderation_user=None, public=None):
         self.name = Org.sanitise_name(name)
         self.org = org
@@ -641,11 +663,26 @@ class Event(Base, NotableEntity):
     moderation_user = relationship(User, backref='moderation_event_list')
     
     note_list = relationship(
-        "Note", secondary=event_note, backref='event_list')
+        "Note",
+        secondary=event_note,
+        backref='event_list',
+        single_parent=True,
+        cascade="all, delete, delete-orphan",
+        )
     address_list = relationship(
-        "Address", secondary=event_address, backref='event_list')
+        "Address",
+        secondary=event_address,
+        backref='event_list',
+        single_parent=True,
+        cascade="all, delete, delete-orphan",
+        )
     eventtag_list = relationship(
-        "Eventtag", secondary=event_eventtag, backref='event_list')
+        "Eventtag",
+        secondary=event_eventtag,
+        backref='event_list',
+        single_parent=True,
+        cascade="all, delete, delete-orphan",
+        )
 
     note_list_public = relationship(
         "Note",
@@ -790,7 +827,8 @@ class Address(Base, NotableEntity):
     note_list = relationship(
         "Note",
         secondary=address_note,
-        backref='address_list'
+        backref='address_list',
+        cascade="all, delete",
         )
 
     note_list_public = relationship(
@@ -1049,10 +1087,12 @@ class Orgtag(Base, NotableEntity):
 
     moderation_user = relationship(User, backref='moderation_orgtag_list')
 
-    note_list = relationship("Note",
-                             secondary=orgtag_note,
-                             backref='orgtag_list'
-                             )
+    note_list = relationship(
+        "Note",
+        secondary=orgtag_note,
+        backref='orgtag_list',
+        cascade="all, delete",
+        )
 
     note_list_public = relationship(
         "Note",
@@ -1157,10 +1197,12 @@ class Eventtag(Base, NotableEntity):
 
     moderation_user = relationship(User, backref='moderation_eventtag_list')
 
-    note_list = relationship("Note",
-                             secondary=eventtag_note,
-                             backref='eventtag_list'
-                             )
+    note_list = relationship(
+        "Note",
+        secondary=eventtag_note,
+        backref='eventtag_list',
+        cascade="all, delete",
+        )
 
     note_list_public = relationship(
         "Note",
