@@ -132,12 +132,14 @@ for each row begin
     insert into event_v (
         event_id,
         moderation_user_id, a_time, public, existence,
-	name
+	name, start_date, end_date,
+        description, start_time, end_time
         )
         values (
 	new.event_id,
 	new.moderation_user_id, UNIX_TIMESTAMP(), new.public, 1,
-	new.name
+	new.name, new.start_date, new.end_date,
+        new.description, new.start_time, new.end_time
 	);
 end $$
 
@@ -147,12 +149,14 @@ for each row begin
     insert into event_v (
         event_id,
         moderation_user_id, a_time, public, existence,
-	name
+	name, start_date, end_date,
+        description, start_time, end_time
         )
         values (
 	new.event_id,
 	new.moderation_user_id, UNIX_TIMESTAMP(), new.public, 1,
-	new.name
+	new.name, new.start_date, new.end_date,
+        new.description, new.start_time, new.end_time
 	);
 end $$
 
@@ -161,12 +165,14 @@ for each row begin
     insert into event_v (
         event_id,
         moderation_user_id, a_time, public, existence,
-	name
+	name, start_date, end_date,
+        description, start_time, end_time
         )
         values (
 	old.event_id,
 	old.moderation_user_id, UNIX_TIMESTAMP(), old.public, 0,
-	old.name
+	old.name, old.start_date, old.end_date,
+        old.description, old.start_time, old.end_time
 	);
 end $$
 

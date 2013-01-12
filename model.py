@@ -17,13 +17,14 @@ from urllib import urlencode
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy import Column, Table, and_
 from sqlalchemy import ForeignKey, ForeignKeyConstraint, UniqueConstraint, CheckConstraint, PrimaryKeyConstraint
-from sqlalchemy import Boolean, Integer, Float, Numeric, Date, Time
 from sqlalchemy.orm import sessionmaker, create_session, relationship, backref, object_session
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm.interfaces import MapperExtension 
 from sqlalchemy.sql import func
-from sqlalchemy.dialects.mysql import LONGTEXT
+
+from sqlalchemy import Boolean, Integer, Float as FloatOrig, Numeric, Date, Time
 from sqlalchemy import Unicode as UnicodeOrig, String as StringOrig
+from sqlalchemy.dialects.mysql import LONGTEXT, DOUBLE
 
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -31,11 +32,13 @@ log = logging.getLogger('model')
 
 Base = declarative_base()
 
+Float = lambda : FloatOrig
 String = lambda : StringOrig
 Unicode = lambda : UnicodeOrig
 
 def use_mysql():
-    global String, Unicode
+    global Float, String, Unicode
+    Float = lambda : DOUBLE()
     String = lambda : LONGTEXT(charset="latin1", collation="latin1_swedish_ci")
     Unicode = lambda : LONGTEXT(charset="utf8", collation="utf8_general_ci")
 
@@ -174,7 +177,7 @@ address_note = Table(
     'address_note', Base.metadata,
     Column('address_id', Integer, ForeignKey('address.address_id'), primary_key=True),
     Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
-    Column('a_time', Float),
+    Column('a_time', Float()),
    )
 
 
@@ -183,7 +186,7 @@ org_note = Table(
     'org_note', Base.metadata,
     Column('org_id', Integer, ForeignKey('org.org_id'), primary_key=True),
     Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
-    Column('a_time', Float),
+    Column('a_time', Float()),
     )
 
 
@@ -192,7 +195,7 @@ event_note = Table(
     'event_note', Base.metadata,
     Column('event_id', Integer, ForeignKey('event.event_id'), primary_key=True),
     Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
-    Column('a_time', Float),
+    Column('a_time', Float()),
     )
 
 
@@ -201,7 +204,7 @@ orgtag_note = Table(
     'orgtag_note', Base.metadata,
     Column('orgtag_id', Integer, ForeignKey('orgtag.orgtag_id'), primary_key=True),
     Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
-    Column('a_time', Float),
+    Column('a_time', Float()),
     )
 
 
@@ -210,7 +213,7 @@ eventtag_note = Table(
     'eventtag_note', Base.metadata,
     Column('eventtag_id', Integer, ForeignKey('eventtag.eventtag_id'), primary_key=True),
     Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
-    Column('a_time', Float),
+    Column('a_time', Float()),
     )
 
 
@@ -219,7 +222,7 @@ org_address = Table(
     'org_address', Base.metadata,
     Column('org_id', Integer, ForeignKey('org.org_id'), primary_key=True),
     Column('address_id', Integer, ForeignKey('address.address_id'), primary_key=True),
-    Column('a_time', Float),
+    Column('a_time', Float()),
     )
 
 
@@ -228,7 +231,7 @@ event_address = Table(
     'event_address', Base.metadata,
     Column('event_id', Integer, ForeignKey('event.event_id'), primary_key=True),
     Column('address_id', Integer, ForeignKey('address.address_id'), primary_key=True),
-    Column('a_time', Float),
+    Column('a_time', Float()),
     )
 
 
@@ -237,7 +240,7 @@ org_orgtag = Table(
     'org_orgtag', Base.metadata,
     Column('org_id', Integer, ForeignKey('org.org_id'), primary_key=True),
     Column('orgtag_id', Integer, ForeignKey('orgtag.orgtag_id'), primary_key=True),
-    Column('a_time', Float),
+    Column('a_time', Float()),
     )
 
 
@@ -246,7 +249,7 @@ event_eventtag = Table(
     'event_eventtag', Base.metadata,
     Column('event_id', Integer, ForeignKey('event.event_id'), primary_key=True),
     Column('eventtag_id', Integer, ForeignKey('eventtag.eventtag_id'), primary_key=True),
-    Column('a_time', Float),
+    Column('a_time', Float()),
     )
 
 
@@ -255,7 +258,7 @@ org_event = Table(
     'org_event', Base.metadata,
     Column('org_id', Integer, ForeignKey('org.org_id'), primary_key=True),
     Column('event_id', Integer, ForeignKey('event.event_id'), primary_key=True),
-    Column('a_time', Float),
+    Column('a_time', Float()),
     )
 
 
@@ -333,9 +336,9 @@ class Session(Base):
     session_id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey(User.user_id), nullable=False)
 
-    c_time = Column(Float, nullable=False)
-    a_time = Column(Float, nullable=False)
-    d_time = Column(Float)
+    c_time = Column(Float(), nullable=False)
+    a_time = Column(Float(), nullable=False)
+    d_time = Column(Float())
 
     ip_address = Column(String(), nullable=False)
     accept_language = Column(String(), nullable=False)
@@ -376,7 +379,7 @@ class Org(Base, NotableEntity):
     name = Column(Unicode(), nullable=False)
 
     moderation_user_id = Column(Integer, ForeignKey(User.user_id))
-    a_time = Column(Float, nullable=False)
+    a_time = Column(Float(), nullable=False)
     public = Column(Boolean)
 
     moderation_user = relationship(User, backref='moderation_org_list')
@@ -404,8 +407,7 @@ class Org(Base, NotableEntity):
         "Orgtag",
         secondary=org_orgtag,
         backref='org_list',
-        single_parent=True,
-        cascade="all, delete, delete-orphan",
+        cascade="save-update",
         )
     event_list = relationship(
         "Event",
@@ -510,6 +512,21 @@ class Org(Base, NotableEntity):
             obj["alias"] = alias;
         return obj
 
+    def pprint(self, indent=""):
+        o = u"";
+        o += u"%sOrg: %s %s\n" % (indent, self.org_id, self.name)
+        for orgalias in self.orgalias_list:
+            o += orgalias.pprint(indent + "  ")
+        for orgtag in self.orgtag_list:
+            o += orgtag.pprint(indent + "  ")
+        for address in self.address_list:
+            o += address.pprint(indent + "  ")
+        for note in self.note_list:
+            o += note.pprint(indent + "  ")
+        for event in self.event_list:
+            o += u"%sEvent: %s %s...\n" % (indent + "  ", event.event_id, event.name)
+        return o
+
     def merge(self, other, moderation_user=False, public=None):
         session = object_session(self)
         assert session
@@ -576,7 +593,7 @@ class Orgalias(Base):
     name = Column(Unicode(), nullable=False)
 
     moderation_user_id = Column(Integer, ForeignKey(User.user_id))
-    a_time = Column(Float, nullable=False)
+    a_time = Column(Float(), nullable=False)
     public = Column(Boolean)
 
     moderation_user = relationship(User, backref='moderation_orgalias_list')
@@ -614,6 +631,11 @@ class Orgalias(Base):
             obj["org"] = org_obj
         return obj
 
+    def pprint(self, indent=""):
+        o = u"";
+        o += u"%sOrgalias: %s %s\n" % (indent, self.orgalias_id, self.name)
+        return o
+
     @property
     def url(self):
         return "/organisation-alias/%d" % self.orgalias_id
@@ -634,14 +656,6 @@ class Orgalias(Base):
 
 
 
-
-
-
-
-
-
-
-
 class Event(Base, NotableEntity):
     __tablename__ = 'event'
     __table_args__ = {'sqlite_autoincrement':True}
@@ -657,7 +671,7 @@ class Event(Base, NotableEntity):
     end_time = Column(Time)
 
     moderation_user_id = Column(Integer, ForeignKey(User.user_id))
-    a_time = Column(Float, nullable=False)
+    a_time = Column(Float(), nullable=False)
     public = Column(Boolean)
 
     moderation_user = relationship(User, backref='moderation_event_list')
@@ -680,8 +694,7 @@ class Event(Base, NotableEntity):
         "Eventtag",
         secondary=event_eventtag,
         backref='event_list',
-        single_parent=True,
-        cascade="all, delete, delete-orphan",
+        cascade="save-update",
         )
 
     note_list_public = relationship(
@@ -781,6 +794,19 @@ class Event(Base, NotableEntity):
             obj["org_list"] = org_obj_list
         return obj
 
+    def pprint(self, indent=""):
+        o = u"";
+        o += u"%sEvent: %s %s\n" % (indent, self.event_id, self.name)
+        for eventtag in self.eventtag_list:
+            o += eventtag.pprint(indent + "  ")
+        for address in self.address_list:
+            o += address.pprint(indent + "  ")
+        for note in self.note_list:
+            o += note.pprint(indent + "  ")
+        for org in self.org_list:
+            o += u"%sOrg: %s %s...\n" % (indent + "  ", org.org_id, org.name)
+        return o
+
     @property
     def url(self):
         return "/event/%d" % self.event_id
@@ -811,16 +837,16 @@ class Address(Base, NotableEntity):
     address_id = Column(Integer, primary_key=True)
 
     moderation_user_id = Column(Integer, ForeignKey(User.user_id))
-    a_time = Column(Float, nullable=False)
+    a_time = Column(Float(), nullable=False)
     public = Column(Boolean)
 
     postal = Column(Unicode(), nullable=False)
     source = Column(Unicode(), nullable=False)
     lookup = Column(Unicode())
-    manual_longitude = Column(Float)
-    manual_latitude = Column(Float)
-    longitude = Column(Float)
-    latitude = Column(Float)
+    manual_longitude = Column(Float())
+    manual_latitude = Column(Float())
+    longitude = Column(Float())
+    latitude = Column(Float())
 
     moderation_user = relationship(User, backref='moderation_address_list')
     
@@ -941,6 +967,13 @@ class Address(Base, NotableEntity):
         if general:
             obj["general"] = self.general(self.postal)
         return obj
+
+    def pprint(self, indent=""):
+        o = u"";
+        o += u"%sAddress: %s %s\n" % (indent, self.address_id, self.postal.split("\n")[0])
+        for note in self.note_list:
+            o += note.pprint(indent + "  ")
+        return o
 
     @property
     def split(self):
@@ -1079,7 +1112,7 @@ class Orgtag(Base, NotableEntity):
     orgtag_id = Column(Integer, primary_key=True)
 
     moderation_user_id = Column(Integer, ForeignKey(User.user_id))
-    a_time = Column(Float, nullable=False)
+    a_time = Column(Float(), nullable=False)
     public = Column(Boolean)
 
     name = Column(Unicode(), nullable=False)
@@ -1156,6 +1189,13 @@ class Orgtag(Base, NotableEntity):
             obj["org_len"] = org_len
         return obj
 
+    def pprint(self, indent=""):
+        o = u"";
+        o += u"%sOrgtag: %s %s\n" % (indent, self.orgtag_id, self.name)
+        for note in self.note_list:
+            o += note.pprint(indent + "  ")
+        return o
+
     def org_list_url(self, parameters=None):
         if parameters == None:
             parameters = {}
@@ -1189,7 +1229,7 @@ class Eventtag(Base, NotableEntity):
     eventtag_id = Column(Integer, primary_key=True)
 
     moderation_user_id = Column(Integer, ForeignKey(User.user_id))
-    a_time = Column(Float, nullable=False)
+    a_time = Column(Float(), nullable=False)
     public = Column(Boolean)
 
     name = Column(Unicode(), nullable=False)
@@ -1266,6 +1306,13 @@ class Eventtag(Base, NotableEntity):
             obj["event_len"] = event_len
         return obj
 
+    def pprint(self, indent=""):
+        o = u"";
+        o += u"%sEventtag: %s %s\n" % (indent, self.eventtag_id, self.name)
+        for note in self.note_list:
+            o += note.pprint(indent + "  ")
+        return o
+
     def event_list_url(self, parameters=None):
         if parameters == None:
             parameters = {}
@@ -1298,7 +1345,7 @@ class Note(Base):
     note_id = Column(Integer, primary_key=True)
 
     moderation_user_id = Column(Integer, ForeignKey(User.user_id))
-    a_time = Column(Float, nullable=False)
+    a_time = Column(Float(), nullable=False)
     public = Column(Boolean)
 
     text = Column(Unicode(), nullable=False)
@@ -1397,6 +1444,11 @@ class Note(Base):
         if linked is not False:
             obj["linked"] = linked
         return obj
+
+    def pprint(self, indent=""):
+        o = u"";
+        o += u"%sNote: %s %s\n" % (indent, self.note_id, self.text.split("\n")[0][:32])
+        return o
 
     @property
     def url(self):
