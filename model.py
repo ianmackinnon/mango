@@ -527,12 +527,17 @@ class Org(Base, NotableEntity):
             o += u"%sEvent: %s %s...\n" % (indent + "  ", event.event_id, event.name)
         return o
 
-    def merge(self, other, moderation_user=False, public=None):
+    def merge(self, other, moderation_user):
+        # Merge other into this
+        
         session = object_session(self)
         assert session
+
         orgalias = Orgalias.get(session, other.name, self, moderation_user, other.public)
-        for alias in other.orgalias_list:
+
+        for alias in other.orgalias_list[::-1]:
             alias.org = self
+        
         self.note_list = list(set(self.note_list + other.note_list))
         self.address_list = list(set(self.address_list + other.address_list))
         self.orgtag_list = list(set(self.orgtag_list + other.orgtag_list))
@@ -541,9 +546,8 @@ class Org(Base, NotableEntity):
         other.address_list = []
         other.orgtag_list = []
         other.event_list = []
-        session.commit()
         session.delete(other)
-        session.commit()
+        #session.flush()
 
     @property
     def url(self):
