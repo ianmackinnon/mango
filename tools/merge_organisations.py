@@ -40,7 +40,7 @@ def hash(name_a, name_b):
 def merge(orm, master, alias, moderation_user=None):
     print "MERGE: '%s' -> '%s'" % (alias.name, master.name)
     master.merge(alias, moderation_user)
-    orm.commit()
+
 
 
 def multi_merge(orm, org_id_list):
@@ -189,6 +189,8 @@ ID:   Integer organisation IDs to merge."""
                       help="Letter of the alphabet to start at.", default=None)
     parser.add_option("-d", "--database", action="store", dest="database",
                       help="sqlite or mysql.", default="sqlite")
+    parser.add_option("-n", "--dry-run", action="store_true", dest="dry_run",
+                      help="Dry run.", default=None)
 
     (options, args) = parser.parse_args()
 
@@ -213,17 +215,21 @@ ID:   Integer organisation IDs to merge."""
 
     if len(args) == 0:
         main(orm, options.threshold, options.characters, options.alpha)
-        sys.exit(0)
+    else:
+        try:
+            org_id_list = [int(arg) for arg in args]
+        except ValueError:
+            parser.print_usage()
+            sys.exit(1)
 
-    try:
-        org_id_list = [int(arg) for arg in args]
-    except ValueError:
-        parser.print_usage()
-        sys.exit(1)
+        multi_merge(orm, org_id_list)
 
-    multi_merge(orm, org_id_list)
-
-        
+    if options.dry_run:
+        log.warning("rolling back")
+        orm.rollback()
+    else:
+        log.info("Committing.")
+        orm.commit()
     
 
 

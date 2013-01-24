@@ -393,7 +393,7 @@ class Org(Base, NotableEntity):
         "Note",
         secondary=org_note,
         backref='org_list',
-        single_parent=True,
+        single_parent=True,  # shouldn't be single parent
         cascade="all, delete, delete-orphan",
         )
     address_list = relationship(
