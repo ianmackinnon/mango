@@ -6,6 +6,7 @@ import codecs
 import hashlib
 import markdown
 import datetime
+import urlparse
 import tornado.web
 
 from urllib import urlencode
@@ -211,18 +212,25 @@ class BaseHandler(tornado.web.RequestHandler):
         uri += "?" + urlencode(arguments, True)
         return uri
 
-    def url_rewrite(self, path, options=None):
+    def url_rewrite(self, uri, options=None):
         if options is None:
             options = {}
-        uri = path
-        if uri.startswith("/"):
-            uri = self.application.url_root + uri[1:]
+        scheme, netloc, path, query, fragment = urlparse.urlsplit(uri)
+
+        arguments = urlparse.parse_qs(query, keep_blank_values=False)
+
+        if path.startswith("/"):
+            path = self.application.url_root + path[1:]
+
         for key, value in options.items():
             if value is None:
-                del options[key]
-        parameters = urlencode(options, True)
-        if parameters:
-            uri += "?" + parameters
+                del arguments[key]
+                continue
+            arguments[key] = value
+
+        query = urlencode(options, True)
+
+        uri = urlparse.urlunsplit((scheme, netloc, path, query, fragment))
         return uri
 
     def render(self, template_name, **kwargs):
