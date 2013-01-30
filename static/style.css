@@ -782,12 +782,13 @@ form.mango input[type="checkbox"]
 #note-form label[name="text"],
 #note-form label[name="source"]
 {
-    width: 384px;
+    width: 359px;
+
 }
 #note-form label[name="text"] textarea,
 #note-form label[name="source"] textarea
 {
-    width: 384px;
+    width: 359px;
 }
 #note-form label[name="source"]
 {
