@@ -223,12 +223,12 @@ class BaseHandler(tornado.web.RequestHandler):
             path = self.application.url_root + path[1:]
 
         for key, value in options.items():
+            arguments[key] = value
             if value is None:
                 del arguments[key]
                 continue
-            arguments[key] = value
 
-        query = urlencode(options, True)
+        query = urlencode(arguments, True)
 
         uri = urlparse.urlunsplit((scheme, netloc, path, query, fragment))
         return uri

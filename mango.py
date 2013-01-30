@@ -219,7 +219,7 @@ class Application(tornado.web.Application):
             (r"/note", NoteListHandler),
             (r"/note/new", NoteNewHandler),
             (r"/note/%s" % re_id, NoteHandler),
-            (r"/note/%s/link" % re_id, NoteLinkHandler),
+#            (r"/note/%s/link" % re_id, NoteLinkHandler),
 
             (r"/organisation", OrgListHandler),
             (r"/organisation/new", OrgNewHandler),
