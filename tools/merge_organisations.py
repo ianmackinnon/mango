@@ -3,6 +3,7 @@
 
 import sys
 sys.path.append(".")
+
 import redis
 import urllib
 import logging
@@ -73,6 +74,7 @@ def multi_merge(orm, org_id_list):
 
     if choice >= len(org_list) or choice < 0:
         log.error("%d is out of range." % choice)
+        sys.exit(1)
 
     main = org_list.pop(choice)
 
