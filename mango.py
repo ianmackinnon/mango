@@ -34,8 +34,7 @@ from handle.auth import AuthLoginHandler, AuthLoginLocalHandler, \
     AuthLoginGoogleHandler, AuthLogoutHandler
 from handle.user import UserHandler, UserListHandler
 from handle.home import HomeHandler
-from handle.note import NoteHandler, NoteNewHandler, NoteListHandler, \
-    NoteLinkHandler
+from handle.note import NoteHandler, NoteNewHandler, NoteListHandler
 from handle.address import AddressHandler, AddressListHandler, \
     AddressLookupHandler, AddressNoteListHandler, AddressNoteHandler
 from handle.org import OrgHandler, OrgNewHandler, OrgListHandler, \
@@ -219,7 +218,6 @@ class Application(tornado.web.Application):
             (r"/note", NoteListHandler),
             (r"/note/new", NoteNewHandler),
             (r"/note/%s" % re_id, NoteHandler),
-#            (r"/note/%s/link" % re_id, NoteLinkHandler),
 
             (r"/organisation", OrgListHandler),
             (r"/organisation/new", OrgNewHandler),

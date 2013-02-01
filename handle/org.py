@@ -243,11 +243,12 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
             return;
 
         cache_key = None
-        if self.accept_type("json") and not location and not offset:
+        if 0 and self.accept_type("json") and not location and not offset:
             cache_key = self._cache_key(name_search, tag_name_list, view,
                                         self.parameters["visibility"])
             value = self.cache.get(cache_key)
             if value:
+                self.set_header("Content-Type", "application/json; charset=UTF-8")
                 self.write(value)
                 self.finish()
                 return
@@ -291,6 +292,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
 
 
 class OrgNewHandler(BaseOrgHandler):
+    @authenticated
     def get(self):
         self.render(
             'organisation.html',

@@ -199,6 +199,7 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler):
                                         self.parameters["visibility"])
             value = self.cache.get(cache_key)
             if value:
+                self.set_header("Content-Type", "application/json; charset=UTF-8")
                 self.write(value)
                 self.finish()
                 return
@@ -253,6 +254,7 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler):
 
 
 class EventNewHandler(BaseEventHandler):
+    @authenticated
     def get(self):
         self.render(
             'event.html',

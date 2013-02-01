@@ -154,6 +154,7 @@ class OrgtagListHandler(BaseOrgtagHandler):
 
 
 class OrgtagNewHandler(BaseOrgtagHandler):
+    @authenticated
     def get(self):
         self.render(
             'tag.html',
@@ -260,6 +261,7 @@ class OrgtagNoteListHandler(BaseOrgtagHandler, BaseNoteHandler):
         self.orm.commit()
         self.redirect(self.next or self.url_root[:-1] + orgtag.url)
 
+    @authenticated
     def get(self, orgtag_id_string): 
         public = bool(self.current_user)
 

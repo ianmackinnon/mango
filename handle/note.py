@@ -41,29 +41,8 @@ class NoteListHandler(BaseNoteHandler):
 
 
 
-class NoteLinkHandler(BaseNoteHandler, BaseOrgHandler, BaseOrgtagHandler):
-    @authenticated
-    def get(self, note_id_string):
-        orgtag_search = self.get_argument("orgtag_search", None)
-        orgtag_list = self._get_orgtag_list_search(search=orgtag_search)
-
-        org_search = self.get_argument("org_search", None)
-        org_list, org_count, geobox, latlon = self._get_org_list_search(name_search=org_search)
-
-        note = self._get_note(note_id_string)
-        self.render(
-            'note_link.html',
-            note=note,
-            orgtag_search=orgtag_search,
-            orgtag_list=orgtag_list,
-            org_search=org_search,
-            org_list=org_list,
-            org_count=org_count,
-            )
-
-
-
 class NoteNewHandler(BaseNoteHandler):
+    @authenticated
     def get(self):
         self.render('note.html')
 

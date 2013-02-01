@@ -16,7 +16,6 @@ from sqlalchemy.orm.exc import NoResultFound
 from mako import exceptions
 
 import geo
-import template.mini
 
 from model import Session, Address
 
@@ -237,7 +236,6 @@ class BaseHandler(tornado.web.RequestHandler):
         mako_template = self.application.lookup.get_template(template_name)
 
         kwargs.update({
-                "mini": template.mini,
                 "geo_in": self.geo_in,
                 "next": self.next,
                 "messages": self.messages,
@@ -259,7 +257,6 @@ class BaseHandler(tornado.web.RequestHandler):
                 "query_rewrite": self.query_rewrite,
                 "url_rewrite": self.url_rewrite,
                 "parameters": self.parameters,
-                "mini_js" : open("template/mini.js.html").read(),
                 "header1": None,
                 "header2": None,
                 "footer": None,
@@ -476,6 +473,8 @@ class BaseHandler(tornado.web.RequestHandler):
     def get_arguments_multi(self, name, delimiter=",", json=False):
         ret = []
         args = self.get_arguments(name, strip=True, json=json)
+        if not args:
+            return ret
         for arg in args:
             ret += [value.strip() for value in arg.split(delimiter)]
         return ret
@@ -490,10 +489,8 @@ class BaseHandler(tornado.web.RequestHandler):
         return json.dumps(obj, indent=2)
 
     def write_json(self, obj):
+        self.set_header("Content-Type", "application/json; charset=UTF-8")
         self.write(self.dump_json(obj))
-
-    
-
 
     def has_geo_arguments(self):
         self.lookup = self.get_argument("lookup", None)

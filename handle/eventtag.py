@@ -155,6 +155,7 @@ class EventtagListHandler(BaseEventtagHandler):
 
 
 class EventtagNewHandler(BaseEventtagHandler):
+    @authenticated
     def get(self):
         self.render(
             'tag.html',
@@ -261,6 +262,7 @@ class EventtagNoteListHandler(BaseEventtagHandler, BaseNoteHandler):
         self.orm.commit()
         self.redirect(self.next or self.url_root[:-1] + eventtag.url)
 
+    @authenticated
     def get(self, eventtag_id_string): 
         public = bool(self.current_user)
 

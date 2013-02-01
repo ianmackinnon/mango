@@ -58,7 +58,7 @@ if location:
 <div class="box right" id="org_list">
 <div class="action-bar">
   <span class="counts">
-    %if org_packet:
+    %if org_packet and "org_list" in org_packet:
     ${self.mini.counts(
       org_packet["org_list"],
       org_packet.get("offset", 0),
@@ -79,7 +79,7 @@ if location:
 </div>
 
 <div class="column">
-  %if org_packet:
+  %if org_packet and "org_list" in org_packet:
   %for org in org_packet["org_list"]:
   ${self.mini.org_box(org, geobox=org_packet["geobox"], parameters=parameters) | n}
   %endfor
