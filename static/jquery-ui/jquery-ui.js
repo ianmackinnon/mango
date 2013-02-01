@@ -1,1 +1,1 @@
-../../vendor/jquery-ui-1.9.1.custom/js/jquery-ui-1.9.1.custom.js
+../../vendor/jquery-ui-1.10.0.custom/js/jquery-ui-1.10.0.custom.js

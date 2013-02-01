@@ -45,7 +45,7 @@ def get_names(orm):
 
 def select_from_list(matches):
     for m, match in enumerate(matches):
-        print "  %4d  %s" % (m, match)
+        print (u"  %4d  %s" % (m, match)).encode("utf-8")
     print
     print "Choose name or non-numeric to exit: ",
 
@@ -84,6 +84,9 @@ def closest_names(name, names, orm):
 
     matches = sorted(list(matches))
 
+    print
+    print         ("\n%s\n" % name).encode("utf-8")
+
     existing_name = select_from_list(matches)
 
     return existing_name
@@ -121,7 +124,7 @@ def select_org(orm, name, user):
     if not existing_name:
         return None
 
-    log.info("Chose name '%s'" % existing_name)
+    log.info((u"Chose name '%s'" % existing_name).encode("utf-8"))
     org = get_org(orm, existing_name)
 
     if not org:
@@ -148,11 +151,11 @@ def insert_fast(data, orm, public=None, tag_names=None, dry_run=None):
         tags.append(tag)
 
     for chunk in data:
-        log.info("\n%s\n", chunk["name"])
+        log.info(("\n%s\n" % chunk["name"]).encode("utf-8"))
         org = select_org(orm, chunk["name"], user)
 
         if not org:
-            log.warning("\nCreating org %s\n" % chunk["name"])
+            log.warning((u"\nCreating org %s\n" % chunk["name"]).encode("utf-8"))
             org = Org(chunk["name"], moderation_user=user, public=public,)
             orm.add(org)
 
@@ -192,12 +195,17 @@ def insert_fast(data, orm, public=None, tag_names=None, dry_run=None):
                 log.debug(note)
                 org.note_list.append(note)
         
+        if not (orm.new or orm.dirty or orm.deleted):
+            log.warning("Nothing to commit.")
+            continue
+
         if dry_run == True:
             log.warning("rolling back")
             orm.rollback()
-        else:
-            log.info("Committing.")
-            orm.commit()
+            continue
+
+        log.info("Committing.")
+        orm.commit()
 
 
 

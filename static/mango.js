@@ -39,7 +39,7 @@ var m = {
   _templateCache: {},
 
   template: function (name, data) {
-    var url = "/static/template/" + name;
+    var url = m.url_root + "static/template/" + name;
 
     if (!(m._templateCache.hasOwnProperty(name))) {
       m._templateCache[name] = false;
@@ -860,6 +860,10 @@ var m = {
       var mapView = m.initMap();
       m.initOrg(mapView);
     }],
+    [/^\/organisation\/new$/, function () {
+      var mapView = m.initMap();
+      m.initOrg(mapView);
+    }],
     [/^\/organisation\/([1-9][0-9]*)\/address$/, function () {
       var mapView = m.initMap();
       m.initAddressForm(mapView);
@@ -868,6 +872,10 @@ var m = {
       m.note_markdown();
     }],
     [/^\/event\/([1-9][0-9]*)$/, function () {
+      var mapView = m.initMap();
+      m.initEvent(mapView);
+    }],
+    [/^\/event\/new$/, function () {
       var mapView = m.initMap();
       m.initEvent(mapView);
     }],

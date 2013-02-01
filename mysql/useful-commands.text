@@ -7,3 +7,13 @@ select address_id, postal from address where postal like "%)%" and postal not li
 
 delete from org_address where address_id in (select address_id from address where postal like "%)%" and postal not like "%(%");
 delete from address where postal like "%)%" and postal not like "%(%";
+
+
+delete from org_note where not exists (select 1 from org where org.org_id = org_note.org_id) or not exists (select 1 from note where note.note_id = org_note.note_id);
+delete from org_orgtag where not exists (select 1 from org where org.org_id = org_orgtag.org_id) or not exists (select 1 from orgtag where orgtag.orgtag_id = org_orgtag.orgtag_id);
+delete from org_address where not exists (select 1 from org where org.org_id = org_address.org_id) or not exists (select 1 from address where address.address_id = org_address.address_id);
+delete from event_note where not exists (select 1 from event where event.event_id = event_note.event_id) or not exists (select 1 from note where note.note_id = event_note.note_id);
+delete from event_eventtag where not exists (select 1 from event where event.event_id = event_eventtag.event_id) or not exists (select 1 from eventtag where eventtag.eventtag_id = event_eventtag.eventtag_id);
+delete from event_address where not exists (select 1 from event where event.event_id = event_address.event_id) or not exists (select 1 from address where address.address_id = event_address.address_id);
+delete from address_note where not exists (select 1 from address where address.address_id = address_note.address_id) or not exists (select 1 from note where note.note_id = address_note.note_id);
+delete from org_event where not exists (select 1 from org where org.org_id = org_event.org_id) or not exists (select 1 from event where event.event_id = org_event.event_id);

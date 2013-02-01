@@ -123,11 +123,11 @@
     },
 
     markerIconUrl: function (style, color, letter) {
-      return "/static/image/map/marker/" + style + "-" + color + "-" + letter + ".png";
+      return m.url_root + "static/image/map/marker/" + style + "-" + color + "-" + letter + ".png";
     },
 
     dotIconUrl: function (color) {
-      return "/static/image/map/marker/dot-" + color + ".png";
+      return m.url_root + "static/image/map/marker/dot-" + color + ".png";
     },
 
     clickDraggableMarker: function (callback, latitude, longitude) {

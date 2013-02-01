@@ -17,7 +17,7 @@
       var view = this;
 
       var onClick = function (event) {
-        var href=view.model.get("url");
+        var href = m.url_root + view.model.get("url").substr(1);
         window.document.location.href=href;
       };
 
@@ -977,7 +977,8 @@
     },
 
     addThrobber: function () {
-      this.$throbber = $('<img class="throbber" width="16px" height="16px" alt="Loading." src="/static/image/throbber.gif" style="display: none;">');
+      var src = m.url_root + "static/image/throbber.gif"
+      this.$throbber = $('<img class="throbber" width="16px" height="16px" alt="Loading." src="' + src + '" style="display: none;">');
       this.$el.find(".actions").prepend(this.$throbber);
       return this.$throbber;
     },

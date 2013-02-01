@@ -22,7 +22,7 @@ Download jQuery and jQuery-UI including at least the modules:
 
 Expand and link
     
-    mkdir vendor
+    mkdir -p vendor
 
     unzip jquery-ui-*.custom.zip -d vendor
 
