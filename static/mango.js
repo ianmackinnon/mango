@@ -39,7 +39,7 @@ var m = {
   _templateCache: {},
 
   template: function (name, data) {
-    var url = m.url_root + "static/template/" + name;
+    var url = m.urlRoot + "static/template/" + name;
 
     if (!(m._templateCache.hasOwnProperty(name))) {
       m._templateCache[name] = false;
@@ -200,7 +200,7 @@ var m = {
   "url_rewrite": function (path, parameters) {
     var url = path;
     if (url.indexOf("/") === 0) {
-      url = m.url_root + url.substring(1);
+      url = m.urlRoot + url.substring(1);
     }
     var query = null;
     $.each(parameters, function (key, value) {
@@ -386,7 +386,7 @@ var m = {
     var search = m.get_field(form, field);
     var visibility = form.find("input[name='visibility']");
     var throbber = $("<img>").attr({
-      "src": m.url_root + "static/image/throbber.gif",
+      "src": m.urlRoot + "static/image/throbber.gif",
       "class": "throbber"
     }).hide();
     form.append(throbber);
@@ -403,7 +403,7 @@ var m = {
       if (visibility.length) {
         data.visibility = visibility.val();
       }
-      xhr = $.ajax(m.url_root + "organisation-tag", {
+      xhr = $.ajax(m.urlRoot + "organisation-tag", {
         "dataType": "json",
         "data": data,
         "success": function (data, textStatus, jqXHR) {
@@ -426,7 +426,7 @@ var m = {
     var search = m.get_field(form, field);
     var visibility = form.find("input[name='visibility']");
     var throbber = $("<img>").attr({
-      "src": m.url_root + "static/image/throbber.gif",
+      "src": m.urlRoot + "static/image/throbber.gif",
       "class": "throbber"
     }).hide();
     form.append(throbber);
@@ -443,7 +443,7 @@ var m = {
       if (visibility.length) {
         data.visibility = visibility.val();
       }
-      xhr = $.ajax(m.url_root + "event-tag", {
+      xhr = $.ajax(m.urlRoot + "event-tag", {
         "dataType": "json",
         "data": data,
         "success": function (data, textStatus, jqXHR) {
@@ -559,7 +559,7 @@ var m = {
     var updateMarker = mapView.clickDraggableMarker(set_manual_position);
 
     var address_search = function () {
-      $.ajax(m.url_root + "address/lookup", {
+      $.ajax(m.urlRoot + "address/lookup", {
         "dataType": "json",
         "data": {
           "postal": postal.input.val(),
@@ -769,7 +769,7 @@ var m = {
       if (!$el.attr("href")) {
         return;
       }
-      if ($el.attr("href").indexOf(m.url_root) !== 0) {
+      if ($el.attr("href").indexOf(m.urlRoot) !== 0) {
         return;
       }
       var href = $el.attr("href");
@@ -932,10 +932,10 @@ var m = {
 
   "handle": function () {
     var path = window.location.pathname;
-    if (path.indexOf(m.url_root) !== 0) {
-      console.log("Path does not match url root", path, m.url_root);
+    if (path.indexOf(m.urlRoot) !== 0) {
+      console.log("Path does not match url root", path, m.urlRoot);
     }
-    path = "/" + path.substring(m.url_root.length);
+    path = "/" + path.substring(m.urlRoot.length);
     $.each(m.route, function (index, value) {
       var regex = value[0];
       var func = value[1];
