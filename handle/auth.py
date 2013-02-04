@@ -19,7 +19,7 @@ class AuthLoginHandler(BaseHandler):
 class AuthLoginLocalHandler(BaseHandler):
     def get(self):
         if not self.is_local():
-            raise tornado.web.HTTPError(500, "Auth failed")
+            raise tornado.web.HTTPError(404, "Not found")
         user = self.orm.query(User).filter_by(user_id=-1).one()
         session = Session(
                 user,
@@ -46,13 +46,13 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
         self.authenticate_redirect(self.get_login_url())
     
     def _on_auth(self, auth_user):
-        """
+        """<
         Called after we receive authorisation information from Google.
         auth_user dict is either empty or contains 'locale', 'first_name', 'last_name', 'name' and 'email'.
         """
 
         if not auth_user:
-            raise tornado.web.HTTPError(500, "Google auth failed")
+            raise tornado.web.HTTPError(500, "Google authentication failed")
 
         auth_name = auth_user["email"]
 
