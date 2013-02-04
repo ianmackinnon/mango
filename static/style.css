@@ -529,27 +529,34 @@ form.mango input[type="checkbox"]
     width: 384px;
 }
 
-.ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default {
+.ui-state-default,
+.ui-widget-content .ui-state-default,
+.ui-widget-header .ui-state-default {
     background-color: inherit;
     background-image: inherit;
 }
 
-div.ui-datepicker
+div.ui-datepicker,
+div.ui-timepicker
 {
     font-size: 80%;
 }
-div.ui-datepicker td
+div.ui-datepicker td,
+div.ui-timepicker td
 {
 	border: 1px solid #ffffff;
 	background: #404040 url(images/ui-bg_flat_100_404040_40x100.png) 50% 50% repeat-x;
 }
 div.ui-datepicker td a,
-div.ui-datepicker td a.ui-state-highlight
+div.ui-datepicker td a.ui-state-highlight,
+div.ui-timepicker td a,
+div.ui-timepicker td a.ui-state-highlight
 {
 	font-weight: bold;
 	color: #ffffff;
 }
-div.ui-datepicker td.ui-datepicker-current-day
+div.ui-datepicker td a.ui-state-active,
+div.ui-timepicker td a.ui-state-active
 {
 	background: #d1b310;
 	color: #363636;
