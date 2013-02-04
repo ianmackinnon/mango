@@ -529,7 +529,31 @@ form.mango input[type="checkbox"]
     width: 384px;
 }
 
+.ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default {
+    background-color: inherit;
+    background-image: inherit;
+}
 
+div.ui-datepicker
+{
+    font-size: 80%;
+}
+div.ui-datepicker td
+{
+	border: 1px solid #ffffff;
+	background: #404040 url(images/ui-bg_flat_100_404040_40x100.png) 50% 50% repeat-x;
+}
+div.ui-datepicker td a,
+div.ui-datepicker td a.ui-state-highlight
+{
+	font-weight: bold;
+	color: #ffffff;
+}
+div.ui-datepicker td.ui-datepicker-current-day
+{
+	background: #d1b310;
+	color: #363636;
+}
 
 #org-search .inputs,
 #event-search .inputs
@@ -840,3 +864,11 @@ form.mango input[type="checkbox"]
 #mango .description.markdown-preview
 {
 }
+
+
+
+
+
+/* Fix CAAT jQuery UI rules */
+
+
