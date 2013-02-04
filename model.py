@@ -662,13 +662,19 @@ class Orgalias(Base):
 
 class Event(Base, NotableEntity):
     __tablename__ = 'event'
-    __table_args__ = {'sqlite_autoincrement':True}
+    __table_args__ = (
+        CheckConstraint("end_time > start_time or end_date > start_date"),
+        {'sqlite_autoincrement':True},
+        )
 
     event_id = Column(Integer, primary_key=True)
 
     name = Column(Unicode(), nullable=False)
     start_date = Column(Date, nullable=False)
-    end_date = Column(Date, nullable=False)
+    end_date = Column(Date,
+                      CheckConstraint("end_date >= start_date"),
+                      nullable=False,
+                      )
 
     description = Column(Unicode())
     start_time = Column(Time)
@@ -677,6 +683,8 @@ class Event(Base, NotableEntity):
     moderation_user_id = Column(Integer, ForeignKey(User.user_id))
     a_time = Column(Float(), nullable=False)
     public = Column(Boolean)
+
+    
 
     moderation_user = relationship(User, backref='moderation_event_list')
     

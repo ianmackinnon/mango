@@ -243,6 +243,14 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler):
         end_time = self.get_argument_time("end_time", None, json=is_json)
         public = self.get_argument_public("public", json=is_json)
 
+        if end_date is None:
+            end_date = start_date
+
+        if end_date < start_date:
+            raise HTTPError(400, "End date is earlier than start date")
+        if end_date == start_date and end_time < start_time:
+            raise HTTPError(400, "End time is earlier than start time on the same date")
+
         event = Event(
             name, start_date, end_date,
             description, start_time, end_time,
@@ -328,11 +336,14 @@ class EventHandler(BaseEventHandler):
         is_json = self.content_type("application/json")
         name = self.get_argument("name", json=is_json)
         start_date = self.get_argument_date("start_date", json=is_json)
-        end_date = self.get_argument_date("end_date", json=is_json)
+        end_date = self.get_argument_date("end_date", None, json=is_json)
         description = self.get_argument("description", None, json=is_json);
         start_time = self.get_argument_time("start_time", None, json=is_json)
         end_time = self.get_argument_time("end_time", None, json=is_json)
         public = self.get_argument_public("public", json=is_json)
+
+        if end_date is None:
+            end_date = start_date
 
         if event.name == name and \
                 event.start_date == start_date and \
@@ -344,6 +355,11 @@ class EventHandler(BaseEventHandler):
             self.redirect(self.next or self.url_root[:-1] + event.url)
             return
 
+        if end_date < start_date:
+            raise HTTPError(400, "End date is earlier than start date")
+        if end_date == start_date and end_time < start_time:
+            raise HTTPError(400, "End time is earlier than start time on the same date")
+
         event.name = name
         event.start_date = start_date
         event.end_date = end_date
@@ -352,6 +368,7 @@ class EventHandler(BaseEventHandler):
         event.end_time = end_time
         event.moderation_user = self.current_user
         event.public = public
+
         self.orm.commit()
         self.redirect(self.next or self.url_root[:-1] + event.url)
 
