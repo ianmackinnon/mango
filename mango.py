@@ -46,7 +46,8 @@ from handle.org import OrgHandler, OrgNewHandler, OrgListHandler, \
 from handle.orgalias import OrgaliasHandler
 from handle.event import EventHandler, EventNewHandler, EventListHandler, \
     EventEventtagListHandler, EventEventtagHandler, EventNoteListHandler, \
-    EventNoteHandler, EventAddressListHandler, EventAddressHandler
+    EventNoteHandler, EventAddressListHandler, EventAddressHandler, \
+    EventDuplicateHandler
 from handle.orgtag import OrgtagHandler, OrgtagListHandler, \
     OrgtagNewHandler, OrgtagNoteListHandler, OrgtagNoteHandler
 from handle.eventtag import EventtagHandler, EventtagListHandler, \
@@ -243,6 +244,7 @@ class Application(tornado.web.Application):
             (r"/event/%s/address" % re_id, EventAddressListHandler),
             (r"/event/%s/address/%s" % (re_id, re_id),
              EventAddressHandler),
+            (r"/event/%s/duplicate" % re_id, EventDuplicateHandler),
 
             (r"/task/address", OrgListTaskAddressHandler),
             (r"/task/visibility", OrgListTaskVisibilityHandler),

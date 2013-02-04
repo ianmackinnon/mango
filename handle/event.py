@@ -232,6 +232,7 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler):
                 offset=offset,
                 )
 
+    @authenticated
     def post(self):
         is_json = self.content_type("application/json")
 
@@ -555,3 +556,53 @@ class EventEventtagHandler(BaseEventHandler, BaseEventtagHandler):
 
 
 
+class EventDuplicateHandler(BaseEventHandler):
+    @authenticated
+    def post(self, event_id_string):
+        event = self._get_event(event_id_string)
+
+        is_json = self.content_type("application/json")
+        start_date = self.get_argument_date("start_date", json=is_json)
+
+        end_date = start_date + (event.end_date - event.start_date)
+
+        name = event.name
+        description = event.description
+        start_time = event.start_time
+        end_time = event.end_time
+        public = event.public
+
+        event2 = Event(
+            name, start_date, end_date,
+            description, start_time, end_time,
+            moderation_user=self.current_user, public=public)
+        self.orm.add(event2)
+
+        for address in event.address_list:
+            address2 = Address(
+                address.postal,
+                address.source,
+                address.lookup,
+                manual_longitude=address.manual_longitude,
+                manual_latitude=address.manual_latitude,
+                moderation_user=self.current_user,
+                public=address.public)
+            address2.geocode()
+            event2.address_list.append(address2)
+
+        for eventtag in event.eventtag_list:
+            event2.eventtag_list.append(eventtag)
+
+        for note in event.note_list:
+            note2 = Note(
+                note.text,
+                note.source,
+                moderation_user=self.current_user,
+                public=note.public)
+            event2.note_list.append(note2)
+
+        for org in event.org_list:
+            event2.org_list.append(org)
+
+        self.orm.commit()
+        self.redirect(self.next or self.url_root[:-1] + event2.url)

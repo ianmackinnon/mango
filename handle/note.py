@@ -29,6 +29,7 @@ class NoteListHandler(BaseNoteHandler):
             note_order=note_order,
             )
 
+    @authenticated
     def post(self):
         text, source, public = BaseNoteHandler._get_arguments(self)
         note = Note(text, source,

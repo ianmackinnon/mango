@@ -121,6 +121,15 @@
     </form>
     %endif
 
+
+
+
+
+
+
+
+
+
     %else:
     ${obj["name"]}
 
@@ -171,7 +180,7 @@
         <a
            href="${url_rewrite("%s/address" % obj["url"], parameters)}"
            class="action"
-           >Add an address</a>
+           >Add address</a>
       </div>
       %endif
     </div>
@@ -213,6 +222,28 @@
     No organisations linked yet.
     %endif
 
+    %if obj:
+    <h3>Duplicate Event</h3>
+
+    <form
+       class="mango"
+       action="${url_rewrite(obj["url"] + "/duplicate", parameters)}"
+       method="post"
+       >
+      <input name="_xsrf" type="hidden" value="${xsrf}">
+      <input name="_method" type="hidden" value="post">
+      <label name="start_date" status="">
+	<span>Duplicate Start Date</span>
+	<span class="requirement"></span>
+	<input
+           name="start_date"
+           placeholder="Format is 'YYYY-MM-DD', eg. '2012-07-24'."
+           value=""
+           >
+      </label>
+      <input type="submit" value="Duplicate">
+    </form>
+    %endif
   </div>
   
 </div>

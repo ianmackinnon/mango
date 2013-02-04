@@ -672,7 +672,6 @@ var m = {
     var text = m.get_field(form, "description");
     var preview = $(".description.markdown-preview");
     var on_change = function (value) {
-      text.label.attr("status", !!value ? "good" : "bad");
       preview.html(m.filter.markdown(value));
       m.convert_inline_links($(".description.markdown-preview"));
     };

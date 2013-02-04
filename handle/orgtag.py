@@ -140,6 +140,7 @@ class OrgtagListHandler(BaseOrgtagHandler):
                 type_li_template="org_li",
                 )
 
+    @authenticated
     def post(self):
         name, public, note_id_list = BaseOrgtagHandler._get_arguments(self)
 

@@ -141,6 +141,7 @@ class EventtagListHandler(BaseEventtagHandler):
                 type_li_template="event_li",
                 )
 
+    @authenticated
     def post(self):
         name, public, note_id_list = BaseEventtagHandler._get_arguments(self)
 

@@ -279,6 +279,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
                 offset=offset,
                 )
 
+    @authenticated
     def post(self):
         is_json = self.content_type("application/json")
         name = self.get_argument("name", json=is_json)
