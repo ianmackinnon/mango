@@ -159,16 +159,18 @@ class BaseHandler(tornado.web.RequestHandler):
     def write_error(self, status_code, **kwargs):
         if 'exc_info' in kwargs:
             exc_info = kwargs.pop('exc_info')
-            exception = exc_info[1]
-            message = exception.log_message
-            status_message = httplib.responses[status_code]
-            self.render("error.html",
-                        status_code=status_code,
-                        status_message=status_message,
-                        message=message,
-                        )
-            self.finish()
-            return
+            if exc_info:
+                exception = exc_info[1]
+                if hasattr(exception, "log_message"):
+                    message = exception.log_message
+                    status_message = httplib.responses[status_code]
+                    self.render("error.html",
+                                status_code=status_code,
+                                status_message=status_message,
+                                message=message,
+                                )
+                    self.finish()
+                    return
         tornado.web.RequestHandler.write_error(self, status_code, **kwargs)
 
     def content_type(self, name):
