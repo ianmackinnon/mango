@@ -213,7 +213,7 @@ if not parameters:
 
 
 
-<%def name="org_li(org, link_url=False, unlink=False, visibility=False, parameters=None)">\
+<%def name="org_li(org, link_url=False, link=False, unlink=False, visibility=False, parameters=None)">\
 <%
 if not parameters:
     parameters = {}
@@ -224,6 +224,19 @@ if not parameters:
    href="${url_rewrite(org["url"], parameters)}"
    >${org["name"] | n, h, unicode, nbsp}</a>\
 </span>\
+%if link and link_url and current_user:
+&nbsp;\
+<span>\
+<form
+   action="${url_rewrite(link_url, dict(parameters, next=url_rewrite(uri)))}"
+   method="post"
+   >\
+<input name="_xsrf" type="hidden" value="${xsrf}">\
+<input name="_method" type="hidden" value="put">\
+<input type="submit" value="+">\
+</form>\
+</span>\
+%endif
 %if unlink and link_url and current_user:
 &nbsp;\
 <span>\
@@ -246,7 +259,7 @@ ${visibility_bar(org)}\
 
 
 
-<%def name="event_li(event, link_url=False, unlink=False, visibility=False, parameters=None)">\
+<%def name="event_li(event, date=True, link_url=False, link=False, unlink=False, visibility=False, parameters=None)">\
 <%
 if not parameters:
     parameters = {}
@@ -257,6 +270,23 @@ if not parameters:
    href="${url_rewrite(event["url"], parameters)}"
    >${event["name"] | n, h, unicode, nbsp}</a>\
 </span>\
+%if date:
+&nbsp;\
+<span>${event["start_date"] | n, page_date, nbsp}</span>\
+%endif
+%if link and link_url and current_user:
+&nbsp;\
+<span>\
+<form
+   action="${url_rewrite(link_url, dict(parameters, next=url_rewrite(uri)))}"
+   method="post"
+   >\
+<input name="_xsrf" type="hidden" value="${xsrf}">\
+<input name="_method" type="hidden" value="put">\
+<input type="submit" value="+">\
+</form>\
+</span>\
+%endif
 %if unlink and link_url and current_user:
 &nbsp;\
 <span>\

@@ -48,20 +48,20 @@
 
   </div>
 
-<ul class="tag_list">
-  <%
-     tag_id_list = [tag["id"] for tag in obj[type_tag_list]]
-     %>
-  %for tag in tag_list:
-  %if tag["id"] not in tag_id_list:
-  ${self.mini.tag_li(tag, entity=False, note=False,
-    link_url="%s/tag/%s" % (obj["url"], tag["id"]),
-    link=True, next=uri,
-    visibility=True)}
-  %endif
-  %endfor
-</ul>
-
+  <ul class="tag_list">
+    <%
+       tag_id_list = [tag["id"] for tag in obj[type_tag_list]]
+       %>
+    %for tag in tag_list:
+    %if tag["id"] not in tag_id_list:
+    ${self.mini.tag_li(tag, entity=False, note=False,
+      link_url="%s/tag/%s" % (obj["url"], tag["id"]),
+      link=True, next=uri,
+      visibility=True)}
+    %endif
+    %endfor
+  </ul>
+  
 </div>
 
 </%def>

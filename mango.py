@@ -42,12 +42,14 @@ from handle.org import OrgHandler, OrgNewHandler, OrgListHandler, \
     OrgOrgtagListHandler, OrgOrgtagHandler, \
     OrgNoteListHandler, OrgNoteHandler, \
     OrgAddressListHandler, OrgAddressHandler, \
+    OrgEventHandler, OrgEventListHandler, \
     OrgListTaskAddressHandler, OrgListTaskVisibilityHandler
 from handle.orgalias import OrgaliasHandler
 from handle.event import EventHandler, EventNewHandler, EventListHandler, \
     EventEventtagListHandler, EventEventtagHandler, EventNoteListHandler, \
     EventNoteHandler, EventAddressListHandler, EventAddressHandler, \
-    EventDuplicateHandler
+    EventDuplicateHandler, \
+    EventOrgHandler, EventOrgListHandler
 from handle.orgtag import OrgtagHandler, OrgtagListHandler, \
     OrgtagNewHandler, OrgtagNoteListHandler, OrgtagNoteHandler
 from handle.eventtag import EventtagHandler, EventtagListHandler, \
@@ -231,6 +233,8 @@ class Application(tornado.web.Application):
             (r"/organisation/%s/address" % re_id, OrgAddressListHandler),
             (r"/organisation/%s/address/%s" % (re_id, re_id),
              OrgAddressHandler),
+            (r"/organisation/%s/event" % re_id, OrgEventListHandler),
+            (r"/organisation/%s/event/%s" % (re_id, re_id), OrgEventHandler),
 
             (r"/organisation-alias/%s" % re_id, OrgaliasHandler),
 
@@ -244,6 +248,8 @@ class Application(tornado.web.Application):
             (r"/event/%s/address" % re_id, EventAddressListHandler),
             (r"/event/%s/address/%s" % (re_id, re_id),
              EventAddressHandler),
+            (r"/event/%s/organisation" % re_id, EventOrgListHandler),
+            (r"/event/%s/organisation/%s" % (re_id, re_id), EventOrgHandler),
             (r"/event/%s/duplicate" % re_id, EventDuplicateHandler),
 
             (r"/task/address", OrgListTaskAddressHandler),

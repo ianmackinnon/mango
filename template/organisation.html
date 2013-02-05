@@ -63,7 +63,7 @@
     <div class="action-bar no-border">
       <h3>Events</h3>
 
-      %if False and current_user:
+      %if current_user:
       <div class="actions">
         <a
            href="${url_rewrite("%s/event" % obj["url"], parameters)}"

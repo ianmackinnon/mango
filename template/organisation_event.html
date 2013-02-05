@@ -1,0 +1,58 @@
+<%inherit file="base.html"/>
+
+<%def name="title()">${obj["name"]} | Edit events</%def>
+
+<%def name="page()">
+
+<h1>
+  <a
+     href="${url_rewrite(obj["url"], parameters)}"
+     >${obj["name"]}</a> | Edit events
+</h1>
+
+<div class="section">
+  <h3>Current events</h3>
+
+  <ul class="tag_list">
+    %for event in obj["event_list"]:
+    ${self.mini.event_li(event,
+      link_url="%s/event/%s" % (obj["url"], event["id"]),
+      unlink=True,
+      visibility=True)}
+    %endfor
+  </ul>
+</div>    
+
+<div class="section">
+  <h3>Available Events</h3>
+
+  <div class="action-bar">
+    <form id="event-search">
+      <label name="search">
+        <span>Search</span>
+        <input name="search" value="${search or ''}">
+      </label>
+      ${self.mini.visibility_search_input(visibility, current_user)}
+      <input type="submit">
+    </form>
+
+  </div>
+
+  <ul class="tag_list">
+    <%
+       event_id_list = [event["id"] for event in obj["event_list"]]
+       %>
+    %for event in event_list:
+    %if event["id"] not in event_id_list:
+    ${self.mini.event_li(event,
+      link_url="%s/event/%s" % (obj["url"], event["id"]),
+      link=True,
+      visibility=True)}
+    %endif
+    %endfor
+  </ul>
+
+</div>
+    
+</%def>
+

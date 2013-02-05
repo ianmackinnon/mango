@@ -1,160 +1,18 @@
 # -*- coding: utf-8 -*-
 
 import json
-import datetime
 
-from collections import OrderedDict
-
-from sqlalchemy import distinct, or_, and_
-from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.orm import joinedload, aliased
-from sqlalchemy.sql import exists, func, literal
-from sqlalchemy.sql.expression import case
 from tornado.web import HTTPError
 
-from base import BaseHandler, authenticated, sha1_concat
-from note import BaseNoteHandler
+from base import authenticated, sha1_concat
+from base_event import BaseEventHandler
+from base_org import BaseOrgHandler
+from base_note import BaseNoteHandler
 from eventtag import BaseEventtagHandler
 from address import BaseAddressHandler
 
-from model import Event, Note, Address, Eventtag, event_eventtag, event_address
+from model import Event, Note, Address, Org
 
-
-
-max_address_per_page = 26
-max_address_pages = 3
-
-
-
-class BaseEventHandler(BaseHandler):
-    def _get_event(self, event_id_string, options=None):
-        event_id = int(event_id_string)
-
-        query = self.orm.query(Event)\
-            .filter_by(event_id=event_id)
-
-        if options:
-            query = query \
-                .options(*options)
-
-        if not self.current_user:
-            query = query \
-                .filter_by(public=True)
-
-        try:
-            event = query.one()
-        except NoResultFound:
-            raise HTTPError(404, "%d: No such event" % event_id)
-
-        return event
-
-    def _get_event_packet_search(self, name=None, name_search=None,
-                                 past=False,
-                                 tag_name_list=None,
-                                 location=None,
-                                 visibility=None,
-                                 offset=None,
-                                 view="event"):
-        event_query = self.orm.query(Event)
-
-        date_start = None
-        date_end = None
-        today = datetime.datetime.today().date()
-        if past:
-            date_end = today
-        else:
-            date_start = today
-
-        if date_start:
-            event_query = event_query.filter(Event.start_date >= date_start)
-        if date_end:
-            event_query = event_query.filter(Event.end_date <= date_end)
-
-        event_query = self.filter_visibility(event_query, Event, visibility)
-
-        if name:
-            event_query = event_query.filter_by(name=name)
-        elif name_search:
-            event_query = event_query\
-                .filter(Event.name.contains(name_search))
-
-        if tag_name_list:
-            event_query = event_query.join((Eventtag, Event.eventtag_list)) \
-                .filter(Eventtag.short.in_(tag_name_list))
-
-        if location:
-            event_address_query = event_query \
-                .join(Event.address_list)
-        else:
-            event_address_query = event_query \
-                .outerjoin(Event.address_list)
-            
-        event_address_query = event_address_query \
-            .add_entity(Address)
-        event_address_query = self.filter_visibility(
-            event_address_query, Address, visibility,
-            secondary=True, null_column=Address.address_id)
-
-        if location:
-            event_address_query = event_address_query \
-                .filter(and_(
-                    Address.latitude != None,
-                    Address.latitude >= location.south,
-                    Address.latitude <= location.north,
-                    Address.longitude != None,
-                    Address.longitude >= location.west,
-                    Address.longitude <= location.east,
-                    ))
-
-        if past:
-            event_address_query = event_address_query \
-                .order_by(Event.start_date.desc())
-        else:
-            event_address_query = event_address_query \
-                .order_by(Event.end_date.asc())
-
-        if offset:
-            event_address_query = event_address_query \
-                .offset(offset)
-
-        event_packet = {
-            "location": location and location.to_obj(),
-            }
-
-        if (view == "marker" or
-            event_address_query.count() > max_address_per_page * max_address_pages
-            ):
-            event_packet["marker_list"] = []
-            for event, address in event_address_query:
-                event_packet["marker_list"].append({
-                        "name": event.name,
-                        "url": event.url,
-                        "latitude": address and address.latitude,
-                        "longitude": address and address.longitude,
-                        })
-        else:
-            events = OrderedDict()
-            for event, address in event_address_query:
-                if not event.event_id in events:
-                    events[event.event_id] = {
-                        "event": event,
-                        "address_obj_list": [],
-                        }
-                if address:
-                    events[event.event_id]["address_obj_list"].append(address.obj(
-                            public=bool(self.current_user),
-                            general=True,
-                            ))
-
-            event_packet["event_list"] = []
-            for event_id, data in events.items():
-                event_packet["event_list"].append(data["event"].obj(
-                        public=bool(self.current_user),
-                        address_obj_list=data["address_obj_list"],
-                        ))
-
-        return event_packet
-        
 
 
 class EventListHandler(BaseEventHandler, BaseEventtagHandler):
@@ -553,6 +411,68 @@ class EventEventtagHandler(BaseEventHandler, BaseEventtagHandler):
         self.redirect(self.next or self.url_root[:-1] + event.url)
 
 
+
+class EventOrgListHandler(BaseEventHandler):
+    @authenticated
+    def get(self, event_id_string):
+
+        # event...
+
+        event = self._get_event(event_id_string)
+
+        if self.deep_visible():
+            org_list=event.org_list
+        else:
+            org_list=event.org_list_public
+            
+        public = bool(self.current_user)
+
+        org_list = [org.obj(public=public) for org in org_list]
+
+        obj = event.obj(
+            public=public,
+            org_obj_list=org_list,
+            )
+
+        del org_list
+
+        # org...
+
+        org_list = []
+        search = ""
+        for org in self.orm.query(Org).all(): # to do: filter search, public
+            org_list.append(org.obj(
+                    public=bool(self.current_user)
+                    ))
+
+        self.next = event.url
+        self.render(
+            'event_organisation.html',
+            obj=obj,
+            org_list=org_list,
+            search=search,
+            )
+
+
+
+class EventOrgHandler(BaseEventHandler, BaseOrgHandler):
+    @authenticated
+    def put(self, event_id_string, org_id_string):
+        event = self._get_event(event_id_string)
+        org = self._get_org(org_id_string)
+        if org not in event.org_list:
+            event.org_list.append(org)
+            self.orm.commit()
+        self.redirect(self.next or self.url_root[:-1] + event.url)
+
+    @authenticated
+    def delete(self, event_id_string, org_id_string):
+        event = self._get_event(event_id_string)
+        org = self._get_org(org_id_string)
+        if org in event.org_list:
+            event.org_list.remove(org)
+            self.orm.commit()
+        self.redirect(self.next or self.url_root[:-1] + event.url)
 
 
 

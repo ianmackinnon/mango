@@ -2,8 +2,6 @@
 
 from base import authenticated
 from base_note import BaseNoteHandler
-from orgtag import BaseOrgtagHandler
-from org import BaseOrgHandler
 from model import Note
 
 
