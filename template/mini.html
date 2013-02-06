@@ -213,7 +213,7 @@ if not parameters:
 
 
 
-<%def name="org_li(org, link_url=False, link=False, unlink=False, visibility=False, parameters=None)">\
+<%def name="org_li(org, alias=False, link_url=False, link=False, unlink=False, visibility=False, parameters=None)">\
 <%
 if not parameters:
     parameters = {}
@@ -224,6 +224,12 @@ if not parameters:
    href="${url_rewrite(org["url"], parameters)}"
    >${org["name"] | n, h, unicode, nbsp}</a>\
 </span>\
+%if alias and org.get("alias", None):
+&nbsp;\
+<span class="org_alias">\
+(${org["alias"]["name"] | n, h, unicode, nbsp})
+</span>\
+%endif
 %if link and link_url and current_user:
 &nbsp;\
 <span>\

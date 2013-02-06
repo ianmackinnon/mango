@@ -42,6 +42,14 @@ class BaseOrgHandler(BaseHandler):
     
     def _get_name_search_query(self, name=None, name_search=None,
                                visibility=None):
+        u"""
+        name:         Full name match.
+        name_search:  Name contains search, matches from start first.
+        visibility:   "public", "pending", "private", "all". Unknown = "public".
+
+        Returns:      A matching list of tuples like (org_id, orgalias_id) where
+                      orgalias_id may be None.
+        """
 
         org_name_query = self.orm.query(
             Org.name.label("name"),

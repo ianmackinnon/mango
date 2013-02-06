@@ -18,7 +18,8 @@
     ${self.mini.org_li(org,
       link_url="%s/organisation/%s" % (obj["url"], org["id"]),
       unlink=True,
-      visibility=True)}
+      visibility=True,
+    )}
     %endfor
   </ul>
 </div>    
@@ -38,20 +39,25 @@
 
   </div>
 
-<ul class="tag_list">
-  <%
-     org_id_list = [org["id"] for org in obj["org_list"]]
-     %>
-  %for org in org_list:
-  %if org["id"] not in org_id_list:
-  ${self.mini.org_li(org,
-    link_url="%s/organisation/%s" % (obj["url"], org["id"]),
-    link=True,
-    visibility=True)}
+  <ul class="tag_list">
+    <%
+       org_id_list = [org["id"] for org in obj["org_list"]]
+       %>
+    %for org in org_list:
+    %if org["id"] not in org_id_list:
+    ${self.mini.org_li(org,
+      link_url="%s/organisation/%s" % (obj["url"], org["id"]),
+      link=True,
+      visibility=True,
+      alias=True,
+      )}
+    %endif
+    %endfor
+  </ul>
+  %if org_count > 20:
+  <p>Refine search for more results.</p>
   %endif
-  %endfor
-</ul>
-
+  
 </div>
 
 </%def>

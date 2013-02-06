@@ -575,6 +575,10 @@ class BaseHandler(tornado.web.RequestHandler):
 
     def filter_visibility(self, query, Entity, visibility=None,
                           secondary=False, null_column=False):
+        """
+        visibility:  "public", "pending", "private", "all". Unknown = "public".
+        """
+
         if secondary:
             if visibility in ["pending", "private"]:
                 visibility = "all"

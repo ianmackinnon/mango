@@ -44,6 +44,30 @@ class BaseEventHandler(BaseHandler):
 
         return event
 
+    
+
+    def _get_event_search_query(
+        self, name=None, name_search=None,
+        tag_name_list=None, visibility=None):
+        
+        event_query = self.orm.query(Event)
+        event_query = self.filter_visibility(event_query, Event, visibility)
+
+        if name:
+            event_query = event_query.filter_by(name=name)
+        elif name_search:
+            event_query = event_query\
+                .filter(Event.name.contains(name_search))
+
+        if tag_name_list:
+            event_query = event_query.join((Eventtag, Event.eventtag_list)) \
+                .filter(Eventtag.short.in_(tag_name_list))
+            # order by?
+
+        return event_query
+
+
+
     def _get_event_packet_search(self, name=None, name_search=None,
                                  past=False,
                                  tag_name_list=None,
@@ -51,7 +75,10 @@ class BaseEventHandler(BaseHandler):
                                  visibility=None,
                                  offset=None,
                                  view="event"):
-        event_query = self.orm.query(Event)
+
+        event_query = self._get_event_search_query(
+            name=name, name_search=name_search,
+            tag_name_list=tag_name_list, visibility=visibility)
 
         date_start = None
         date_end = None
@@ -65,18 +92,6 @@ class BaseEventHandler(BaseHandler):
             event_query = event_query.filter(Event.start_date >= date_start)
         if date_end:
             event_query = event_query.filter(Event.end_date <= date_end)
-
-        event_query = self.filter_visibility(event_query, Event, visibility)
-
-        if name:
-            event_query = event_query.filter_by(name=name)
-        elif name_search:
-            event_query = event_query\
-                .filter(Event.name.contains(name_search))
-
-        if tag_name_list:
-            event_query = event_query.join((Eventtag, Event.eventtag_list)) \
-                .filter(Eventtag.short.in_(tag_name_list))
 
         if location:
             event_address_query = event_query \

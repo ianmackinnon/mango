@@ -47,10 +47,14 @@
     ${self.mini.event_li(event,
       link_url="%s/event/%s" % (obj["url"], event["id"]),
       link=True,
-      visibility=True)}
+      visibility=True,
+      )}
     %endif
     %endfor
   </ul>
+  %if event_count > 20:
+  <p>Refine search for more results.</p>
+  %endif
 
 </div>
     

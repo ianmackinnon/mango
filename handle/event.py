@@ -412,9 +412,11 @@ class EventEventtagHandler(BaseEventHandler, BaseEventtagHandler):
 
 
 
-class EventOrgListHandler(BaseEventHandler):
+class EventOrgListHandler(BaseEventHandler, BaseOrgHandler):
     @authenticated
     def get(self, event_id_string):
+
+        is_json = self.content_type("application/json")
 
         # event...
 
@@ -438,11 +440,22 @@ class EventOrgListHandler(BaseEventHandler):
 
         # org...
 
+        org_name_search = self.get_argument("search", None, json=is_json)
+
+        org_alias_name_query = BaseOrgHandler._get_org_alias_search_query(
+            self,
+            name_search=org_name_search,
+            visibility=self.parameters["visibility"]
+            )
+
         org_list = []
-        search = ""
-        for org in self.orm.query(Org).all(): # to do: filter search, public
+        org_count = org_alias_name_query.count()
+        for org, alias in org_alias_name_query[:20]:
             org_list.append(org.obj(
-                    public=bool(self.current_user)
+                    public=bool(self.current_user),
+                    alias=alias and alias.obj(
+                        public=bool(self.current_user),
+                        ),
                     ))
 
         self.next = event.url
@@ -450,7 +463,8 @@ class EventOrgListHandler(BaseEventHandler):
             'event_organisation.html',
             obj=obj,
             org_list=org_list,
-            search=search,
+            org_count=org_count,
+            search=org_name_search,
             )
 
 
