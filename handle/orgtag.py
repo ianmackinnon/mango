@@ -178,10 +178,16 @@ class OrgtagHandler(BaseOrgtagHandler):
 
         orgtag = self._get_orgtag(orgtag_id_string)
 
-        if self.deep_visible():
-            org_list=orgtag.org_list
-        else:
-            org_list=orgtag.org_list_public
+        org_list_query = self.orm.query(Org) \
+            .join(org_orgtag) \
+            .filter(Org.org_id==org_orgtag.c.org_id) \
+            .filter(org_orgtag.c.orgtag_id==orgtag.orgtag_id)
+        org_list_query = self.filter_visibility(
+            org_list_query,
+            Org,
+            visibility=self.parameters["visibility"],
+            )
+        org_list = org_list_query.all()
 
         note_list, note_count = orgtag.note_list_filtered(
             note_search=note_search,

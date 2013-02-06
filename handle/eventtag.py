@@ -179,10 +179,16 @@ class EventtagHandler(BaseEventtagHandler):
 
         eventtag = self._get_eventtag(eventtag_id_string)
 
-        if self.deep_visible():
-            event_list=eventtag.event_list
-        else:
-            event_list=eventtag.event_list_public
+        event_list_query = self.orm.query(Event) \
+            .join(event_eventtag) \
+            .filter(Event.event_id==event_eventtag.c.event_id) \
+            .filter(event_eventtag.c.eventtag_id==eventtag.eventtag_id)
+        event_list_query = self.filter_visibility(
+            event_list_query,
+            Event,
+            visibility=self.parameters["visibility"],
+            )
+        event_list = event_list_query.all()
 
         note_list, note_count = eventtag.note_list_filtered(
             note_search=note_search,
