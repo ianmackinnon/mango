@@ -190,6 +190,10 @@
 
       addressCollectionView.render();
 
+      if (!this.model.addressCollection.length) {
+        this.limit.offset -= 1;
+      }
+
       if (this.limit.offset > 0 || this.limit.offset === 0) {
         insert = false;
       }
@@ -225,6 +229,9 @@
         model.addressCollection.each(function (addressModel) {
           sum += 1;
         });
+        if (!model.addressCollection.length) {
+          sum += 1;
+        }
       });
       if (this.markerList) {
         sum += this.markerList.length;
