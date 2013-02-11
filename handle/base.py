@@ -340,7 +340,7 @@ class BaseHandler(tornado.web.RequestHandler):
         try:
             value = fn(value)
         except ValueError:
-            raise tornado.web.HTTPError(400, message)
+            raise tornado.web.HTTPError(400, repr(value) + " " + message)
         return value
 
     def get_argument_allowed(self, name, allowed, default=_ARG_DEFAULT_MANGO, json=False):

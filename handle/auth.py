@@ -2,6 +2,8 @@
 
 import tornado.auth
 
+from urllib import urlencode
+
 from base import BaseHandler, authenticated
 
 from model import User, Auth, Session
@@ -43,10 +45,14 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
         if self.get_argument("openid.mode", None):
             self.get_authenticated_user(self.async_callback(self._on_auth))
             return
-        self.authenticate_redirect(self.get_login_url())
+        login_args = {
+            "next": self.next or self.application.url_root,
+            }
+        login_url = self.get_login_url() + "?" + urlencode(login_args)
+        self.authenticate_redirect(login_url)
     
     def _on_auth(self, auth_user):
-        """<
+        """
         Called after we receive authorisation information from Google.
         auth_user dict is either empty or contains 'locale', 'first_name', 'last_name', 'name' and 'email'.
         """
