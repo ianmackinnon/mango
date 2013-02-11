@@ -7,6 +7,7 @@ import sys
 import errno
 import urllib
 import logging
+import logging.handlers
 import memcache
 
 from BeautifulSoup import BeautifulSoup
@@ -59,10 +60,11 @@ from handle.history import HistoryHandler
 
 
 define("port", default=8802, help="Run on the given port", type=int)
-define("root", default='', help="URL root", type=str)
+define("root", default='', help="URL root", type=unicode)
 define("caat", default=False, help="CAAT header", type=bool)
-define("database", default="sqlite", help="sqlite or mysql", type=str)
+define("database", default="sqlite", help="Either 'sqlite' or 'mysql'. Default is 'sqlite'.", type=str)
 define("conf", default=".mango.conf", help="eg. .mango.conf", type=str)
+define("log", default=None, help="Log directory. Write permission required. Logging is disabled if this option is not set.", type=unicode)
 
 
 
@@ -332,20 +334,32 @@ class Application(tornado.web.Application):
                                      default_filters=["unicode", "h"],
                                      )
 
-        log_location = "log/arms_map.py.log"
-        log_max_bytes = 1048576
+        self.log_path = None
+        self.log_handler = None
+        if options.log:
+            options.log = options.log.decode("utf-8")
+            try:
+                os.makedirs(options.log)
+            except OSError, e:
+                if e.errno != errno.EEXIST:
+                    raise e
 
-        try:
-            os.mkdir(os.path.dirname(log_location))
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise e
-            
+            self.log_path = os.path.join(
+                options.log,
+                'mango.log'
+                )
+
+            self.log_handler = logging.handlers.TimedRotatingFileHandler(
+                self.log_path,
+                when="midnight",
+                encoding="utf-8",
+                backupCount=7,
+                utc=True
+                )
 
         logger = logging.getLogger()
-        handler = logging.handlers.RotatingFileHandler(
-            log_location, maxBytes=log_max_bytes)
-        logging.getLogger().addHandler(handler)
+        if self.log_handler:
+            logging.getLogger().addHandler(self.log_handler)
 
         settings["xsrf_cookies"] = False
         
@@ -362,6 +376,7 @@ def main():
     http_server = tornado.httpserver.HTTPServer(Application())
     http_server.listen(options.port)
     tornado.ioloop.IOLoop.instance().start()
+
 
 
 if __name__ == "__main__":
