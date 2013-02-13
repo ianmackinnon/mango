@@ -68,6 +68,13 @@ var m = {
     return _.template(m._templateCache[name], data);
   },
 
+  $template: function (name, data) {
+    var html = m.template(name, data);
+    html = html.replace(/[\r\n]+/gm,"")
+    var $el = $("<div>").html(html);
+    return $el;
+  },
+
   currentUser: null,
 
   "filter": {
@@ -129,12 +136,12 @@ var m = {
       tag_list.empty();
 
       $.each(orgtag_packet, function(index, value) {
-	var tag_li = $(m.template("tag-li.html", {
+	var tag_li = m.$template("tag-li.html", {
 	  "tag":value,
 	  "org":true,
 	  "note":true,
           "parameters":m.parameters,
-	}));
+	});
 	tag_list.append(tag_li);
 	tag_list.append(" ");
       });
@@ -145,12 +152,12 @@ var m = {
       tag_list.empty();
 
       $.each(eventtag_packet, function(index, value) {
-	var tag_li = $(m.template("tag-li.html", {
+	var tag_li = m.$template("tag-li.html", {
 	  "tag":value,
 	  "org":true,
 	  "note":true,
           "parameters":m.parameters,
-	}));
+	});
 	tag_list.append(tag_li);
 	tag_list.append(" ");
       });

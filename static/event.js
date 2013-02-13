@@ -170,12 +170,12 @@
     render: function () {
       var view = this;
 
-      var $this = $(m.template(this.templateName, {
+      var $this = m.$template(this.templateName, {
         event: this.model.toJSON(),
         m: m,
         parameters: m.parameters,
         note: false,
-      }));
+      });
 
       var insert = true;
 
