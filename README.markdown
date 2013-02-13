@@ -11,7 +11,7 @@ Mapping Application for NGOs
     sudo pip install \
       mako tornado sqlalchemy geopy markdown redis pysqlite BeautifulSoup4 \
       python-levenshtein mysql-python python-memcached BeautifulSoup \
-      httplib2
+      httplib2 unidecode
       
     sudo npm install -g jslint
 
