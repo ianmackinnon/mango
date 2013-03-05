@@ -6,12 +6,12 @@ Mapping Application for NGOs
 
     sudo apt-get install python-setuptools sqlite3 libsqlite3-dev \
       redis-server mysql-server mysql-client libmysqlclient-dev \
-      node npm
+      nodejs npm
 
     sudo pip install \
       mako tornado sqlalchemy geopy markdown redis pysqlite BeautifulSoup4 \
       python-levenshtein mysql-python python-memcached BeautifulSoup \
-      httplib2 unidecode
+      httplib2
       
     sudo npm install -g jslint
 

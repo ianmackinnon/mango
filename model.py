@@ -6,7 +6,6 @@ import sys
 import math
 import time
 import logging
-import unidecode
 import mysql.mysql_init
 
 import geo
@@ -87,11 +86,7 @@ SQLITE :  Destination SQLite database. If not supplied, you must
 
 
 def short_name(name):
-    """
-    Unicode input, string output.
-    """
-    short = unidecode.unidecode(name)
-    short = short.lower()
+    short = name.lower()
     short = re.compile(u"[-_]", re.U).sub(" ", short)
     short = re.compile(u"[^\w\s\|]", re.U).sub("", short)
     short = re.compile(u"[\s]+", re.U).sub(" ", short)
