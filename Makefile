@@ -1,5 +1,9 @@
 SHELL := /bin/bash
-.PHONY : all clean seed sqlite mysql clean-sqlite clean-mysql clean-database vendor
+.PHONY : all clean database clean-database vendor sqlite clean-sqlite mysql mysql-build mysql-import mysql-triggers mysql-seed clean-mysql lint
+
+
+MYSQL_IMPORT = "mysql/import.my.sql"
+
 
 all : .xsrf seed database
 
@@ -17,6 +21,7 @@ vendor:
 	head -c 32 /dev/urandom | base64 > .xsrf
 	chmod 600 .xsrf
 
+# SQLite
 
 sqlite : mango.db
 
@@ -28,7 +33,9 @@ mango.db : model.py sqlite/build.sqlite.sql
 	./model.py mango.db
 	sqlite3 mango.db < sqlite/build.sqlite.sql
 
-mysql : mysql-build mysql-triggers mysql-seed
+# MySQL
+
+mysql : mysql-build mysql-import mysql-triggers mysql-seed
 
 mysql-build:
 	@./mysql/mysql_init.py > /dev/null
@@ -39,24 +46,25 @@ mysql-build:
 	  mysql/build.mysql.sql \
 	 | mysql -u root -p -D $$(./mysql/mysql_init.py -d database)
 
+mysql-import:
+	@([ -f "$(MYSQL_IMPORT)" ] && mysql -u root -p -D $$(./mysql/mysql_init.py -d database) < "$(MYSQL_IMPORT)") || true
+
 mysql-triggers:
 	@cat \
 	  mysql/build_triggers.mysql.sql \
 	 | mysql -u root -p -D $$(./mysql/mysql_init.py -d database)
 
 mysql-seed:
-	@cat \
+	@([ -f "$(MYSQL_IMPORT)" ] || @cat \
 	  mysql/seed.mysql.sql \
-	 | mysql -u root -p -D $$(./mysql/mysql_init.py -d database)
+	 | mysql -u root -p -D $$(./mysql/mysql_init.py -d database))
 
 clean-mysql:
 	@./mysql/mysql_init.py > /dev/null
 	@echo "Logging into MySQL as user 'root'"
 	@./mysql/mysql_init.py -x | mysql -u root -p
 
-seed :
-	if [ -e seed.bash ]; then ./seed.bash; fi
-
+# Static analysis
 
 lint :
 	jslint --indent=2 --nomen --vars \
