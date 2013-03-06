@@ -150,7 +150,7 @@ class OrgtagListHandler(BaseOrgtagHandler):
                          )
         self.orm.add(orgtag)
         self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + orgtag.url)
+        self.redirect_next(orgtag.url)
 
 
 
@@ -229,7 +229,7 @@ class OrgtagHandler(BaseOrgtagHandler):
             return self.error(405, "Method not allowed. Tag has attached Organisations.")
         self.orm.delete(orgtag)
         self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + "/organisation")
+        self.redirect_next("/organisation")
         
     @authenticated
     def put(self, orgtag_id_string):
@@ -242,7 +242,7 @@ class OrgtagHandler(BaseOrgtagHandler):
         if orgtag.name == name and \
                 orgtag.public == public and \
                 orgtag.note_list == note_list:
-            self.redirect(self.next or self.url_root[:-1] + orgtag.url)
+            self.redirect_next(orgtag.url)
             return
             
         orgtag.name = name
@@ -250,7 +250,7 @@ class OrgtagHandler(BaseOrgtagHandler):
         orgtag.moderation_user = self.current_user
         orgtag.note_list = note_list
         self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + orgtag.url)
+        self.redirect_next(orgtag.url)
 
 
 class OrgtagNoteListHandler(BaseOrgtagHandler, BaseNoteHandler):
@@ -266,7 +266,7 @@ class OrgtagNoteListHandler(BaseOrgtagHandler, BaseNoteHandler):
                     )
         orgtag.note_list.append(note)
         self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + orgtag.url)
+        self.redirect_next(orgtag.url)
 
     @authenticated
     def get(self, orgtag_id_string): 
@@ -293,7 +293,7 @@ class OrgtagNoteHandler(BaseOrgtagHandler, BaseNoteHandler):
         if note not in orgtag.note_list:
             orgtag.note_list.append(note)
             self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + orgtag.url)
+        self.redirect_next(orgtag.url)
 
     @authenticated
     def delete(self, orgtag_id_string, note_id_string):
@@ -302,7 +302,7 @@ class OrgtagNoteHandler(BaseOrgtagHandler, BaseNoteHandler):
         if note in orgtag.note_list:
             orgtag.note_list.remove(note)
             self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + orgtag.url)
+        self.redirect_next(orgtag.url)
 
 
 

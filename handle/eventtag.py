@@ -151,7 +151,7 @@ class EventtagListHandler(BaseEventtagHandler):
                          )
         self.orm.add(eventtag)
         self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + eventtag.url)
+        self.redirect_next(eventtag.url)
 
 
 
@@ -230,7 +230,7 @@ class EventtagHandler(BaseEventtagHandler):
             return self.error(405, "Method not allowed. Tag has attached Events.")
         self.orm.delete(eventtag)
         self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + "/event")
+        self.redirect_next("/event")
         
     @authenticated
     def put(self, eventtag_id_string):
@@ -243,7 +243,7 @@ class EventtagHandler(BaseEventtagHandler):
         if eventtag.name == name and \
                 eventtag.public == public and \
                 eventtag.note_list == note_list:
-            self.redirect(self.next or self.url_root[:-1] + eventtag.url)
+            self.redirect_next(eventtag.url)
             return
             
         eventtag.name = name
@@ -251,7 +251,7 @@ class EventtagHandler(BaseEventtagHandler):
         eventtag.moderation_user = self.current_user
         eventtag.note_list = note_list
         self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + eventtag.url)
+        self.redirect_next(eventtag.url)
 
 
 class EventtagNoteListHandler(BaseEventtagHandler, BaseNoteHandler):
@@ -267,7 +267,7 @@ class EventtagNoteListHandler(BaseEventtagHandler, BaseNoteHandler):
                     )
         eventtag.note_list.append(note)
         self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + eventtag.url)
+        self.redirect_next(eventtag.url)
 
     @authenticated
     def get(self, eventtag_id_string): 
@@ -294,7 +294,7 @@ class EventtagNoteHandler(BaseEventtagHandler, BaseNoteHandler):
         if note not in eventtag.note_list:
             eventtag.note_list.append(note)
             self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + eventtag.url)
+        self.redirect_next(eventtag.url)
 
     @authenticated
     def delete(self, eventtag_id_string, note_id_string):
@@ -303,7 +303,7 @@ class EventtagNoteHandler(BaseEventtagHandler, BaseNoteHandler):
         if note in eventtag.note_list:
             eventtag.note_list.remove(note)
             self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + eventtag.url)
+        self.redirect_next(eventtag.url)
 
 
 

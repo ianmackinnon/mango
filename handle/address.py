@@ -114,7 +114,7 @@ class AddressHandler(BaseAddressHandler):
                 address.manual_longitude == manual_longitude and \
                 address.manual_latitude == manual_latitude and \
                 address.public == public:
-            self.redirect(self.next or self.url_root[:-1] + address.url)
+            self.redirect_next(address.url)
             return
             
         address.postal = postal
@@ -127,7 +127,7 @@ class AddressHandler(BaseAddressHandler):
 
         address.geocode()
         self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + address.url)
+        self.redirect_next(address.url)
 
 
 
@@ -209,7 +209,7 @@ class AddressNoteListHandler(BaseAddressHandler, BaseNoteHandler):
                     )
         address.note_list.append(note)
         self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + address.url)
+        self.redirect_next(address.url)
 
     def get(self, address_id_string):
         address = self._get_address(address_id_string)
@@ -235,7 +235,7 @@ class AddressNoteHandler(BaseAddressHandler, BaseNoteHandler):
         if note not in address.note_list:
             address.note_list.append(note)
             self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + address.url)
+        self.redirect_next(address.url)
 
     @authenticated
     def delete(self, address_id_string, note_id_string):
@@ -244,4 +244,4 @@ class AddressNoteHandler(BaseAddressHandler, BaseNoteHandler):
         if note in address.note_list:
             address.note_list.remove(note)
             self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + address.url)
+        self.redirect_next(address.url)
