@@ -1,9 +1,9 @@
 .mango.conf
 .xsrf
-seed.bash
 *.pyc
 *.db
 log/
 static/image/map/marker
 mysql/migrate.bash
+mysql/import.my.sql
 vendor/
