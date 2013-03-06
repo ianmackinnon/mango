@@ -15,7 +15,7 @@ underscore-min.js:
 	wget https://raw.github.com/documentcloud/underscore/master/underscore-min.js -O $@ || rm -f $@
 
 markdown.js:
-	wget https://raw.github.com/cadorn/markdown-js/master/lib/markdown.js -O $@ || rm -f $@
+	wget https://raw.github.com/evilstreak/markdown-js/master/lib/markdown.js -O $@ || rm -f $@
 
 tag-it.js:
 	wget https://raw.github.com/ianmackinnon/tag-it/master/js/tag-it.js -O $@ || rm -f $@
