@@ -75,7 +75,7 @@ class OrgaliasHandler(BaseOrgaliasHandler):
         orgalias = self._get_orgalias(orgalias_id_string)
         self.orm.delete(orgalias)
         self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + "/organisation")
+        self.redirect("/organisation")
 
     @authenticated
     def put(self, orgalias_id_string):
@@ -84,11 +84,11 @@ class OrgaliasHandler(BaseOrgaliasHandler):
 
         if orgalias.name == name and \
                 orgalias.public == public:
-            self.redirect(self.next or self.url_root[:-1] + orgalias.url)
+            self.redirect(orgalias.url)
             return
             
         orgalias.name = name
         orgalias.public = public
         orgalias.moderation_user = self.current_user
         self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + orgalias.url)
+        self.redirect(orgalias.url)

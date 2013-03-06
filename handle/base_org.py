@@ -10,7 +10,7 @@ from tornado.web import HTTPError
 
 from base import BaseHandler
 
-from model import Org, Address, Orgalias, Orgtag
+from model import Org, Address, Orgalias, Orgtag, detach
 
 
 max_address_per_page = 26
@@ -37,6 +37,22 @@ class BaseOrgHandler(BaseHandler):
             org = query.one()
         except NoResultFound:
             raise HTTPError(404, "%d: No such org" % org_id)
+
+        return org
+
+    def _create_org(self):
+        is_json = self.content_type("application/json")
+
+        name = self.get_argument("name", json=is_json)
+
+        public = self.get_argument_public("public", json=is_json)
+        moderation_user = self.current_user
+
+        org = Org(
+            name, 
+            moderation_user=moderation_user, public=public)
+
+        detach(org)
 
         return org
     

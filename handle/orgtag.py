@@ -4,10 +4,11 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
 from tornado.web import HTTPError
 
-from base import BaseHandler, authenticated
+from base import BaseHandler, authenticated, \
+    MangoEntityHandlerMixin, MangoEntityListHandlerMixin
 from note import BaseNoteHandler
 
-from model import Org, Orgtag, Note, org_orgtag, short_name
+from model import Org, Orgtag, Note, org_orgtag, short_name, detach
 
 
 
@@ -30,6 +31,19 @@ class BaseOrgtagHandler(BaseHandler):
             orgtag = query.one()
         except NoResultFound:
             raise HTTPError(404, "%d: No such orgtag" % orgtag_id)
+
+        return orgtag
+
+    def _create_orgtag(self):
+        name, public, note_id_list = BaseOrgtagHandler._get_arguments(self)
+
+        moderation_user = self.current_user
+
+        orgtag = Orgtag(
+            name,
+            moderation_user=moderation_user, public=public,)
+
+        detach(orgtag)
 
         return orgtag
 
@@ -113,7 +127,16 @@ class BaseOrgtagHandler(BaseHandler):
 
 
 
-class OrgtagListHandler(BaseOrgtagHandler):
+class OrgtagListHandler(BaseOrgtagHandler,
+                        MangoEntityListHandlerMixin):
+    @property
+    def _create(self):
+        return self._create_orgtag
+
+    @property
+    def _get(self):
+        return self._get_orgtag
+
     def get(self):
         orgtag_and_org_count_list, name, short, search = \
             BaseOrgtagHandler._get_orgtag_and_org_count_list_search_and_args(self)
@@ -140,18 +163,6 @@ class OrgtagListHandler(BaseOrgtagHandler):
                 type_li_template="org_li",
                 )
 
-    @authenticated
-    def post(self):
-        name, public, note_id_list = BaseOrgtagHandler._get_arguments(self)
-
-        orgtag = Orgtag(name,
-                         moderation_user=self.current_user,
-                         public=public,
-                         )
-        self.orm.add(orgtag)
-        self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + orgtag.url)
-
 
 
 class OrgtagNewHandler(BaseOrgtagHandler):
@@ -168,7 +179,20 @@ class OrgtagNewHandler(BaseOrgtagHandler):
 
 
 
-class OrgtagHandler(BaseOrgtagHandler):
+class OrgtagHandler(BaseOrgtagHandler,
+                    MangoEntityHandlerMixin):
+    @property
+    def _create(self):
+        return self._create_orgtag
+
+    @property
+    def _get(self):
+        return self._get_orgtag
+
+    def _before_delete(self, orgtag):
+        if orgtag.org_list:
+            raise HTTPError(405, "Cannot delete tag because it has attached organisations.")
+
     def get(self, orgtag_id_string):
         note_search = self.get_argument("note_search", None)
         note_order = self.get_argument_order("note_order", None)
@@ -222,35 +246,6 @@ class OrgtagHandler(BaseOrgtagHandler):
                 type_li_template="org_li",
                 )
 
-    @authenticated
-    def delete(self, orgtag_id_string):
-        orgtag = self._get_orgtag(orgtag_id_string)
-        if orgtag.org_list:
-            return self.error(405, "Method not allowed. Tag has attached Organisations.")
-        self.orm.delete(orgtag)
-        self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + "/organisation")
-        
-    @authenticated
-    def put(self, orgtag_id_string):
-        orgtag = self._get_orgtag(orgtag_id_string)
-        name, public, note_id_list = BaseOrgtagHandler._get_arguments(self)
-
-        note_list = self.orm.query(Note)\
-            .filter(Note.note_id.in_(note_id_list)).all()
-        
-        if orgtag.name == name and \
-                orgtag.public == public and \
-                orgtag.note_list == note_list:
-            self.redirect(self.next or self.url_root[:-1] + orgtag.url)
-            return
-            
-        orgtag.name = name
-        orgtag.public = public
-        orgtag.moderation_user = self.current_user
-        orgtag.note_list = note_list
-        self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + orgtag.url)
 
 
 class OrgtagNoteListHandler(BaseOrgtagHandler, BaseNoteHandler):
@@ -266,7 +261,7 @@ class OrgtagNoteListHandler(BaseOrgtagHandler, BaseNoteHandler):
                     )
         orgtag.note_list.append(note)
         self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + orgtag.url)
+        self.redirect(orgtag.url)
 
     @authenticated
     def get(self, orgtag_id_string): 
@@ -293,7 +288,7 @@ class OrgtagNoteHandler(BaseOrgtagHandler, BaseNoteHandler):
         if note not in orgtag.note_list:
             orgtag.note_list.append(note)
             self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + orgtag.url)
+        self.redirect(orgtag.url)
 
     @authenticated
     def delete(self, orgtag_id_string, note_id_string):
@@ -302,7 +297,7 @@ class OrgtagNoteHandler(BaseOrgtagHandler, BaseNoteHandler):
         if note in orgtag.note_list:
             orgtag.note_list.remove(note)
             self.orm.commit()
-        self.redirect(self.next or self.url_root[:-1] + orgtag.url)
+        self.redirect(orgtag.url)
 
 
 

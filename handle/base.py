@@ -250,6 +250,9 @@ class BaseHandler(tornado.web.RequestHandler):
         uri = urlparse.urlunsplit((scheme, netloc, path, query, fragment))
         return uri
 
+    def redirect_next(self, url):
+        self.redirect(self.next or self.url_root[:-1] + url)        
+
     def render(self, template_name, **kwargs):
         mako_template = self.application.lookup.get_template(template_name)
 
@@ -313,14 +316,6 @@ class BaseHandler(tornado.web.RequestHandler):
         if session:
             return session.user
         return None
-
-    def error(self, status_code, message):
-        self.set_status(status_code);
-        self.render('error.html',
-                    current_user=self.current_user, uri=self.request.uri,
-                    status_code=status_code, message=message,
-                    )
-        self.finish()
 
 
 
@@ -622,4 +617,32 @@ class BaseHandler(tornado.web.RequestHandler):
 
 
 
+class MangoEntityHandlerMixin(tornado.web.RequestHandler):
+    @authenticated
+    def delete(self, entity_id_string):
+        entity = self._get(entity_id_string)
+        if self._before_delete:
+            self._before_delete(entity)
+        self.orm.delete(entity)
+        self.orm.commit()
+        self.redirect_next(entity.list_url)
+        
+    @authenticated
+    def put(self, entity_id_string):
+        old_entity = self._get(entity_id_string)
+        new_entity = self._create()
+        if not old_entity.content_same(new_entity):
+            old_entity.content_copy(new_entity, self.current_user)
+            self.orm.commit()
+        self.redirect_next(old_entity.url)
+
+
+
+class MangoEntityListHandlerMixin(tornado.web.RequestHandler):
+    @authenticated
+    def post(self):
+        new_entity = self._create()
+        self.orm.add(new_entity)
+        self.orm.commit()
+        self.redirect_next(new_entity.url)
 
