@@ -4,7 +4,8 @@ import json
 
 from tornado.web import HTTPError
 
-from base import authenticated, sha1_concat
+from base import authenticated, sha1_concat, \
+    MangoEntityHandlerMixin, MangoEntityListHandlerMixin
 from base_event import BaseEventHandler
 from base_org import BaseOrgHandler
 from base_note import BaseNoteHandler
@@ -15,7 +16,16 @@ from model import Event, Note, Address, Org
 
 
 
-class EventListHandler(BaseEventHandler, BaseEventtagHandler):
+class EventListHandler(BaseEventHandler, BaseEventtagHandler,
+                       MangoEntityListHandlerMixin):
+    @property
+    def _create(self):
+        return self._create_event
+
+    @property
+    def _get(self):
+        return self._get_event
+
     @staticmethod
     def _cache_key(name_search, past, tag_name_list, view, visibility):
         if not visibility:
@@ -90,34 +100,6 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler):
                 offset=offset,
                 )
 
-    @authenticated
-    def post(self):
-        is_json = self.content_type("application/json")
-
-        name = self.get_argument("name", json=is_json)
-        start_date = self.get_argument_date("start_date", json=is_json)
-        end_date = self.get_argument_date("end_date", json=is_json)
-        description = self.get_argument("description", None, json=is_json);
-        start_time = self.get_argument_time("start_time", None, json=is_json)
-        end_time = self.get_argument_time("end_time", None, json=is_json)
-        public = self.get_argument_public("public", json=is_json)
-
-        if end_date is None:
-            end_date = start_date
-
-        if end_date < start_date:
-            raise HTTPError(400, "End date is earlier than start date")
-        if end_date == start_date and end_time < start_time:
-            raise HTTPError(400, "End time is earlier than start time on the same date")
-
-        event = Event(
-            name, start_date, end_date,
-            description, start_time, end_time,
-            moderation_user=self.current_user, public=public)
-        self.orm.add(event)
-        self.orm.commit()
-        self.redirect_next(event.url)
-
 
 
 class EventNewHandler(BaseEventHandler):
@@ -129,7 +111,15 @@ class EventNewHandler(BaseEventHandler):
 
 
 
-class EventHandler(BaseEventHandler):
+class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
+    @property
+    def _create(self):
+        return self._create_event
+
+    @property
+    def _get(self):
+        return self._get_event
+
     def get(self, event_id_string):
         note_search = self.get_argument("note_search", None)
         note_order = self.get_argument_order("note_order", None)
@@ -179,57 +169,6 @@ class EventHandler(BaseEventHandler):
                 note_order=note_order,
                 note_offset=note_offset,
                 )
-
-
-    @authenticated
-    def delete(self, event_id_string):
-        event = self._get_event(event_id_string)
-        self.orm.delete(event)
-        self.orm.commit()
-        self.redirect_next("/event")
-        
-    @authenticated
-    def put(self, event_id_string):
-        event = self._get_event(event_id_string)
-
-        is_json = self.content_type("application/json")
-        name = self.get_argument("name", json=is_json)
-        start_date = self.get_argument_date("start_date", json=is_json)
-        end_date = self.get_argument_date("end_date", None, json=is_json)
-        description = self.get_argument("description", None, json=is_json);
-        start_time = self.get_argument_time("start_time", None, json=is_json)
-        end_time = self.get_argument_time("end_time", None, json=is_json)
-        public = self.get_argument_public("public", json=is_json)
-
-        if end_date is None:
-            end_date = start_date
-
-        if event.name == name and \
-                event.start_date == start_date and \
-                event.end_date == end_date and \
-                event.description == description and \
-                event.start_time == start_time and \
-                event.end_time == end_time and \
-                event.public == public:
-            self.redirect_next(event.url)
-            return
-
-        if end_date < start_date:
-            raise HTTPError(400, "End date is earlier than start date")
-        if end_date == start_date and end_time < start_time:
-            raise HTTPError(400, "End time is earlier than start time on the same date")
-
-        event.name = name
-        event.start_date = start_date
-        event.end_date = end_date
-        event.description = description
-        event.start_time = start_time
-        event.end_time = end_time
-        event.moderation_user = self.current_user
-        event.public = public
-
-        self.orm.commit()
-        self.redirect_next(event.url)
 
 
 

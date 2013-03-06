@@ -13,7 +13,7 @@ from tornado.web import HTTPError
 from base import BaseHandler
 
 
-from model import Event, Address, Eventtag
+from model import Event, Address, Eventtag, detach
 
 
 
@@ -44,6 +44,39 @@ class BaseEventHandler(BaseHandler):
 
         return event
 
+
+    def _create_event(self):
+        is_json = self.content_type("application/json")
+
+        name = self.get_argument("name", json=is_json)
+        start_date = self.get_argument_date("start_date", json=is_json)
+        end_date = self.get_argument_date("end_date", None, json=is_json)
+        description = self.get_argument("description", None, json=is_json);
+        start_time = self.get_argument_time("start_time", None, json=is_json)
+        end_time = self.get_argument_time("end_time", None, json=is_json)
+
+        public = self.get_argument_public("public", json=is_json)
+        moderation_user = self.current_user
+
+        if end_date is None:
+            end_date = start_date
+
+        if end_time and not start_time:
+            raise HTTPError(400, "End time only allowed if start time is also supplied.")
+
+        if end_date < start_date:
+            raise HTTPError(400, "End date is earlier than start date.")
+        if end_date == start_date and start_time and end_time and end_time < start_time:
+            raise HTTPError(400, "End time is earlier than start time on the same date.")
+
+        event = Event(
+            name, start_date, end_date,
+            description, start_time, end_time,
+            moderation_user=moderation_user, public=public)
+
+        detach(event)
+
+        return event
     
 
     def _get_event_search_query(

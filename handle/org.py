@@ -2,7 +2,8 @@
 
 import json
 
-from base import authenticated, sha1_concat
+from base import authenticated, sha1_concat, \
+    MangoEntityHandlerMixin, MangoEntityListHandlerMixin
 from base_note import BaseNoteHandler
 from base_org import BaseOrgHandler
 from base_event import BaseEventHandler
@@ -13,7 +14,16 @@ from model import Org, Note, Address, Orgalias, Event
 
 
 
-class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
+class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
+                       MangoEntityListHandlerMixin):
+    @property
+    def _create(self):
+        return self._create_org
+
+    @property
+    def _get(self):
+        return self._get_org
+
     @staticmethod
     def _cache_key(name_search, tag_name_list, view, visibility):
         if not visibility:
@@ -83,17 +93,6 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler):
                 offset=offset,
                 )
 
-    @authenticated
-    def post(self):
-        is_json = self.content_type("application/json")
-        name = self.get_argument("name", json=is_json)
-        public = self.get_argument_public("public", json=is_json)
-
-        org = Org(name, moderation_user=self.current_user, public=public)
-        self.orm.add(org)
-        self.orm.commit()
-        self.redirect_next(org.url)
-
 
 
 class OrgNewHandler(BaseOrgHandler):
@@ -105,7 +104,15 @@ class OrgNewHandler(BaseOrgHandler):
 
 
 
-class OrgHandler(BaseOrgHandler):
+class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
+    @property
+    def _create(self):
+        return self._create_org
+
+    @property
+    def _get(self):
+        return self._get_org
+
     def get_note_arguments(self):
         is_json = self.content_type("application/json")
         note_search = self.get_argument("note_search", None, json=is_json)
@@ -164,32 +171,6 @@ class OrgHandler(BaseOrgHandler):
                 note_order=note_order,
                 note_offset=note_offset,
                 )
-
-    @authenticated
-    def delete(self, org_id_string):
-        org = self._get_org(org_id_string)
-        self.orm.delete(org)
-        self.orm.commit()
-        self.redirect_next("/organisation")
-        
-    @authenticated
-    def put(self, org_id_string):
-        org = self._get_org(org_id_string)
-
-        is_json = self.content_type("application/json")
-        name = self.get_argument("name", json=is_json)
-        public = self.get_argument_public("public", json=is_json)
-
-        if org.name == name and \
-                org.public == public:
-            self.redirect_next(org.url)
-            return
-
-        org.name = name
-        org.public = public
-        org.moderation_user = self.current_user
-        self.orm.commit()
-        self.redirect_next(org.url)
         
 
 

@@ -18,15 +18,15 @@ from sqlalchemy import create_engine, MetaData
 from sqlalchemy import Column, Table, and_
 from sqlalchemy import ForeignKey, ForeignKeyConstraint, UniqueConstraint, CheckConstraint, PrimaryKeyConstraint
 from sqlalchemy.orm import sessionmaker, create_session, relationship, backref, object_session
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm.util import has_identity
 from sqlalchemy.orm.interfaces import MapperExtension 
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 
 from sqlalchemy import Boolean, Integer, Float as FloatOrig, Numeric, Date, Time
 from sqlalchemy import Unicode as UnicodeOrig, String as StringOrig
 from sqlalchemy.dialects.mysql import LONGTEXT, DOUBLE
-
-from sqlalchemy.orm.exc import NoResultFound
 
 log = logging.getLogger('model')
 
@@ -86,8 +86,13 @@ SQLITE :  Destination SQLite database. If not supplied, you must
 
 
 def short_name(name):
+    """
+    Accept letters and numbers in all alphabets, converting to lower case.
+    Reject symbols except '-'.
+    Use '|' as a namespace separator.
+    """
     short = name.lower()
-    short = re.compile(u"[-_]", re.U).sub(" ", short)
+    short = re.compile(u"[-_/]", re.U).sub(" ", short)
     short = re.compile(u"[^\w\s\|]", re.U).sub("", short)
     short = re.compile(u"[\s]+", re.U).sub(" ", short)
     short = short.strip()
@@ -104,6 +109,13 @@ def assert_session_is_fresh(session):
     assert not session.dirty, "Session has dirty objects: %s" % repr(session.dirty)
     assert not session.deleted, "Session has deleted objects: %s" % repr(session.deleted)
 
+
+
+def detach(entity):
+    session = object_session(entity)
+    if session and not has_identity(entity):
+        session.expunge(entity)
+        
 
 
 def gravatar_hash(plaintext):
@@ -134,6 +146,20 @@ def generate_salted_hash(plaintext, salted_hash=None):
 
 def verify_salted_hash(plaintext, salted_hash):
     return salted_hash == generate_salted_hash(plaintext, salted_hash)
+
+
+
+class MangoEntity(object):
+    def content_same(self, other):
+        for name in self.content:
+            if getattr(self, name) != getattr(other, name):
+                return False
+        return True
+
+    def content_copy(self, other, user):
+        for name in self.content:
+            setattr(self, name, getattr(other, name))
+        self.moderation_user = user
 
 
 
@@ -370,7 +396,7 @@ class Session(Base):
 
 
 
-class Org(Base, NotableEntity):
+class Org(Base, MangoEntity, NotableEntity):
     __tablename__ = 'org'
     __table_args__ = {'sqlite_autoincrement':True}
 
@@ -465,6 +491,13 @@ class Org(Base, NotableEntity):
         passive_deletes=True,
         )
     
+    content = [
+        "name",
+        "public",
+        ]
+
+    list_url = "/organisation"
+    
     def __init__(self, name, moderation_user=None, public=None):
         self.name = self.sanitise_name(name)
 
@@ -551,7 +584,7 @@ class Org(Base, NotableEntity):
 
     @property
     def url(self):
-        return "/organisation/%d" % self.org_id
+        return "%s/%d" % (self.list_url, self.org_id)
 
     @staticmethod
     def sanitise_name(name):
@@ -586,7 +619,7 @@ class Org(Base, NotableEntity):
 
 
 
-class Orgalias(Base):
+class Orgalias(Base, MangoEntity):
     __tablename__ = 'orgalias'
     __table_args__ = {'sqlite_autoincrement':True}
 
@@ -601,6 +634,13 @@ class Orgalias(Base):
     public = Column(Boolean)
 
     moderation_user = relationship(User, backref='moderation_orgalias_list')
+
+    content = [
+        "name",
+        "public",
+        ]
+
+    list_url = "/organisation-alias"
 
     def __init__(self, name, org, moderation_user=None, public=None):
         self.name = Org.sanitise_name(name)
@@ -642,7 +682,7 @@ class Orgalias(Base):
 
     @property
     def url(self):
-        return "/organisation-alias/%d" % self.orgalias_id
+        return "%s/%d" % (self.list_url, self.orgalias_id)
 
     @staticmethod
     def get(orm, name, org, moderation_user=None, public=None):
@@ -660,7 +700,7 @@ class Orgalias(Base):
 
 
 
-class Event(Base, NotableEntity):
+class Event(Base, MangoEntity, NotableEntity):
     __tablename__ = 'event'
     __table_args__ = (
         CheckConstraint("end_time > start_time or end_date > start_date"),
@@ -749,6 +789,18 @@ class Event(Base, NotableEntity):
             ),
         passive_deletes=True,
         )
+
+    content = [
+        "name",
+        "start_date",
+        "end_date",
+        "description",
+        "start_time",
+        "end_time",
+        "public",
+        ]
+
+    list_url = "/event"
     
     def __init__(self,
                  name, start_date, end_date,
@@ -821,7 +873,7 @@ class Event(Base, NotableEntity):
 
     @property
     def url(self):
-        return "/event/%d" % self.event_id
+        return "%s/%d" % (self.list_url, self.event_id)
 
     @staticmethod
     def sanitise_name(name):
@@ -842,7 +894,7 @@ class Event(Base, NotableEntity):
 
 
 
-class Address(Base, NotableEntity):
+class Address(Base, MangoEntity, NotableEntity):
     __tablename__ = 'address'
     __table_args__ = {'sqlite_autoincrement':True}
 
@@ -899,6 +951,19 @@ class Address(Base, NotableEntity):
             ),
         passive_deletes=True,
         )
+
+    content = [
+        "postal",
+        "source",
+        "lookup",
+        "manual_longitude",
+        "manual_latitude",
+        "longitude",
+        "latitude",
+        "public",
+        ]
+
+    list_url = "/address"
 
     def __init__(self,
                  postal=None, source=None, lookup=None,
@@ -999,7 +1064,7 @@ class Address(Base, NotableEntity):
     def url(self):
         if self.address_id is None:
             return None
-        return "/address/%d" % self.address_id
+        return "%s/%d" % (self.list_url, self.address_id)
 
     @staticmethod
     def sanitise_address(address, allow_commas=True):
@@ -1116,7 +1181,7 @@ class TagExtension(MapperExtension):
 
 
 
-class Orgtag(Base, NotableEntity):
+class Orgtag(Base, MangoEntity, NotableEntity):
     __tablename__ = 'orgtag'
     __table_args__ = {'sqlite_autoincrement':True}
     __mapper_args__ = {'extension':TagExtension()}
@@ -1159,6 +1224,13 @@ class Orgtag(Base, NotableEntity):
             ),
         passive_deletes=True,
         )
+
+    content = [
+        "name",
+        "public",
+        ]
+
+    list_url = "/organisation-tag"
 
     def __init__(self, name, moderation_user=None, public=None):
         self.name = name
@@ -1217,7 +1289,7 @@ class Orgtag(Base, NotableEntity):
 
     @property
     def url(self):
-        return "/organisation-tag/%d" % self.orgtag_id
+        return "%s/%d" % (self.list_url, self.orgtag_id)
 
     @staticmethod
     def get(orm, name, moderation_user=None, public=None):
@@ -1233,7 +1305,7 @@ class Orgtag(Base, NotableEntity):
 
         
 
-class Eventtag(Base, NotableEntity):
+class Eventtag(Base, MangoEntity, NotableEntity):
     __tablename__ = 'eventtag'
     __table_args__ = {'sqlite_autoincrement':True}
     __mapper_args__ = {'extension':TagExtension()}
@@ -1276,6 +1348,13 @@ class Eventtag(Base, NotableEntity):
             ),
         passive_deletes=True,
         )
+
+    content = [
+        "name",
+        "public",
+        ]
+
+    list_url = "/event-tag"
 
     def __init__(self, name, moderation_user=None, public=None):
         self.name = name
@@ -1334,7 +1413,7 @@ class Eventtag(Base, NotableEntity):
 
     @property
     def url(self):
-        return "/event-tag/%d" % self.eventtag_id
+        return "%s/%d" % (self.list_url, self.eventtag_id)
 
     @staticmethod
     def get(orm, name, moderation_user=None, public=None):
@@ -1350,7 +1429,7 @@ class Eventtag(Base, NotableEntity):
 
         
 
-class Note(Base):
+class Note(Base, MangoEntity):
     __tablename__ = 'note'
     __table_args__ = {'sqlite_autoincrement':True}
 
@@ -1405,6 +1484,14 @@ class Note(Base):
             ),
         passive_deletes=True,
         )
+
+    content = [
+        "text",
+        "source",
+        "public",
+        ]
+
+    list_url = "/note"
 
     def __init__(self, text=None, source=None,
                  moderation_user=None, public=None):
@@ -1464,7 +1551,7 @@ class Note(Base):
 
     @property
     def url(self):
-        return "/note/%d" % self.note_id
+        return "%s/%d" % (self.list_url, self.note_id)
 
 
 

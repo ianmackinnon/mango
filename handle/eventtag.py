@@ -4,10 +4,11 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
 from tornado.web import HTTPError
 
-from base import BaseHandler, authenticated
+from base import BaseHandler, authenticated, \
+    MangoEntityHandlerMixin, MangoEntityListHandlerMixin
 from note import BaseNoteHandler
 
-from model import Event, Eventtag, Note, event_eventtag, short_name
+from model import Event, Eventtag, Note, event_eventtag, short_name, detach
 
 
 
@@ -30,6 +31,19 @@ class BaseEventtagHandler(BaseHandler):
             eventtag = query.one()
         except NoResultFound:
             raise HTTPError(404, "%d: No such eventtag" % eventtag_id)
+
+        return eventtag
+
+    def _create_eventtag(self):
+        name, public, note_id_list = BaseEventtagHandler._get_arguments(self)
+
+        moderation_user = self.current_user
+
+        eventtag = Eventtag(
+            name,
+            moderation_user=moderation_user, public=public,)
+
+        detach(eventtag)
 
         return eventtag
 
@@ -114,7 +128,16 @@ class BaseEventtagHandler(BaseHandler):
 
 
 
-class EventtagListHandler(BaseEventtagHandler):
+class EventtagListHandler(BaseEventtagHandler,
+                          MangoEntityListHandlerMixin):
+    @property
+    def _create(self):
+        return self._create_eventtag
+
+    @property
+    def _get(self):
+        return self._get_eventtag
+
     def get(self):
         eventtag_and_event_count_list, name, short, search = \
             BaseEventtagHandler._get_eventtag_and_event_count_list_search_and_args(self)
@@ -141,18 +164,6 @@ class EventtagListHandler(BaseEventtagHandler):
                 type_li_template="event_li",
                 )
 
-    @authenticated
-    def post(self):
-        name, public, note_id_list = BaseEventtagHandler._get_arguments(self)
-
-        eventtag = Eventtag(name,
-                         moderation_user=self.current_user,
-                         public=public,
-                         )
-        self.orm.add(eventtag)
-        self.orm.commit()
-        self.redirect_next(eventtag.url)
-
 
 
 class EventtagNewHandler(BaseEventtagHandler):
@@ -169,7 +180,20 @@ class EventtagNewHandler(BaseEventtagHandler):
 
 
 
-class EventtagHandler(BaseEventtagHandler):
+class EventtagHandler(BaseEventtagHandler,
+                      MangoEntityHandlerMixin):
+    @property
+    def _create(self):
+        return self._create_eventtag
+
+    @property
+    def _get(self):
+        return self._get_eventtag
+
+    def _before_delete(self, eventtag):
+        if eventtag.event_list:
+            raise HTTPError(405, "Cannot delete tag because it has attached events.")
+
     def get(self, eventtag_id_string):
         note_search = self.get_argument("note_search", None)
         note_order = self.get_argument_order("note_order", None)
@@ -223,35 +247,6 @@ class EventtagHandler(BaseEventtagHandler):
                 type_li_template="event_li",
                 )
 
-    @authenticated
-    def delete(self, eventtag_id_string):
-        eventtag = self._get_eventtag(eventtag_id_string)
-        if eventtag.event_list:
-            return self.error(405, "Method not allowed. Tag has attached Events.")
-        self.orm.delete(eventtag)
-        self.orm.commit()
-        self.redirect_next("/event")
-        
-    @authenticated
-    def put(self, eventtag_id_string):
-        eventtag = self._get_eventtag(eventtag_id_string)
-        name, public, note_id_list = BaseEventtagHandler._get_arguments(self)
-
-        note_list = self.orm.query(Note)\
-            .filter(Note.note_id.in_(note_id_list)).all()
-        
-        if eventtag.name == name and \
-                eventtag.public == public and \
-                eventtag.note_list == note_list:
-            self.redirect_next(eventtag.url)
-            return
-            
-        eventtag.name = name
-        eventtag.public = public
-        eventtag.moderation_user = self.current_user
-        eventtag.note_list = note_list
-        self.orm.commit()
-        self.redirect_next(eventtag.url)
 
 
 class EventtagNoteListHandler(BaseEventtagHandler, BaseNoteHandler):

@@ -30,7 +30,7 @@ jquery : jquery-version-check jquery-$(JQUERY_VERSION).min.js ../static/jquery-u
 	ln -sf ../../vendor/jquery-ui-$(JQUERY_UI_VERSION).custom/js/jquery-ui-$(JQUERY_UI_VERSION).custom.min.js ../static/jquery-ui/jquery-ui.min.js
 	ln -sf ../../vendor/jquery-ui-$(JQUERY_UI_VERSION).custom/js/jquery-ui-$(JQUERY_UI_VERSION).custom.js ../static/jquery-ui/jquery-ui.js
 	ln -sf ../../vendor/$(JQUERY_UI_THEME_PATH)/jquery-ui-$(JQUERY_UI_VERSION).custom.css ../static/jquery-ui/jquery-ui.css
-	ln -sf ../../vendor/$(JQUERY_UI_THEME_PATH)/images ../static/jquery-ui/images
+	ln -sf ../../vendor/$(JQUERY_UI_THEME_PATH)/images ../static/jquery-ui/
 
 jquery-version-check :
 	@[ "$$(echo $(JQUERY_VERSION_LIST) | wc -w)" -gt 0 ] || (echo "No jQuery UI version" && false)
