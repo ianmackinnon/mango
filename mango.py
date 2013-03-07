@@ -5,9 +5,11 @@ import os
 import re
 import sys
 import errno
+import redis
 import urllib
 import logging
 import logging.handlers
+import datetime
 import memcache
 
 from BeautifulSoup import BeautifulSoup
@@ -68,14 +70,29 @@ define("log", default=None, help="Log directory. Write permission required. Logg
 
 
 
-class DictCache(object):
+DEFAULT_CACHE_PERIOD = None
+
+
+
+class BaseCache(object): 
+    def set_namespace(self, namespace):
+        self._namespace = namespace
+        return self._namespace
+
+    def key(self, key):
+        return self._namespace + ":" + key
+    
+
+
+class DictCache(BaseCache):
     def __init__(self, namespace):
         self._cache = {}
         
     def get(self, key):
         return self._cache.get(key, None)
 
-    def set(self, key, value):
+    def set(self, key, value, period=None):
+        # Does not support expiration
         self._cache[key] = value
 
     def delete(self, key):
@@ -83,22 +100,50 @@ class DictCache(object):
 
 
 
-class MemcacheCache(object):
+class MemcacheCache(BaseCache):
     def __init__(self, namespace):
         self._cache = memcache.Client(["127.0.0.1:11211"])
-        self._namespace = namespace
-        
-    def key(self, key):
-        return self._namespace + ":" + key
+        self.set_namespace(namespace)
         
     def get(self, key):
-        return self._cache.get(self.key(key))
+        value = self._cache.get(self.key(key))
+        return value
 
-    def set(self, key, value, period=15*60):  # 15 minutes
+    def set(self, key, value, period=DEFAULT_CACHE_PERIOD):
+        if not period:
+            period = 0;
         self._cache.set(self.key(key), value, time=period)
 
     def delete(self, key):
         self._cache.delete(self.key(key))
+
+
+
+class RedisCache(BaseCache):
+    def __init__(self, namespace):
+        self._cache = redis.StrictRedis(host='localhost', port=6379, db=0)
+        self.set_namespace(namespace)
+        
+    def get(self, key):
+        try:
+            value = self._cache.get(self.key(key))
+        except redis.ConnectionError as e:
+            value = None
+        return value
+
+    def set(self, key, value, period=DEFAULT_CACHE_PERIOD):
+        try:
+            self._cache.set(self.key(key), value)
+            if period:
+                self._cache.expire(self.key(key), period)
+        except redis.ConnectionError as e:
+            pass
+
+    def delete(self, key):
+        try:
+            self._cache.delete(self.key(key))
+        except redis.ConnectionError as e:
+            pass
 
 
 
@@ -203,7 +248,18 @@ class Application(tornado.web.Application):
 
         return header1, header2, footer
 
+    def cache_namespace(self, offset=""):
+        return sha1_concat(
+            sys.version,
+            sqlalchemy_version,
+            self.database_namespace,
+            offset,
+            )
 
+    def increment_cache(self):
+        offset = datetime.datetime.utcnow().isoformat()
+        namespace = self.cache_namespace(offset)
+        self.cache.set_namespace(namespace)
 
     def __init__(self):
 
@@ -301,24 +357,27 @@ class Application(tornado.web.Application):
             (database,
              app_username, app_password,
              admin_username, admin_password) = mysql.mysql_init.get_conf(options.conf)
-            database_namespace = 'mysql://%s' % database
+            self.database_namespace = 'mysql://%s' % database
             connection_url = 'mysql://%s:%s@localhost/%s?charset=utf8' % (
                 admin_username, admin_password, database)
         else:
             database = "mango.db"
-            database_namespace = 'sqlite:///%s' % database
+            self.database_namespace = 'sqlite:///%s' % database
             connection_url = 'sqlite:///%s' % database
 
-        cache_namespace = sha1_concat(
-            sys.version,
-            sqlalchemy_version,
-            database_namespace,
-            )
-    
         engine = create_engine(
             connection_url,
             #echo=True,
             )
+
+        if options.database == "mysql":
+            self.database_mtime = datetime.datetime.utcnow()
+        else:
+            self.database_mtime = \
+                datetime.datetime.utcfromtimestamp(database)
+
+        self.cache = RedisCache(
+            self.cache_namespace(self.database_mtime.isoformat()))
 
         self.orm = scoped_session(sessionmaker(
                 bind=engine,
@@ -326,7 +385,6 @@ class Application(tornado.web.Application):
                 query_cls=SafeQueryClass(),
                 ))
 
-        self.cache = MemcacheCache(cache_namespace)
 
         self.lookup = TemplateLookup(directories=['template'],
                                      input_encoding='utf-8',
@@ -357,19 +415,16 @@ class Application(tornado.web.Application):
                 utc=True
                 )
 
-        logger = logging.getLogger()
+        self.logger = logging.getLogger()
         if self.log_handler:
-            logging.getLogger().addHandler(self.log_handler)
+            self.logger.addHandler(self.log_handler)
 
         settings["xsrf_cookies"] = False
         
         tornado.web.Application.__init__(self, self.handler_list, **settings)
 
-        print """CAAT Mapping Application running.
-  Port: %d
-  Cache namespace: %s""" % (options.port, cache_namespace)
+        self.logger.info("""CAAT Mapping Application running on port %d.""" % (options.port))
         
-
 
 def main():
     tornado.options.parse_command_line()

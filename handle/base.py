@@ -625,6 +625,7 @@ class MangoEntityHandlerMixin(tornado.web.RequestHandler):
             self._before_delete(entity)
         self.orm.delete(entity)
         self.orm.commit()
+        self.application.increment_cache()
         self.redirect_next(entity.list_url)
         
     @authenticated
@@ -634,6 +635,7 @@ class MangoEntityHandlerMixin(tornado.web.RequestHandler):
         if not old_entity.content_same(new_entity):
             old_entity.content_copy(new_entity, self.current_user)
             self.orm.commit()
+            self.application.increment_cache()
         self.redirect_next(old_entity.url)
 
 
@@ -644,5 +646,6 @@ class MangoEntityListHandlerMixin(tornado.web.RequestHandler):
         new_entity = self._create()
         self.orm.add(new_entity)
         self.orm.commit()
+        self.application.increment_cache()
         self.redirect_next(new_entity.url)
 
