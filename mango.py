@@ -129,11 +129,13 @@ class RedisCache(BaseCache):
             value = self._cache.get(self.key(key))
         except redis.ConnectionError as e:
             value = None
+        if value:
+            value = unicode(value, "utf-8")
         return value
 
     def set(self, key, value, period=DEFAULT_CACHE_PERIOD):
         try:
-            self._cache.set(self.key(key), value)
+            self._cache.set(self.key(key), unicode(value))
             if period:
                 self._cache.expire(self.key(key), period)
         except redis.ConnectionError as e:
