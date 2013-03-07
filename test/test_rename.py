@@ -31,7 +31,8 @@ class TestTagShortName(unittest.TestCase):
     def test_html_private(self):
         for name, known_result in self.known:
             result = short_name(name)
-            self.assertIsInstance(result, str)
+            print name, known_result, result
+            self.assertIsInstance(result, unicode)
             self.assertEqual(known_result, result)
 
 
