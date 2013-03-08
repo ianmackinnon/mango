@@ -41,6 +41,13 @@ ${header | n}
         <td>
           <p class="eventtitle">${event["name"]}</p>
 
+          %if current_user:
+          <p><a
+             href="${url_rewrite(event["url"])}"
+             >Edit</a></p>
+          %endif
+          </p>
+
           <p class="eventtimeplace">${event | n, page_period}</p>
           
           %if event.get("address_list", None):
@@ -87,6 +94,13 @@ ${header | n}
         </td>
         <td>
           <p class="eventtitle">${event["name"]}</p>
+
+          %if current_user:
+          <p><a
+             href="${url_rewrite(event["url"])}"
+             >Edit</a></p>
+          %endif
+          </p>
 
           <p class="eventtimeplace">${event | n, page_period}</p>
 
