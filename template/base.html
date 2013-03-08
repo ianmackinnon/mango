@@ -1,3 +1,7 @@
+<%
+   header1, header2, footer = skin_variables(
+   "header1", "header2", "footer")
+   %> \
 %if header1:
 ${header1.replace("/render-header-footer.php", uri) | n}
 %else:

@@ -6,13 +6,10 @@ import re
 import sys
 import errno
 import redis
-import urllib
 import logging
 import logging.handlers
 import datetime
 import memcache
-
-from BeautifulSoup import BeautifulSoup
 
 from mako.template import Template
 from mako.lookup import TemplateLookup
@@ -28,6 +25,8 @@ from sqlalchemy import create_engine, __version__ as sqlalchemy_version
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm.query import Query
 from sqlalchemy.exc import SQLAlchemyError
+
+from skin import skin
 
 import mysql.mysql_init
 
@@ -52,7 +51,8 @@ from handle.event import EventHandler, EventNewHandler, EventListHandler, \
     EventEventtagListHandler, EventEventtagHandler, EventNoteListHandler, \
     EventNoteHandler, EventAddressListHandler, EventAddressHandler, \
     EventDuplicateHandler, \
-    EventOrgHandler, EventOrgListHandler
+    EventOrgHandler, EventOrgListHandler, \
+    DiaryHandler
 from handle.orgtag import OrgtagHandler, OrgtagListHandler, \
     OrgtagNewHandler, OrgtagNoteListHandler, OrgtagNoteHandler
 from handle.eventtag import EventtagHandler, EventtagListHandler, \
@@ -60,10 +60,9 @@ from handle.eventtag import EventtagHandler, EventtagListHandler, \
 from handle.history import HistoryHandler
 
 
-
 define("port", default=8802, help="Run on the given port", type=int)
 define("root", default='', help="URL root", type=unicode)
-define("caat", default=False, help="CAAT header", type=bool)
+define("skin", default=True, help="Enable skin. 0 or 1. Default is 1.", type=bool)
 define("database", default="sqlite", help="Either 'sqlite' or 'mysql'. Default is 'sqlite'.", type=str)
 define("conf", default=".mango.conf", help="eg. .mango.conf", type=str)
 define("log", default=None, help="Log directory. Write permission required. Logging is disabled if this option is not set.", type=unicode)
@@ -196,60 +195,34 @@ class Application(tornado.web.Application):
                         value.get.authenticated == True:
                     return True
         return False
+
+    def skin_variable(self, name):
+        if not self.skin:
+            return None
+
+        def skin_key(key):
+            return "skin:%s" % key
+
+        value = self.cache.get(skin_key(name))
+        if value:
+            return value
+        cache_period = 60 * 15;  # 15 minutes
+        values = skin.variable(name) # May return multiple values.
+        for key, value in values.items():
+            self.cache.set(skin_key(key), value, cache_period)
+        value = values.get(name, None)
+        if not value:
+            return
+        return value
                 
+    def skin_variables(self, *args):
+        variables = []
+        for arg in args:
+            variables.append(self.skin_variable(arg))
+        return variables
+
+            
         
-    def caat_header_footer(self):
-        header1 = self.cache.get("header1")
-        header2 = self.cache.get("header2")
-        footer = self.cache.get("footer")
-        if header1 and header2 and footer:
-            return header1, header2, footer
-
-        caat_source = "render-header-footer.php"
-        caat_uri = "http://www.caat.org.uk/resources/mapping/render-header-footer.php"
-        caat_period = 15 * 60 # 15 minutes
-        
-        page = urllib.urlopen(caat_uri).read()
-        soup = BeautifulSoup(page)
- 
-        regex = re.compile("^[/]")
-        for link in soup.findAll(href=regex):
-            link["href"] = "http://www.caat.org.uk" + link["href"]
-        for link in soup.findAll(src=regex):
-            link["src"] = "http://www.caat.org.uk" + link["src"]
- 
-        text = unicode(soup)
-
-        text = text.replace("<head>",
-                     """
-<head>
-  <!--[if lt IE 9]>
-  <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-  <![endif]-->
-
-""")
-
-        splitter_1 = '</head>'
-        splitter_2 = '<div id="mapping">'
-
-        assert splitter_2 in text
-
-        header, footer = text.split(splitter_2)
-        header += splitter_2
-
-        assert splitter_1 in header
-
-        header1, header2 = header.split(splitter_1)
-        header2 = splitter_1 + header2
-
-        del header
-
-        self.cache.set("header1", header1, caat_period)
-        self.cache.set("header2", header2, caat_period)
-        self.cache.set("footer", footer, caat_period)
-
-        return header1, header2, footer
-
     def cache_namespace(self, offset=""):
         return sha1_concat(
             sys.version,
@@ -311,6 +284,7 @@ class Application(tornado.web.Application):
             (r"/event/%s/organisation" % re_id, EventOrgListHandler),
             (r"/event/%s/organisation/%s" % (re_id, re_id), EventOrgHandler),
             (r"/event/%s/duplicate" % re_id, EventDuplicateHandler),
+            (r"/diary", DiaryHandler),
 
             (r"/task/address", OrgListTaskAddressHandler),
             (r"/task/visibility", OrgListTaskVisibilityHandler),
@@ -341,7 +315,7 @@ class Application(tornado.web.Application):
             (r"/history", HistoryHandler),
             ]
         
-        self.caat = options.caat
+        self.skin = options.skin
 
         self.url_root = options.root
         if not self.url_root.startswith('/'):
@@ -376,7 +350,8 @@ class Application(tornado.web.Application):
             self.database_mtime = datetime.datetime.utcnow()
         else:
             self.database_mtime = \
-                datetime.datetime.utcfromtimestamp(database)
+                datetime.datetime.utcfromtimestamp(
+                os.path.getmtime(database))
 
         self.cache = RedisCache(
             self.cache_namespace(self.database_mtime.isoformat()))
@@ -425,7 +400,7 @@ class Application(tornado.web.Application):
         
         tornado.web.Application.__init__(self, self.handler_list, **settings)
 
-        self.logger.info("""CAAT Mapping Application running on port %d.""" % (options.port))
+        self.logger.info("""Mapping Application for NGOs (mango) running on port %d.""" % (options.port))
         
 
 def main():

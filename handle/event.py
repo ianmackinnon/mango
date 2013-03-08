@@ -101,6 +101,19 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
                 )
 
 
+class DiaryHandler(EventListHandler):
+    def get(self):
+        event_packet = self._get_event_packet_search(
+            past=False,
+            visibility=True,
+            )
+
+        self.render(
+            'diary.html',
+            event_packet=event_packet,
+            )
+
+
 
 class EventNewHandler(BaseEventHandler):
     @authenticated
@@ -337,7 +350,6 @@ class EventEventtagHandler(BaseEventHandler, BaseEventtagHandler):
         if eventtag not in event.eventtag_list:
             event.eventtag_list.append(eventtag)
             self.orm.commit()
-        print self.next
         self.redirect_next(event.url)
 
     @authenticated

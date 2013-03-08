@@ -75,8 +75,15 @@ def form_time(time):
 
 
 
-def page_date(date):
-    return date and datetime.datetime.strptime(date, "%Y-%m-%d").date().strftime("%a %d %b %Y") or ""
+def page_date(date, format_="%a %d %b %Y"):
+    return date and datetime.datetime.strptime(date, "%Y-%m-%d").date().strftime(format_) or ""
+
+
+
+def page_date_format(format_="%a %d %b %Y"):
+    def filter(date):
+        return page_date(date, format_)
+    return filter
 
 
 
@@ -267,6 +274,7 @@ class BaseHandler(tornado.web.RequestHandler):
                 "form_date": form_date,
                 "form_time": form_time,
                 "page_date": page_date,
+                "page_date_format": page_date_format,
                 "page_time": page_time,
                 "page_period": page_period,
                 "markdown_safe": markdown_safe,
@@ -278,15 +286,9 @@ class BaseHandler(tornado.web.RequestHandler):
                 "query_rewrite": self.query_rewrite,
                 "url_rewrite": self.url_rewrite,
                 "parameters": self.parameters,
-                "header1": None,
-                "header2": None,
-                "footer": None,
                 "url_root": self.application.url_root,
+                "skin_variables": self.application.skin_variables,
                 })
-
-        if self.application.caat:
-            kwargs["header1"], kwargs["header2"], kwargs["footer"] = \
-            self.application.caat_header_footer()
 
         try:
             self.write(mako_template.render(**kwargs))

@@ -1,0 +1,118 @@
+<%
+   header, footer = skin_variables(
+   "diary_header", "diary_footer")
+   %> \
+%if header:
+${header | n}
+%else:
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset=utf-8 />
+    <title>Diary</title>
+  </head>
+
+  <body>
+    %endif
+
+    %if event_packet:
+    <table class="eventlist justify" cellspacing="0">
+      <col class="eventdate" />
+      <col class="eventdetails" />
+      <tr>
+        <th>Date</th>
+        <th>Event</th>
+      </tr>
+      %for event in event_packet["event_list"]:
+      <%
+         tag_list = [tag["short"] for tag in event["eventtag_list"]]
+         %>
+      %if "weekly" in tag_list or "monthly" in tag_list:
+      <% continue %>
+      %endif
+      <tr>
+        <td>
+          ${event["start_date"] | n, page_date_format(format_="%-d %B %Y")}<br/>
+          %if "caat" in tag_list:
+          <img src="http://www.caat.org.uk/images/iconsandlogos/caat-icon.png" alt="CAAT" title="CAAT Event" /><br/>
+          %endif
+        </td>
+        <td>
+          <p class="eventtitle">${event["name"]}</p>
+
+          <p class="eventtimeplace">${event | n, page_period}</p>
+          
+          %if event.get("address_list", None):
+          %for address in event["address_list"]:
+          <p class="eventtimeplace">${address["postal"] | n, h, unicode, newline_comma} (<a href="${url_rewrite(address["url"])}">map</a>)</p>
+          %endfor
+          %endif
+          
+          %if event.get("description", None):
+          <p>${event["description"] | n, markdown_safe, convert_links}</p>
+          %endif
+        </td>
+      </tr>
+      %endfor
+    </table>
+
+    <h3>Regular Events</h3>
+
+    <table class="eventlist justify" cellspacing="0">
+      <col class="eventdate" />
+      <col class="eventdetails" />
+      <tr>
+        <th>Date</th>
+        <th>Event</th>
+      </tr>
+      %for event in event_packet["event_list"]:
+      <%
+         tag_list = [tag["short"] for tag in event["eventtag_list"]]
+         %>
+      %if not ("weekly" in tag_list or "monthly" in tag_list):
+      <% continue %>
+      %endif
+      <tr>
+        <td>
+          %if "weekly" in tag_list:
+          Weekly<br/>
+          %endif
+          %if "monthly" in tag_list:
+          Monthly<br/>
+          %endif
+          %if "caat" in tag_list:
+          <img src="http://www.caat.org.uk/images/iconsandlogos/caat-icon.png" alt="CAAT" title="CAAT Event" /><br/>
+          %endif
+        </td>
+        <td>
+          <p class="eventtitle">${event["name"]}</p>
+
+          <p class="eventtimeplace">${event | n, page_period}</p>
+
+          %if event.get("address_list", None):
+          %for address in event["address_list"]:
+          <p class="eventtimeplace">${address["postal"] | n, h, unicode, newline_comma} (<a href="${url_rewrite(address["url"])}">map</a>)</p>
+          %endfor
+          %endif
+          
+          %if event.get("description", None):
+          <p>${event["description"] | n, markdown_safe, convert_links}</p>
+          %endif
+        </td>
+      </tr>
+      %endfor
+    </table>
+    %endif
+
+    %if footer:
+    ${footer | n}
+    %else:
+
+  </body>
+
+</html>
+
+%endif
+
+<%namespace name="mini" file="mini.html" inheritable="True"/>

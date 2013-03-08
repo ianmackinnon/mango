@@ -192,9 +192,13 @@ class BaseEventHandler(BaseHandler):
 
             event_packet["event_list"] = []
             for event_id, data in events.items():
-                event_packet["event_list"].append(data["event"].obj(
+                event = data["event"]
+                address_list = data["address_obj_list"]
+                eventtag_list = [eventtag.obj(public=True) for eventtag in event.eventtag_list_public]
+                event_packet["event_list"].append(event.obj(
                         public=bool(self.current_user),
-                        address_obj_list=data["address_obj_list"],
+                        address_obj_list=address_list,
+                        eventtag_obj_list=eventtag_list,
                         ))
 
         return event_packet
