@@ -347,9 +347,12 @@ var m = {
       dateFormat: "yy-mm-dd",
       numberOfMonths: 2
     });
-    $("input[name='start_time']").timepicker();
-    $("input[name='end_time']").timepicker();
-
+    $("input[name='start_time']").timepicker({
+      defaultTime: ""
+    });
+    $("input[name='end_time']").timepicker({
+      defaultTime: ""
+    });
 
     var title = $("<h3>").text("Description Preview");
     var preview = $("<div>").addClass("description markdown-preview");
