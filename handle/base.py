@@ -620,6 +620,9 @@ class BaseHandler(tornado.web.RequestHandler):
 
 
 class MangoEntityHandlerMixin(tornado.web.RequestHandler):
+    def _before_delete(self, entity):
+        pass
+
     @authenticated
     def delete(self, entity_id_string):
         entity = self._get(entity_id_string)

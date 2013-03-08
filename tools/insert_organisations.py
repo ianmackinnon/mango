@@ -14,7 +14,7 @@ from optparse import OptionParser
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 import geo
 import mysql.mysql_init
@@ -98,11 +98,17 @@ def get_org(orm, name):
         return orm.query(Org).filter_by(name=name).one()
     except NoResultFound:
         org = None
+    except MultipleResultsFound:
+        log.warning("Multiple results found for name '%s'." % name)
+        return orm.query(Org).filter_by(name=name).first()
         
     try:
         orgalias = orm.query(Orgalias).filter_by(name=name).one()
     except NoResultFound:
         orgalias = None
+    except MultipleResultsFound:
+        log.warning("Multiple results found for alias '%s'." % name)
+        orgalias = orm.query(Orgalias).filter_by(name=name).first()
 
     if orgalias:
         return orgalias.org

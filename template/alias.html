@@ -53,7 +53,7 @@ if obj:
 	<span>Name</span>
 	<input name="name" value="${obj and obj["name"] or ''}">
       </label>
-      ${self.mini.visibility_input(obj)}
+      ${self.mini.visibility_input(obj, "public")}
       <input type="submit">
     </form>
 

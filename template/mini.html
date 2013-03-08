@@ -583,10 +583,18 @@ if not parameters:
 
 <%def name="visibility_input(entity=None, default='pending')">
 <%
+    default_options = {
+        "public": "true",
+        "pending": "null",
+        "private": "false",
+    }
+
+    default = default_options.get(default, "null")
+
     options = {
-        "null":"Pending",
-        "true":"Public",
-        "false":"Private",
+        "null": "Pending",
+        "true": "Public",
+        "false": "Private",
     }
 
     selected = {}
