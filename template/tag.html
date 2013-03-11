@@ -46,9 +46,26 @@ if obj:
       %if put:
       <input name="_method" type="hidden" value="put">
       %endif
+      %if path_list:
+      <label name="path">
+	<span>Path</span>
+        <span class="select">
+          <select>
+            <option value=""></option>
+            %for path in path_list:
+            <option value="${path}">${path}</option>
+            %endfor
+          </select>
+        </span>
+      </label>
+      %endif
       <label name="name">
 	<span>Name</span>
 	<input name="name" value="${obj and obj["name"] or ''}">
+      </label>
+      <label name="name_short">
+	<span>Short Name</span>
+	<input name="name_short" disabled value="${obj and obj["name_short"] or ''}">
       </label>
       ${self.mini.visibility_input(obj, "public")}
       <input type="submit">

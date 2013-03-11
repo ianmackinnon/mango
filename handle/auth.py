@@ -2,6 +2,8 @@
 
 import tornado.auth
 
+from tornado.web import HTTPError
+
 from urllib import urlencode
 
 from base import BaseHandler, authenticated
@@ -58,15 +60,14 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
         """
 
         if not auth_user:
-            raise tornado.web.HTTPError(500, "Google authentication failed")
+            raise HTTPError(500, "Google authentication failed")
 
         auth_name = auth_user["email"]
 
         user = User.get_from_auth(self.orm, self.openid_url, auth_name)
 
         if not user:
-            self.error(404, "No account found for %s" % auth_user["email"])
-            return
+            raise HTTPError(404, "No account found for %s" % auth_user["email"])
 
         session = Session(
                 user,

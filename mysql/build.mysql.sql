@@ -22,7 +22,7 @@ CREATE TABLE org_v (
     KEY moderation_user_id (moderation_user_id),
     CONSTRAINT org_v_c2 FOREIGN KEY (moderation_user_id)
       REFERENCES user (user_id)
-) DEFAULT CHARSET=utf8;
+) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE orgalias_v (
     orgalias_v_id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, --
@@ -38,7 +38,7 @@ CREATE TABLE orgalias_v (
     KEY moderation_user_id (moderation_user_id),
     CONSTRAINT orgalias_v_c2 FOREIGN KEY (moderation_user_id)
       REFERENCES user (user_id)
-) DEFAULT CHARSET=utf8;
+) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE event_v (
     event_v_id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, --
@@ -58,7 +58,7 @@ CREATE TABLE event_v (
     KEY moderation_user_id (moderation_user_id),
     CONSTRAINT event_v_c2 FOREIGN KEY (moderation_user_id)
       REFERENCES user (user_id)
-) DEFAULT CHARSET=utf8;
+) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE address_v (
     address_v_id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, --
@@ -79,7 +79,7 @@ CREATE TABLE address_v (
     KEY moderation_user_id (moderation_user_id),
     CONSTRAINT address_v_c2 FOREIGN KEY (moderation_user_id)
       REFERENCES user (user_id)
-) DEFAULT CHARSET=utf8;
+) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE note_v (
     note_v_id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, --
@@ -95,7 +95,7 @@ CREATE TABLE note_v (
     KEY moderation_user_id (moderation_user_id),
     CONSTRAINT note_v_c2 FOREIGN KEY (moderation_user_id)
       REFERENCES user (user_id)
-) DEFAULT CHARSET=utf8;
+) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE orgtag_v (
     orgtag_v_id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, --
@@ -106,12 +106,16 @@ CREATE TABLE orgtag_v (
     existence BOOLEAN NOT NULL, --
 
     name LONGTEXT NOT NULL, 
-    short LONGTEXT NOT NULL, 
+    name_short LONGTEXT NOT NULL, 
+    base LONGTEXT NOT NULL, 
+    base_short LONGTEXT NOT NULL, 
+    path LONGTEXT, 
+    path_short LONGTEXT, 
 
     KEY moderation_user_id (moderation_user_id),
     CONSTRAINT orgtag_v_c2 FOREIGN KEY (moderation_user_id)
       REFERENCES user (user_id)
-) DEFAULT CHARSET=utf8;
+) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE eventtag_v (
     eventtag_v_id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, --
@@ -127,74 +131,74 @@ CREATE TABLE eventtag_v (
     KEY moderation_user_id (moderation_user_id),
     CONSTRAINT eventtag_v_c2 FOREIGN KEY (moderation_user_id)
       REFERENCES user (user_id)
-) DEFAULT CHARSET=utf8;
+) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE org_address_v (
     org_id INTEGER NOT NULL,
     address_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
     existence BOOLEAN NOT NULL --
-) DEFAULT CHARSET=utf8;
+) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE org_note_v (
     org_id INTEGER NOT NULL,
     note_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
     existence BOOLEAN NOT NULL --
-) DEFAULT CHARSET=utf8;
+) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE org_orgtag_v (
     org_id INTEGER NOT NULL,
     orgtag_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
     existence BOOLEAN NOT NULL --
-) DEFAULT CHARSET=utf8;
+) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE orgtag_note_v (
     orgtag_id INTEGER NOT NULL,
     note_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
     existence BOOLEAN NOT NULL --
-) DEFAULT CHARSET=utf8;
+) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE event_address_v (
     event_id INTEGER NOT NULL,
     address_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
     existence BOOLEAN NOT NULL --
-) DEFAULT CHARSET=utf8;
+) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE event_note_v (
     event_id INTEGER NOT NULL,
     note_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
     existence BOOLEAN NOT NULL --
-) DEFAULT CHARSET=utf8;
+) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE event_eventtag_v (
     event_id INTEGER NOT NULL,
     eventtag_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
     existence BOOLEAN NOT NULL --
-) DEFAULT CHARSET=utf8;
+) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE eventtag_note_v (
     eventtag_id INTEGER NOT NULL,
     note_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
     existence BOOLEAN NOT NULL --
-) DEFAULT CHARSET=utf8;
+) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE address_note_v (
     address_id INTEGER NOT NULL,
     note_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
     existence BOOLEAN NOT NULL --
-) DEFAULT CHARSET=utf8;
+) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE org_event_v (
     org_id INTEGER NOT NULL,
     event_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
     existence BOOLEAN NOT NULL --
-) DEFAULT CHARSET=utf8;
+) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;

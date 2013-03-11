@@ -288,6 +288,18 @@ form.mango span.checkbox
     padding: 2px;
     padding-top: 3px;
 }
+form.mango span.select
+{
+    display: block;
+    margin: -2px;
+    margin-top: 1px;
+    border: 0px;
+    border-top: 1px solid #ccc;
+    border-bottom-left-radius: 2px;
+    border-bottom-right-radius: 2px;
+    padding: 2px;
+    background: white;
+}
 form.mango input[type="checkbox"]
 {
     position: relative;

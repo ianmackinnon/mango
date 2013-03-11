@@ -90,7 +90,7 @@ drop database %s;
         print """
 create database %s
   DEFAULT CHARACTER SET = utf8
-  DEFAULT COLLATE = utf8_general_ci;
+  DEFAULT COLLATE = utf8_bin;
 use %s;
 create user '%s'@'localhost' identified by '%s';
 create user '%s'@'localhost' identified by '%s';

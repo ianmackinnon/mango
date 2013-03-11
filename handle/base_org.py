@@ -6,6 +6,7 @@ from sqlalchemy import and_
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func, literal
 from sqlalchemy.sql.expression import case
+
 from tornado.web import HTTPError
 
 from base import BaseHandler

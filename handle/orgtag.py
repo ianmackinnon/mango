@@ -34,6 +34,16 @@ class BaseOrgtagHandler(BaseHandler):
 
         return orgtag
 
+    def _get_path_list(self):
+        path_list = self.orm.query(Orgtag.path.distinct().label("path")) \
+            .filter(Orgtag.path != None) \
+            .group_by(Orgtag.path) \
+            .order_by(func.count(Orgtag.orgtag_id).desc()) \
+            .all()
+        
+        return [entry.path for entry in path_list]
+        
+
     def _create_orgtag(self):
         name, public, note_id_list = BaseOrgtagHandler._get_arguments(self)
 
@@ -67,11 +77,11 @@ class BaseOrgtagHandler(BaseHandler):
             tag_list = tag_list.filter_by(name=name)
 
         if short:
-            tag_list = tag_list.filter_by(short=short)
+            tag_list = tag_list.filter_by(name_short=short)
 
         if search:
             search = short_name(search)
-            tag_list = tag_list.filter(Orgtag.short.contains(search))
+            tag_list = tag_list.filter(Orgtag.name_short.contains(search))
 
         s = self.orm.query(
             org_orgtag.c.orgtag_id, 
@@ -87,7 +97,7 @@ class BaseOrgtagHandler(BaseHandler):
 
         if search:
             results = results\
-                .order_by(Orgtag.short.startswith(search).desc())
+                .order_by(Orgtag.name_short.startswith(search).desc())
 
         results = results\
             .order_by(s.c.count.desc())\
@@ -168,6 +178,7 @@ class OrgtagListHandler(BaseOrgtagHandler,
 class OrgtagNewHandler(BaseOrgtagHandler):
     @authenticated
     def get(self):
+        path_list = self._get_path_list()
         self.render(
             'tag.html',
             type_title="Organisation",
@@ -175,6 +186,7 @@ class OrgtagNewHandler(BaseOrgtagHandler):
             type_url="organisation",
             type_entity_list="org_list",
             type_li_template="org_li",
+            path_list=path_list,
             )
 
 
@@ -233,6 +245,7 @@ class OrgtagHandler(BaseOrgtagHandler,
         if self.accept_type("json"):
             self.write_json(obj)
         else:
+            path_list = self._get_path_list() 
             self.render(
                 'tag.html',
                 obj=obj,
@@ -244,6 +257,7 @@ class OrgtagHandler(BaseOrgtagHandler,
                 type_url="organisation",
                 type_entity_list="org_list",
                 type_li_template="org_li",
+                path_list=path_list,
                 )
 
 

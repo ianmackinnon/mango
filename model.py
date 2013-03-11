@@ -40,7 +40,8 @@ def use_mysql():
     global Float, String, Unicode
     Float = lambda : DOUBLE()
     String = lambda : LONGTEXT(charset="latin1", collation="latin1_swedish_ci")
-    Unicode = lambda : LONGTEXT(charset="utf8", collation="utf8_general_ci")
+    Unicode = lambda : LONGTEXT(charset="utf8", collation="utf8_bin")
+
 
 
 if __name__ == '__main__':
@@ -91,6 +92,8 @@ def short_name(name):
     Reject symbols except '-'.
     Use '|' as a namespace separator.
     """
+    if not name:
+        return name
     short = name.lower()
     short = re.compile(u"[-_/]", re.U).sub(" ", short)
     short = re.compile(u"[^\w\s\|]", re.U).sub("", short)
@@ -1173,11 +1176,22 @@ class Address(Base, MangoEntity, NotableEntity):
 
 
 class TagExtension(MapperExtension):
+    def _set_name(self, instance):
+        parts = instance.name.rsplit("|", 1)
+        if len(parts) == 2:
+            instance.path, instance.base = [part.strip() for part in parts]
+        else:
+            instance.path = None
+            instance.base = instance.name
+        instance.name_short = short_name(instance.name)
+        instance.base_short = short_name(instance.base)
+        instance.path_short = short_name(instance.path)
+
     def before_insert(self, mapper, connection, instance):
-        instance.short = short_name(instance.name)
+        self._set_name(instance)
 
     def before_update(self, mapper, connection, instance):
-        instance.short = short_name(instance.name)
+        self._set_name(instance)
 
 
 
@@ -1193,7 +1207,13 @@ class Orgtag(Base, MangoEntity, NotableEntity):
     public = Column(Boolean)
 
     name = Column(Unicode(), nullable=False)
-    short = Column(Unicode(), nullable=False)
+    name_short = Column(Unicode(), nullable=False)
+    base = Column(Unicode(), nullable=False)
+    base_short = Column(Unicode(), nullable=False)
+    path = Column(Unicode())
+    path_short = Column(Unicode())
+
+    UniqueConstraint(base_short)
 
     moderation_user = relationship(User, backref='moderation_orgtag_list')
 
@@ -1259,7 +1279,11 @@ class Orgtag(Base, MangoEntity, NotableEntity):
             "date": self.a_time,
             "org_list_url": self.org_list_url(None),
             "name": self.name,
-            "short": self.short,
+            "name_short": self.name_short,
+            "base": self.base,
+            "base_short": self.base_short,
+            "path": self.path,
+            "path_short": self.path_short,
             }
         if public:
             obj["public"] = self.public
@@ -1283,7 +1307,7 @@ class Orgtag(Base, MangoEntity, NotableEntity):
     def org_list_url(self, parameters=None):
         if parameters == None:
             parameters = {}
-        parameters["tag"] = self.short
+        parameters["tag"] = self.name_short
 
         return "/organisation?%s" % urlencode(parameters)
 
