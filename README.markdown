@@ -10,10 +10,16 @@ Mapping Application for NGOs
       redis-server mysql-server mysql-client libmysqlclient-dev \
       nodejs npm
 
+If you're using a virtual Python environment, repace 'pip' below with the path to your virtual environment's pip path.
+
     sudo pip install \
-      Mako tornado sqlalchemy geopy markdown redis pysqlite BeautifulSoup4 \
+      Mako tornado sqlalchemy markdown redis pysqlite BeautifulSoup4 \
       python-levenshtein mysql-python python-memcached BeautifulSoup \
       httplib2
+
+Install 'geopy' from the GitHub repository, because we need Google Maps API v3 support which is not yet in the release version.
+
+    sudo pip install install https://github.com/geopy/geopy/tarball/master
       
     sudo npm install -g jslint
 

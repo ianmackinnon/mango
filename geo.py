@@ -21,7 +21,7 @@ log.addHandler(logging.StreamHandler())
 
 
 http = httplib2.Http(cache=None)
-geocoder = geopy.geocoders.Google(domain='maps.google.co.uk')
+geocoder = geopy.geocoders.GoogleV3(domain='maps.google.co.uk')
 redis_server = redis.Redis("localhost")
 wait = 0.0
 attempts = 3
@@ -160,11 +160,17 @@ def coords(address, cache=True):
             print e
             return None
         except geopy.geocoders.google.GTooManyQueriesError as e:
+            print e
             wait += 1
             continue
+        except geopy.geocoders.base.GeocoderError as e:
+            print e
+            return None
         except URLError as e:
+            print e
             return None
         except ValueError as e:
+            print e
             return None
         
         value = json.dumps((latitude, longitude))
