@@ -358,12 +358,12 @@ for each row begin
     insert into eventtag_v (
         eventtag_id,
         moderation_user_id, a_time, public, existence,
-	name, short
+	name, name_short, base, base_short, path, path_short
         )
         values (
 	new.eventtag_id,
 	new.moderation_user_id, UNIX_TIMESTAMP(), new.public, 1,
-	new.name, new.short
+	new.name, new.name_short, new.base, new.base_short, new.path, new.path_short
 	);
 end $$
 
@@ -373,12 +373,12 @@ for each row begin
     insert into eventtag_v (
         eventtag_id,
         moderation_user_id, a_time, public, existence,
-	name, short
+	name, name_short, base, base_short, path, path_short
         )
         values (
 	new.eventtag_id,
 	new.moderation_user_id, UNIX_TIMESTAMP(), new.public, 1,
-	new.name, new.short
+	new.name, new.name_short, new.base, new.base_short, new.path, new.path_short
 	);
 end $$
 
@@ -387,12 +387,12 @@ for each row begin
     insert into eventtag_v (
         eventtag_id,
         moderation_user_id, a_time, public, existence,
-	name, short
+	name, name_short, base, base_short, path, path_short
         )
         values (
 	old.eventtag_id,
 	old.moderation_user_id, UNIX_TIMESTAMP(), old.public, 0,
-	old.name, old.short
+	old.name, old.name_short, old.base, old.base_short, old.path, old.path_short
 	);
 end $$
 

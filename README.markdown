@@ -8,7 +8,7 @@ Mapping Application for NGOs
 
     sudo apt-get install python-setuptools sqlite3 libsqlite3-dev \
       redis-server mysql-server mysql-client libmysqlclient-dev \
-      nodejs npm
+      nodejs npm pylint
 
 If you're using a virtual Python environment, repace 'pip' below with the path to your virtual environment's pip path.
 

@@ -344,19 +344,29 @@ if not parameters:
 
 
 
-<%def name="tag_li(tag, entity=False, note=False,
+<%def name="tag_li(tag, entity=False, note=False, path=False,
 	    link_url=False, unlink=False, link=False, next=False,
 	    visibility=False, parameters=None)">\
 <%
 if not parameters:
     parameters = {}
 %>\
-<li class="tag">\
-<span class="tag_name">\
+<li class="tag"
+   %if not path:
+   title="${tag["name"] | n, h, unicode}"\
+   %endif
+>\
+<span
+   class="tag_name"
+   >\
 <a
    href="${url_rewrite(tag["url"], parameters)}"
    >\
+%if path:
 ${tag["name"] | n, h, unicode, nbsp}\
+%else:
+${tag["base"] | n, h, unicode, nbsp}\
+%endif
 </a>\
 </span>\
 \

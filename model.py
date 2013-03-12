@@ -1341,7 +1341,13 @@ class Eventtag(Base, MangoEntity, NotableEntity):
     public = Column(Boolean)
 
     name = Column(Unicode(), nullable=False)
-    short = Column(Unicode(), nullable=False)
+    name_short = Column(Unicode(), nullable=False)
+    base = Column(Unicode(), nullable=False)
+    base_short = Column(Unicode(), nullable=False)
+    path = Column(Unicode())
+    path_short = Column(Unicode())
+
+    UniqueConstraint(base_short)
 
     moderation_user = relationship(User, backref='moderation_eventtag_list')
 
@@ -1407,7 +1413,11 @@ class Eventtag(Base, MangoEntity, NotableEntity):
             "date": self.a_time,
             "event_list_url": self.event_list_url(None),
             "name": self.name,
-            "short": self.short,
+            "name_short": self.name_short,
+            "base": self.base,
+            "base_short": self.base_short,
+            "path": self.path,
+            "path_short": self.path_short,
             }
         if public:
             obj["public"] = self.public
@@ -1431,7 +1441,7 @@ class Eventtag(Base, MangoEntity, NotableEntity):
     def event_list_url(self, parameters=None):
         if parameters == None:
             parameters = {}
-        parameters["tag"] = self.short
+        parameters["tag"] = self.name_short
 
         return "/event?%s" % urlencode(parameters)
 

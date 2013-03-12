@@ -126,7 +126,11 @@ CREATE TABLE eventtag_v (
     existence BOOLEAN NOT NULL, --
 
     name LONGTEXT NOT NULL, 
-    short LONGTEXT NOT NULL, 
+    name_short LONGTEXT NOT NULL, 
+    base LONGTEXT NOT NULL, 
+    base_short LONGTEXT NOT NULL, 
+    path LONGTEXT, 
+    path_short LONGTEXT, 
 
     KEY moderation_user_id (moderation_user_id),
     CONSTRAINT eventtag_v_c2 FOREIGN KEY (moderation_user_id)

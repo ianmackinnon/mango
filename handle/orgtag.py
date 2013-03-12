@@ -4,15 +4,19 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
 from tornado.web import HTTPError
 
-from base import BaseHandler, authenticated, \
+from base import authenticated, \
     MangoEntityHandlerMixin, MangoEntityListHandlerMixin
+from base_tag import BaseTagHandler
 from note import BaseNoteHandler
 
 from model import Org, Orgtag, Note, org_orgtag, short_name, detach
 
 
 
-class BaseOrgtagHandler(BaseHandler): 
+class BaseOrgtagHandler(BaseTagHandler):
+    Tag = Orgtag
+    tag_id = "orgtag_id"
+
     def _get_orgtag(self, orgtag_id_string, options=None):
         orgtag_id = int(orgtag_id_string)
 
@@ -34,18 +38,8 @@ class BaseOrgtagHandler(BaseHandler):
 
         return orgtag
 
-    def _get_path_list(self):
-        path_list = self.orm.query(Orgtag.path.distinct().label("path")) \
-            .filter(Orgtag.path != None) \
-            .group_by(Orgtag.path) \
-            .order_by(func.count(Orgtag.orgtag_id).desc()) \
-            .all()
-        
-        return [entry.path for entry in path_list]
-        
-
     def _create_orgtag(self):
-        name, public, note_id_list = BaseOrgtagHandler._get_arguments(self)
+        name, public = BaseOrgtagHandler._get_arguments(self)
 
         moderation_user = self.current_user
 
@@ -56,14 +50,6 @@ class BaseOrgtagHandler(BaseHandler):
         detach(orgtag)
 
         return orgtag
-
-    def _get_arguments(self):
-        is_json = self.content_type("application/json")
-        name = self.get_argument("name", json=is_json)
-        public = self.get_argument_public("public", json=is_json)
-        note_id_list = self.get_argument("note_id", [], json=is_json)
-
-        return name, public, note_id_list
 
     def _get_orgtag_and_org_count_list_search(
         self, name=None, short=None, search=None, visibility=None):
@@ -257,7 +243,6 @@ class OrgtagHandler(BaseOrgtagHandler,
                 type_url="organisation",
                 type_entity_list="org_list",
                 type_li_template="org_li",
-                path_list=path_list,
                 )
 
 

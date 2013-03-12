@@ -4,15 +4,19 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
 from tornado.web import HTTPError
 
-from base import BaseHandler, authenticated, \
+from base import authenticated, \
     MangoEntityHandlerMixin, MangoEntityListHandlerMixin
+from base_tag import BaseTagHandler
 from note import BaseNoteHandler
 
 from model import Event, Eventtag, Note, event_eventtag, short_name, detach
 
 
 
-class BaseEventtagHandler(BaseHandler): 
+class BaseEventtagHandler(BaseTagHandler):
+    Tag = Eventtag
+    tag_id = "eventtag_id"
+
     def _get_eventtag(self, eventtag_id_string, options=None):
         eventtag_id = int(eventtag_id_string)
 
@@ -35,7 +39,7 @@ class BaseEventtagHandler(BaseHandler):
         return eventtag
 
     def _create_eventtag(self):
-        name, public, note_id_list = BaseEventtagHandler._get_arguments(self)
+        name, public = BaseEventtagHandler._get_arguments(self)
 
         moderation_user = self.current_user
 
@@ -46,15 +50,6 @@ class BaseEventtagHandler(BaseHandler):
         detach(eventtag)
 
         return eventtag
-
-    def _get_arguments(self):
-        is_json = self.content_type("application/json")
-
-        name = self.get_argument("name", json=is_json)
-        public = self.get_argument_public("public", json=is_json)
-        note_id_list = self.get_argument("note_id", [], json=is_json)
-
-        return name, public, note_id_list
 
     def _get_eventtag_and_event_count_list_search(
         self, name=None, short=None, search=None, visibility=None):
@@ -72,7 +67,7 @@ class BaseEventtagHandler(BaseHandler):
 
         if search:
             search = short_name(search)
-            tag_list = tag_list.filter(Eventtag.short.contains(search))
+            tag_list = tag_list.filter(Eventtag.name_short.contains(search))
 
         s = self.orm.query(
             event_eventtag.c.eventtag_id, 
@@ -88,7 +83,7 @@ class BaseEventtagHandler(BaseHandler):
 
         if search:
             results = results\
-                .order_by(Eventtag.short.startswith(search).desc())
+                .order_by(Eventtag.name_short.startswith(search).desc())
 
         results = results\
             .order_by(s.c.count.desc())\
@@ -169,6 +164,7 @@ class EventtagListHandler(BaseEventtagHandler,
 class EventtagNewHandler(BaseEventtagHandler):
     @authenticated
     def get(self):
+        path_list = self._get_path_list()
         self.render(
             'tag.html',
             type_title="Event",
@@ -176,6 +172,7 @@ class EventtagNewHandler(BaseEventtagHandler):
             type_url="event",
             type_entity_list="event_list",
             type_li_template="event_li",
+            path_list=path_list,
             )
 
 
@@ -234,6 +231,8 @@ class EventtagHandler(BaseEventtagHandler,
         if self.accept_type("json"):
             self.write_json(obj)
         else:
+            path_list = self._get_path_list() 
+            print path_list
             self.render(
                 'tag.html',
                 obj=obj,
@@ -245,6 +244,7 @@ class EventtagHandler(BaseEventtagHandler,
                 type_url="event",
                 type_entity_list="event_list",
                 type_li_template="event_li",
+                path_list=path_list,
                 )
 
 

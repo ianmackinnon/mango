@@ -625,6 +625,22 @@ var m = {
     $("#address-form textarea[name='postal']").focus();
   },
 
+  initTagForm: function () {
+    var form = $("#tag-form");
+    var inputName = form.find("input[name='name']");
+    var inputPath = form.find("select[name='path']");
+    inputName.focus().val(inputName.val());  // Move cursor to end.
+    inputPath.after($("<span>").text("Select to prepend path to name."));
+    inputPath.change(function() {
+      console.log(inputPath.val());
+      if (!inputPath.val()) {
+        return;
+      }
+      inputName.focus().val(inputPath.val() + " | " + inputName.val());
+      inputPath.val(null);
+    });
+  },
+
   "text_children": function (el) {
     // http://stackoverflow.com/a/4399718/201665
     return $(el).find(":not(iframe)").andSelf().contents().filter(function () {
@@ -910,12 +926,12 @@ var m = {
       m.visibility();
     }],
     [/^\/organisation-tag\/([1-9][0-9]*)$/, function () {
+      m.initTagForm();
       m.init_orgtag_search("tag-form", "name");
-      $("#orgtag-form input[name='name']").focus();
     }],
     [/^\/organisation-tag\/new$/, function () {
+      m.initTagForm();
       m.init_orgtag_search("tag-form", "name");
-      $("#orgtag-form input[name='name']").focus();
     }],
     [/^\/organisation-tag\/([1-9][0-9]*)\/note$/, function () {
       m.note_markdown();
@@ -927,12 +943,12 @@ var m = {
       m.visibility();
     }],
     [/^\/event-tag\/([1-9][0-9]*)$/, function () {
+      m.initTagForm();
       m.init_eventtag_search("tag-form", "name");
-      $("#eventtag-form input[name='name']").focus();
     }],
     [/^\/event-tag\/new$/, function () {
+      m.initTagForm();
       m.init_eventtag_search("tag-form", "name");
-      $("#eventtag-form input[name='name']").focus();
     }],
     [/^\/event-tag\/([1-9][0-9]*)\/note$/, function () {
       m.note_markdown();
