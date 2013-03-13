@@ -63,6 +63,15 @@ mysql-seed:
 	  mysql/seed.mysql.sql \
 	 | mysql -u root -p -D $$(./mysql/mysql_init.py -d database))
 
+mysql-drop-triggers:
+	@echo "Creating triggers"
+	@cat \
+	  mysql/drop_triggers.mysql.sql \
+	 | mysql -u root -p -D $$(./mysql/mysql_init.py -d database)
+
+mysql-regenerate-drop-triggers:
+	grep trigger mysql/build_triggers.mysql.sql | sed 's/^create trigger \([a-z_]*\) .*$$/drop trigger if exists \1;/' > mysql/drop_triggers.mysql.sql;
+
 clean-mysql:
 	@./mysql/mysql_init.py > /dev/null
 	@echo "Logging into MySQL as user 'root'"

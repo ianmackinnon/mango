@@ -375,7 +375,7 @@ ${tag["base"] | n, h, unicode, nbsp}\
 (\
 <span class="number">\
 <a
-   href="${url_rewrite("/%s" % entity["url"], dict(parameters, tag=tag["short"]))}"
+   href="${url_rewrite("/%s" % entity["url"], dict(parameters, tag=tag["name_short"]))}"
    >${tag[entity["len"]]}</a>\
 </span>\
 )\
@@ -423,6 +423,9 @@ ${tag["base"] | n, h, unicode, nbsp}\
 ${visibility_bar(tag)}\
 %endif
 </li>
+%if path:
+<br/>
+%endif
 </%def>
 
 

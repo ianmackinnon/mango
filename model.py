@@ -86,7 +86,7 @@ SQLITE :  Destination SQLite database. If not supplied, you must
 
 
 
-def short_name(name):
+def short_name(name, allow_end_pipe=False):
     """
     Accept letters and numbers in all alphabets, converting to lower case.
     Reject symbols except '-'.
@@ -101,7 +101,8 @@ def short_name(name):
     short = short.strip()
     short = re.compile(u"[\s]*\|[\s]*", re.U).sub("|", short)
     short = re.compile(u"\|+", re.U).sub("|", short)
-    short = re.compile(u"(^\||\|$)", re.U).sub("", short)
+    if not allow_end_pipe:
+        short = re.compile(u"(^\||\|$)", re.U).sub("", short)
     short = re.compile(u"[\s]", re.U).sub("-", short)
     return short
 

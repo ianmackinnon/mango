@@ -15,7 +15,10 @@ from model import Event, Eventtag, Note, event_eventtag, short_name, detach
 
 class BaseEventtagHandler(BaseTagHandler):
     Tag = Eventtag
+    Entity = Event
     tag_id = "eventtag_id"
+    entity_id = "event_id"
+    cross_table = event_eventtag
 
     def _get_eventtag(self, eventtag_id_string, options=None):
         eventtag_id = int(eventtag_id_string)
@@ -51,63 +54,6 @@ class BaseEventtagHandler(BaseTagHandler):
 
         return eventtag
 
-    def _get_eventtag_and_event_count_list_search(
-        self, name=None, short=None, search=None, visibility=None):
-        tag_list = self.orm.query(Eventtag)
-        event_q = self.orm.query(Event)
-
-        tag_list = self.filter_visibility(tag_list, Eventtag, visibility)
-        event_q = self.filter_visibility(event_q, Event, visibility).subquery()
-
-        if name:
-            tag_list = tag_list.filter_by(name=name)
-
-        if short:
-            tag_list = tag_list.filter_by(short=short)
-
-        if search:
-            search = short_name(search)
-            tag_list = tag_list.filter(Eventtag.name_short.contains(search))
-
-        s = self.orm.query(
-            event_eventtag.c.eventtag_id, 
-            func.count(event_eventtag.c.event_id).label("count")
-            )\
-            .join((event_q, event_q.c.event_id == event_eventtag.c.event_id))\
-            .group_by(event_eventtag.c.eventtag_id)\
-            .subquery()
-
-        results = tag_list\
-            .add_columns(s.c.count)\
-            .outerjoin((s, Eventtag.eventtag_id == s.c.eventtag_id))
-
-        if search:
-            results = results\
-                .order_by(Eventtag.name_short.startswith(search).desc())
-
-        results = results\
-            .order_by(s.c.count.desc())\
-            .all()
-
-        tag_and_event_count_list = results
-
-        return tag_and_event_count_list
-        
-    def _get_eventtag_and_event_count_list_search_and_args(self):
-        is_json = self.content_type("application/json")
-        name = self.get_argument("name", None, json=is_json)
-        short = self.get_argument("short", None, json=is_json)
-        search = self.get_argument("search", None, json=is_json)
-
-        eventtag_and_event_count_list = self._get_eventtag_and_event_count_list_search(
-            name=name,
-            short=short,
-            search=search,
-            visibility=self.parameters["visibility"],
-            )
-
-        return eventtag_and_event_count_list, name, short, search
-
     def _get_full_eventtag_list(self):
         eventtag_and_event_count_list = \
             self._get_eventtag_and_event_count_list_search(
@@ -134,8 +80,7 @@ class EventtagListHandler(BaseEventtagHandler,
         return self._get_eventtag
 
     def get(self):
-        eventtag_and_event_count_list, name, short, search = \
-            BaseEventtagHandler._get_eventtag_and_event_count_list_search_and_args(self)
+        (eventtag_and_event_count_list, name, name_short, base, base_short, path, search) = self._get_tag_entity_count_search_args()
 
         eventtag_list = []
         for eventtag, event_count in eventtag_and_event_count_list:
@@ -150,6 +95,7 @@ class EventtagListHandler(BaseEventtagHandler,
             self.render(
                 'tag_list.html',
                 tag_list=eventtag_list,
+                path=path,
                 search=search,
                 visibility=self.parameters["visibility"],
                 type_title="Event",
@@ -157,6 +103,7 @@ class EventtagListHandler(BaseEventtagHandler,
                 type_url="event",
                 type_entity_list="event_list",
                 type_li_template="event_li",
+                type_length="event_len",
                 )
 
 
@@ -232,7 +179,6 @@ class EventtagHandler(BaseEventtagHandler,
             self.write_json(obj)
         else:
             path_list = self._get_path_list() 
-            print path_list
             self.render(
                 'tag.html',
                 obj=obj,

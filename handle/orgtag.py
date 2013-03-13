@@ -9,13 +9,16 @@ from base import authenticated, \
 from base_tag import BaseTagHandler
 from note import BaseNoteHandler
 
-from model import Org, Orgtag, Note, org_orgtag, short_name, detach
+from model import Org, Orgtag, Note, org_orgtag, detach
 
 
 
 class BaseOrgtagHandler(BaseTagHandler):
     Tag = Orgtag
+    Entity = Org
     tag_id = "orgtag_id"
+    entity_id = "org_id"
+    cross_table = org_orgtag
 
     def _get_orgtag(self, orgtag_id_string, options=None):
         orgtag_id = int(orgtag_id_string)
@@ -51,63 +54,6 @@ class BaseOrgtagHandler(BaseTagHandler):
 
         return orgtag
 
-    def _get_orgtag_and_org_count_list_search(
-        self, name=None, short=None, search=None, visibility=None):
-        tag_list = self.orm.query(Orgtag)
-        org_q = self.orm.query(Org)
-
-        tag_list = self.filter_visibility(tag_list, Orgtag, visibility)
-        org_q = self.filter_visibility(org_q, Org, visibility).subquery()
-
-        if name:
-            tag_list = tag_list.filter_by(name=name)
-
-        if short:
-            tag_list = tag_list.filter_by(name_short=short)
-
-        if search:
-            search = short_name(search)
-            tag_list = tag_list.filter(Orgtag.name_short.contains(search))
-
-        s = self.orm.query(
-            org_orgtag.c.orgtag_id, 
-            func.count(org_orgtag.c.org_id).label("count")
-            )\
-            .join((org_q, org_q.c.org_id == org_orgtag.c.org_id))\
-            .group_by(org_orgtag.c.orgtag_id)\
-            .subquery()
-
-        results = tag_list\
-            .add_columns(s.c.count)\
-            .outerjoin((s, Orgtag.orgtag_id == s.c.orgtag_id))
-
-        if search:
-            results = results\
-                .order_by(Orgtag.name_short.startswith(search).desc())
-
-        results = results\
-            .order_by(s.c.count.desc())\
-            .all()
-
-        tag_and_org_count_list = results
-
-        return tag_and_org_count_list
-        
-    def _get_orgtag_and_org_count_list_search_and_args(self):
-        is_json = self.content_type("application/json")
-        name = self.get_argument("name", None, json=is_json)
-        short = self.get_argument("short", None, json=is_json)
-        search = self.get_argument("search", None, json=is_json)
-
-        orgtag_and_org_count_list = self._get_orgtag_and_org_count_list_search(
-            name=name,
-            short=short,
-            search=search,
-            visibility=self.parameters["visibility"],
-            )
-
-        return orgtag_and_org_count_list, name, short, search
-
     def _get_full_orgtag_list(self):
         orgtag_and_org_count_list = \
             self._get_orgtag_and_org_count_list_search(
@@ -134,8 +80,7 @@ class OrgtagListHandler(BaseOrgtagHandler,
         return self._get_orgtag
 
     def get(self):
-        orgtag_and_org_count_list, name, short, search = \
-            BaseOrgtagHandler._get_orgtag_and_org_count_list_search_and_args(self)
+        (orgtag_and_org_count_list, name, name_short, base, base_short, path, search) = self._get_tag_entity_count_search_args()
 
         orgtag_list = []
         for orgtag, org_count in orgtag_and_org_count_list:
@@ -150,6 +95,7 @@ class OrgtagListHandler(BaseOrgtagHandler,
             self.render(
                 'tag_list.html',
                 tag_list=orgtag_list,
+                path=path,
                 search=search,
                 visibility=self.parameters["visibility"],
                 type_title="Organisation",
@@ -157,6 +103,7 @@ class OrgtagListHandler(BaseOrgtagHandler,
                 type_url="organisation",
                 type_entity_list="org_list",
                 type_li_template="org_li",
+                type_length="org_len",
                 )
 
 
@@ -243,6 +190,7 @@ class OrgtagHandler(BaseOrgtagHandler,
                 type_url="organisation",
                 type_entity_list="org_list",
                 type_li_template="org_li",
+                path_list=path_list,
                 )
 
 

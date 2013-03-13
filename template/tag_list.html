@@ -12,6 +12,10 @@
       <span>Search</span>
       <input name="search" value="${search or ''}">
     </label>
+    <label name="past">
+      <span>Path</span>
+      <input type="checkbox" name="path" value="1"${path and ' checked="checked"' or ''}>
+    </label>
     ${self.mini.visibility_search_input(visibility, current_user)}
     <div class="actions">
       <input type="submit">
@@ -24,14 +28,14 @@
        >Create a tag</a>
   </div>
 </div>
-
 <ul id="tag_list" class="tag_list">
   %for tag in tag_list:
   ${self.mini.tag_li(tag, entity={
-  "len": "%s_len" % type_url,
+  "len": type_length,
   "url": type_url,
   }, note=True,
-    visibility=True, parameters=parameters)}
+  path=path,
+  visibility=True, parameters=parameters)}
   %endfor
 </ul>
 

@@ -103,7 +103,7 @@ if obj:
       %for entity in obj[type_entity_list]:
       ${getattr(self.mini, type_li_template)(
         entity,
-        link_url=entity["url"] + obj["url"],
+        link_url=entity["url"] + "/tag/" + str(obj["id"]),
         unlink=len(obj[type_entity_list]),
         visibility=True,
       )}
