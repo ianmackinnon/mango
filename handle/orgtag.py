@@ -90,7 +90,10 @@ class OrgtagListHandler(BaseOrgtagHandler,
                     ))
 
         if self.accept_type("json"):
-            self.write_json(orgtag_list)
+            self.write_json({
+                    "orgtag_list": orgtag_list,
+                    "path": path,
+                    })
         else:
             self.render(
                 'tag_list.html',

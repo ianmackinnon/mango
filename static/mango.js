@@ -133,14 +133,19 @@ var m = {
   "process": {
     "orgtag_packet": function(tag_list_id, orgtag_packet) {
       var tag_list = $(tag_list_id);
+      var path = orgtag_packet.path;
       tag_list.empty();
 
-      $.each(orgtag_packet, function(index, value) {
+      $.each(orgtag_packet.orgtag_list, function(index, value) {
+        console.log(value);
 	var tag_li = m.$template("tag-li.html", {
 	  "tag":value,
-	  "org":true,
+	  "entity":true,
 	  "note":true,
+          path: path,
           "parameters":m.parameters,
+          "entity_len": "org_len",
+          "entity_list_url": "org_list_url",
 	});
 	tag_list.append(tag_li);
 	tag_list.append(" ");
@@ -149,14 +154,20 @@ var m = {
 
     "eventtag_packet": function(tag_list_id, eventtag_packet) {
       var tag_list = $(tag_list_id);
+      var path = eventtag_packet.path;
+
       tag_list.empty();
 
-      $.each(eventtag_packet, function(index, value) {
+      $.each(eventtag_packet.eventtag_list, function(index, value) {
+        console.log(value);
 	var tag_li = m.$template("tag-li.html", {
 	  "tag":value,
-	  "org":true,
+	  "entity":true,
 	  "note":true,
+          path: path,
           "parameters":m.parameters,
+          "entity_len": "event_len",
+          "entity_list_url": "event_list_url",
 	});
 	tag_list.append(tag_li);
 	tag_list.append(" ");
@@ -205,6 +216,9 @@ var m = {
   },
 
   "url_rewrite": function (path, parameters) {
+    if (!!path) {
+      console.log("No path supplied to url_rewrite!");
+    }
     var url = path;
     if (url.indexOf("/") === 0) {
       url = m.urlRoot + url.substring(1);
@@ -394,12 +408,16 @@ var m = {
   "init_orgtag_search": function (id, field) {
     var form = $("#" + id);
     var search = m.get_field(form, field);
+    var $path = form.find("input[name='path']");
+    var pathValue = function () {
+      return $path.is(":checked") && 1 || null;
+    };
     var visibility = form.find("input[name='visibility']");
     var throbber = $("<img>").attr({
       "src": m.urlRoot + "static/image/throbber.gif",
       "class": "throbber"
     }).hide();
-    form.append(throbber);
+    form.find("input[type='submit']").before(throbber);
     var xhr = null;
 
     var change = function (value) {
@@ -408,7 +426,8 @@ var m = {
         xhr.abort();
       }
       var data = {
-        "search": search.input.val()
+        search: search.input.val(),
+        path: pathValue()
       };
       if (visibility.length) {
         data.visibility = visibility.val();
@@ -421,25 +440,30 @@ var m = {
         },
         "error": m.ajaxError,
         "complete": function (jqXHR, textStatus) {
-          throbber.hide();
+        throbber.hide();
         }
       });
       throbber.show();
     };
 
     m.on_change(search.input, id + "_" + field, change, 500);
+    $path.change(change);
     visibility.change(change);
   },
 
   "init_eventtag_search": function (id, field) {
     var form = $("#" + id);
     var search = m.get_field(form, field);
+    var $path = form.find("input[name='path']");
+    var pathValue = function () {
+      return $path.is(":checked") && 1 || null;
+    };
     var visibility = form.find("input[name='visibility']");
     var throbber = $("<img>").attr({
       "src": m.urlRoot + "static/image/throbber.gif",
       "class": "throbber"
     }).hide();
-    form.append(throbber);
+    form.find("input[type='submit']").before(throbber);
     var xhr = null;
 
     var change = function (value) {
@@ -448,7 +472,8 @@ var m = {
         xhr.abort();
       }
       var data = {
-        "search": search.input.val()
+        search: search.input.val(),
+        path: pathValue()
       };
       if (visibility.length) {
         data.visibility = visibility.val();
@@ -468,6 +493,7 @@ var m = {
     };
 
     m.on_change(search.input, id + "_" + field, change, 500);
+    $path.change(change);
     visibility.change(change);
   },
 

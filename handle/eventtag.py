@@ -90,7 +90,10 @@ class EventtagListHandler(BaseEventtagHandler,
                     ))
 
         if self.accept_type("json"):
-            self.write_json(eventtag_list)
+            self.write_json({
+                    "eventtag_list": eventtag_list,
+                    "path": path,
+                    })
         else:
             self.render(
                 'tag_list.html',
