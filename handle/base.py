@@ -14,6 +14,7 @@ from urllib import urlencode
 from bs4 import BeautifulSoup
 from sqlalchemy import or_, not_
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import IntegrityError
 from mako import exceptions
 
 import geo
@@ -629,7 +630,10 @@ class MangoEntityHandlerMixin(tornado.web.RequestHandler):
         if self._before_delete:
             self._before_delete(entity)
         self.orm.delete(entity)
-        self.orm.commit()
+        try:
+            self.orm.commit()
+        except IntegrityError as e:
+            raise tornado.web.HTTPError(500, e.message)
         self.application.increment_cache()
         self.redirect_next(entity.list_url)
         
@@ -639,7 +643,10 @@ class MangoEntityHandlerMixin(tornado.web.RequestHandler):
         new_entity = self._create()
         if not old_entity.content_same(new_entity):
             old_entity.content_copy(new_entity, self.current_user)
-            self.orm.commit()
+            try:
+                self.orm.commit()
+            except IntegrityError as e:
+                raise tornado.web.HTTPError(500, e.message)
             self.application.increment_cache()
         self.redirect_next(old_entity.url)
 
@@ -650,7 +657,10 @@ class MangoEntityListHandlerMixin(tornado.web.RequestHandler):
     def post(self):
         new_entity = self._create()
         self.orm.add(new_entity)
-        self.orm.commit()
+        try:
+            self.orm.commit()
+        except IntegrityError as e:
+            raise tornado.web.HTTPError(500, e.message)
         self.application.increment_cache()
         self.redirect_next(new_entity.url)
 

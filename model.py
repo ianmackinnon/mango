@@ -26,7 +26,7 @@ from sqlalchemy.sql import func
 
 from sqlalchemy import Boolean, Integer, Float as FloatOrig, Numeric, Date, Time
 from sqlalchemy import Unicode as UnicodeOrig, String as StringOrig
-from sqlalchemy.dialects.mysql import LONGTEXT, DOUBLE
+from sqlalchemy.dialects.mysql import LONGTEXT, DOUBLE, VARCHAR
 
 log = logging.getLogger('model')
 
@@ -35,13 +35,19 @@ Base = declarative_base()
 Float = lambda : FloatOrig
 String = lambda : StringOrig
 Unicode = lambda : UnicodeOrig
+StringKey = lambda : StringOrig
+UnicodeKey = lambda : UnicodeOrig
+
 
 def use_mysql():
-    global Float, String, Unicode
+    global Float, String, Unicode, StringKey, UnicodeKey
+    print "use mysql"
     Float = lambda : DOUBLE()
     String = lambda : LONGTEXT(charset="latin1", collation="latin1_swedish_ci")
     Unicode = lambda : LONGTEXT(charset="utf8", collation="utf8_bin")
-
+    # MySQL needs a character limit to use a variable-length column as a key.
+    StringKey = lambda : VARCHAR(length=128, charset="latin1", collation="latin1_swedish_ci")
+    UnicodeKey = lambda : VARCHAR(length=128, charset="utf8", collation="utf8_bin")
 
 
 if __name__ == '__main__':
@@ -302,17 +308,22 @@ note_fts = Table(
 
 
 
+
+
+
+
 class Auth(Base):
     __tablename__ = 'auth'
-    __table_args__ = {'sqlite_autoincrement':True}
+    __table_args__ = (
+        UniqueConstraint('url', 'name_hash'),    
+        {'sqlite_autoincrement':True}
+        )
      
     auth_id = Column(Integer, primary_key=True)
 
-    url = Column(Unicode(), nullable=False)
-    name_hash = Column(String(), nullable=False)
+    url = Column(StringKey(), nullable=False)
+    name_hash = Column(UnicodeKey(), nullable=False)
     gravatar_hash = Column(String(), nullable=False)
-    
-    UniqueConstraint(url, name_hash)
     
     def __init__(self, url, name):
         """
@@ -1198,7 +1209,10 @@ class TagExtension(MapperExtension):
 
 class Orgtag(Base, MangoEntity, NotableEntity):
     __tablename__ = 'orgtag'
-    __table_args__ = {'sqlite_autoincrement':True}
+    __table_args__ = (
+        UniqueConstraint('base_short'),    
+        {'sqlite_autoincrement':True}
+        )
     __mapper_args__ = {'extension':TagExtension()}
 
     orgtag_id = Column(Integer, primary_key=True)
@@ -1210,11 +1224,9 @@ class Orgtag(Base, MangoEntity, NotableEntity):
     name = Column(Unicode(), nullable=False)
     name_short = Column(Unicode(), nullable=False)
     base = Column(Unicode(), nullable=False)
-    base_short = Column(Unicode(), nullable=False)
+    base_short = Column(UnicodeKey(), nullable=False)
     path = Column(Unicode())
     path_short = Column(Unicode())
-
-    UniqueConstraint(base_short)
 
     moderation_user = relationship(User, backref='moderation_orgtag_list')
 
@@ -1332,7 +1344,10 @@ class Orgtag(Base, MangoEntity, NotableEntity):
 
 class Eventtag(Base, MangoEntity, NotableEntity):
     __tablename__ = 'eventtag'
-    __table_args__ = {'sqlite_autoincrement':True}
+    __table_args__ = (
+        UniqueConstraint('base_short'),    
+        {'sqlite_autoincrement':True}
+        )
     __mapper_args__ = {'extension':TagExtension()}
 
     eventtag_id = Column(Integer, primary_key=True)
@@ -1344,11 +1359,9 @@ class Eventtag(Base, MangoEntity, NotableEntity):
     name = Column(Unicode(), nullable=False)
     name_short = Column(Unicode(), nullable=False)
     base = Column(Unicode(), nullable=False)
-    base_short = Column(Unicode(), nullable=False)
+    base_short = Column(UnicodeKey(), nullable=False)
     path = Column(Unicode())
     path_short = Column(Unicode())
-
-    UniqueConstraint(base_short)
 
     moderation_user = relationship(User, backref='moderation_eventtag_list')
 
