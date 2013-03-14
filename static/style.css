@@ -479,7 +479,6 @@ form.mango input[type="checkbox"]
 
 #mango .visibility
 {
-    margin-bottom: 8px;
     border-radius: 2px;
     padding: 2px;
     text-align: center;
@@ -719,11 +718,10 @@ div.ui-timepicker td a.ui-state-active
 #mango ul.alias_list,
 #mango ul.tag_list
 {
-    display: inline;
     list-style-type: none;
     padding: 0px;
     margin: 0px;
-    line-height: 24px;
+    line-height: 18px;
 }
 #mango ul.alias_list *,
 #mango ul.tag_list *
@@ -734,15 +732,26 @@ div.ui-timepicker td a.ui-state-active
 #mango ul.alias_list li,
 #mango ul.tag_list li
 {
+    display: inline-block;
     margin: 2px;
     border: 1px solid #ccc;
-    padding: 2px 4px;
+    padding: 0 4px;
+    height: 18px;
+    line-height: 18px;
     border-radius: 2px;
     background: #f8f8f8;
+}
+#mango ul.alias_list li.has-visibility,
+#mango ul.tag_list li.has-visibility
+{
+    padding-right: 0;
 }
 #mango ul.alias_list input,
 #mango ul.tag_list input
 {
+    height: 18px;
+    line-height: 18px;
+
     margin: 0;
     border: 0;
     padding: 0;

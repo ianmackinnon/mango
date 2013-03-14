@@ -310,20 +310,14 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
 
         # orgtag...
 
-        orgtag_and_org_count_list, name, short, search = \
-            BaseOrgtagHandler._get_orgtag_and_org_count_list_search_and_args(self)
-
-        orgtag_list = []
-        for orgtag, org_count in orgtag_and_org_count_list:
-            orgtag_list.append(orgtag.obj(
-                    public=bool(self.current_user),
-                    org_len=org_count,
-                    ))
+        (orgtag_list, name, name_short, base, base_short, path, search) = \
+            self._get_tag_search_args("org_len")
 
         self.render(
             'entity_tag.html',
             obj=obj,
             tag_list=orgtag_list,
+            path=path,
             search=search,
             type_title="Organisation",
             type_title_plural="Organisations",

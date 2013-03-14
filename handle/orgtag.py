@@ -80,14 +80,8 @@ class OrgtagListHandler(BaseOrgtagHandler,
         return self._get_orgtag
 
     def get(self):
-        (orgtag_and_org_count_list, name, name_short, base, base_short, path, search) = self._get_tag_entity_count_search_args()
-
-        orgtag_list = []
-        for orgtag, org_count in orgtag_and_org_count_list:
-            orgtag_list.append(orgtag.obj(
-                    public=bool(self.current_user),
-                    org_len=org_count,
-                    ))
+        (orgtag_list, name, name_short, base, base_short, path, search) = \
+            self._get_tag_search_args("org_len")
 
         if self.accept_type("json"):
             self.write_json({

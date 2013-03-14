@@ -80,14 +80,8 @@ class EventtagListHandler(BaseEventtagHandler,
         return self._get_eventtag
 
     def get(self):
-        (eventtag_and_event_count_list, name, name_short, base, base_short, path, search) = self._get_tag_entity_count_search_args()
-
-        eventtag_list = []
-        for eventtag, event_count in eventtag_and_event_count_list:
-            eventtag_list.append(eventtag.obj(
-                    public=bool(self.current_user),
-                    event_len=event_count,
-                    ))
+        (eventtag_list, name, name_short, base, base_short, path, search) = \
+            self._get_tag_search_args("event_len")
 
         if self.accept_type("json"):
             self.write_json({

@@ -317,20 +317,14 @@ class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
 
         # eventtag...
 
-        eventtag_and_event_count_list, name, short, search = \
-            BaseEventtagHandler._get_eventtag_and_event_count_list_search_and_args(self)
-
-        eventtag_list = []
-        for eventtag, event_count in eventtag_and_event_count_list:
-            eventtag_list.append(eventtag.obj(
-                    public=bool(self.current_user),
-                    event_len=event_count,
-                    ))
+        (eventtag_list, name, name_short, base, base_short, path, search) = \
+            self._get_tag_search_args("event_len")
 
         self.render(
             'entity_tag.html',
             obj=obj,
             tag_list=eventtag_list,
+            path=path,
             search=search,
             type_title="Event",
             type_title_plural="Events",

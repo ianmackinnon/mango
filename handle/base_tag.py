@@ -89,7 +89,7 @@ class BaseTagHandler(BaseHandler):
 
         return tag_and_org_count_list
         
-    def _get_tag_entity_count_search_args(self):
+    def _get_tag_search_args(self, entity_len):
         is_json = self.content_type("application/json")
         name = self.get_argument("name", None, json=is_json)
         name_short = self.get_argument("name_short", None, json=is_json)
@@ -108,5 +108,14 @@ class BaseTagHandler(BaseHandler):
             visibility=self.parameters["visibility"],
             )
 
-        return entity_count_list, name, name_short, base, base_short, path, search
+        tag_list = []
+        for tag, entity_count in entity_count_list:
+            tag_list.append(tag.obj(**{
+                    "public": bool(self.current_user),
+                    entity_len: entity_count,
+                    }))
+
+        
+
+        return tag_list, name, name_short, base, base_short, path, search
 

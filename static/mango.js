@@ -131,7 +131,7 @@ var m = {
   },
 
   "process": {
-    "orgtag_packet": function(tag_list_id, orgtag_packet) {
+    "orgtag_packet": function(tag_list_id, orgtag_packet, entity, note) {
       var tag_list = $(tag_list_id);
       var path = orgtag_packet.path;
       tag_list.empty();
@@ -139,8 +139,8 @@ var m = {
       $.each(orgtag_packet.orgtag_list, function(index, value) {
 	var tag_li = m.$template("tag-li.html", {
 	  "tag":value,
-	  "entity":true,
-	  "note":true,
+	  "entity": entity,
+	  "note": note,
           path: path,
           "parameters":m.parameters,
           "entity_len": "org_len",
@@ -151,7 +151,7 @@ var m = {
       });
     },
 
-    "eventtag_packet": function(tag_list_id, eventtag_packet) {
+    "eventtag_packet": function(tag_list_id, eventtag_packet, entity, note) {
       var tag_list = $(tag_list_id);
       var path = eventtag_packet.path;
 
@@ -160,8 +160,8 @@ var m = {
       $.each(eventtag_packet.eventtag_list, function(index, value) {
 	var tag_li = m.$template("tag-li.html", {
 	  "tag":value,
-	  "entity":true,
-	  "note":true,
+	  "entity": entity,
+	  "note": note,
           path: path,
           "parameters":m.parameters,
           "entity_len": "event_len",
@@ -403,7 +403,7 @@ var m = {
     console.log("error", jqXHR, textStatus, errorThrown);
   },
 
-  "init_orgtag_search": function (id, field) {
+  "init_orgtag_search": function (id, field, entity, note) {
     var form = $("#" + id);
     var search = m.get_field(form, field);
     var $path = form.find("input[name='path']");
@@ -419,7 +419,6 @@ var m = {
     var xhr = null;
 
     var change = function (value) {
-
       if (xhr && xhr.readyState !== 4) {
         xhr.abort();
       }
@@ -434,7 +433,7 @@ var m = {
         "dataType": "json",
         "data": data,
         "success": function (data, textStatus, jqXHR) {
-          m.process.orgtag_packet("#tag_list", data);
+          m.process.orgtag_packet("#tag_list", data, entity, note);
         },
         "error": m.ajaxError,
         "complete": function (jqXHR, textStatus) {
@@ -449,7 +448,7 @@ var m = {
     visibility.change(change);
   },
 
-  "init_eventtag_search": function (id, field) {
+  "init_eventtag_search": function (id, field, entity, note) {
     var form = $("#" + id);
     var search = m.get_field(form, field);
     var $path = form.find("input[name='path']");
@@ -480,7 +479,7 @@ var m = {
         "dataType": "json",
         "data": data,
         "success": function (data, textStatus, jqXHR) {
-          m.process.eventtag_packet("#tag_list", data);
+          m.process.eventtag_packet("#tag_list", data, entity, note);
         },
         "error": m.ajaxError,
         "complete": function (jqXHR, textStatus) {
@@ -919,6 +918,9 @@ var m = {
     [/^\/organisation\/([1-9][0-9]*)\/note$/, function () {
       m.note_markdown();
     }],
+    [/^\/organisation\/([1-9][0-9]*)\/tag$/, function () {
+      m.visibility();
+    }],
     [/^\/event\/([1-9][0-9]*)$/, function () {
       var mapView = m.initMap();
       m.initEvent(mapView);
@@ -944,7 +946,7 @@ var m = {
     }],
 
     [/^\/organisation-tag$/, function () {
-      m.init_orgtag_search("tag-search", "search");
+      m.init_orgtag_search("tag-search", "search", true, true);
       $("#orgtag-search input[name='search']").focus();
       m.visibility();
     }],

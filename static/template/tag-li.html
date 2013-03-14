@@ -1,4 +1,4 @@
-<li class="tag"><span class="tag_name"><a
+<li class="tag<% if (parameters.visibility && "public" in tag) { %> has-visibility<% } %>"><span class="tag_name"><a
    href="<%= m.url_rewrite(tag["url"], parameters) %>"
    ><% if (path) { %><%=m.filter.nbsp(m.filter.h(tag["name"]))%><% } else { %><%=m.filter.nbsp(m.filter.h(tag["base"]))%><% } %></a></span><% if (entity) { %>&nbsp;(<span class="number"><% if (tag[entity_len]) { %><a
    href="<%= m.url_rewrite(tag[entity_list_url], parameters) %>"
