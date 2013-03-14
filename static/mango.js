@@ -137,7 +137,6 @@ var m = {
       tag_list.empty();
 
       $.each(orgtag_packet.orgtag_list, function(index, value) {
-        console.log(value);
 	var tag_li = m.$template("tag-li.html", {
 	  "tag":value,
 	  "entity":true,
@@ -159,7 +158,6 @@ var m = {
       tag_list.empty();
 
       $.each(eventtag_packet.eventtag_list, function(index, value) {
-        console.log(value);
 	var tag_li = m.$template("tag-li.html", {
 	  "tag":value,
 	  "entity":true,
@@ -216,7 +214,7 @@ var m = {
   },
 
   "url_rewrite": function (path, parameters) {
-    if (!!path) {
+    if (!path) {
       console.log("No path supplied to url_rewrite!");
     }
     var url = path;
@@ -658,7 +656,6 @@ var m = {
     inputName.focus().val(inputName.val());  // Move cursor to end.
     inputPath.after($("<span>").text("Select to prepend path to name."));
     inputPath.change(function() {
-      console.log(inputPath.val());
       if (!inputPath.val()) {
         return;
       }
@@ -846,7 +843,7 @@ var m = {
     m.parameters.visibility = value;
   },
 
-  "visibility": function () {
+  visibility: function () {
     $("#visibility-public").click(function (e) {
       if (e.which !== 1 || e.metaKey || e.shiftKey) {
         return;

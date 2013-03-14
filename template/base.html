@@ -131,7 +131,7 @@ ${parameters.get("visibility", "public")=="all" and " selected" or "" | n}"
 <script type="text/javascript">
 m.urlRoot = "${url_root}";
 m.parameters = {
-%if "visibility" in parameters:
+%if parameters.get("visibility", None):
   visibility: "${parameters["visibility"]}"
 %endif
 };

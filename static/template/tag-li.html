@@ -2,4 +2,4 @@
    href="<%= m.url_rewrite(tag["url"], parameters) %>"
    ><% if (path) { %><%=m.filter.nbsp(m.filter.h(tag["name"]))%><% } else { %><%=m.filter.nbsp(m.filter.h(tag["base"]))%><% } %></a></span><% if (entity) { %>&nbsp;(<span class="number"><% if (tag[entity_len]) { %><a
    href="<%= m.url_rewrite(tag[entity_list_url], parameters) %>"
-   ><% } %><%=tag[entity_len]%><% if (tag[entity_len]) { %></a><% } %></span>)<% } %><% if (note && tag["note_len"]) { %><span class="has-notes">…</span><% } %><% if (visibility && "public" in tag) { %>&nbsp;<%=m.template("visibility-bar.html", {obj: tag})%><% } %></li><% if (path) { %><br /><% } %>
+   ><% } %><%=tag[entity_len]%><% if (tag[entity_len]) { %></a><% } %></span>)<% } %><% if (note && tag["note_len"]) { %><span class="has-notes">…</span><% } %><% if (parameters.visibility && "public" in tag) { %>&nbsp;<%=m.template("visibility-bar.html", {obj: tag})%><% } %></li><% if (path) { %><br /><% } %>
