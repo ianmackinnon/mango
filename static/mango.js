@@ -131,45 +131,44 @@ var m = {
   },
 
   "process": {
-    "orgtag_packet": function(tag_list_id, orgtag_packet, entity, note) {
-      var tag_list = $(tag_list_id);
-      var path = orgtag_packet.path;
-      tag_list.empty();
+    tagPacket: function (tagListId, tagPacket, tagListName, lengthName, urlName, options) {
+      var showEntity = options && options.showEntity;
+      var showNotes = options && options.showNotes;
+      var showPath = options && options.showPath;
+      var excludeTagId = options && options.excludeTagId;
 
-      $.each(orgtag_packet.orgtag_list, function(index, value) {
-	var tag_li = m.$template("tag-li.html", {
-	  "tag":value,
-	  "entity": entity,
-	  "note": note,
-          path: path,
-          "parameters":m.parameters,
-          "entity_len": "org_len",
-          "entity_list_url": "org_list_url",
+      var tagList = $(tagListId);
+
+      if (_.isNull(showPath) || _.isUndefined(showPath)) {
+        var showPath = tagPacket.path;
+      }
+
+      tagList.empty();
+
+      $.each(tagPacket[tagListName], function(index, value) {
+        if (value.id == excludeTagId) {
+          return;
+        }
+	var $tagLi = m.$template("tag-li.html", {
+	  tag: value,
+	  entity: showEntity,
+	  note: showNotes,
+          path: showPath,
+          parameters: m.parameters,
+          entity_len: lengthName, 
+          entity_list_url: urlName
 	});
-	tag_list.append(tag_li);
-	tag_list.append(" ");
+	tagList.append($tagLi);
+	tagList.append(" ");
       });
     },
 
-    "eventtag_packet": function(tag_list_id, eventtag_packet, entity, note) {
-      var tag_list = $(tag_list_id);
-      var path = eventtag_packet.path;
+    "orgtag_packet": function(tag_list_id, orgtag_packet, options) {
+      return m.process.tagPacket(tag_list_id, orgtag_packet, "orgtag_list", "org_len", "org_list_url", options);
+    },
 
-      tag_list.empty();
-
-      $.each(eventtag_packet.eventtag_list, function(index, value) {
-	var tag_li = m.$template("tag-li.html", {
-	  "tag":value,
-	  "entity": entity,
-	  "note": note,
-          path: path,
-          "parameters":m.parameters,
-          "entity_len": "event_len",
-          "entity_list_url": "event_list_url",
-	});
-	tag_list.append(tag_li);
-	tag_list.append(" ");
-      });
+    "eventtag_packet": function(tag_list_id, eventtag_packet, options) {
+      return m.process.tagPacket(tag_list_id, eventtag_packet, "eventtag_list", "event_len", "event_list_url", options);
     }
   },
 
@@ -396,14 +395,14 @@ var m = {
     return eventSearch;
   },
 
-  "ajaxError": function (jqXHR, textStatus, errorThrown) {
+  ajaxError: function (jqXHR, textStatus, errorThrown) {
     if (textStatus === "abort") {
       return;
     }
     console.log("error", jqXHR, textStatus, errorThrown);
   },
 
-  "init_orgtag_search": function (id, field, entity, note) {
+  initOrgtagSearch: function (id, field, options) {
     var form = $("#" + id);
     var search = m.get_field(form, field);
     var $path = form.find("input[name='path']");
@@ -433,7 +432,7 @@ var m = {
         "dataType": "json",
         "data": data,
         "success": function (data, textStatus, jqXHR) {
-          m.process.orgtag_packet("#tag_list", data, entity, note);
+          m.process.orgtag_packet("#tag_list", data, options);
         },
         "error": m.ajaxError,
         "complete": function (jqXHR, textStatus) {
@@ -448,7 +447,7 @@ var m = {
     visibility.change(change);
   },
 
-  "init_eventtag_search": function (id, field, entity, note) {
+  "init_eventtag_search": function (id, field, options) {
     var form = $("#" + id);
     var search = m.get_field(form, field);
     var $path = form.find("input[name='path']");
@@ -479,7 +478,7 @@ var m = {
         "dataType": "json",
         "data": data,
         "success": function (data, textStatus, jqXHR) {
-          m.process.eventtag_packet("#tag_list", data, entity, note);
+          m.process.eventtag_packet("#tag_list", data, options);
         },
         "error": m.ajaxError,
         "complete": function (jqXHR, textStatus) {
@@ -883,7 +882,7 @@ var m = {
     [/^\/note\/new$/, function () {
       m.note_markdown();
     }],
-    [/^\/note\/([1-9][0-9]*)$/, function () {
+    [/^\/note\/([1-9][0-9]*)$/, function (noteIdString) {
       m.note_markdown();
     }],
 
@@ -903,7 +902,7 @@ var m = {
       m.visibility();
     }],
 
-    [/^\/organisation\/([1-9][0-9]*)$/, function () {
+    [/^\/organisation\/([1-9][0-9]*)$/, function (orgIdString) {
       var mapView = m.initMap();
       m.initOrg(mapView);
     }],
@@ -911,17 +910,17 @@ var m = {
       var mapView = m.initMap();
       m.initOrg(mapView);
     }],
-    [/^\/organisation\/([1-9][0-9]*)\/address$/, function () {
+    [/^\/organisation\/([1-9][0-9]*)\/address$/, function (orgIdString) {
       var mapView = m.initMap();
       m.initAddressForm(mapView);
     }],
-    [/^\/organisation\/([1-9][0-9]*)\/note$/, function () {
+    [/^\/organisation\/([1-9][0-9]*)\/note$/, function (orgIdString) {
       m.note_markdown();
     }],
-    [/^\/organisation\/([1-9][0-9]*)\/tag$/, function () {
+    [/^\/organisation\/([1-9][0-9]*)\/tag$/, function (orgIdString) {
       m.visibility();
     }],
-    [/^\/event\/([1-9][0-9]*)$/, function () {
+    [/^\/event\/([1-9][0-9]*)$/, function (eventIdString) {
       var mapView = m.initMap();
       m.initEvent(mapView);
     }],
@@ -929,53 +928,69 @@ var m = {
       var mapView = m.initMap();
       m.initEvent(mapView);
     }],
-    [/^\/event\/([1-9][0-9]*)\/address$/, function () {
+    [/^\/event\/([1-9][0-9]*)\/address$/, function (eventIdString) {
       var mapView = m.initMap();
       m.initAddressForm(mapView);
     }],
-    [/^\/event\/([1-9][0-9]*)\/note$/, function () {
+    [/^\/event\/([1-9][0-9]*)\/note$/, function (eventIdString) {
       m.note_markdown();
     }],
 
-    [/^\/address\/([1-9][0-9]*)$/, function () {
+    [/^\/address\/([1-9][0-9]*)$/, function (addressIdString) {
       var mapView = m.initMap();
       m.initAddressForm(mapView);
     }],
-    [/^\/address\/([1-9][0-9]*)\/note$/, function () {
+    [/^\/address\/([1-9][0-9]*)\/note$/, function (addressIdString) {
       m.note_markdown();
     }],
 
     [/^\/organisation-tag$/, function () {
-      m.init_orgtag_search("tag-search", "search", true, true);
+      m.initOrgtagSearch("tag-search", "search", {
+        showEntity: true,
+        showNotes: true
+      });
       $("#orgtag-search input[name='search']").focus();
       m.visibility();
     }],
-    [/^\/organisation-tag\/([1-9][0-9]*)$/, function () {
+    [/^\/organisation-tag\/([1-9][0-9]*)$/, function (orgtagIdString) {
       m.initTagForm();
-      m.init_orgtag_search("tag-form", "name");
+      m.initOrgtagSearch("tag-form", "name", {
+        showPath: true,
+        excludeTagId: parseInt(orgtagIdString)
+      });
     }],
     [/^\/organisation-tag\/new$/, function () {
       m.initTagForm();
-      m.init_orgtag_search("tag-form", "name");
+      m.initOrgtagSearch("tag-form", "name", {
+        showPath: true
+      });
     }],
-    [/^\/organisation-tag\/([1-9][0-9]*)\/note$/, function () {
+    [/^\/organisation-tag\/([1-9][0-9]*)\/note$/, function (orgtagIdString) {
       m.note_markdown();
     }],
 
     [/^\/event-tag$/, function () {
-      m.init_eventtag_search("tag-search", "search");
+      m.init_eventtag_search("tag-search", "search", {
+        showEntity: true,
+        showNotes: true
+      });
       $("#eventtag-search input[name='search']").focus();
       m.visibility();
     }],
-    [/^\/event-tag\/([1-9][0-9]*)$/, function () {
+    [/^\/event-tag\/([1-9][0-9]*)$/, function (eventtagIdString) {
       m.initTagForm();
-      m.init_eventtag_search("tag-form", "name");
+      m.init_eventtag_search("tag-form", "name", {
+        showPath: true,
+        excludeTagId: parseInt(eventtagIdString)
+      });
     }],
     [/^\/event-tag\/new$/, function () {
       m.initTagForm();
-      m.init_eventtag_search("tag-form", "name");
+      m.init_eventtag_search("tag-form", "name", {
+        showPath: true
+      });
     }],
-    [/^\/event-tag\/([1-9][0-9]*)\/note$/, function () {
+    [/^\/event-tag\/([1-9][0-9]*)\/note$/, function (eventtagIdString) {
       m.note_markdown();
     }],
   ],
@@ -989,8 +1004,10 @@ var m = {
     $.each(m.route, function (index, value) {
       var regex = value[0];
       var func = value[1];
-      if (path.match(regex)) {
-        func();
+      var match = path.match(regex);
+      window.match = match;
+      if (match) {
+        func.apply(null, match.slice(1));
         return false;
       }
     });
