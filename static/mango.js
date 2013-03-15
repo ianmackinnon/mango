@@ -137,15 +137,11 @@ var m = {
       var showPath = options && options.showPath;
       var excludeTagId = options && options.excludeTagId;
 
-      var tagList = $(tagListId);
+      var $tagList = $(tagListId);
 
-      if (_.isNull(showPath) || _.isUndefined(showPath)) {
-        var showPath = tagPacket.path;
-      }
+      $tagList.empty();
 
-      tagList.empty();
-
-      $.each(tagPacket[tagListName], function(index, value) {
+      $.each(tagPacket, function(index, value) {
         if (value.id == excludeTagId) {
           return;
         }
@@ -158,8 +154,8 @@ var m = {
           entity_len: lengthName, 
           entity_list_url: urlName
 	});
-	tagList.append($tagLi);
-	tagList.append(" ");
+	$tagList.append($tagLi);
+	$tagList.append(" ");
       });
     },
 
@@ -402,9 +398,11 @@ var m = {
     console.log("error", jqXHR, textStatus, errorThrown);
   },
 
-  initOrgtagSearch: function (id, field, options) {
+  initTagSearch: function (id, field, url, callback, options) {
     var form = $("#" + id);
     var search = m.get_field(form, field);
+    var showPath = options.showPath;
+
     var $path = form.find("input[name='path']");
     var pathValue = function () {
       return $path.is(":checked") && 1 || null;
@@ -428,11 +426,14 @@ var m = {
       if (visibility.length) {
         data.visibility = visibility.val();
       }
-      xhr = $.ajax(m.urlRoot + "organisation-tag", {
+      xhr = $.ajax(url, {
         "dataType": "json",
         "data": data,
         "success": function (data, textStatus, jqXHR) {
-          m.process.orgtag_packet("#tag_list", data, options);
+          if (_.isNull(showPath) || _.isUndefined(showPath)) {
+            options.showPath = pathValue();
+          }
+          callback("#tag_list", data, options);
         },
         "error": m.ajaxError,
         "complete": function (jqXHR, textStatus) {
@@ -447,50 +448,12 @@ var m = {
     visibility.change(change);
   },
 
-  "init_eventtag_search": function (id, field, options) {
-    var form = $("#" + id);
-    var search = m.get_field(form, field);
-    var $path = form.find("input[name='path']");
-    var pathValue = function () {
-      return $path.is(":checked") && 1 || null;
-    };
-    var visibility = form.find("input[name='visibility']");
-    var throbber = $("<img>").attr({
-      "src": m.urlRoot + "static/image/throbber.gif",
-      "class": "throbber"
-    }).hide();
-    form.find("input[type='submit']").before(throbber);
-    var xhr = null;
+  initOrgtagSearch: function (id, field, options) {
+    m.initTagSearch(id, field, m.urlRoot + "organisation-tag", m.process.orgtag_packet, options);
+  },
 
-    var change = function (value) {
-
-      if (xhr && xhr.readyState !== 4) {
-        xhr.abort();
-      }
-      var data = {
-        search: search.input.val(),
-        path: pathValue()
-      };
-      if (visibility.length) {
-        data.visibility = visibility.val();
-      }
-      xhr = $.ajax(m.urlRoot + "event-tag", {
-        "dataType": "json",
-        "data": data,
-        "success": function (data, textStatus, jqXHR) {
-          m.process.eventtag_packet("#tag_list", data, options);
-        },
-        "error": m.ajaxError,
-        "complete": function (jqXHR, textStatus) {
-          throbber.hide();
-        }
-      });
-      throbber.show();
-    };
-
-    m.on_change(search.input, id + "_" + field, change, 500);
-    $path.change(change);
-    visibility.change(change);
+  initEventtagSearch: function (id, field, options) {
+    m.initTagSearch(id, field, m.urlRoot + "event-tag", m.process.eventtag_packet, options);
   },
 
   "get_field": function (form, name) {
@@ -970,7 +933,7 @@ var m = {
     }],
 
     [/^\/event-tag$/, function () {
-      m.init_eventtag_search("tag-search", "search", {
+      m.initEventtagSearch("tag-search", "search", {
         showEntity: true,
         showNotes: true
       });
@@ -979,14 +942,14 @@ var m = {
     }],
     [/^\/event-tag\/([1-9][0-9]*)$/, function (eventtagIdString) {
       m.initTagForm();
-      m.init_eventtag_search("tag-form", "name", {
+      m.initEventtagSearch("tag-form", "name", {
         showPath: true,
         excludeTagId: parseInt(eventtagIdString)
       });
     }],
     [/^\/event-tag\/new$/, function () {
       m.initTagForm();
-      m.init_eventtag_search("tag-form", "name", {
+      m.initEventtagSearch("tag-form", "name", {
         showPath: true
       });
     }],

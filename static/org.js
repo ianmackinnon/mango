@@ -839,7 +839,7 @@
           var start = [];
           var middle = [];
           view.orgtagCollection.each(function(orgtag) {
-            var index = orgtag.get("short").toLowerCase().indexOf(search.term);
+            var index = orgtag.get("base_short").toLowerCase().indexOf(search.term);
             if (index === 0) {
               start.push(orgtag.toAutocomplete());
             } else if (index > 0) {

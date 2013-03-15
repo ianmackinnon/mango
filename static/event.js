@@ -854,7 +854,7 @@
           var start = [];
           var middle = [];
           view.eventtagCollection.each(function(eventtag) {
-            var index = eventtag.get("short").toLowerCase().indexOf(search.term);
+            var index = eventtag.get("base_short").toLowerCase().indexOf(search.term);
             if (index === 0) {
               start.push(eventtag.toAutocomplete());
             } else if (index > 0) {

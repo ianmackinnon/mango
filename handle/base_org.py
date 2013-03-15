@@ -135,7 +135,7 @@ class BaseOrgHandler(BaseHandler):
         if tag_name_list:
             org_alias_query = org_alias_query \
                 .join((Orgtag, Org.orgtag_list)) \
-                .filter(Orgtag.short.in_(tag_name_list))
+                .filter(Orgtag.base_short.in_(tag_name_list))
             org_alias_query = self.filter_visibility(
                 org_alias_query, Orgtag, visibility, secondary=True)
 

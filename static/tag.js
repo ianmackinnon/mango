@@ -9,8 +9,8 @@
   window.Tag = Backbone.Model.extend({
     toAutocomplete: function () {
       return {
-        value: this.get("short"),
-        label: this.get("short") + " (" + this.get("name") + ")"
+        value: this.get("base_short"),
+        label: this.get("name")
       };
     }
   });

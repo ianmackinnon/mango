@@ -56,10 +56,16 @@ class BaseTagHandler(BaseHandler):
             tag_list = tag_list.filter_by(base_short=base_short)
 
         if search:
-            search_member = path and "name_short" or "base_short"
-            search_member = getattr(self.Tag, search_member)
-            search = short_name(search, allow_end_pipe=True)
-            tag_list = tag_list.filter(search_member.contains(search))
+            if path:
+                search = short_name(search, allow_end_pipe=True)
+                search_member = self.Tag.name_short
+            else:
+                search = search.rsplit("|")[-1].strip()
+                if search:
+                    search = short_name(search)
+                    search_member = self.Tag.base_short
+            tag_list = tag_list \
+                .filter(search_member.contains(search))
 
         cross_tag_id = getattr(self.cross_table.c, self.tag_id) 
         cross_entity_id = getattr(self.cross_table.c, self.entity_id) 

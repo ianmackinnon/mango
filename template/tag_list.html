@@ -21,12 +21,14 @@
       <input type="submit">
     </div>
   </form>
+  %if current_user:
   <div class="actions">
     <a
        class="action"
        href="${url_rewrite("/%s-tag/new" % type_url, parameters)}"
        >Create a tag</a>
   </div>
+  %endif
 </div>
 <ul id="tag_list" class="tag_list">
   %for tag in tag_list:

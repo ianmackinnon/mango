@@ -162,7 +162,15 @@ class BaseHandler(tornado.web.RequestHandler):
         method = self.get_argument("_method", None)
         if method and self.request.method.lower() == "post":
             self.request.method = method.upper()
-        tornado.web.RequestHandler._execute(self, transforms, *args, **kwargs)
+        try:
+            tornado.web.RequestHandler._execute(self, transforms, *args, **kwargs)
+        except IOError as e:
+            print 'ioerror'
+            raise e
+        except AssertionError as e:
+            print 'assertionerror'
+            raise e
+            
 
     def write_error(self, status_code, **kwargs):
         if 'exc_info' in kwargs:

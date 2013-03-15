@@ -94,7 +94,7 @@ class BaseEventHandler(BaseHandler):
 
         if tag_name_list:
             event_query = event_query.join((Eventtag, Event.eventtag_list)) \
-                .filter(Eventtag.short.in_(tag_name_list))
+                .filter(Eventtag.base_short.in_(tag_name_list))
             # order by?
 
         return event_query
