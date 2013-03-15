@@ -104,11 +104,14 @@ class BaseOrgHandler(BaseHandler):
             name_query = name_query \
                 .filter(name_subquery.c.name==name)
         elif name_search:
+            name_column = func.lower(name_subquery.c.name)
+            name_value = name_search.lower()
+
             name_query = name_query \
-                .filter(name_subquery.c.name.contains(name_search)) \
+                .filter(name_column.contains(name_value)) \
                 .order_by(
-                name_subquery.c.name.startswith(name_search).desc(),
-                name_subquery.c.name
+                name_column.startswith(name_value).desc(),
+                name_column
                 )
         else:
             name_query = name_query \

@@ -56,14 +56,15 @@ class BaseTagHandler(BaseHandler):
             tag_list = tag_list.filter_by(base_short=base_short)
 
         if search:
+            search = search.lower()
             if path:
                 search = short_name(search, allow_end_pipe=True)
-                search_member = self.Tag.name_short
+                search_member = func.lower(self.Tag.name_short)
             else:
                 search = search.rsplit("|")[-1].strip()
                 if search:
                     search = short_name(search)
-                    search_member = self.Tag.base_short
+                    search_member = func.lower(self.Tag.base_short)
             tag_list = tag_list \
                 .filter(search_member.contains(search))
 

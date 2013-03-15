@@ -8,6 +8,7 @@ from collections import OrderedDict
 
 from sqlalchemy import and_
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.sql import func
 from tornado.web import HTTPError
 
 from base import BaseHandler
@@ -89,8 +90,10 @@ class BaseEventHandler(BaseHandler):
         if name:
             event_query = event_query.filter_by(name=name)
         elif name_search:
+            name_column = func.lower(Event.name)
+            name_value = name_search.lower()
             event_query = event_query\
-                .filter(Event.name.contains(name_search))
+                .filter(name_column.contains(name_value))
 
         if tag_name_list:
             event_query = event_query.join((Eventtag, Event.eventtag_list)) \
