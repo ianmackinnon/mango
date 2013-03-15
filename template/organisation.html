@@ -18,6 +18,93 @@
 
   <div id="mango-map-box">
     <div id="mango-map-canvas">Map loading...</div>
+    
+    <!-- Events Start -->
+
+    %if obj:
+    <hr />
+    <div class="action-bar no-border">
+      <h3>Events</h3>
+
+      %if current_user:
+      <div class="actions">
+        <a
+           href="${url_rewrite("%s/event" % obj["url"], parameters)}"
+           class="action"
+           >Edit events</a>
+      </div>
+      %endif
+    </div>
+
+    %if "event_list" in obj and obj["event_list"]:
+    <ul class="event_list">
+      %for event in obj["event_list"]:
+      ${self.mini.event_box(
+        event, parameters=parameters,
+        )}
+      %endfor
+    </ul>
+    %else:
+    %if not current_user:
+    <p>No events yet.
+    <a
+       href="${url_rewrite("/creative-action.php", parameters)}"
+       >Learn more about organising your own</a>,
+    then 
+    <a
+       href="${url_rewrite("/submit.php", parameters)}"
+       >tell us about it</a>!</p>
+    %endif
+    %endif
+    %endif
+    <!-- Events End -->
+
+    <!-- Tags Start -->
+    %if obj:
+    <hr />
+    <div class="action-bar no-border">
+      <h3>Tags</h3>
+
+      %if current_user:
+      <div class="actions">
+        <a
+           href="${url_rewrite("%s/tag" % obj["url"], parameters)}"
+           class="action"
+           >Edit tags</a>
+      </div>
+      %endif
+    </div>
+
+    %if "orgtag_list" in obj:
+
+<%
+type_tag_list = "orgtag_list"
+
+path_dict = {}
+for tag in obj[type_tag_list]:
+    if not tag["path"] in path_dict:
+        path_dict[tag["path"]] = []
+    path_dict[tag["path"]].append(tag)
+path_keys = sorted(path_dict.keys())
+if None in path_keys:
+    path_keys.append(path_keys.pop(path_keys.index(None)))
+%>
+
+    %for key in path_keys:
+    <h4>${key or "Other"}</h4>
+    <ul class="tag_list">
+      %for tag in path_dict[key]:
+      ${self.mini.tag_li(
+        tag, visibility=True, parameters=parameters,
+        )}
+      %endfor
+    </ul>
+    %endfor
+
+    %endif
+    %endif
+    <!-- Tags End -->
+
   </div>
   
   <div class="form-by-map" id="org-form">
@@ -58,66 +145,9 @@
       <input type="submit" value="Delete">
     </form>
     %endif
+    %endif
 
     %if obj:
-    <div class="action-bar no-border">
-      <h3>Events</h3>
-
-      %if current_user:
-      <div class="actions">
-        <a
-           href="${url_rewrite("%s/event" % obj["url"], parameters)}"
-           class="action"
-           >Edit events</a>
-      </div>
-      %endif
-    </div>
-    %endif
-
-    %if "event_list" in obj and obj["event_list"]:
-    <ul class="event_list">
-      %for event in obj["event_list"]:
-      ${self.mini.event_box(
-        event, parameters=parameters,
-        )}
-      %endfor
-    </ul>
-    %else:
-    %if not current_user:
-    <p>No events yet.
-    <a
-       href="${url_rewrite("/creative-action.php", parameters)}"
-       >Learn more about organising your own</a>,
-    then 
-    <a
-       href="${url_rewrite("/submit.php", parameters)}"
-       >tell us about it</a>!</p>
-    %endif
-    %endif
-
-    <div class="action-bar no-border">
-      <h3>Tags</h3>
-
-      %if current_user:
-      <div class="actions">
-        <a
-           href="${url_rewrite("%s/tag" % obj["url"], parameters)}"
-           class="action"
-           >Edit tags</a>
-      </div>
-      %endif
-    </div>
-
-    %if "orgtag_list" in obj:
-    <ul class="tag_list">
-      %for orgtag in obj["orgtag_list"]:
-      ${self.mini.tag_li(
-        orgtag, visibility=True, parameters=parameters,
-        )}
-      %endfor
-    </ul>
-    %endif
-    
     %if "address_list" in obj:
     <div class="action-bar no-border">
       <h3>Addresses</h3>

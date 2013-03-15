@@ -251,7 +251,7 @@ var m = {
 
   initMap: function () {
     var mapView = new window.MapView();
-    $("#mango-map-box").replaceWith(mapView.$el);
+    $("#mango-map-canvas").replaceWith(mapView.$el);
     return mapView;
   },
 
@@ -361,13 +361,7 @@ var m = {
       defaultTime: ""
     });
 
-    var title = $("<h3>").text("Description Preview");
-    var preview = $("<div>").addClass("description markdown-preview");
-    $("#mango-map-box").append(title);
-    $("#mango-map-box").append(preview);
-    
     m.event_markdown();
-
   },
 
   initEventSearch: function (mapView) {

@@ -19,7 +19,9 @@
   <div id="mango-map-box">
     <div id="mango-map-canvas">Map loading...</div>
 
+    <!-- Description Preview Start -->
     %if current_user:
+    <hr />
     <h3>Description Preview</h3>
     <div class="description markdown markdown-preview">
       %if obj and obj["description"]:
@@ -27,6 +29,84 @@
       %endif
     </div>
     %endif
+    <!-- Description Preview End -->
+
+    <!-- Organisations Start -->
+    %if obj:
+    <hr />
+    <div class="action-bar no-border">
+      <h3>Organisations</h3>
+
+      %if current_user:
+      <div class="actions">
+        <a
+           href="${url_rewrite("%s/organisation" % obj["url"], parameters)}"
+           class="action"
+           >Edit organisations</a>
+      </div>
+      %endif
+    </div>
+
+    %if obj and "org_list" in obj:
+    <ul class="org_list">
+      %for org in obj["org_list"]:
+      ${self.mini.org_box(
+        org, parameters=parameters,
+        )}
+      %endfor
+    </ul>
+    %else:
+    No organisations linked yet.
+    %endif
+    %endif
+    <!-- Organisations End -->
+
+    <!-- Tags Start -->
+    %if obj:
+    <hr />
+    <div class="action-bar no-border">
+      <h3>Tags</h3>
+
+      %if current_user:
+      <div class="actions">
+        <a
+           href="${url_rewrite("%s/tag" % obj["url"], parameters)}"
+           class="action"
+           >Edit tags</a>
+      </div>
+      %endif
+    </div>
+
+    %if "eventtag_list" in obj:
+
+<%
+type_tag_list = "eventtag_list"
+
+path_dict = {}
+for tag in obj[type_tag_list]:
+    if not tag["path"] in path_dict:
+        path_dict[tag["path"]] = []
+    path_dict[tag["path"]].append(tag)
+path_keys = sorted(path_dict.keys())
+if None in path_keys:
+    path_keys.append(path_keys.pop(path_keys.index(None)))
+%>
+
+    %for key in path_keys:
+    <h4>${key or "Other"}</h4>
+    <ul class="tag_list">
+      %for tag in path_dict[key]:
+      ${self.mini.tag_li(
+        tag, visibility=True, parameters=parameters,
+        )}
+      %endfor
+    </ul>
+    %endfor
+
+    %endif
+    %endif
+    <!-- Tags End -->
+
 
   </div>
   
@@ -147,30 +227,8 @@
 
     %endif
 
+
     %if obj:
-    <div class="action-bar no-border">
-      <h3>Tags</h3>
-
-      %if current_user:
-      <div class="actions">
-        <a
-           href="${url_rewrite("%s/tag" % obj["url"], parameters)}"
-           class="action"
-           >Edit tags</a>
-      </div>
-      %endif
-    </div>
-
-    %if "eventtag_list" in obj:
-    <ul class="tag_list">
-      %for eventtag in obj["eventtag_list"]:
-      ${self.mini.tag_li(
-        eventtag, visibility=True, parameters=parameters,
-        )}
-      %endfor
-    </ul>
-    %endif
-    
     %if "address_list" in obj:
     <div class="action-bar no-border">
       <h3>Addresses</h3>
@@ -196,33 +254,7 @@
     %endif
 
     %if obj:
-    <div class="action-bar no-border">
-      <h3>Organisations</h3>
-
-      %if current_user:
-      <div class="actions">
-        <a
-           href="${url_rewrite("%s/organisation" % obj["url"], parameters)}"
-           class="action"
-           >Edit organisations</a>
-      </div>
-      %endif
-    </div>
-    %endif
-
-    %if obj and "org_list" in obj:
-    <ul class="org_list">
-      %for org in obj["org_list"]:
-      ${self.mini.org_box(
-        org, parameters=parameters,
-        )}
-      %endfor
-    </ul>
-    %else:
-    No organisations linked yet.
-    %endif
-
-    %if obj:
+    %if current_user:
     <h3>Duplicate Event</h3>
 
     <form
@@ -243,6 +275,7 @@
       </label>
       <input type="submit" value="Duplicate">
     </form>
+    %endif
     %endif
   </div>
   

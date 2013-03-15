@@ -44,7 +44,6 @@
 
   window.MapView = Backbone.View.extend({
     tagName: "div",
-    id: "mango-map-box",
 
     log: function() {},
 
