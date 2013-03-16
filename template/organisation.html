@@ -20,7 +20,6 @@
     <div id="mango-map-canvas">Map loading...</div>
     
     <!-- Events Start -->
-
     %if obj:
     <hr />
     <div class="action-bar no-border">
@@ -85,7 +84,7 @@ for tag in obj[type_tag_list]:
     if not tag["path"] in path_dict:
         path_dict[tag["path"]] = []
     path_dict[tag["path"]].append(tag)
-path_keys = sorted(path_dict.keys())
+path_keys = sorted(path_dict.keys(), key=lambda key: len(path_dict[key]))
 if None in path_keys:
     path_keys.append(path_keys.pop(path_keys.index(None)))
 %>
