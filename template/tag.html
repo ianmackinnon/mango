@@ -43,6 +43,9 @@ if obj:
        method="post"
        >
       <input name="_xsrf" type="hidden" value="${xsrf}">
+      %if next:
+      <input name="next" type="hidden" value="${next}">
+      %endif
       %if put:
       <input name="_method" type="hidden" value="put">
       %endif

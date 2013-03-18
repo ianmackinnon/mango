@@ -770,7 +770,6 @@ var m = {
     if (m.currentUser && !m.parameters.visibility) {
       m.setVisibility("public");
     }
-    console.log(m.parameters);
   },
 
   setVisibility: function (value) {
@@ -812,7 +811,6 @@ var m = {
     if (!m.currentUser) {
       return;
     }
-    console.log("V");
     $("#visibility-public").click(function (e) {
       if (e.which !== 1 || e.metaKey || e.shiftKey) {
         return;
