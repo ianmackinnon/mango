@@ -765,7 +765,14 @@ var m = {
     return multi.join(", ");
   },
 
-  "set_visibility": function (value) {
+  setParameters: function () {
+    if (m.currentUser && !m.parameters.visibility) {
+      m.setVisibility("public");
+    }
+    console.log(m.parameters);
+  },
+
+  setVisibility: function (value) {
     $("a").each(function () {
       var $el = $(this);
       if ($el.hasClass("visibility-button")) {
@@ -801,41 +808,44 @@ var m = {
   },
 
   visibility: function () {
+    if (!m.currentUser) {
+      return;
+    }
+    console.log("V");
     $("#visibility-public").click(function (e) {
       if (e.which !== 1 || e.metaKey || e.shiftKey) {
         return;
       }
       e.preventDefault();
-      m.set_visibility("public");
+      m.setVisibility("public");
     });
     $("#visibility-private").click(function (e) {
       if (e.which !== 1 || e.metaKey || e.shiftKey) {
         return;
       }
       e.preventDefault();
-      m.set_visibility("private");
+      m.setVisibility("private");
     });
     $("#visibility-pending").click(function (e) {
       if (e.which !== 1 || e.metaKey || e.shiftKey) {
         return;
       }
       e.preventDefault();
-      m.set_visibility("pending");
+      m.setVisibility("pending");
     });
     $("#visibility-all").click(function (e) {
       if (e.which !== 1 || e.metaKey || e.shiftKey) {
         return;
       }
       e.preventDefault();
-      m.set_visibility("all");
+      m.setVisibility("all");
     });
   },
 
-  "route": [
+  route: [
     [/^\/$/, function () {
       var mapView = m.initMap();
       m.initHome(mapView);
-      m.visibility();
     }],
 
     [/^\/note\/new$/, function () {
@@ -954,7 +964,8 @@ var m = {
     }],
   ],
 
-  "handle": function () {
+  handle: function () {
+    m.setParameters();
     var path = window.location.pathname;
     if (path.indexOf(m.urlRoot) !== 0) {
       console.log("Path does not match url root", path, m.urlRoot);

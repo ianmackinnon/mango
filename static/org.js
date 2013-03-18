@@ -683,7 +683,7 @@
 
     changeVisibility: function () {
       var visibility = this.model.get("visibility") || "public";
-      m.set_visibility(visibility);
+      m.setVisibility(visibility);
       this.fetchOrgtagList();
     },
 
