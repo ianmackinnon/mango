@@ -207,7 +207,7 @@ class OrgAddressListHandler(BaseOrgHandler, BaseAddressHandler):
                               )
         address.geocode()
         org.address_list.append(address)
-        self.orm.commit()
+        self.orm_commit()
         self.redirect_next(org.url)
 
 
@@ -219,7 +219,7 @@ class OrgAddressHandler(BaseOrgHandler, BaseAddressHandler):
         address = self._get_address(address_id_string)
         if address not in org.address_list:
             org.address_list.append(address)
-            self.orm.commit()
+            self.orm_commit()
         self.redirect_next(org.url)
 
     @authenticated
@@ -228,7 +228,7 @@ class OrgAddressHandler(BaseOrgHandler, BaseAddressHandler):
         address = self._get_address(address_id_string)
         if address in org.address_list:
             org.address_list.remove(address)
-            self.orm.commit()
+            self.orm_commit()
         self.redirect_next(org.url)
 
 
@@ -245,7 +245,7 @@ class OrgNoteListHandler(BaseOrgHandler, BaseNoteHandler):
                     public=public,
                     )
         org.note_list.append(note)
-        self.orm.commit()
+        self.orm_commit()
         self.redirect_next(org.url)
 
     @authenticated
@@ -270,7 +270,7 @@ class OrgNoteHandler(BaseOrgHandler, BaseNoteHandler):
         note = self._get_note(note_id_string)
         if note not in org.note_list:
             org.note_list.append(note)
-            self.orm.commit()
+            self.orm_commit()
         self.redirect_next(org.url)
 
     @authenticated
@@ -279,7 +279,7 @@ class OrgNoteHandler(BaseOrgHandler, BaseNoteHandler):
         note = self._get_note(note_id_string)
         if note in org.note_list:
             org.note_list.remove(note)
-            self.orm.commit()
+            self.orm_commit()
         self.redirect_next(org.url)
 
 
@@ -336,7 +336,7 @@ class OrgOrgtagHandler(BaseOrgHandler, BaseOrgtagHandler):
         orgtag = self._get_orgtag(orgtag_id_string)
         if orgtag not in org.orgtag_list:
             org.orgtag_list.append(orgtag)
-            self.orm.commit()
+            self.orm_commit()
         self.redirect_next(org.url)
 
     @authenticated
@@ -345,7 +345,7 @@ class OrgOrgtagHandler(BaseOrgHandler, BaseOrgtagHandler):
         orgtag = self._get_orgtag(orgtag_id_string)
         if orgtag in org.orgtag_list:
             org.orgtag_list.remove(orgtag)
-            self.orm.commit()
+            self.orm_commit()
         self.redirect_next(org.url)
 
 
@@ -392,7 +392,7 @@ class OrgOrgaliasListHandler(BaseOrgHandler, BaseOrgtagHandler):
         org = self._get_org(org_id_string)
 
         orgalias = Orgalias.get(self.orm, name, org, self.current_user, True)
-        self.orm.commit()
+        self.orm_commit()
 
         self.redirect_next(org.url)
 
@@ -459,7 +459,7 @@ class OrgEventHandler(BaseOrgHandler, BaseEventHandler):
         event = self._get_event(event_id_string)
         if event not in org.event_list:
             org.event_list.append(event)
-            self.orm.commit()
+            self.orm_commit()
         self.redirect_next(org.url)
 
     @authenticated
@@ -468,7 +468,7 @@ class OrgEventHandler(BaseOrgHandler, BaseEventHandler):
         event = self._get_event(event_id_string)
         if event in org.event_list:
             org.event_list.remove(event)
-            self.orm.commit()
+            self.orm_commit()
         self.redirect_next(org.url)
 
 

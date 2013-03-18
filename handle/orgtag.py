@@ -201,7 +201,7 @@ class OrgtagNoteListHandler(BaseOrgtagHandler, BaseNoteHandler):
                     public=public,
                     )
         orgtag.note_list.append(note)
-        self.orm.commit()
+        self.orm_commit()
         self.redirect_next(orgtag.url)
 
     @authenticated
@@ -228,7 +228,7 @@ class OrgtagNoteHandler(BaseOrgtagHandler, BaseNoteHandler):
         note = self._get_note(note_id_string)
         if note not in orgtag.note_list:
             orgtag.note_list.append(note)
-            self.orm.commit()
+            self.orm_commit()
         self.redirect_next(orgtag.url)
 
     @authenticated
@@ -237,7 +237,7 @@ class OrgtagNoteHandler(BaseOrgtagHandler, BaseNoteHandler):
         note = self._get_note(note_id_string)
         if note in orgtag.note_list:
             orgtag.note_list.remove(note)
-            self.orm.commit()
+            self.orm_commit()
         self.redirect_next(orgtag.url)
 
 

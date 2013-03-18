@@ -69,7 +69,7 @@ define("log", default=None, help="Log directory. Write permission required. Logg
 
 
 
-DEFAULT_CACHE_PERIOD = None
+DEFAULT_CACHE_PERIOD = 60 * 60 * 8  # 8 hours
 
 
 

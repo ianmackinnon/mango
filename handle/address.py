@@ -126,7 +126,7 @@ class AddressHandler(BaseAddressHandler):
         address.moderation_user = self.current_user
 
         address.geocode()
-        self.orm.commit()
+        self.orm_commit()
         self.redirect_next(address.url)
 
 
@@ -208,7 +208,7 @@ class AddressNoteListHandler(BaseAddressHandler, BaseNoteHandler):
                     public=public,
                     )
         address.note_list.append(note)
-        self.orm.commit()
+        self.orm_commit()
         self.redirect_next(address.url)
 
     def get(self, address_id_string):
@@ -234,7 +234,7 @@ class AddressNoteHandler(BaseAddressHandler, BaseNoteHandler):
         note = self._get_note(note_id_string)
         if note not in address.note_list:
             address.note_list.append(note)
-            self.orm.commit()
+            self.orm_commit()
         self.redirect_next(address.url)
 
     @authenticated
@@ -243,5 +243,5 @@ class AddressNoteHandler(BaseAddressHandler, BaseNoteHandler):
         note = self._get_note(note_id_string)
         if note in address.note_list:
             address.note_list.remove(note)
-            self.orm.commit()
+            self.orm_commit()
         self.redirect_next(address.url)

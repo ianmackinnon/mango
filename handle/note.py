@@ -35,7 +35,7 @@ class NoteListHandler(BaseNoteHandler):
                     public=public,
                     )
         self.orm.add(note)
-        self.orm.commit()
+        self.orm_commit()
         self.redirect_next(note.url)
 
 
@@ -85,7 +85,7 @@ class NoteHandler(BaseNoteHandler):
     def delete(self, note_id_string):
         note = self._get_note(note_id_string)
         self.orm.delete(note)
-        self.orm.commit()
+        self.orm_commit()
         self.redirect_next("/note")
         
     @authenticated
@@ -104,5 +104,5 @@ class NoteHandler(BaseNoteHandler):
         note.source = source
         note.public = public
         note.moderation_user = self.current_user
-        self.orm.commit()
+        self.orm_commit()
         self.redirect_next(note.url)

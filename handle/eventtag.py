@@ -201,7 +201,7 @@ class EventtagNoteListHandler(BaseEventtagHandler, BaseNoteHandler):
                     public=public,
                     )
         eventtag.note_list.append(note)
-        self.orm.commit()
+        self.orm_commit()
         self.redirect_next(eventtag.url)
 
     @authenticated
@@ -228,7 +228,7 @@ class EventtagNoteHandler(BaseEventtagHandler, BaseNoteHandler):
         note = self._get_note(note_id_string)
         if note not in eventtag.note_list:
             eventtag.note_list.append(note)
-            self.orm.commit()
+            self.orm_commit()
         self.redirect_next(eventtag.url)
 
     @authenticated
@@ -237,7 +237,7 @@ class EventtagNoteHandler(BaseEventtagHandler, BaseNoteHandler):
         note = self._get_note(note_id_string)
         if note in eventtag.note_list:
             eventtag.note_list.remove(note)
-            self.orm.commit()
+            self.orm_commit()
         self.redirect_next(eventtag.url)
 
 

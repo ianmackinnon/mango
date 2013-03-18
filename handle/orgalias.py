@@ -74,7 +74,7 @@ class OrgaliasHandler(BaseOrgaliasHandler):
     def delete(self, orgalias_id_string):
         orgalias = self._get_orgalias(orgalias_id_string)
         self.orm.delete(orgalias)
-        self.orm.commit()
+        self.orm_commit()
         self.redirect_next("/organisation")
 
     @authenticated
@@ -90,5 +90,5 @@ class OrgaliasHandler(BaseOrgaliasHandler):
         orgalias.name = name
         orgalias.public = public
         orgalias.moderation_user = self.current_user
-        self.orm.commit()
+        self.orm_commit()
         self.redirect_next(orgalias.url)

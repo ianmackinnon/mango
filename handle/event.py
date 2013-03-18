@@ -216,7 +216,7 @@ class EventAddressListHandler(BaseEventHandler, BaseAddressHandler):
                               )
         address.geocode()
         event.address_list.append(address)
-        self.orm.commit()
+        self.orm_commit()
         self.redirect_next(event.url)
 
 
@@ -233,7 +233,7 @@ class EventNoteListHandler(BaseEventHandler, BaseNoteHandler):
                     public=public,
                     )
         event.note_list.append(note)
-        self.orm.commit()
+        self.orm_commit()
         self.redirect_next(event.url)
 
     @authenticated
@@ -258,7 +258,7 @@ class EventAddressHandler(BaseEventHandler, BaseAddressHandler):
         address = self._get_address(address_id_string)
         if address not in event.address_list:
             event.address_list.append(address)
-            self.orm.commit()
+            self.orm_commit()
         self.redirect_next(event.url)
 
     @authenticated
@@ -267,7 +267,7 @@ class EventAddressHandler(BaseEventHandler, BaseAddressHandler):
         address = self._get_address(address_id_string)
         if address in event.address_list:
             event.address_list.remove(address)
-            self.orm.commit()
+            self.orm_commit()
         self.redirect_next(event.url)
 
 
@@ -279,7 +279,7 @@ class EventNoteHandler(BaseEventHandler, BaseNoteHandler):
         note = self._get_note(note_id_string)
         if note not in event.note_list:
             event.note_list.append(note)
-            self.orm.commit()
+            self.orm_commit()
         self.redirect_next(event.url)
 
     @authenticated
@@ -288,7 +288,7 @@ class EventNoteHandler(BaseEventHandler, BaseNoteHandler):
         note = self._get_note(note_id_string)
         if note in event.note_list:
             event.note_list.remove(note)
-            self.orm.commit()
+            self.orm_commit()
         self.redirect_next(event.url)
 
 
@@ -343,7 +343,7 @@ class EventEventtagHandler(BaseEventHandler, BaseEventtagHandler):
         eventtag = self._get_eventtag(eventtag_id_string)
         if eventtag not in event.eventtag_list:
             event.eventtag_list.append(eventtag)
-            self.orm.commit()
+            self.orm_commit()
         self.redirect_next(event.url)
 
     @authenticated
@@ -353,7 +353,7 @@ class EventEventtagHandler(BaseEventHandler, BaseEventtagHandler):
         eventtag = self._get_eventtag(eventtag_id_string)
         if eventtag in event.eventtag_list:
             event.eventtag_list.remove(eventtag)
-            self.orm.commit()
+            self.orm_commit()
         self.redirect_next(event.url)
 
 
@@ -422,7 +422,7 @@ class EventOrgHandler(BaseEventHandler, BaseOrgHandler):
         org = self._get_org(org_id_string)
         if org not in event.org_list:
             event.org_list.append(org)
-            self.orm.commit()
+            self.orm_commit()
         self.redirect_next(event.url)
 
     @authenticated
@@ -431,7 +431,7 @@ class EventOrgHandler(BaseEventHandler, BaseOrgHandler):
         org = self._get_org(org_id_string)
         if org in event.org_list:
             event.org_list.remove(org)
-            self.orm.commit()
+            self.orm_commit()
         self.redirect_next(event.url)
 
 
@@ -484,5 +484,5 @@ class EventDuplicateHandler(BaseEventHandler):
         for org in event.org_list:
             event2.org_list.append(org)
 
-        self.orm.commit()
+        self.orm_commit()
         self.redirect_next(event2.url)

@@ -614,6 +614,13 @@ class BaseHandler(tornado.web.RequestHandler):
     def deep_visible(self):
         return self.parameters["visibility"] in ["pending", "private", "all"]
     
+    def orm_commit(self):
+        try:
+            self.orm.commit()
+        except IntegrityError as e:
+            raise tornado.web.HTTPError(500, e.message)
+        self.application.increment_cache()
+
     @property
     def orm(self):
         return self.application.orm
@@ -638,11 +645,7 @@ class MangoEntityHandlerMixin(tornado.web.RequestHandler):
         if self._before_delete:
             self._before_delete(entity)
         self.orm.delete(entity)
-        try:
-            self.orm.commit()
-        except IntegrityError as e:
-            raise tornado.web.HTTPError(500, e.message)
-        self.application.increment_cache()
+        self.orm_commit()
         self.redirect_next(entity.list_url)
         
     @authenticated
@@ -651,11 +654,7 @@ class MangoEntityHandlerMixin(tornado.web.RequestHandler):
         new_entity = self._create()
         if not old_entity.content_same(new_entity):
             old_entity.content_copy(new_entity, self.current_user)
-            try:
-                self.orm.commit()
-            except IntegrityError as e:
-                raise tornado.web.HTTPError(500, e.message)
-            self.application.increment_cache()
+            self.orm_commit()
         self.redirect_next(old_entity.url)
 
 
@@ -665,10 +664,6 @@ class MangoEntityListHandlerMixin(tornado.web.RequestHandler):
     def post(self):
         new_entity = self._create()
         self.orm.add(new_entity)
-        try:
-            self.orm.commit()
-        except IntegrityError as e:
-            raise tornado.web.HTTPError(500, e.message)
-        self.application.increment_cache()
+        self.orm_commit()
         self.redirect_next(new_entity.url)
 
