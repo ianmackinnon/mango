@@ -464,7 +464,7 @@ var m = {
     };
   },
 
-  initAddressForm: function (mapView) {
+  initAddress: function (mapView) {
     var form = $("#address-form").find("form");
     if (!form.length) {
       var $span = $("span[latitude]");
@@ -475,6 +475,7 @@ var m = {
         $span.attr("latitude"),
         $span.attr("longitude")
       );
+      mapView.fit();
       return;
     }
 
@@ -881,7 +882,7 @@ var m = {
     }],
     [/^\/organisation\/([1-9][0-9]*)\/address$/, function (orgIdString) {
       var mapView = m.initMap();
-      m.initAddressForm(mapView);
+      m.initAddress(mapView);
     }],
     [/^\/organisation\/([1-9][0-9]*)\/note$/, function (orgIdString) {
       m.note_markdown();
@@ -899,7 +900,7 @@ var m = {
     }],
     [/^\/event\/([1-9][0-9]*)\/address$/, function (eventIdString) {
       var mapView = m.initMap();
-      m.initAddressForm(mapView);
+      m.initAddress(mapView);
     }],
     [/^\/event\/([1-9][0-9]*)\/note$/, function (eventIdString) {
       m.note_markdown();
@@ -907,7 +908,7 @@ var m = {
 
     [/^\/address\/([1-9][0-9]*)$/, function (addressIdString) {
       var mapView = m.initMap();
-      m.initAddressForm(mapView);
+      m.initAddress(mapView);
     }],
     [/^\/address\/([1-9][0-9]*)\/note$/, function (addressIdString) {
       m.note_markdown();

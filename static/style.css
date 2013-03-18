@@ -685,6 +685,10 @@ div.ui-timepicker td a.ui-state-active
     padding: 2px;
     border-radius: 2px;
 }
+#mango div.address-box .actions
+{
+    clear: both;
+}
 #mango div.address-row
 {
     margin: 6px 0;
