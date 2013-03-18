@@ -1320,7 +1320,7 @@ class Orgtag(Base, MangoEntity, NotableEntity):
     def org_list_url(self, parameters=None):
         if parameters == None:
             parameters = {}
-        parameters["tag"] = self.name_short
+        parameters["tag"] = self.base_short
 
         return "/organisation?%s" % urlencode(parameters)
 
@@ -1455,7 +1455,7 @@ class Eventtag(Base, MangoEntity, NotableEntity):
     def event_list_url(self, parameters=None):
         if parameters == None:
             parameters = {}
-        parameters["tag"] = self.name_short
+        parameters["tag"] = self.base_short
 
         return "/event?%s" % urlencode(parameters)
 

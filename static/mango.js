@@ -130,7 +130,7 @@ var m = {
     return arr2;
   },
 
-  "process": {
+  process: {
     tagPacket: function (tagListId, tagPacket, tagListName, lengthName, urlName, options) {
       var showEntity = options && options.showEntity;
       var showNotes = options && options.showNotes;
@@ -159,12 +159,12 @@ var m = {
       });
     },
 
-    "orgtag_packet": function(tag_list_id, orgtag_packet, options) {
-      return m.process.tagPacket(tag_list_id, orgtag_packet, "orgtag_list", "org_len", "org_list_url", options);
+    orgtagPacket: function(tag_list_id, orgtagPacket, options) {
+      return m.process.tagPacket(tag_list_id, orgtagPacket, "orgtag_list", "org_len", "org_list_url", options);
     },
 
-    "eventtag_packet": function(tag_list_id, eventtag_packet, options) {
-      return m.process.tagPacket(tag_list_id, eventtag_packet, "eventtag_list", "event_len", "event_list_url", options);
+    eventtagPacket: function(tag_list_id, eventtagPacket, options) {
+      return m.process.tagPacket(tag_list_id, eventtagPacket, "eventtag_list", "event_len", "event_list_url", options);
     }
   },
 
@@ -443,11 +443,11 @@ var m = {
   },
 
   initOrgtagSearch: function (id, field, options) {
-    m.initTagSearch(id, field, m.urlRoot + "organisation-tag", m.process.orgtag_packet, options);
+    m.initTagSearch(id, field, m.urlRoot + "organisation-tag", m.process.orgtagPacket, options);
   },
 
   initEventtagSearch: function (id, field, options) {
-    m.initTagSearch(id, field, m.urlRoot + "event-tag", m.process.eventtag_packet, options);
+    m.initTagSearch(id, field, m.urlRoot + "event-tag", m.process.eventtagPacket, options);
   },
 
   "get_field": function (form, name) {
