@@ -1,6 +1,6 @@
 <div class="address">
   <%= m.template("visibility-bar.html", {obj: address}) %>
   <a
-     href="<%= m.url_rewrite(address.url, parameters) %>"
+     href="<%= m.urlRewrite(address.url, parameters) %>"
      ><%=m.filter.newline_comma(m.filter.h(address["general"] || address["postal"]))%></a>
 </div>

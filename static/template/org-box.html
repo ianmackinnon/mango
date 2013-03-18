@@ -2,7 +2,7 @@
 
 <div class="org_name">
   <a
-     href="<%= m.url_rewrite(org["url"], parameters) %>"
+     href="<%= m.urlRewrite(org["url"], parameters) %>"
      ><%=m.filter.h(org["name"])%></a>
   <% if (org.alias) { %>
   (<%=org.alias%>)
@@ -15,7 +15,7 @@
   <% var tag = org["tag_list"][t]; %>
   <li class="orgtag">
     <a
-       href="<%= m.url_rewrite(tag["url"], parameters) %>"
+       href="<%= m.urlRewrite(tag["url"], parameters) %>"
        ><%=m.filter.h(tag["name"])%></a>
   </li>
   <% } %>

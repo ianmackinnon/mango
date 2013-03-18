@@ -208,9 +208,10 @@ var m = {
     change();
   },
 
-  "url_rewrite": function (path, parameters) {
+  urlRewrite: function (path, parameters) {
     if (!path) {
-      console.log("No path supplied to url_rewrite!");
+      console.log("No path supplied to urlRewrite!");
+      return path;
     }
     var url = path;
     if (url.indexOf("/") === 0) {
@@ -229,7 +230,8 @@ var m = {
       query += encodeURIComponent(key) + "=" + encodeURIComponent(value);
     });
     if (!!query) {
-      url += "?" + query;
+      var join = (url.indexOf("?") < 0) && "?" || "&";
+      url += join + query;
     }
     return url;
   },

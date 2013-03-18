@@ -16,7 +16,7 @@
 
 <div class="event_name">
   <a
-     href="<%= m.url_rewrite(event["url"], parameters) %>"
+     href="<%= m.urlRewrite(event["url"], parameters) %>"
      ><%=m.filter.h(event["name"])%></a>
 </div>
 
@@ -30,7 +30,7 @@
   <% var tag = event["tag_list"][t]; %>
   <li class="eventtag">
     <a
-       href="<%= m.url_rewrite(tag["url"], parameters) %>"
+       href="<%= m.urlRewrite(tag["url"], parameters) %>"
        ><%=m.filter.h(tag["name"])%></a>
   </li>
   <% } %>
