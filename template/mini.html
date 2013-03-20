@@ -206,7 +206,7 @@ if not parameters:
     %endif
 
             %else:
-            <a href="${address["url"]}">
+            <a href="${url_rewrite(address["url"], parameters)}">
               View
             </a>
 	    %endif
