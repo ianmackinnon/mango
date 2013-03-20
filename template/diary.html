@@ -26,7 +26,7 @@ ${header | n}
       </tr>
       %for event in event_packet["event_list"]:
       <%
-         tag_list = [tag["short"] for tag in event["eventtag_list"]]
+         tag_list = [tag["base_short"] for tag in event["eventtag_list"]]
          %>
       %if "weekly" in tag_list or "monthly" in tag_list:
       <% continue %>
@@ -75,7 +75,7 @@ ${header | n}
       </tr>
       %for event in event_packet["event_list"]:
       <%
-         tag_list = [tag["short"] for tag in event["eventtag_list"]]
+         tag_list = [tag["base_short"] for tag in event["eventtag_list"]]
          %>
       %if not ("weekly" in tag_list or "monthly" in tag_list):
       <% continue %>
