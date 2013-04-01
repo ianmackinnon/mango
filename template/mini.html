@@ -183,7 +183,13 @@ if not parameters:
 	      &nbsp;
 	    </div>
 	    <div class="address">
-	      ${address["postal"] | n, h, unicode, newline}
+	      ${address["postal"] | n, h, unicode, newline_comma}
+              %if not current_user:
+              <br />
+              <a href="${url_rewrite(address["url"], parameters)}">
+                View
+              </a>
+              %endif
 	    </div>
 	    <div class="actions">
 	    %if current_user:
@@ -205,10 +211,6 @@ if not parameters:
     </span>
     %endif
 
-            %else:
-            <a href="${url_rewrite(address["url"], parameters)}">
-              View
-            </a>
 	    %endif
 	    </div>
           </div>

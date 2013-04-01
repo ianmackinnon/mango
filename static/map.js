@@ -175,13 +175,13 @@
         );
         var letter = alpha(this.markers.length);
         var pinIconUrl = this.markerIconUrl("pin", color, letter);
+        var zIndex = Math.round((500 - latitude) * 100);
+          
         var marker = new google.maps.Marker({
           position: position,
           map: this.map,
-          icon: pinIconUrl
+          icon: pinIconUrl,
         });
-
-        marker.setZIndex(-(this.markers.length + this.dots.length));
 
         this.markers.push(marker);
 
@@ -206,14 +206,13 @@
       );
 
       var dotIconUrl = this.dotIconUrl(color);
+      var zIndex = Math.round((100 - latitude) * 100);
       var marker = new google.maps.Marker({
         position: position,
         map: this.map,
         icon: dotIconUrl,
         title: title
       });
-
-      marker.setZIndex(-(this.markers.length + this.dots.length));
 
       if (onClick) {
         google.maps.event.addListener(marker, 'click', onClick);

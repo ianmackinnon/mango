@@ -332,6 +332,7 @@ class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
             type_tag_list="eventtag_list",
             type_entity_list="event_list",
             type_li_template="event_li",
+            type_length="event_len",
             )
 
 
@@ -348,7 +349,6 @@ class EventEventtagHandler(BaseEventHandler, BaseEventtagHandler):
 
     @authenticated
     def delete(self, event_id_string, eventtag_id_string):
-        print event_id_string, eventtag_id_string
         event = self._get_event(event_id_string)
         eventtag = self._get_eventtag(eventtag_id_string)
         if eventtag in event.eventtag_list:

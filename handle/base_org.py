@@ -184,7 +184,7 @@ class BaseOrgHandler(BaseHandler):
                     Address.longitude != None,
                     Address.longitude >= location.west,
                     Address.longitude <= location.east,
-                    ))
+                    )) \
 
         if offset:
             org_alias_address_query = org_alias_address_query \
@@ -221,6 +221,9 @@ class BaseOrgHandler(BaseHandler):
 
             org_packet["org_list"] = []
             for org_id, data in orgs.items():
+                data["address_obj_list"].sort(
+                    key=lambda address_obj: -address_obj["latitude"]
+                    )
                 org_packet["org_list"].append(data["org"].obj(
                         public=bool(self.current_user),
                         address_obj_list=data["address_obj_list"],

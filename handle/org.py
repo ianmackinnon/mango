@@ -325,6 +325,7 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
             type_tag_list="orgtag_list",
             type_entity_list="org_list",
             type_li_template="org_li",
+            type_length="org_len",
             )
 
 

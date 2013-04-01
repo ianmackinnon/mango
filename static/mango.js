@@ -308,10 +308,10 @@ var m = {
     $("div.address-row div.pin").each(function(i) {
       var $pin = $(this);
       var $circle = mapView.addMarker(
-        $pin.attr("latitude"),
-        $pin.attr("longitude")
+        parseFloat($pin.attr("latitude")),
+        parseFloat($pin.attr("longitude"))
       );
-      $pin.append($circle);
+      $pin.html($circle);
     });
     mapView.fit();
 
@@ -346,7 +346,7 @@ var m = {
         $pin.attr("latitude"),
         $pin.attr("longitude")
       );
-      $pin.append($circle);
+      $pin.html($circle);
     });
     mapView.fit();
 

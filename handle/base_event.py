@@ -196,6 +196,9 @@ class BaseEventHandler(BaseHandler):
             event_packet["event_list"] = []
             for event_id, data in events.items():
                 event = data["event"]
+                data["address_obj_list"].sort(
+                    key=lambda address_obj: -address_obj["latitude"]
+                    )
                 address_list = data["address_obj_list"]
                 eventtag_list = [eventtag.obj(public=True) for eventtag in event.eventtag_list_public]
                 event_packet["event_list"].append(event.obj(

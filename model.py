@@ -445,12 +445,14 @@ class Org(Base, MangoEntity, NotableEntity):
         backref='org_list',
         single_parent=True,
         cascade="all, delete, delete-orphan",
+        order_by="Address.latitude.desc()",
         )
     orgtag_list = relationship(
         "Orgtag",
         secondary=org_orgtag,
         backref='org_list',
         cascade="save-update",
+        order_by="Orgtag.name",
         )
     event_list = relationship(
         "Event",
@@ -486,6 +488,7 @@ class Org(Base, MangoEntity, NotableEntity):
             "Address.public==True)"
             ),
         passive_deletes=True,
+        order_by="Address.latitude.desc()",
         )
     orgtag_list_public = relationship(
         "Orgtag",
@@ -496,6 +499,7 @@ class Org(Base, MangoEntity, NotableEntity):
             "Orgtag.public==True)"
             ),
         passive_deletes=True,
+        order_by="Orgtag.name",
         )
     event_list_public = relationship(
         "Event",
@@ -764,12 +768,14 @@ class Event(Base, MangoEntity, NotableEntity):
         backref='event_list',
         single_parent=True,
         cascade="all, delete, delete-orphan",
+        order_by="Address.latitude.desc()",
         )
     eventtag_list = relationship(
         "Eventtag",
         secondary=event_eventtag,
         backref='event_list',
         cascade="save-update",
+        order_by="Eventtag.name",
         )
 
     note_list_public = relationship(
@@ -791,6 +797,7 @@ class Event(Base, MangoEntity, NotableEntity):
             "Address.public==True)"
             ),
         passive_deletes=True,
+        order_by="Address.latitude.desc()",
         )
     eventtag_list_public = relationship(
         "Eventtag",
@@ -801,6 +808,7 @@ class Event(Base, MangoEntity, NotableEntity):
             "Eventtag.public==True)"
             ),
         passive_deletes=True,
+        order_by="Eventtag.name",
         )
     org_list_public = relationship(
         "Org",
