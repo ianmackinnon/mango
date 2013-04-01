@@ -45,12 +45,13 @@ class BaseOrgHandler(BaseHandler):
         is_json = self.content_type("application/json")
 
         name = self.get_argument("name", json=is_json)
+        description = self.get_argument("description", None, json=is_json);
 
         public = self.get_argument_public("public", json=is_json)
         moderation_user = self.current_user
 
         org = Org(
-            name, 
+            name, description,
             moderation_user=moderation_user, public=public)
 
         detach(org)

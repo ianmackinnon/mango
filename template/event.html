@@ -56,23 +56,23 @@
       %endfor
     </ul>
     %else:
-    No organisations linked yet.
+    no organisations linked yet.
     %endif
     %endif
-    <!-- Organisations End -->
+    <!-- organisations end -->
 
-    <!-- Tags Start -->
+    <!-- tags start -->
     %if obj:
     <hr />
     <div class="action-bar no-border">
-      <h3>Tags</h3>
+      <h3>tags</h3>
 
       %if current_user:
       <div class="actions">
         <a
            href="${url_rewrite("%s/tag" % obj["url"], parameters)}"
            class="action"
-           >Edit tags</a>
+           >edit tags</a>
       </div>
       %endif
     </div>
@@ -168,9 +168,9 @@ if None in path_keys:
            value="${obj and obj["end_time"] | n, form_time}"
            >
       </label>
-     <div class="form-hint">
-      <p>Enter description using <a href='http://daringfireball.net/projects/markdown/syntax'>Markdown syntax</a>.</p>
-    </div>
+      <div class="form-hint">
+        <p>Enter description using <a href='http://daringfireball.net/projects/markdown/syntax'>Markdown syntax</a>.</p>
+      </div>
 
       <label
          name="description"
@@ -203,29 +203,23 @@ if None in path_keys:
 
 
 
-
-
-
-
-
-
-
-    %else:
+    %else :
     ${obj["name"]}
 
     <h3>Time</h3>
-
     ${obj["start_date"] | n, page_date}
 
+    %if obj and obj["description"]:
     <h3>Description</h3>
 
     <div class="description-preview markdown">
-      %if obj and obj["description"]:
       ${obj["description"] | n, markdown_safe, convert_links}
-      %endif
     </div>
+    %endif
 
     %endif
+
+
 
 
     %if obj:

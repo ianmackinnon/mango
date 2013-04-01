@@ -18,6 +18,7 @@ CREATE TABLE org_v (
     existence BOOLEAN NOT NULL, --
 
     name LONGTEXT NOT NULL, 
+    description longtext,
 
     KEY moderation_user_id (moderation_user_id),
     CONSTRAINT org_v_c2 FOREIGN KEY (moderation_user_id)

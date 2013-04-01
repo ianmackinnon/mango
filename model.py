@@ -423,6 +423,8 @@ class Org(Base, MangoEntity, NotableEntity):
     a_time = Column(Float(), nullable=False)
     public = Column(Boolean)
 
+    description = Column(Unicode())
+
     moderation_user = relationship(User, backref='moderation_org_list')
     
     orgalias_list = relationship(
@@ -508,13 +510,18 @@ class Org(Base, MangoEntity, NotableEntity):
     
     content = [
         "name",
+        "description",
         "public",
         ]
 
     list_url = "/organisation"
     
-    def __init__(self, name, moderation_user=None, public=None):
+    def __init__(self,
+                 name, description=None,
+                 moderation_user=None, public=None):
         self.name = self.sanitise_name(name)
+
+        self.description = description
 
         self.moderation_user = moderation_user
         self.a_time = 0
@@ -541,6 +548,7 @@ class Org(Base, MangoEntity, NotableEntity):
             "url": self.url,
             "date": self.a_time,
             "name": self.name,
+            "description": self.description,
             }
         if public:
             obj["public"] = self.public

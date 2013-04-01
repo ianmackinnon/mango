@@ -19,6 +19,18 @@
   <div id="mango-map-box">
     <div id="mango-map-canvas">Map loading...</div>
     
+    <!-- Description Preview Start -->
+    %if current_user:
+    <hr />
+    <h3>Description Preview</h3>
+    <div class="description markdown markdown-preview">
+      %if obj and obj["description"]:
+      ${obj["description"] | n, markdown_safe, convert_links}
+      %endif
+    </div>
+    %endif
+    <!-- Description Preview End -->
+
     <!-- Events Start -->
     %if obj:
     <hr />
@@ -126,14 +138,28 @@ if None in path_keys:
 	<input name="name" value="${obj and obj["name"] or ''}">
       </label>
       
+      <div class="form-hint">
+        <p>Enter description using <a href='http://daringfireball.net/projects/markdown/syntax'>Markdown syntax</a>.</p>
+      </div>
+
+      <label
+         name="description"
+         status="${obj and obj.get("description", "") and 'good' or ''}"
+         class="textarea"
+         >
+        <span>Description</span>\
+        <span class="requirement"></span>
+        <textarea
+           name="description"
+           >${obj and obj.get("description", "") or ""}</textarea>
+      </label>
+      
       ${self.mini.visibility_input(obj, "public")}
 
       <input type="submit">
     </form>
-    %endif
 
     %if obj:
-    %if current_user:
     <form
        class="mango"
        action="${url_rewrite(obj["url"], parameters)}"
@@ -144,7 +170,22 @@ if None in path_keys:
       <input type="submit" value="Delete">
     </form>
     %endif
+
+
+
+    %else:
+    ${obj["name"]}
+
+    %if obj and obj["description"]:
+    <h3>Description</h3>
+
+    <div class="description-preview markdown">
+      ${obj["description"] | n, markdown_safe, convert_links}
+    </div>
     %endif
+
+    %endif
+
 
     %if obj:
     %if "address_list" in obj:

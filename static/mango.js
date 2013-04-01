@@ -314,6 +314,8 @@ var m = {
       $pin.append($circle);
     });
     mapView.fit();
+
+    m.orgMarkdown();
   },
 
   initOrgSearch: function (mapView) {
@@ -363,7 +365,7 @@ var m = {
       defaultTime: ""
     });
 
-    m.event_markdown();
+    m.eventMarkdown();
   },
 
   initEventSearch: function (mapView) {
@@ -658,7 +660,7 @@ var m = {
 
   },
 
-  "note_markdown": function () {
+  noteMarkdown: function () {
     var form = $("#note-form");
     var text = m.get_field(form, "text");
     var source = m.get_field(form, "source");
@@ -674,7 +676,19 @@ var m = {
     }, 500);
   },
 
-  "event_markdown": function () {
+  orgMarkdown: function () {
+    var form = $("#org-form");
+    var text = m.get_field(form, "description");
+    var preview = $(".description.markdown-preview");
+    var on_change = function (value) {
+      preview.html(m.filter.markdown(value));
+      m.convert_inline_links($(".description.markdown-preview"));
+    };
+    m.on_change(text.input, "org-form" + "_" + "text", on_change, 500);
+    on_change(text.input.val());
+  },
+
+  eventMarkdown: function () {
     var form = $("#event-form");
     var text = m.get_field(form, "description");
     var preview = $(".description.markdown-preview");
@@ -848,10 +862,10 @@ var m = {
     }],
 
     [/^\/note\/new$/, function () {
-      m.note_markdown();
+      m.noteMarkdown();
     }],
     [/^\/note\/([1-9][0-9]*)$/, function (noteIdString) {
-      m.note_markdown();
+      m.noteMarkdown();
     }],
 
     [/^\/organisation$/, function () {
@@ -883,7 +897,7 @@ var m = {
       m.initAddress(mapView);
     }],
     [/^\/organisation\/([1-9][0-9]*)\/note$/, function (orgIdString) {
-      m.note_markdown();
+      m.noteMarkdown();
     }],
     [/^\/organisation\/([1-9][0-9]*)\/tag$/, function (orgIdString) {
       m.visibility();
@@ -901,7 +915,7 @@ var m = {
       m.initAddress(mapView);
     }],
     [/^\/event\/([1-9][0-9]*)\/note$/, function (eventIdString) {
-      m.note_markdown();
+      m.noteMarkdown();
     }],
 
     [/^\/address\/([1-9][0-9]*)$/, function (addressIdString) {
@@ -909,7 +923,7 @@ var m = {
       m.initAddress(mapView);
     }],
     [/^\/address\/([1-9][0-9]*)\/note$/, function (addressIdString) {
-      m.note_markdown();
+      m.noteMarkdown();
     }],
 
     [/^\/organisation-tag$/, function () {
@@ -934,7 +948,7 @@ var m = {
       });
     }],
     [/^\/organisation-tag\/([1-9][0-9]*)\/note$/, function (orgtagIdString) {
-      m.note_markdown();
+      m.noteMarkdown();
     }],
 
     [/^\/event-tag$/, function () {
@@ -959,7 +973,7 @@ var m = {
       });
     }],
     [/^\/event-tag\/([1-9][0-9]*)\/note$/, function (eventtagIdString) {
-      m.note_markdown();
+      m.noteMarkdown();
     }],
   ],
 

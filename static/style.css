@@ -512,6 +512,7 @@ form.mango input[type="checkbox"]
 {
     padding-bottom: 4px;
 }
+#mango div.org_description,
 #mango div.event_description
 {
     white-space: nowrap;
@@ -534,6 +535,8 @@ form.mango input[type="checkbox"]
     padding: 2px;
 }
 
+#org-form label[name="description"],
+#org-form label[name="description"] textarea,
 #event-form label[name="description"],
 #event-form label[name="description"] textarea
 {
