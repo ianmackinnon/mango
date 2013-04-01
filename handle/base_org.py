@@ -222,7 +222,8 @@ class BaseOrgHandler(BaseHandler):
             org_packet["org_list"] = []
             for org_id, data in orgs.items():
                 data["address_obj_list"].sort(
-                    key=lambda address_obj: -address_obj["latitude"]
+                    key=lambda address_obj: address_obj.get("latitude", None),
+                    reverse=True
                     )
                 org_packet["org_list"].append(data["org"].obj(
                         public=bool(self.current_user),
