@@ -36,16 +36,16 @@ def get_names(orm):
     names = set()
     records = orm.query(Org.name).all()
     for record in records:
-        names.add(record.name)
-    records = orm.query(Orgalias.name).all()
-    for record in records:
-        names.add(record.name)
+        names.add((record.name, None))
+    orgalias_list = orm.query(Orgalias).all()
+    for orgalias in orgalias_list:
+        names.add((orgalias.name, orgalias.org.name))
 
 
 
 def select_from_list(matches):
-    for m, match in enumerate(matches):
-        print (u"  %4d  %s" % (m, match)).encode("utf-8")
+    for m, (name, alias) in enumerate(matches):
+        print (u"  %4d  %s  %s" % (m, name, (alias and ("[%s]" % alias) or ""))).encode("utf-8")
     print
     print "Choose name or non-numeric to exit: ",
 
@@ -61,7 +61,7 @@ def select_from_list(matches):
         log.error("%d is out of range." % choice)
         return None
 
-    return matches[choice]
+    return matches[choice][0]
 
 
 
@@ -72,12 +72,12 @@ def closest_names(name, names, orm):
     higher = orm.query(Org.name).filter(Org.name < name).order_by(Org.name.desc()).limit(3).all()
 
     for (name2, ) in lower + higher:
-        matches.add(name2)
+        matches.add((name2, None))
 
-    for name2 in names:
+    for name2, alias in names:
         ratio = Levenshtein.ratio(name.lower(), name2.lower())
         if ratio > 0.8:
-            matches.add(name2)
+            matches.add((name2, alias))
 
     if not matches:
         return None
