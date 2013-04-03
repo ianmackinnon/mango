@@ -110,7 +110,7 @@ class BaseEventHandler(BaseHandler):
                                  location=None,
                                  visibility=None,
                                  offset=None,
-                                 view="event"):
+                                 map_view="entity"):
 
         event_query = self._get_event_search_query(
             name=name, name_search=name_search,
@@ -168,7 +168,7 @@ class BaseEventHandler(BaseHandler):
             "location": location and location.to_obj(),
             }
 
-        if (view == "marker" or
+        if (map_view == "marker" or
             event_address_query.count() > max_address_per_page * max_address_pages
             ):
             event_packet["marker_list"] = []
@@ -195,16 +195,17 @@ class BaseEventHandler(BaseHandler):
 
             event_packet["event_list"] = []
             for event_id, data in events.items():
-                data["address_obj_list"].sort(
+                event = data["event"]
+                address_obj_list = data["address_obj_list"]
+                address_obj_list.sort(
                     key=lambda address_obj: address_obj.get("latitude", None),
                     reverse=True
                     )
-                address_list = data["address_obj_list"]
-                eventtag_list = [eventtag.obj(public=True) for eventtag in event.eventtag_list_public]
+                eventtag_obj_list = [eventtag.obj(public=True) for eventtag in event.eventtag_list_public]
                 event_packet["event_list"].append(event.obj(
                         public=bool(self.current_user),
-                        address_obj_list=address_list,
-                        eventtag_obj_list=eventtag_list,
+                        address_obj_list=address_obj_list,
+                        eventtag_obj_list=eventtag_obj_list,
                         ))
 
         return event_packet

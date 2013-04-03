@@ -184,15 +184,9 @@ if not parameters:
 	    </div>
 	    <div class="address">
 	      ${address["postal"] | n, h, unicode, newline_comma}
-              %if not current_user:
-              <br />
-              <a href="${url_rewrite(address["url"], parameters)}">
-                View
-              </a>
-              %endif
 	    </div>
 	    <div class="actions">
-	    %if current_user:
+	    %if current_user and (parameters.get("view", None) == "edit"):
 	      <a
                  href="${url_rewrite(address["url"], parameters)}"
                  class="action"
@@ -211,7 +205,11 @@ if not parameters:
     </span>
     %endif
 
-	    %endif
+              %else:
+              <a href="${url_rewrite(address["url"], parameters)}">
+                View
+              </a>
+              %endif
 	    </div>
           </div>
         </div>
@@ -236,7 +234,8 @@ if not parameters:
 (${org["alias"]["name"] | n, h, unicode, nbsp})
 </span>\
 %endif
-%if link and link_url and current_user:
+%if current_user and (parameters.get("view", None) == "edit"):
+%if link and link_url:
 &nbsp;\
 <span>\
 <form
@@ -249,7 +248,7 @@ if not parameters:
 </form>\
 </span>\
 %endif
-%if unlink and link_url and current_user:
+%if unlink and link_url:
 &nbsp;\
 <span>\
 <form
@@ -261,6 +260,7 @@ if not parameters:
 <input type="submit" value="✕">\
 </form>\
 </span>\
+%endif
 %endif
 %if visibility and "public" in org:
 &nbsp;\
@@ -286,7 +286,8 @@ if not parameters:
 &nbsp;\
 <span>${event["start_date"] | n, page_date, nbsp}</span>\
 %endif
-%if link and link_url and current_user:
+%if current_user and (parameters.get("view", None) == "edit"):
+%if link and link_url:
 &nbsp;\
 <span>\
 <form
@@ -299,7 +300,7 @@ if not parameters:
 </form>\
 </span>\
 %endif
-%if unlink and link_url and current_user:
+%if unlink and link_url:
 &nbsp;\
 <span>\
 <form
@@ -311,6 +312,7 @@ if not parameters:
 <input type="submit" value="✕">\
 </form>\
 </span>\
+%endif
 %endif
 %if visibility and "public" in event:
 &nbsp;\
@@ -332,7 +334,8 @@ if not parameters:
          href="${url_rewrite(address["url"], parameters)}"
          >${address["postal"]}</a>
     </span>
-    %if unlink and link_url and current_user:
+    %if current_user and (parameters.get("view", None) == "edit"):
+    %if unlink and link_url:
     <span>
       <form
          action="${url_rewrite(link_url, dict(parameters, next=url_rewrite(uri)))}"
@@ -343,6 +346,7 @@ if not parameters:
 	<input type="submit" value="✕">
       </form>
     </span>
+    %endif
     %endif
 
   </li>
@@ -391,7 +395,8 @@ ${tag["base"] | n, h, unicode, nbsp}\
 &nbsp;\
 <span class="has-notes">…</span>\
 %endif
-%if link and link_url and current_user:
+%if current_user and (parameters.get("view", None) == "edit"):
+%if link and link_url:
 <span>\
 <form
    action="${url_rewrite(link_url, parameters)}"
@@ -408,7 +413,7 @@ ${tag["base"] | n, h, unicode, nbsp}\
 </span>\
 %endif
 \
-%if unlink and link_url and current_user:
+%if unlink and link_url:
 <span>\
 <form
    action="${url_rewrite(link_url, parameters)}"
@@ -423,6 +428,7 @@ ${tag["base"] | n, h, unicode, nbsp}\
 <input type="submit" value="✕">\
 </form>\
 </span>\
+%endif
 %endif
 %if visibility and "public" in tag:
 &nbsp;\
@@ -445,18 +451,19 @@ if not parameters:
 %>\
 <li class="alias">\
 <span class="alias_name">\
-%if current_user:
+%if current_user and (parameters.get("view", None) == "edit"):
 <a
    href="${url_rewrite(alias["url"], parameters)}"
    >\
 %endif
 ${alias["name"] | n, h, unicode, nbsp}\
-%if current_user:
+%if current_user and (parameters.get("view", None) == "edit"):
 </a>\
 %endif
 </span>\
 \
-%if unlink and link_url and current_user:
+%if current_user and (parameters.get("view", None) == "edit"):
+%if unlink and link_url:
 &nbsp;\
 <span>\
 <form
@@ -472,6 +479,7 @@ ${alias["name"] | n, h, unicode, nbsp}\
 <input type="submit" value="✕">\
 </form>\
 </span>\
+%endif
 %endif
 %if visibility and "public" in alias:
 &nbsp;\
@@ -509,7 +517,8 @@ if not parameters:
 	%endif
 	</a>
       </div>
-      %if action and current_user:
+      %if current_user and (parameters.get("view", None) == "edit"):
+      %if action:
       <div class="action-bar no-border right">
 	<a
            class="action"
@@ -544,6 +553,7 @@ if not parameters:
 	</form>
       </div>
       %endif
+      %endif
     </div>
 </%def>
 
@@ -560,41 +570,41 @@ if not parameters:
       <h3>Notes (${len(note_list)})</h3>
       
       %if note_list or note_search:
-
-	<form id="note-filter">
-	  <label name="note_search">
-	    <span>Search</span>
-	    <input name="note_search" value="${note_search or ''}">
-	    <select name="note_order">
-	      <option value="desc"
-		      ${note_order != "asc" and "selected='selected'" or ""}
-		      >Newest</option>
-	      <option value="asc"
-		      ${note_order == "asc" and "selected='selected'" or ""}
-		      >Oldest</options>
-	    </select>
-	  </label>
-	  <input type="submit">
-	</form>
-
-%endif
-
-        %if current_user:
-	<ul class="actions">
-	  <a
-             class="action"
-             href="${url_rewrite(new_url, parameters)}"
-             >Add a note</a>
-	</ul>
-	%endif
-      </div>
-
+      
+      <form id="note-filter">
+	<label name="note_search">
+	  <span>Search</span>
+	  <input name="note_search" value="${note_search or ''}">
+	  <select name="note_order">
+	    <option value="desc"
+		    ${note_order != "asc" and "selected='selected'" or ""}
+		    >Newest</option>
+	    <option value="asc"
+		    ${note_order == "asc" and "selected='selected'" or ""}
+		    >Oldest</option>
+          </select>
+        </label>
+        <input type="submit">
+      </form>
+      
+      %endif
+      
+      %if current_user and (parameters.get("view", None) == "edit"):
+      <ul class="actions">
+	<a
+           class="action"
+           href="${url_rewrite(new_url, parameters)}"
+           >Add a note</a>
+      </ul>
+      %endif
+    </div>
+    
     %for note in note_list:
     ${self.render_note(
-      note, next_url=next_url, unlink_url=unlink_url, parameters=parameters)}
+    note, next_url=next_url, unlink_url=unlink_url, parameters=parameters)}
     %endfor
   </div>
-    </div>
+</div>
 
 </%def>
 

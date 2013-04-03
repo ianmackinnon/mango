@@ -27,7 +27,7 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
         return self._get_event
 
     @staticmethod
-    def _cache_key(name_search, past, tag_name_list, view, visibility):
+    def _cache_key(name_search, past, tag_name_list, map_view, visibility):
         if not visibility:
             visibility = "public"
         return sha1_concat(json.dumps({
@@ -35,7 +35,7 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
                 "past": past,
                 "tag": tuple(set(tag_name_list)),
                 "visibility": visibility,
-                "view": view,
+                "mapView": map_view,
                 }))
     
     def get(self):
@@ -46,8 +46,8 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
         tag_name_list = self.get_arguments("tag", json=is_json)
         location = self.get_argument_geobox("location", None, json=is_json)
         offset = self.get_argument_int("offset", None, json=is_json)
-        view = self.get_argument_allowed("view", ["event", "marker"],
-                                         default="event", json=is_json)
+        map_view = self.get_argument_allowed("mapView", ["entity", "marker"],
+                                             default="entity", json=is_json)
 
         if self.has_javascript and not self.accept_type("json"):
             self.render(
@@ -62,9 +62,12 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
             return;
 
         cache_key = None
-        if self.accept_type("json") and not location and not offset:
-            cache_key = self._cache_key(name_search, past, tag_name_list, view,
-                                        self.parameters["visibility"])
+        if 0 and self.accept_type("json") and not location and not offset:
+            cache_key = self._cache_key(
+                name_search, past,
+                tag_name_list, map_view,
+                self.parameters.get("visibility", None),
+                )
             value = self.cache.get(cache_key)
             if value:
                 self.set_header("Content-Type", "application/json; charset=UTF-8")
@@ -78,9 +81,9 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
             past=past,
             tag_name_list=tag_name_list,
             location=location,
-            visibility=self.parameters["visibility"],
+            visibility=self.parameters.get("visibility", None),
             offset=offset,
-            view=view,
+            map_view=map_view,
             )
 
         if cache_key:

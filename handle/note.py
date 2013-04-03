@@ -11,7 +11,7 @@ class NoteListHandler(BaseNoteHandler):
         note_list = self.orm.query(Note)
 
         note_list = self.filter_visibility(
-            note_list, Note, self.parameters["visibility"])
+            note_list, Note, self.parameters.get("visibility", None))
 
         note_search = self.get_argument("note_search", None)
         note_order = self.get_argument_order("note_order", None)

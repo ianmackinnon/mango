@@ -112,7 +112,7 @@ class BaseTagHandler(BaseHandler):
             base_short=base_short,
             path=path,
             search=search,
-            visibility=self.parameters["visibility"],
+            visibility=self.parameters.get("visibility", None),
             )
 
         tag_list = []

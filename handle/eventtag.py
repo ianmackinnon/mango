@@ -57,7 +57,7 @@ class BaseEventtagHandler(BaseTagHandler):
     def _get_full_eventtag_list(self):
         eventtag_and_event_count_list = \
             self._get_eventtag_and_event_count_list_search(
-            visibility=self.parameters["visibility"],
+            visibility=self.parameters.get("visibility", None),
             )
         eventtag_list = []
         for eventtag, event_count in eventtag_and_event_count_list:
@@ -91,7 +91,7 @@ class EventtagListHandler(BaseEventtagHandler,
                 tag_list=eventtag_list,
                 path=path,
                 search=search,
-                visibility=self.parameters["visibility"],
+                visibility=self.parameters.get("visibility", None),
                 type_title="Event",
                 type_title_plural="Events",
                 type_url="event",
@@ -148,7 +148,7 @@ class EventtagHandler(BaseEventtagHandler,
         event_list_query = self.filter_visibility(
             event_list_query,
             Event,
-            visibility=self.parameters["visibility"],
+            visibility=self.parameters.get("visibility", None),
             )
         event_list = event_list_query.all()
 

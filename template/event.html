@@ -20,7 +20,7 @@
     <div id="mango-map-canvas">Map loading...</div>
 
     <!-- Description Preview Start -->
-    %if current_user:
+    %if current_user and (parameters.get("view", None) == "edit"):
     <hr />
     <h3>Description Preview</h3>
     <div class="description markdown markdown-preview">
@@ -37,7 +37,7 @@
     <div class="action-bar no-border">
       <h3>Organisations</h3>
 
-      %if current_user:
+      %if current_user and (parameters.get("view", None) == "edit"):
       <div class="actions">
         <a
            href="${url_rewrite("%s/organisation" % obj["url"], parameters)}"
@@ -67,7 +67,7 @@
     <div class="action-bar no-border">
       <h3>tags</h3>
 
-      %if current_user:
+      %if current_user and (parameters.get("view", None) == "edit"):
       <div class="actions">
         <a
            href="${url_rewrite("%s/tag" % obj["url"], parameters)}"
@@ -114,7 +114,7 @@ if None in path_keys:
     
     <h3>Event</h3>
     
-    %if current_user:
+    %if current_user and (parameters.get("view", None) == "edit"):
     <form
        class="mango"
        action="${url_rewrite(obj and obj["url"] or '/event', parameters)}"
@@ -227,7 +227,7 @@ if None in path_keys:
     <div class="action-bar no-border">
       <h3>Addresses</h3>
 
-      %if current_user:
+      %if current_user and (parameters.get("view", None) == "edit"):
       <div class="actions">
         <a
            href="${url_rewrite("%s/address" % obj["url"], parameters)}"
@@ -248,7 +248,7 @@ if None in path_keys:
     %endif
 
     %if obj:
-    %if current_user:
+    %if current_user and (parameters.get("view", None) == "edit"):
     <h3>Duplicate Event</h3>
 
     <form

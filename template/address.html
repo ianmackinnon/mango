@@ -38,7 +38,7 @@ Address ${obj["id"]}
     <div id="mango-map-canvas">Map loading...</div>
   </div>
 
-  %if current_user:
+  %if current_user and (parameters.get("view", None) == "edit"):
   <div class="box right" id="address-form">
     <div class="form-hint">
       <p>Enter a postal address and a source where it can be verified.</p>
@@ -132,7 +132,8 @@ elif entity_list in obj and len(obj[entity_list]) == 1:
 %if obj and "note_list" in obj:
 ${self.mini.render_note_section(obj["note_list"],
     obj["url"] + "/note", obj["url"],
-    note_search, note_order, unlink_url=obj["url"]
+    note_search, note_order, unlink_url=obj["url"],
+    parameters=parameters
 )}
 %endif
 

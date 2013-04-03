@@ -4,26 +4,31 @@
 
 <%def name="page()">
 
+<h1>
+  Users
+</h1>
+
+<div class="section">
+
 <ul id="all_users">
-  % if current_user:
-  <li>
-    <a
-       href="${url_rewrite("/user/%d" % current_user.user_id, parameters)}"
-       >${current_user.name}</a>
-    (you)
-  </li>
-  % endif
   % for user in user_list:
-  % if current_user and current_user == user:
-  <% continue %>
-  % endif
-  <li>
+  <li class="user">
+    <% hash = user.auth.gravatar_hash %>
     <a
        href="${url_rewrite("/user/%d" % user.user_id, parameters)}"
-       >${user.name}</a>
+       >
+      <img width="24px" height="24px"
+	   src="http://gravatar.com/avatar/${hash}?d=identicon&s=24">
+      ${user.name}
+    </a>
+    %if current_user == user:
+    (you)
+    %endif
   </li>
   % endfor
 </ul>
+
+</div>
 
 </%def>
 

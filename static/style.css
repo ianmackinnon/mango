@@ -158,34 +158,64 @@ form.mango input[disabled="disabled"]
     text-align: center;
 }
 
-#mango nav,
-#account
-{
-    margin: 4px 0;
-}
+
+
+/* Navigation */
+
 #mango nav
+{
+    margin: 2px 0;
+    line-height: 24px;
+}
+
+#mango nav,
+#mango nav * 
+{
+    vertical-align: bottom;
+}
+
+#mango nav:before,
+#mango nav:after {
+    content:"";
+    display:table;
+}
+
+#mango nav:after {
+    clear:both;
+}
+
+#nav-pages,
+#nav-moderator
 {
     float: left;
 }
-#account
+
+#nav-account,
+#nav-parameters
 {
     float: right;
 }
-#mango nav a,
-#account a,
-#visibility a
+
+#mango nav label,
+#mango nav a
 {
     display: inline-block;
     margin: 2px;
-    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0);
     border-radius: 2px;
     padding: 0px 6px;
-    line-height: 23px;
 }
+
+#mango nav a
+{
+    border-color: #ccc;
+}
+
 #mango nav .nav-group
 {
     display: inline-block;
 }
+
 #mango nav .nav-group a
 {
     border-radius: 0;
@@ -193,12 +223,14 @@ form.mango input[disabled="disabled"]
     margin-right: 0;
     margin-left: 0;
 }
+
 #mango nav .nav-group a:first-of-type
 {
     border-top-left-radius: 2px;
     border-bottom-left-radius: 2px;
     margin-left: 2px;
 }
+
 #mango nav .nav-group a:last-of-type
 {
     border-top-right-radius: 2px;
@@ -206,34 +238,27 @@ form.mango input[disabled="disabled"]
     margin-right: 2px;
     border-right: 1px solid #ccc;
 }
-#account img
+
+#mango nav img
 {
     margin-left: -6px;
     margin-right: 3px;
-    vertical-align: middle;
 }
 
-#visibility
-{
-    clear: both;
-    float: right;
-}
-#visibility a.selected
-{
-    background: #eee;
-}
-
-#mango nav a:hover,
-#account a:hover,
-#visibility a:hover
+#mango nav a:hover
 {
     text-decoration: none;
     background: #ddd;
 }
 
+#mango nav a.selected
+{
+    background: #eee;
+}
 
 
-/* forms */
+
+/* Forms */
 
 form.mango label
 {
@@ -475,6 +500,31 @@ form.mango input[type="checkbox"]
     padding: 0 5px;
 }
 
+/* User */
+
+#mango li.user
+{
+    width: 200px;
+
+    margin: 6px;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    padding: 0;
+
+    line-height: 24px;
+}
+
+#mango li.user,
+#mango li.user *
+{
+    vertical-align: bottom;
+}
+
+#mango li.user img
+{
+    border-right: 1px solid #ccc;
+}
+
 /* Entity */
 
 #mango .visibility
@@ -690,6 +740,7 @@ div.ui-timepicker td a.ui-state-active
 }
 #mango div.address-box .actions
 {
+    float: right;
     clear: both;
 }
 #mango div.address-row

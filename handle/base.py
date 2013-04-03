@@ -237,7 +237,7 @@ class BaseHandler(tornado.web.RequestHandler):
         return True
 
     def query_rewrite(self, options):
-        arguments = self.request.arguments
+        arguments = self.request.arguments.copy()
         arguments.update(options)
         uri = self.request.path
         if uri.startswith("/"):
@@ -434,6 +434,12 @@ class BaseHandler(tornado.web.RequestHandler):
         return self.get_argument_allowed(
             "visibility", ("pending", "all", "private", "public"), None, json)
 
+    def get_argument_view(self, json=False):
+        if not self.current_user:
+            return None
+        return self.get_argument_allowed(
+            "view", ("browse", "edit"), None, json)
+
     def get_argument_geobox(self, name, default=_ARG_DEFAULT_MANGO, json=False):
         value = self.get_argument(name, default, json)
 
@@ -609,10 +615,16 @@ class BaseHandler(tornado.web.RequestHandler):
     def set_parameters(self):
         self.parameters = {}
         is_json = self.content_type("application/json")
-        self.parameters["visibility"] = self.get_argument_visibility(json=is_json)
+        visibility = self.get_argument_visibility(json=is_json)
+        if visibility:
+            self.parameters["visibility"] = visibility
+        view = self.get_argument_view(json=is_json)
+        if view:
+            self.parameters["view"] = view
+        
 
     def deep_visible(self):
-        return self.parameters["visibility"] in ["pending", "private", "all"]
+        return self.parameters.get("visibility", None) in ["pending", "private", "all"]
     
     def orm_commit(self):
         try:

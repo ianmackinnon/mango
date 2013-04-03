@@ -57,7 +57,7 @@ class BaseOrgtagHandler(BaseTagHandler):
     def _get_full_orgtag_list(self):
         orgtag_and_org_count_list = \
             self._get_orgtag_and_org_count_list_search(
-            visibility=self.parameters["visibility"],
+            visibility=self.parameters.get("visibility", None),
             )
         orgtag_list = []
         for orgtag, org_count in orgtag_and_org_count_list:
@@ -91,7 +91,7 @@ class OrgtagListHandler(BaseOrgtagHandler,
                 tag_list=orgtag_list,
                 path=path,
                 search=search,
-                visibility=self.parameters["visibility"],
+                visibility=self.parameters.get("visibility", None),
                 type_title="Organisation",
                 type_title_plural="Organisations",
                 type_url="organisation",
@@ -148,7 +148,7 @@ class OrgtagHandler(BaseOrgtagHandler,
         org_list_query = self.filter_visibility(
             org_list_query,
             Org,
-            visibility=self.parameters["visibility"],
+            visibility=self.parameters.get("visibility", None),
             )
         org_list = org_list_query.all()
 

@@ -53,62 +53,86 @@ ${header2.replace("/render-header-footer.php", uri) | n}
   </table>
   %endif
 
-  <nav>
-    <a href="${url_rewrite("/", parameters)}">Arms trade map</a>
-    <div class="nav-group">
-      <a href="${url_rewrite("/organisation", parameters)}">Organisations</a><a href="${url_rewrite("/organisation-tag", parameters)}">Tags</a>
+  <nav id="nav-main">
+    <div id="nav-pages">
+      <a href="${url_rewrite("/", parameters)}">Arms trade map</a>
+      <div class="nav-group">
+        <a href="${url_rewrite("/organisation", parameters)}">Organisations</a><a href="${url_rewrite("/organisation-tag", parameters)}">Tags</a>
+      </div>
+      <div class="nav-group">
+        <a href="${url_rewrite("/event", parameters)}">Events</a><a href="${url_rewrite("/event-tag", parameters)}">Tags</a>
+      </div>
+      <a href="${url_rewrite("/note", parameters)}">Notes</a>
     </div>
-    <div class="nav-group">
-      <a href="${url_rewrite("/event", parameters)}">Events</a><a href="${url_rewrite("/event-tag", parameters)}">Tags</a>
+    <div id="nav-account">
+      %if current_user:
+      <div class="nav-group">
+      <a href="${url_rewrite("/user/%d" % current_user.user_id, parameters)}">
+        <% hash = current_user.auth.gravatar_hash %>
+        <img width="24px" height="24px"
+	     src="http://gravatar.com/avatar/${hash}?d=identicon&s=24">
+        ${current_user.name}
+      </a><!-- <a href="${url_rewrite("/user/%d" % current_user.user_id, parameters)}"> -->
+      <!--   My content -->
+      <!-- </a> -->
+      </div>
+      <a href="${url_rewrite("/auth/logout", {"next": url_rewrite(uri)})}">Log out</a>
+      %else:
+      <a href="${url_rewrite("/auth/login", {"next": url_rewrite(uri)})}">Log in</a>
+      %endif
     </div>
-    <a href="${url_rewrite("/note", parameters)}">Notes</a>
-    %if current_user:
-    |
-    <a href="${url_rewrite("/user", parameters)}">Users</a>
-    <a href="${url_rewrite("/history", parameters)}">History</a>
-    <a href="${url_rewrite("/task/address", parameters)}">Addresses</a>
-    %endif
   </nav>
-    
-  <div id="account">
-    %if current_user:
-    <a href="${url_rewrite("/user/%d" % current_user.user_id, parameters)}">
-      <% hash = current_user.auth.gravatar_hash %>
-      <img width="24px" height="24px"
-	   src="http://gravatar.com/avatar/${hash}?d=identicon&s=24">
-      ${current_user.name}
-    </a>
-    <a href="${url_rewrite("/auth/logout", {"next": url_rewrite(uri)})}">Log out</a>
-    %else:
-    <a href="${url_rewrite("/auth/login", {"next": url_rewrite(uri)})}">Log in</a>
-    %endif
-  </div>
 
-  %if current_user:
-  <div id="visibility">
-    Visibility:
-    <a href="${query_rewrite({"visibility":"public"})}"
-       class="visibility-button\
-${(parameters.get("visibility", "public")=="public") and " selected" or "" | n}"
-       id="visibility-public"
-       >Public</a>
-    <a href="${query_rewrite({"visibility":"private"})}"
-       class="visibility-button\
-${parameters.get("visibility", "public")=="private" and " selected" or "" | n}"
-       id="visibility-private"
-       >Private</a>
-    <a href="${query_rewrite({"visibility":"pending"})}"
-       class="visibility-button\
-${parameters.get("visibility", "public")=="pending" and " selected" or "" | n}"
-       id="visibility-pending"
-       >Pending</a>
-    <a href="${query_rewrite({"visibility":"all"})}"
-       class="visibility-button\
-${parameters.get("visibility", "public")=="all" and " selected" or "" | n}"
-       id="visibility-all"
-       >All</a>
-  </div>
-  %endif
+  <nav id="nav-content">
+    <div id="nav-moderator">
+      %if current_user:
+      <a href="${url_rewrite("/user", parameters)}">Users</a>
+      <a href="${url_rewrite("/history", parameters)}">History</a>
+      %endif
+    </div>
+    
+    <div id="nav-parameters">
+      %if current_user:
+      <div id="nav-parameters-visibility" class="nav-group">
+        <label>Visibility:</label>
+        <a href="${query_rewrite({"visibility":"public"})}"
+           class="visibility-button\
+                  ${(parameters.get("visibility", "public")=="public") and " selected" or "" | n}"
+           id="visibility-public"
+           >Public</a
+                     ><a href="${query_rewrite({"visibility":"private"})}"
+           class="visibility-button\
+                  ${parameters.get("visibility", "public")=="private" and " selected" or "" | n}"
+           id="visibility-private"
+           >Private</a
+                      ><a href="${query_rewrite({"visibility":"pending"})}"
+           class="visibility-button\
+                  ${parameters.get("visibility", "public")=="pending" and " selected" or "" | n}"
+           id="visibility-pending"
+           >Pending</a
+                      ><a href="${query_rewrite({"visibility":"all"})}"
+           class="visibility-button\
+                  ${parameters.get("visibility", "public")=="all" and " selected" or "" | n}"
+           id="visibility-all"
+           >All</a>
+      </div>
+
+      <div id="nav-parameters-view" class="nav-group">
+        <label>View:</label>
+        <a href="${query_rewrite({"view":"browse"})}"
+           class="view-button\
+                  ${(parameters.get("view", "browse")=="browse") and " selected" or "" | n}"
+           id="view-browse"
+           >Browse</a
+                     ><a href="${query_rewrite({"view":"edit"})}"
+           class="view-button\
+                  ${parameters.get("view", "browse")=="edit" and " selected" or "" | n}"
+           id="view-edit"
+           >Edit</a>
+      </div>
+      %endif
+    </div>
+  </nav>
 
   <div id="page">
     ${self.page()}

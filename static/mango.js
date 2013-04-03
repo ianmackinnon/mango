@@ -260,10 +260,6 @@ var m = {
   initHome: function (mapView) {
     $("#mango-map-box").append(m.template("home-map-legend.html"));
 
-    // Z-index fails on Google Maps markers, event with optimization
-    // disabled. Rendering orgs after events seems to make them render
-    // below.
-
     var eventCollection = new window.EventCollection();
     var eventCollectionView = new window.EventCollectionView({
       collection: eventCollection,
@@ -271,30 +267,31 @@ var m = {
     });
     eventCollection.fetch({
       data: {
-        view: "marker"
+        mapView: "marker"
       },
       success: function(collection, response) {
         eventCollectionView.initialize();
         eventCollectionView.render(true);
-        var orgCollection = new window.OrgCollection();
-        var orgCollectionView = new window.OrgCollectionView({
-          collection: orgCollection,
-          mapView: mapView
-        });
-        orgCollection.fetch({
-          data: {
-            view: "marker"
-          },
-          success: function(collection, response) {
-            orgCollectionView.initialize();
-            orgCollectionView.render(true);
-          },
-          error: function (collection, response) {
-            if (response.statusText !== "abort") {
-              console.log("error", collection, response);
-            }
-          }
-        });
+      },
+      error: function (collection, response) {
+        if (response.statusText !== "abort") {
+          console.log("error", collection, response);
+        }
+      }
+    });
+
+    var orgCollection = new window.OrgCollection();
+    var orgCollectionView = new window.OrgCollectionView({
+      collection: orgCollection,
+      mapView: mapView
+    });
+    orgCollection.fetch({
+      data: {
+        mapView: "marker"
+      },
+      success: function(collection, response) {
+        orgCollectionView.initialize();
+        orgCollectionView.render(true);
       },
       error: function (collection, response) {
         if (response.statusText !== "abort") {
@@ -684,8 +681,10 @@ var m = {
       preview.html(m.filter.markdown(value));
       m.convert_inline_links($(".description.markdown-preview"));
     };
-    m.on_change(text.input, "org-form" + "_" + "text", on_change, 500);
-    on_change(text.input.val());
+    if (text) {
+      m.on_change(text.input, "org-form" + "_" + "text", on_change, 500);
+      on_change(text.input.val());
+    }
   },
 
   eventMarkdown: function () {
@@ -696,8 +695,10 @@ var m = {
       preview.html(m.filter.markdown(value));
       m.convert_inline_links($(".description.markdown-preview"));
     };
-    m.on_change(text.input, "event-form" + "_" + "text", on_change, 500);
-    on_change(text.input.val());
+    if (text) {
+      m.on_change(text.input, "event-form" + "_" + "text", on_change, 500);
+      on_change(text.input.val());
+    }
   },
 
   argumentCheckbox: function(value) {

@@ -152,7 +152,7 @@ class BaseOrgHandler(BaseHandler):
                                location=None,
                                visibility=None,
                                offset=None,
-                               view="org"):
+                               map_view="entity"):
 
         org_alias_query = self._get_org_alias_search_query(
             name=name,
@@ -194,7 +194,7 @@ class BaseOrgHandler(BaseHandler):
             "location": location and location.to_obj(),
             }
 
-        if (view == "marker" or
+        if (map_view == "marker" or
             org_alias_address_query.count() > max_address_per_page * max_address_pages
             ):
             org_packet["marker_list"] = []
@@ -221,14 +221,17 @@ class BaseOrgHandler(BaseHandler):
 
             org_packet["org_list"] = []
             for org_id, data in orgs.items():
-                data["address_obj_list"].sort(
+                org = data["org"]
+                address_obj_list = data["address_obj_list"]
+                address_obj_list.sort(
                     key=lambda address_obj: address_obj.get("latitude", None),
                     reverse=True
                     )
-                org_packet["org_list"].append(data["org"].obj(
+                orgtag_obj_list = [orgtag.obj(public=True) for orgtag in org.orgtag_list_public]
+                org_packet["org_list"].append(org.obj(
                         public=bool(self.current_user),
-                        address_obj_list=data["address_obj_list"],
-                        alias=data["alias"],
+                        address_obj_list=address_obj_list,
+                        orgtag_obj_list=orgtag_obj_list,
                         ))
 
         return org_packet

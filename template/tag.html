@@ -35,7 +35,7 @@ if obj:
 
 %>
 
-  %if current_user:
+  %if current_user and (parameters.get("view", None) == "edit"):
   <div class="box left" id="tag-form">
     <form
        class="mango"
@@ -121,7 +121,8 @@ if obj:
 %if "note_list" in obj:
 ${self.mini.render_note_section(obj["note_list"],
     obj["url"] + "/note", obj["url"],
-    note_search, note_order, unlink_url=obj["url"]
+    note_search, note_order, unlink_url=obj["url"],
+    parameters=parameters
 )}
 %endif
 %endif

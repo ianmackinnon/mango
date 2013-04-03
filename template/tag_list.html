@@ -21,7 +21,7 @@
       <input type="submit">
     </div>
   </form>
-  %if current_user:
+  %if current_user and (parameters.get("view", None) == "edit"):
   <div class="actions">
     <a
        class="action"
