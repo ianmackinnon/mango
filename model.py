@@ -925,9 +925,23 @@ class Event(Base, MangoEntity, NotableEntity):
 
 
 
+class AddressExtension(MapperExtension):
+    def _sanitise(self, instance):
+        instance.postal = Address.sanitise_address(instance.postal)
+        instance.lookup = Address.sanitise_address(instance.lookup)
+
+    def before_insert(self, mapper, connection, instance):
+        self._sanitise(instance)
+
+    def before_update(self, mapper, connection, instance):
+        self._sanitise(instance)
+
+
+
 class Address(Base, MangoEntity, NotableEntity):
     __tablename__ = 'address'
     __table_args__ = {'sqlite_autoincrement':True}
+    __mapper_args__ = {'extension': AddressExtension()}
 
     address_id = Column(Integer, primary_key=True)
 
@@ -1002,9 +1016,9 @@ class Address(Base, MangoEntity, NotableEntity):
                  longitude=None, latitude=None,
                  moderation_user=None, public=None):
 
-        self.postal = postal and self.sanitise_address(postal)
+        self.postal = postal
         self.source = source
-        self.lookup = lookup and self.sanitise_address(lookup)
+        self.lookup = lookup
         self.manual_longitude = manual_longitude
         self.manual_latitude = manual_latitude
         self.longitude = longitude
@@ -1099,6 +1113,8 @@ class Address(Base, MangoEntity, NotableEntity):
 
     @staticmethod
     def sanitise_address(address, allow_commas=True):
+        if not address:
+            return address
         address = re.sub("(\r|\n)+", "\n", address)
         address = re.sub("(^|\n)[\s,]+", "\n", address)
         address = re.sub("[\s,]+($|\n)", "\n", address)
@@ -1229,7 +1245,7 @@ class Orgtag(Base, MangoEntity, NotableEntity):
         UniqueConstraint('base_short'),    
         {'sqlite_autoincrement':True}
         )
-    __mapper_args__ = {'extension':TagExtension()}
+    __mapper_args__ = {'extension': TagExtension()}
 
     orgtag_id = Column(Integer, primary_key=True)
 
@@ -1364,7 +1380,7 @@ class Eventtag(Base, MangoEntity, NotableEntity):
         UniqueConstraint('base_short'),    
         {'sqlite_autoincrement':True}
         )
-    __mapper_args__ = {'extension':TagExtension()}
+    __mapper_args__ = {'extension': TagExtension()}
 
     eventtag_id = Column(Integer, primary_key=True)
 
