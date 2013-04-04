@@ -7,7 +7,7 @@
 <h1>
   %if obj:
   <a
-     href="${url_rewrite(obj["url"], parameters)}"
+     href="${url_rewrite(obj["url"])}"
      >${obj["name"]}</a>
   %else:
   New Organisation
@@ -40,7 +40,7 @@
       %if current_user and (parameters.get("view", None) == "edit"):
       <div class="actions">
         <a
-           href="${url_rewrite("%s/event" % obj["url"], parameters)}"
+           href="${url_rewrite("%s/event" % obj["url"])}"
            class="action"
            >Edit events</a>
       </div>
@@ -60,11 +60,11 @@
     <!-- For any non-moderators -->
     <p>No events yet.
     <a
-       href="${url_rewrite("/creative-action.php", parameters)}"
+       href="${url_rewrite("/creative-action.php")}"
        >Learn more about organising your own</a>,
     then 
     <a
-       href="${url_rewrite("/submit.php", parameters)}"
+       href="${url_rewrite("/submit.php")}"
        >tell us about it</a>!</p>
     %endif
     %endif
@@ -80,7 +80,7 @@
       %if current_user and (parameters.get("view", None) == "edit"):
       <div class="actions">
         <a
-           href="${url_rewrite("%s/tag" % obj["url"], parameters)}"
+           href="${url_rewrite("%s/tag" % obj["url"])}"
            class="action"
            >Edit tags</a>
       </div>
@@ -126,7 +126,7 @@ if None in path_keys:
     %if current_user and (parameters.get("view", None) == "edit"):
     <form
        class="mango"
-       action="${url_rewrite(obj and obj["url"] or '/organisation', parameters)}"
+       action="${url_rewrite(obj and obj["url"] or '/organisation')}"
        method="post"
        >
       <input name="_xsrf" type="hidden" value="${xsrf}">
@@ -163,7 +163,7 @@ if None in path_keys:
     %if obj:
     <form
        class="mango"
-       action="${url_rewrite(obj["url"], parameters)}"
+       action="${url_rewrite(obj["url"])}"
        method="post"
        >
       <input name="_xsrf" type="hidden" value="${xsrf}">
@@ -196,7 +196,7 @@ if None in path_keys:
       %if current_user and (parameters.get("view", None) == "edit"):
       <div class="actions">
         <a
-           href="${url_rewrite("%s/address" % obj["url"], parameters)}"
+           href="${url_rewrite("%s/address" % obj["url"])}"
            class="action"
            >Add address</a>
       </div>
@@ -221,7 +221,7 @@ if None in path_keys:
       %if current_user and (parameters.get("view", None) == "edit"):
       <div class="actions">
         <a
-           href="${url_rewrite("%s/alias" % obj["url"], parameters)}"
+           href="${url_rewrite("%s/alias" % obj["url"])}"
            class="action"
            >Edit aliases</a>
       </div>

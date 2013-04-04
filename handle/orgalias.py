@@ -17,7 +17,7 @@ class BaseOrgaliasHandler(BaseHandler):
         query = self.orm.query(Orgalias)\
             .filter_by(orgalias_id=orgalias_id)
 
-        if not self.current_user:
+        if not self.moderator:
             query = query \
                 .filter_by(public=True)
 
@@ -44,7 +44,7 @@ class BaseOrgaliasHandler(BaseHandler):
 class OrgaliasHandler(BaseOrgaliasHandler):
     @authenticated
     def get(self, orgalias_id_string):
-        public = bool(self.current_user)
+        public = self.moderator
 
         options = (
                 joinedload("org"),
@@ -54,7 +54,7 @@ class OrgaliasHandler(BaseOrgaliasHandler):
 
         obj = orgalias.obj(
             public=public,
-            org_obj = orgalias.org.obj(public=public),
+            org_obj=orgalias.org.obj(public=public),
             )
 
         if self.accept_type("json"):
@@ -75,7 +75,7 @@ class OrgaliasHandler(BaseOrgaliasHandler):
         orgalias = self._get_orgalias(orgalias_id_string)
         self.orm.delete(orgalias)
         self.orm_commit()
-        self.redirect_next("/organisation")
+        return self.redirect_next("/organisation")
 
     @authenticated
     def put(self, orgalias_id_string):
@@ -84,11 +84,10 @@ class OrgaliasHandler(BaseOrgaliasHandler):
 
         if orgalias.name == name and \
                 orgalias.public == public:
-            self.redirect_next(orgalias.url)
-            return
+            return self.redirect_next(orgalias.url)
             
         orgalias.name = name
         orgalias.public = public
         orgalias.moderation_user = self.current_user
         self.orm_commit()
-        self.redirect_next(orgalias.url)
+        return self.redirect_next(orgalias.url)

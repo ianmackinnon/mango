@@ -4,8 +4,8 @@
 
 <%def name="page()">
 <h1>${status_code}: ${status_message}</h1>
-<p>"${message}"</p>
-<p>Use the 'back' button of your browser to return to a form.</p>
+<p>${message and message or ""}</p>
+<p>Use the 'back' button of your browser to return.</p>
 </%def>
 
 </body>

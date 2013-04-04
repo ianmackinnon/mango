@@ -118,7 +118,7 @@ class BaseTagHandler(BaseHandler):
         tag_list = []
         for tag, entity_count in entity_count_list:
             tag_list.append(tag.obj(**{
-                    "public": bool(self.current_user),
+                    "public": self.moderator,
                     entity_len: entity_count,
                     }))
 

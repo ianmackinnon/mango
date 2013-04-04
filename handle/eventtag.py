@@ -26,7 +26,7 @@ class BaseEventtagHandler(BaseTagHandler):
         query = self.orm.query(Eventtag)\
             .filter_by(eventtag_id=eventtag_id)
 
-        if not self.current_user:
+        if not self.moderator:
             query = query \
                 .filter_by(public=True)
 
@@ -62,7 +62,7 @@ class BaseEventtagHandler(BaseTagHandler):
         eventtag_list = []
         for eventtag, event_count in eventtag_and_event_count_list:
             eventtag_list.append(eventtag.obj(
-                    public=bool(self.current_user),
+                    public=self.moderator,
                     event_len=event_count,
                     ))
         return eventtag_list
@@ -137,7 +137,7 @@ class EventtagHandler(BaseEventtagHandler,
         note_order = self.get_argument_order("note_order", None)
         note_offset = self.get_argument_int("note_offset", None)
 
-        public = bool(self.current_user)
+        public = self.moderator
 
         eventtag = self._get_eventtag(eventtag_id_string)
 
@@ -202,16 +202,14 @@ class EventtagNoteListHandler(BaseEventtagHandler, BaseNoteHandler):
                     )
         eventtag.note_list.append(note)
         self.orm_commit()
-        self.redirect_next(eventtag.url)
+        return self.redirect_next(eventtag.url)
 
     @authenticated
     def get(self, eventtag_id_string): 
-        public = bool(self.current_user)
-
         eventtag = self._get_eventtag(eventtag_id_string)
 
         obj = eventtag.obj(
-            public=public,
+            public=self.moderator,
             )
         self.next = eventtag.url
         self.render(
@@ -229,7 +227,7 @@ class EventtagNoteHandler(BaseEventtagHandler, BaseNoteHandler):
         if note not in eventtag.note_list:
             eventtag.note_list.append(note)
             self.orm_commit()
-        self.redirect_next(eventtag.url)
+        return self.redirect_next(eventtag.url)
 
     @authenticated
     def delete(self, eventtag_id_string, note_id_string):
@@ -238,7 +236,7 @@ class EventtagNoteHandler(BaseEventtagHandler, BaseNoteHandler):
         if note in eventtag.note_list:
             eventtag.note_list.remove(note)
             self.orm_commit()
-        self.redirect_next(eventtag.url)
+        return self.redirect_next(eventtag.url)
 
 
 

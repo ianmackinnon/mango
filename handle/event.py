@@ -141,7 +141,7 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
         note_order = self.get_argument_order("note_order", None)
         note_offset = self.get_argument_int("note_offset", None)
 
-        public = bool(self.current_user)
+        public = self.moderator
 
         event = self._get_event(event_id_string)
 
@@ -191,10 +191,9 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
 class EventAddressListHandler(BaseEventHandler, BaseAddressHandler):
     @authenticated
     def get(self, event_id_string):
-        public = bool(self.current_user)
         event = self._get_event(event_id_string)
         obj = event.obj(
-            public=public,
+            public=self.moderator,
             )
         self.render(
             'address.html',
@@ -220,7 +219,7 @@ class EventAddressListHandler(BaseEventHandler, BaseAddressHandler):
         address.geocode()
         event.address_list.append(address)
         self.orm_commit()
-        self.redirect_next(event.url)
+        return self.redirect_next(event.url)
 
 
 
@@ -237,14 +236,13 @@ class EventNoteListHandler(BaseEventHandler, BaseNoteHandler):
                     )
         event.note_list.append(note)
         self.orm_commit()
-        self.redirect_next(event.url)
+        return self.redirect_next(event.url)
 
     @authenticated
     def get(self, event_id_string):
         event = self._get_event(event_id_string)
-        public = bool(self.current_user)
         obj = event.obj(
-            public=public,
+            public=self.moderator,
             )
         self.next = event.url
         self.render(
@@ -262,7 +260,7 @@ class EventAddressHandler(BaseEventHandler, BaseAddressHandler):
         if address not in event.address_list:
             event.address_list.append(address)
             self.orm_commit()
-        self.redirect_next(event.url)
+        return self.redirect_next(event.url)
 
     @authenticated
     def delete(self, event_id_string, address_id_string):
@@ -271,7 +269,7 @@ class EventAddressHandler(BaseEventHandler, BaseAddressHandler):
         if address in event.address_list:
             event.address_list.remove(address)
             self.orm_commit()
-        self.redirect_next(event.url)
+        return self.redirect_next(event.url)
 
 
 
@@ -283,7 +281,7 @@ class EventNoteHandler(BaseEventHandler, BaseNoteHandler):
         if note not in event.note_list:
             event.note_list.append(note)
             self.orm_commit()
-        self.redirect_next(event.url)
+        return self.redirect_next(event.url)
 
     @authenticated
     def delete(self, event_id_string, note_id_string):
@@ -292,7 +290,7 @@ class EventNoteHandler(BaseEventHandler, BaseNoteHandler):
         if note in event.note_list:
             event.note_list.remove(note)
             self.orm_commit()
-        self.redirect_next(event.url)
+        return self.redirect_next(event.url)
 
 
 
@@ -309,7 +307,7 @@ class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
         else:
             eventtag_list=event.eventtag_list_public
 
-        public = bool(self.current_user)
+        public = self.moderator
 
         eventtag_list = [eventtag.obj(public=public) for eventtag in eventtag_list]
 
@@ -348,7 +346,7 @@ class EventEventtagHandler(BaseEventHandler, BaseEventtagHandler):
         if eventtag not in event.eventtag_list:
             event.eventtag_list.append(eventtag)
             self.orm_commit()
-        self.redirect_next(event.url)
+        return self.redirect_next(event.url)
 
     @authenticated
     def delete(self, event_id_string, eventtag_id_string):
@@ -357,7 +355,7 @@ class EventEventtagHandler(BaseEventHandler, BaseEventtagHandler):
         if eventtag in event.eventtag_list:
             event.eventtag_list.remove(eventtag)
             self.orm_commit()
-        self.redirect_next(event.url)
+        return self.redirect_next(event.url)
 
 
 
@@ -376,7 +374,7 @@ class EventOrgListHandler(BaseEventHandler, BaseOrgHandler):
         else:
             org_list=event.org_list_public
             
-        public = bool(self.current_user)
+        public = self.moderator
 
         org_list = [org.obj(public=public) for org in org_list]
 
@@ -401,9 +399,9 @@ class EventOrgListHandler(BaseEventHandler, BaseOrgHandler):
         org_count = org_alias_name_query.count()
         for org, alias in org_alias_name_query[:20]:
             org_list.append(org.obj(
-                    public=bool(self.current_user),
+                    public=public,
                     alias=alias and alias.obj(
-                        public=bool(self.current_user),
+                        public=public,
                         ),
                     ))
 
@@ -426,7 +424,7 @@ class EventOrgHandler(BaseEventHandler, BaseOrgHandler):
         if org not in event.org_list:
             event.org_list.append(org)
             self.orm_commit()
-        self.redirect_next(event.url)
+        return self.redirect_next(event.url)
 
     @authenticated
     def delete(self, event_id_string, org_id_string):
@@ -435,7 +433,7 @@ class EventOrgHandler(BaseEventHandler, BaseOrgHandler):
         if org in event.org_list:
             event.org_list.remove(org)
             self.orm_commit()
-        self.redirect_next(event.url)
+        return self.redirect_next(event.url)
 
 
 
@@ -458,7 +456,9 @@ class EventDuplicateHandler(BaseEventHandler):
         event2 = Event(
             name, start_date, end_date,
             description, start_time, end_time,
-            moderation_user=self.current_user, public=public)
+            moderation_user=self.current_user,
+            public=public
+            )
         self.orm.add(event2)
 
         for address in event.address_list:
@@ -469,7 +469,8 @@ class EventDuplicateHandler(BaseEventHandler):
                 manual_longitude=address.manual_longitude,
                 manual_latitude=address.manual_latitude,
                 moderation_user=self.current_user,
-                public=address.public)
+                public=address.public
+                )
             address2.geocode()
             event2.address_list.append(address2)
 
@@ -481,11 +482,12 @@ class EventDuplicateHandler(BaseEventHandler):
                 note.text,
                 note.source,
                 moderation_user=self.current_user,
-                public=note.public)
+                public=note.public
+                )
             event2.note_list.append(note2)
 
         for org in event.org_list:
             event2.org_list.append(org)
 
         self.orm_commit()
-        self.redirect_next(event2.url)
+        return self.redirect_next(event2.url)

@@ -12,17 +12,17 @@
 
 <ul id="all_users">
   % for user in user_list:
-  <li class="user">
+  <li class="user${current_user == user and ' current' or ''}">
     <% hash = user.auth.gravatar_hash %>
     <a
-       href="${url_rewrite("/user/%d" % user.user_id, parameters)}"
+       href="${url_rewrite("/user/%d" % user.user_id)}"
        >
       <img width="24px" height="24px"
 	   src="http://gravatar.com/avatar/${hash}?d=identicon&s=24">
       ${user.name}
     </a>
-    %if current_user == user:
-    (you)
+    %if user.moderator:
+    | Moderator
     %endif
   </li>
   % endfor

@@ -88,6 +88,12 @@ mango input[type="submit"]:hover,
     line-height: 22px;
 }
 
+#mango table
+{
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
 form.mango label
 {
     border: 1px solid #aaa;
@@ -504,7 +510,7 @@ form.mango input[type="checkbox"]
 
 #mango li.user
 {
-    width: 200px;
+    width: 240px;
 
     margin: 6px;
     border: 1px solid #ccc;
@@ -512,6 +518,11 @@ form.mango input[type="checkbox"]
     padding: 0;
 
     line-height: 24px;
+}
+
+#mango li.user.current
+{
+    background: #ddd;
 }
 
 #mango li.user,
@@ -523,6 +534,63 @@ form.mango input[type="checkbox"]
 #mango li.user img
 {
     border-right: 1px solid #ccc;
+}
+
+#mango div.user-icon
+{
+    float: left;
+
+    width: 120px;
+
+    margin: 6px;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    padding: 6px;
+
+    text-align: center;
+}
+#mango div.user-icon p
+{
+    text-align: center;
+}
+
+#mango div.user-introduction
+{
+    float: right;
+    width: 600px;
+
+    margin-top: 6px;
+    border: 1px solid #ccc;
+    padding: 6px;
+}
+
+#mango div.user-entities
+{
+    clear: both;
+    margin-top: 6px;
+    border: 1px solid rgba(0, 0, 0, 0);
+    padding: 6px;
+}
+
+#mango div.user-entities > div.org,
+#mango div.user-entities > div.event
+{
+    width: 350px;
+
+    margin-top: 6px;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    padding: 6px;
+}
+
+#mango div.user-entities > div.org
+{
+    float: left;
+}
+
+#mango div.user-entities > div.event
+{
+    float: right;
 }
 
 /* Entity */
@@ -933,17 +1001,41 @@ div.ui-timepicker td a.ui-state-active
     padding: 4px;
 }
 
-/* history */
+/* History */
 
 #mango table.history
 {
-    margin: 0 auto;
+    margin: 0;
+    table-layout: fixed;
 }
 
 #mango table.history td
 {
-    padding: 0 20px;
+    padding: 2px 6px;
+    
+    line-height: 24px;
 }
+
+#mango table.history th.type {width: 100px;}
+#mango table.history th.id {width: 100px;}
+#mango table.history th.content {width: 261px;}
+#mango table.history th.user {width: 150px;}
+#mango table.history th.date {width: 150px;}
+
+#mango table.history td.content
+{
+    display: inline-block;
+    width: 311px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+#mango table.history td.user img
+{
+    vertical-align: bottom;
+}
+
 
 /* Event markdown */
 

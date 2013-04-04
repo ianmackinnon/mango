@@ -17,7 +17,7 @@ New ${type_title} Tag
 <h1>
 %if obj:
 <a
-   href="${url_rewrite(obj["url"], parameters)}"
+   href="${url_rewrite(obj["url"])}"
    >${obj["name"]}</a>
 %else:
 New ${type_title} Tag
@@ -39,7 +39,7 @@ if obj:
   <div class="box left" id="tag-form">
     <form
        class="mango"
-       action="${url_rewrite(action, parameters)}"
+       action="${url_rewrite(action)}"
        method="post"
        >
       <input name="_xsrf" type="hidden" value="${xsrf}">
@@ -76,7 +76,7 @@ if obj:
 
     %if current_user and obj and type_entity_list in obj and not obj[type_entity_list]:
     <form
-       action="${url_rewrite(obj["url"], parameters)}"
+       action="${url_rewrite(obj["url"])}"
        method="post"
        >
       <input name="_xsrf" type="hidden" value="${xsrf}">

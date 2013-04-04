@@ -29,7 +29,7 @@ class BaseAddressHandler(BaseHandler):
             query = query \
                 .options(*options)
 
-        if not self.current_user:
+        if not self.moderator:
             query = query \
                 .filter_by(public=True)
 
@@ -58,11 +58,11 @@ class AddressHandler(BaseAddressHandler):
         note_order = self.get_argument_order("note_order", None)
         note_offset = self.get_argument_int("note_offset", None)
 
-        public = bool(self.current_user)
+        public = self.moderator
 
         address = self._get_address(address_id_string)
 
-        if self.deep_visible():
+        if self.moderator and self.deep_visible():
             org_list=address.org_list
             event_list=address.event_list
         else:
@@ -114,8 +114,7 @@ class AddressHandler(BaseAddressHandler):
                 address.manual_longitude == manual_longitude and \
                 address.manual_latitude == manual_latitude and \
                 address.public == public:
-            self.redirect_next(address.url)
-            return
+            return self.redirect_next(address.url)
             
         address.postal = postal
         address.source = source
@@ -127,7 +126,7 @@ class AddressHandler(BaseAddressHandler):
 
         address.geocode()
         self.orm_commit()
-        self.redirect_next(address.url)
+        return self.redirect_next(address.url)
 
 
 
@@ -164,7 +163,7 @@ class AddressListHandler(BaseAddressHandler):
         today = datetime.datetime.now().date()
         event_list = event_list.filter(Event.start_date >= today)
 
-        if not self.deep_visible():
+        if not (self.moderator and self.deep_visible()):
             org_list = org_list.filter(Org.public==True)
             event_list = event_list.filter(Event.public==True)
         
@@ -192,7 +191,9 @@ class AddressLookupHandler(BaseAddressHandler):
         address = Address(postal, None, lookup)
         address.geocode()
 
-        self.write_json(address.obj(public=bool(self.current_user)))
+        self.write_json(address.obj(
+                public=self.moderator,
+                ))
 
 
 
@@ -209,15 +210,13 @@ class AddressNoteListHandler(BaseAddressHandler, BaseNoteHandler):
                     )
         address.note_list.append(note)
         self.orm_commit()
-        self.redirect_next(address.url)
+        return self.redirect_next(address.url)
 
     def get(self, address_id_string):
         address = self._get_address(address_id_string)
 
-        public = bool(self.current_user)
-
         obj = address.obj(
-            public=public,
+            public=self.moderator,
             )
 
         self.render(
@@ -235,7 +234,7 @@ class AddressNoteHandler(BaseAddressHandler, BaseNoteHandler):
         if note not in address.note_list:
             address.note_list.append(note)
             self.orm_commit()
-        self.redirect_next(address.url)
+        return self.redirect_next(address.url)
 
     @authenticated
     def delete(self, address_id_string, note_id_string):
@@ -244,4 +243,4 @@ class AddressNoteHandler(BaseAddressHandler, BaseNoteHandler):
         if note in address.note_list:
             address.note_list.remove(note)
             self.orm_commit()
-        self.redirect_next(address.url)
+        return self.redirect_next(address.url)

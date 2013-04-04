@@ -6,7 +6,7 @@
 
 <h1>
   <a
-     href="${url_rewrite(obj["url"], parameters)}"
+     href="${url_rewrite(obj["url"])}"
      >${obj["name"]}</a> | Edit aliases
 </h1>
 
@@ -33,11 +33,11 @@
     <h3>Organisation Alias</h3>
     
     <form
-       action="${url_rewrite("%s/alias" % obj["url"] , parameters)}"
+       action="${url_rewrite("%s/alias" % obj["url"])}"
        method="post"
        >
       <input name="_xsrf" type="hidden" value="${xsrf}">
-      <input name="next" type="hidden" value="${url_rewrite("%s/alias" % obj["url"], parameters)}">\
+      <input name="next" type="hidden" value="${url_rewrite("%s/alias" % obj["url"], parameters={})}">\
       <label name="name">
 	<span>Name</span>
 	<span class="requirement">(required)</span>

@@ -126,7 +126,7 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
     def get(self, org_id_string):
         note_search, note_order, note_offset = self.get_note_arguments()
 
-        public = bool(self.current_user)
+        public = self.moderator
 
         org = self._get_org(org_id_string)
 
@@ -180,11 +180,10 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
 class OrgAddressListHandler(BaseOrgHandler, BaseAddressHandler):
     @authenticated
     def get(self, org_id_string):
-        public = bool(self.current_user)
         org = self._get_org(org_id_string)
 
         obj = org.obj(
-            public=public,
+            public=self.moderator,
             )
 
         self.render(
@@ -211,7 +210,7 @@ class OrgAddressListHandler(BaseOrgHandler, BaseAddressHandler):
         address.geocode()
         org.address_list.append(address)
         self.orm_commit()
-        self.redirect_next(org.url)
+        return self.redirect_next(org.url)
 
 
 
@@ -223,7 +222,7 @@ class OrgAddressHandler(BaseOrgHandler, BaseAddressHandler):
         if address not in org.address_list:
             org.address_list.append(address)
             self.orm_commit()
-        self.redirect_next(org.url)
+        return self.redirect_next(org.url)
 
     @authenticated
     def delete(self, org_id_string, address_id_string):
@@ -232,7 +231,7 @@ class OrgAddressHandler(BaseOrgHandler, BaseAddressHandler):
         if address in org.address_list:
             org.address_list.remove(address)
             self.orm_commit()
-        self.redirect_next(org.url)
+        return self.redirect_next(org.url)
 
 
 
@@ -249,14 +248,13 @@ class OrgNoteListHandler(BaseOrgHandler, BaseNoteHandler):
                     )
         org.note_list.append(note)
         self.orm_commit()
-        self.redirect_next(org.url)
+        return self.redirect_next(org.url)
 
     @authenticated
     def get(self, org_id_string):
         org = self._get_org(org_id_string)
-        public = bool(self.current_user)
         obj = org.obj(
-            public=public,
+            public=self.moderator,
             )
         self.next = org.url
         self.render(
@@ -274,7 +272,7 @@ class OrgNoteHandler(BaseOrgHandler, BaseNoteHandler):
         if note not in org.note_list:
             org.note_list.append(note)
             self.orm_commit()
-        self.redirect_next(org.url)
+        return self.redirect_next(org.url)
 
     @authenticated
     def delete(self, org_id_string, note_id_string):
@@ -283,7 +281,7 @@ class OrgNoteHandler(BaseOrgHandler, BaseNoteHandler):
         if note in org.note_list:
             org.note_list.remove(note)
             self.orm_commit()
-        self.redirect_next(org.url)
+        return self.redirect_next(org.url)
 
 
 
@@ -300,7 +298,7 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
         else:
             orgtag_list=org.orgtag_list_public
 
-        public = bool(self.current_user)
+        public = self.moderator
 
         orgtag_list = [orgtag.obj(public=public) for orgtag in orgtag_list]
 
@@ -341,7 +339,7 @@ class OrgOrgtagHandler(BaseOrgHandler, BaseOrgtagHandler):
         if orgtag not in org.orgtag_list:
             org.orgtag_list.append(orgtag)
             self.orm_commit()
-        self.redirect_next(org.url)
+        return self.redirect_next(org.url)
 
     @authenticated
     def delete(self, org_id_string, orgtag_id_string):
@@ -350,7 +348,7 @@ class OrgOrgtagHandler(BaseOrgHandler, BaseOrgtagHandler):
         if orgtag in org.orgtag_list:
             org.orgtag_list.remove(orgtag)
             self.orm_commit()
-        self.redirect_next(org.url)
+        return self.redirect_next(org.url)
 
 
 
@@ -366,7 +364,7 @@ class OrgOrgaliasListHandler(BaseOrgHandler, BaseOrgtagHandler):
         else:
             orgalias_list=org.orgalias_list_public
 
-        public = bool(self.current_user)
+        public = self.moderator
 
         orgalias_list = [orgalias.obj(public=public) for orgalias in orgalias_list]
 
@@ -398,7 +396,7 @@ class OrgOrgaliasListHandler(BaseOrgHandler, BaseOrgtagHandler):
         orgalias = Orgalias.get(self.orm, name, org, self.current_user, True)
         self.orm_commit()
 
-        self.redirect_next(org.url)
+        return self.redirect_next(org.url)
 
 
 
@@ -417,7 +415,7 @@ class OrgEventListHandler(BaseOrgHandler, BaseEventHandler):
         else:
             event_list=org.event_list_public
             
-        public = bool(self.current_user)
+        public = self.moderator
 
         event_list = [event.obj(public=public) for event in event_list]
 
@@ -442,7 +440,7 @@ class OrgEventListHandler(BaseOrgHandler, BaseEventHandler):
         event_count = event_name_query.count()
         for event in event_name_query[:20]:
             event_list.append(event.obj(
-                    public=bool(self.current_user)
+                    public=public,
                     ))
 
         self.next = org.url
@@ -464,7 +462,7 @@ class OrgEventHandler(BaseOrgHandler, BaseEventHandler):
         if event not in org.event_list:
             org.event_list.append(event)
             self.orm_commit()
-        self.redirect_next(org.url)
+        return self.redirect_next(org.url)
 
     @authenticated
     def delete(self, org_id_string, event_id_string):
@@ -473,7 +471,7 @@ class OrgEventHandler(BaseOrgHandler, BaseEventHandler):
         if event in org.event_list:
             org.event_list.remove(event)
             self.orm_commit()
-        self.redirect_next(org.url)
+        return self.redirect_next(org.url)
 
 
 
@@ -514,7 +512,7 @@ class OrgListTaskAddressHandler(BaseOrgHandler, BaseOrgtagHandler):
 
         for org, alias in org_and_alias_list:
             obj = org.obj(
-                public=bool(self.current_user),
+                public=self.moderator,
                 alias=(alias or None)
                 )
             org_packet["org_list"].append(obj);

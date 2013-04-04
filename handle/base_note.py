@@ -18,7 +18,7 @@ class BaseNoteHandler(BaseHandler):
             query = query \
                 .options(*options)
 
-        if not self.current_user:
+        if not self.moderator:
             query = query \
                 .filter_by(public=True)
 

@@ -11,11 +11,12 @@ from base import BaseHandler, authenticated
 from model import User, Auth, Session
 
 
-class AuthLoginHandler(BaseHandler):
+class AuthRegisterHandler(BaseHandler):
     def get(self):
+        self.next = self.url_rewrite("/user/self", parameters={})
         self.render(
-            'login.html',
-            next=self.next or self.application.url_root,
+            'register.html',
+            next=self.next,
             )
 
 
@@ -34,7 +35,7 @@ class AuthLoginLocalHandler(BaseHandler):
         self.orm.add(session)
         self.orm.flush()
         self.start_session(str(session.session_id))
-        self.redirect(self.next or self.application.url_root)
+        return self.redirect_next()
 
 
 
@@ -67,7 +68,10 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
         user = User.get_from_auth(self.orm, self.openid_url, auth_name)
 
         if not user:
-            raise HTTPError(404, "No account found for %s" % auth_user["email"])
+            auth = Auth(self.openid_url, auth_name)
+            user_name = auth_user["name"]
+            user = User(auth, user_name, moderator=False)
+            self.next = "/user/%d" % user.user_id
 
         session = Session(
                 user,
@@ -79,7 +83,7 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
         self.orm.flush()
         self.start_session(str(session.session_id))
 
-        self.redirect(self.next or self.application.url_root)
+        return self.redirect_next()
 
 
 
@@ -92,7 +96,7 @@ class AuthLogoutHandler(BaseHandler):
         self.clear_cookie("_xsrf")
         if self.next and self.application.path_is_authenticated(self.next):
             self.next = self.application.url_root
-        self.redirect(self.next or self.application.url_root)
+        return self.redirect_next()
 
 
 

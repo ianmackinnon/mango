@@ -17,7 +17,7 @@
       var view = this;
 
       var onClick = function (event) {
-        var href = m.urlRoot + view.model.get("url").substr(1);
+        var href = m.urlRewrite(view.model.get("url"), m.parameters);
         window.document.location.href=href;
       };
 

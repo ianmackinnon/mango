@@ -34,7 +34,7 @@ class BaseEventHandler(BaseHandler):
             query = query \
                 .options(*options)
 
-        if not self.current_user:
+        if not self.moderator:
             query = query \
                 .filter_by(public=True)
 
@@ -189,7 +189,7 @@ class BaseEventHandler(BaseHandler):
                         }
                 if address:
                     events[event.event_id]["address_obj_list"].append(address.obj(
-                            public=bool(self.current_user),
+                            public=self.moderator,
                             general=True,
                             ))
 
@@ -203,7 +203,7 @@ class BaseEventHandler(BaseHandler):
                     )
                 eventtag_obj_list = [eventtag.obj(public=True) for eventtag in event.eventtag_list_public]
                 event_packet["event_list"].append(event.obj(
-                        public=bool(self.current_user),
+                        public=self.moderator,
                         address_obj_list=address_obj_list,
                         eventtag_obj_list=eventtag_obj_list,
                         ))

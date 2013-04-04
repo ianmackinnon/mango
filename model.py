@@ -159,6 +159,46 @@ def verify_salted_hash(plaintext, salted_hash):
 
 
 
+def get_history(session, user_id=None, limit=20, offset=0):
+    user_sql = ""
+    if (user_id):
+        user_sql = """
+where user.user_id = %d
+""" % user_id
+
+    sql = """
+select type, entity_id, entity_v_id, a_time as date, T.name, user_id, user.name as user_name, auth.gravatar_hash
+from
+  (
+  select "org" as type, org_id as entity_id, org_v_id as entity_v_id, a_time, name as name, moderation_user_id from org_v
+  union
+  select "event" as type, event_id as entity_id, event_v_id as entity_v_id, a_time, name as name, moderation_user_id from event_v
+  union
+  select "address" as type, address_id as entity_id, address_v_id as entity_v_id, a_time, postal as name, moderation_user_id from address_v
+  union
+  select "orgtag" as type, orgtag_id as entity_id, orgtag_v_id as entity_v_id, a_time, name as name, moderation_user_id from orgtag_v
+  union
+  select "eventtag" as type, eventtag_id as entity_id, eventtag_v_id as entity_v_id, a_time, name as name, moderation_user_id from eventtag_v
+  union
+  select "note" as type, note_id as entity_id, note_v_id as entity_v_id, a_time, text as name, moderation_user_id from note_v
+  ) as T 
+join user on (moderation_user_id = user_id)
+join auth using (auth_id)
+%s
+order by a_time desc
+limit %d
+offset %d
+""" % (
+        user_sql,
+        limit,
+        offset
+        )
+
+    history = session.connection().execute(sql)
+    return history
+
+
+
 class MangoEntity(object):
     def content_same(self, other):
         for name in self.content:
@@ -347,11 +387,14 @@ class User(Base):
 
     name = Column(Unicode(), nullable=False)
 
+    moderator = Column(Boolean, nullable=False, default=False)
+
     auth = relationship(Auth, backref='user_list')
 
-    def __init__(self, auth, name):
+    def __init__(self, auth, name, moderator=False):
         self.auth = auth
         self.name = unicode(name)
+        self.moderator = moderator
 
     def verify_auth_name(self, auth_name):
         return verify_hash(auth_name, self.auth.name_hash)

@@ -32,8 +32,9 @@ import mysql.mysql_init
 
 from handle.base import BaseHandler, authenticated, sha1_concat
 from handle.generate import GenerateMarkerHandler
-from handle.auth import AuthLoginHandler, AuthLoginLocalHandler, \
-    AuthLoginGoogleHandler, AuthLogoutHandler
+from handle.auth import AuthRegisterHandler, \
+    AuthLoginLocalHandler, AuthLoginGoogleHandler, \
+    AuthLogoutHandler
 from handle.user import UserHandler, UserListHandler
 from handle.home import HomeHandler
 from handle.note import NoteHandler, NoteNewHandler, NoteListHandler
@@ -249,7 +250,8 @@ class Application(tornado.web.Application):
             (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': "static"}),
 
             (r"/user", UserListHandler),
-            (r"/user/%s" % re_id , UserHandler),
+            (r"/user/%s" % re_id, UserHandler),
+            (r"/user/(self)", UserHandler),
 
             (r"/note", NoteListHandler),
             (r"/note/new", NoteNewHandler),
@@ -307,6 +309,7 @@ class Application(tornado.web.Application):
             (r"/event-tag/%s/note" % re_id, EventtagNoteListHandler),
             (r"/event-tag/%s/note/%s" % (re_id, re_id), EventtagNoteHandler),
 
+            (r"/auth/register", AuthRegisterHandler),
             (r"/auth/login", AuthLoginGoogleHandler),
             (r"/auth/login/google", AuthLoginGoogleHandler),
             (r"/auth/login/local", AuthLoginLocalHandler),

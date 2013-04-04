@@ -16,20 +16,20 @@ Address ${obj["id"]}
 %if entity:
 <h1>
   <a
-     href="${url_rewrite(entity["url"], parameters)}"
+     href="${url_rewrite(entity["url"])}"
      >${entity["name"]}</a>
   | address
 </h1>
 %elif entity_list in obj and len(obj[entity_list]) == 1:
 <h1>
   <a
-     href="${url_rewrite(obj[entity_list][0]["url"], parameters)}"
+     href="${url_rewrite(obj[entity_list][0]["url"])}"
      >${obj[entity_list][0]["name"]}</a>
   | address
 </h1>
 %else:
 <a
-   href="${url_rewrite(obj["url"], parameters)}"
+   href="${url_rewrite(obj["url"])}"
    >Address ${obj["id"]}</a>
 %endif
 </h1>
@@ -54,7 +54,7 @@ elif entity_list in obj and len(obj[entity_list]) == 1:
 %>
     <form
        class="mango"
-       action="${url_rewrite(action, parameters)}"
+       action="${url_rewrite(action)}"
        method="post"
        >
       <input name="_xsrf" type="hidden" value="${xsrf}">
@@ -62,11 +62,7 @@ elif entity_list in obj and len(obj[entity_list]) == 1:
       <input name="_method" type="hidden" value="put">
       %endif
       %if next:
-      <input
-         name="next"
-         type="hidden"
-         value="${url_rewrite(next, parameters)}"
-         >
+      <input name="next" type="hidden" value="${url_rewrite(next, parameters={})}">
       %endif
       <label name="postal"
              status="${obj and obj.get("postal", "") and 'good' or 'bad'}"

@@ -17,11 +17,11 @@ New ${type_title} Alias
 <h1>
 %if obj:
 <a
-   href="${url_rewrite(obj["org"]["url"], parameters)}"
+   href="${url_rewrite(obj["org"]["url"])}"
    >${obj["org"]["name"]}</a>
  | 
 <a
-   href="${url_rewrite(obj["url"], parameters)}"
+   href="${url_rewrite(obj["url"])}"
    >${obj["name"]}</a>
 %else:
 New ${type_title} Alias
@@ -42,7 +42,7 @@ if obj:
   %if current_user:
   <div class="box left" id="alias-form">
     <form
-       action="${url_rewrite(action, parameters)}"
+       action="${url_rewrite(action)}"
        method="post"
        >
       <input name="_xsrf" type="hidden" value="${xsrf}">
@@ -59,7 +59,7 @@ if obj:
 
     %if current_user and obj and type_entity_list in obj and not obj[type_entity_list]:
     <form
-       action="${url_rewrite(obj["url"], parameters)}"
+       action="${url_rewrite(obj["url"])}"
        method="post"
        >
       <input name="_xsrf" type="hidden" value="${xsrf}">

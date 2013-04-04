@@ -64,7 +64,7 @@ if __name__ == "__main__":
     openid_url = u"https://www.google.com/accounts/o8/id"
 
     auth = Auth(openid_url, auth_name)
-    user = User(auth, user_name)
+    user = User(auth, user_name, moderator=True)
 
     orm.add(auth)
     orm.add(user)

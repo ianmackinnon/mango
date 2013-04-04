@@ -26,7 +26,7 @@ class BaseOrgtagHandler(BaseTagHandler):
         query = self.orm.query(Orgtag)\
             .filter_by(orgtag_id=orgtag_id)
 
-        if not self.current_user:
+        if not self.moderator:
             query = query \
                 .filter_by(public=True)
 
@@ -62,7 +62,7 @@ class BaseOrgtagHandler(BaseTagHandler):
         orgtag_list = []
         for orgtag, org_count in orgtag_and_org_count_list:
             orgtag_list.append(orgtag.obj(
-                    public=bool(self.current_user),
+                    public=self.moderator,
                     org_len=org_count,
                     ))
         return orgtag_list
@@ -137,7 +137,7 @@ class OrgtagHandler(BaseOrgtagHandler,
         note_order = self.get_argument_order("note_order", None)
         note_offset = self.get_argument_int("note_offset", None)
 
-        public = bool(self.current_user)
+        public = self.moderator
 
         orgtag = self._get_orgtag(orgtag_id_string)
 
@@ -202,16 +202,14 @@ class OrgtagNoteListHandler(BaseOrgtagHandler, BaseNoteHandler):
                     )
         orgtag.note_list.append(note)
         self.orm_commit()
-        self.redirect_next(orgtag.url)
+        return self.redirect_next(orgtag.url)
 
     @authenticated
     def get(self, orgtag_id_string): 
-        public = bool(self.current_user)
-
         orgtag = self._get_orgtag(orgtag_id_string)
 
         obj = orgtag.obj(
-            public=public,
+            public=self.moderator,
             )
         self.next = orgtag.url
         self.render(
@@ -229,7 +227,7 @@ class OrgtagNoteHandler(BaseOrgtagHandler, BaseNoteHandler):
         if note not in orgtag.note_list:
             orgtag.note_list.append(note)
             self.orm_commit()
-        self.redirect_next(orgtag.url)
+        return self.redirect_next(orgtag.url)
 
     @authenticated
     def delete(self, orgtag_id_string, note_id_string):
@@ -238,7 +236,7 @@ class OrgtagNoteHandler(BaseOrgtagHandler, BaseNoteHandler):
         if note in orgtag.note_list:
             orgtag.note_list.remove(note)
             self.orm_commit()
-        self.redirect_next(orgtag.url)
+        return self.redirect_next(orgtag.url)
 
 
 

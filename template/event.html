@@ -7,7 +7,7 @@
 <h1>
   %if obj:
   <a
-     href="${url_rewrite(obj["url"], parameters)}"
+     href="${url_rewrite(obj["url"])}"
      >${obj["name"]}</a>
   %else:
   New Event
@@ -40,7 +40,7 @@
       %if current_user and (parameters.get("view", None) == "edit"):
       <div class="actions">
         <a
-           href="${url_rewrite("%s/organisation" % obj["url"], parameters)}"
+           href="${url_rewrite("%s/organisation" % obj["url"])}"
            class="action"
            >Edit organisations</a>
       </div>
@@ -70,7 +70,7 @@
       %if current_user and (parameters.get("view", None) == "edit"):
       <div class="actions">
         <a
-           href="${url_rewrite("%s/tag" % obj["url"], parameters)}"
+           href="${url_rewrite("%s/tag" % obj["url"])}"
            class="action"
            >edit tags</a>
       </div>
@@ -117,7 +117,7 @@ if None in path_keys:
     %if current_user and (parameters.get("view", None) == "edit"):
     <form
        class="mango"
-       action="${url_rewrite(obj and obj["url"] or '/event', parameters)}"
+       action="${url_rewrite(obj and obj["url"] or '/event')}"
        method="post"
        >
       <input name="_xsrf" type="hidden" value="${xsrf}">
@@ -192,7 +192,7 @@ if None in path_keys:
     %if obj:
     <form
        class="mango"
-       action="${url_rewrite(obj["url"], parameters)}"
+       action="${url_rewrite(obj["url"])}"
        method="post"
        >
       <input name="_xsrf" type="hidden" value="${xsrf}">
@@ -230,7 +230,7 @@ if None in path_keys:
       %if current_user and (parameters.get("view", None) == "edit"):
       <div class="actions">
         <a
-           href="${url_rewrite("%s/address" % obj["url"], parameters)}"
+           href="${url_rewrite("%s/address" % obj["url"])}"
            class="action"
            >Add address</a>
       </div>
@@ -253,7 +253,7 @@ if None in path_keys:
 
     <form
        class="mango"
-       action="${url_rewrite(obj["url"] + "/duplicate", parameters)}"
+       action="${url_rewrite(obj["url"] + "/duplicate")}"
        method="post"
        >
       <input name="_xsrf" type="hidden" value="${xsrf}">

@@ -8,14 +8,14 @@ import httplib
 import markdown
 import datetime
 import urlparse
-import tornado.web
-
 from urllib import urlencode
+
 from bs4 import BeautifulSoup
 from sqlalchemy import or_, not_
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
 from mako import exceptions
+from tornado.web import authenticated as tornado_authenticated, RequestHandler, HTTPError
 
 import geo
 
@@ -38,7 +38,7 @@ def sha1_concat(*parts):
 
 
 def authenticated(f):
-    decorated = tornado.web.authenticated(f)
+    decorated = tornado_authenticated(f)
     decorated.authenticated = True;
     return decorated
 
@@ -148,12 +148,12 @@ def convert_links(text, quote="\""):
 
 
 
-class BaseHandler(tornado.web.RequestHandler):
+class BaseHandler(RequestHandler):
 
     def __init__(self, *args, **kwargs):
         self.messages = []
         self.scripts = []
-        tornado.web.RequestHandler.__init__(self, *args, **kwargs)
+        RequestHandler.__init__(self, *args, **kwargs)
         self.has_javascript = bool(self.get_cookie("j"))
         self.set_parameters()
         self.next = self.get_argument("next", None)
@@ -163,7 +163,7 @@ class BaseHandler(tornado.web.RequestHandler):
         if method and self.request.method.lower() == "post":
             self.request.method = method.upper()
         try:
-            tornado.web.RequestHandler._execute(self, transforms, *args, **kwargs)
+            RequestHandler._execute(self, transforms, *args, **kwargs)
         except IOError as e:
             print 'ioerror'
             raise e
@@ -187,7 +187,7 @@ class BaseHandler(tornado.web.RequestHandler):
                                 )
                     self.finish()
                     return
-        tornado.web.RequestHandler.write_error(self, status_code, **kwargs)
+        RequestHandler.write_error(self, status_code, **kwargs)
 
     def content_type(self, name):
         if "Content-Type" in self.request.headers:
@@ -245,15 +245,40 @@ class BaseHandler(tornado.web.RequestHandler):
         uri += "?" + urlencode(arguments, True)
         return uri
 
-    def url_rewrite(self, uri, options=None):
+    def url_rewrite(self, uri, options=None, parameters=None, next_=None):
+        """
+        Rewrites URLs to:
+            prepend url_root to absolute paths if it's not already there
+            add parameters, optionally overwritten.
+
+        uri:      an URL without the url root
+        options:  optional parameters to write over self.parameters
+
+        query priority:
+            next_
+            options
+            uri query string
+            parameters
+        """
+
         if options is None:
             options = {}
+        
+        if parameters is None:
+            parameters = self.parameters
+        
         scheme, netloc, path, query, fragment = urlparse.urlsplit(uri)
-
-        arguments = urlparse.parse_qs(query, keep_blank_values=False)
 
         if path.startswith("/"):
             path = self.application.url_root + path[1:]
+
+        arguments = parameters.copy()
+
+        for key, value in urlparse.parse_qs(query, keep_blank_values=False).items():
+            arguments[key] = value
+            if value is None:
+                del arguments[key]
+                continue
 
         for key, value in options.items():
             arguments[key] = value
@@ -261,13 +286,31 @@ class BaseHandler(tornado.web.RequestHandler):
                 del arguments[key]
                 continue
 
+        if next_:
+            arguments["next"] = self.url_rewrite(next_, parameters={})
+
         query = urlencode(arguments, True)
 
         uri = urlparse.urlunsplit((scheme, netloc, path, query, fragment))
         return uri
 
-    def redirect_next(self, url):
-        self.redirect(self.next or self.url_root[:-1] + url)        
+    def redirect_next(self, default_url=None):
+        """
+        Redirects to self.next if supplied, else the default url, else '/'.
+
+        Does not terminate handle execution, so usual syntax should be:
+
+            return self.redirect_next()
+
+        self.next:
+            *should* include url_root when used on pages
+            *shouldn't* include url_root when used in handlers
+            *should* include important query options everywhere
+            *shouln't* include duplicate parameters anywhere
+        """
+        self.redirect(self.url_rewrite(
+                self.next or default_url or '/'
+                ))
 
     def render(self, template_name, **kwargs):
         mako_template = self.application.lookup.get_template(template_name)
@@ -289,6 +332,7 @@ class BaseHandler(tornado.web.RequestHandler):
                 "markdown_safe": markdown_safe,
                 "convert_links": convert_links,
                 "current_user": self.current_user,
+                "moderator": self.moderator,
                 "uri": self.request.uri,
                 "xsrf": self.xsrf_token,
                 "json_dumps": json.dumps,
@@ -340,13 +384,13 @@ class BaseHandler(tornado.web.RequestHandler):
 
         if value == default:
             if default is self._ARG_DEFAULT_MANGO:
-                raise tornado.web.HTTPError(400, "Missing argument %s" % name)
+                raise HTTPError(400, "Missing argument %s" % name)
             return value
 
         try:
             value = fn(value)
         except ValueError:
-            raise tornado.web.HTTPError(400, repr(value) + " " + message)
+            raise HTTPError(400, repr(value) + " " + message)
         return value
 
     def get_argument_allowed(self, name, allowed, default=_ARG_DEFAULT_MANGO, json=False):
@@ -429,7 +473,7 @@ class BaseHandler(tornado.web.RequestHandler):
         return table[value]
 
     def get_argument_visibility(self, json=False):
-        if not self.current_user:
+        if not self.moderator:
             return None
         return self.get_argument_allowed(
             "visibility", ("pending", "all", "private", "public"), None, json)
@@ -445,7 +489,7 @@ class BaseHandler(tornado.web.RequestHandler):
 
         if value == default:
             if default is self._ARG_DEFAULT_MANGO:
-                raise tornado.web.HTTPError(400, "Missing argument %s" % name)
+                raise HTTPError(400, "Missing argument %s" % name)
             return value
 
         try:
@@ -458,7 +502,7 @@ class BaseHandler(tornado.web.RequestHandler):
         except ValueError:
             pass
 
-        raise tornado.web.HTTPError(400, "Could not decode %s value %s" % (name, value))
+        raise HTTPError(400, "Could not decode %s value %s" % (name, value))
 
 
 
@@ -474,28 +518,28 @@ class BaseHandler(tornado.web.RequestHandler):
             try:
                 self.json_data = json.loads(self.request.body)
             except ValueError as e:
-                raise tornado.web.HTTPError(400, "Could not decode JSON data.")
+                raise HTTPError(400, "Could not decode JSON data.")
         else:
             self.json_data = {}
 
     def get_argument(self, name, default=_ARG_DEFAULT_MANGO, json=False):
         if not json:
             if default is self._ARG_DEFAULT_MANGO:
-                default = tornado.web.RequestHandler._ARG_DEFAULT
-            return tornado.web.RequestHandler.get_argument(self, name, default)
+                default = RequestHandler._ARG_DEFAULT
+            return RequestHandler.get_argument(self, name, default)
 
         self.get_json_data()
 
         if not name in self.json_data:
             if default is self._ARG_DEFAULT_MANGO:
-                raise tornado.web.HTTPError(400, "Missing argument %s" % name)
+                raise HTTPError(400, "Missing argument %s" % name)
             return default
 
         return self.json_data[name]
 
     def get_arguments(self, name, strip=True, json=False):
         if not json:
-            return tornado.web.RequestHandler.get_arguments(self, name, strip)
+            return RequestHandler.get_arguments(self, name, strip)
 
         self.get_json_data()
         return self.json_data.get(name)
@@ -597,7 +641,7 @@ class BaseHandler(tornado.web.RequestHandler):
         filter_args = []
         if null_column:
             filter_args.append(null_column==None)
-        if self.current_user and visibility:
+        if self.moderator and visibility:
             if visibility == "pending":
                 filter_args.append(Entity.public==None)
             elif visibility == "all":
@@ -630,8 +674,12 @@ class BaseHandler(tornado.web.RequestHandler):
         try:
             self.orm.commit()
         except IntegrityError as e:
-            raise tornado.web.HTTPError(500, e.message)
+            raise HTTPError(500, e.message)
         self.application.increment_cache()
+
+    @property
+    def moderator(self):
+        return bool(self.current_user and self.current_user.moderator)
 
     @property
     def orm(self):
@@ -647,7 +695,7 @@ class BaseHandler(tornado.web.RequestHandler):
 
 
 
-class MangoEntityHandlerMixin(tornado.web.RequestHandler):
+class MangoEntityHandlerMixin(RequestHandler):
     def _before_delete(self, entity):
         pass
 
@@ -658,7 +706,7 @@ class MangoEntityHandlerMixin(tornado.web.RequestHandler):
             self._before_delete(entity)
         self.orm.delete(entity)
         self.orm_commit()
-        self.redirect_next(entity.list_url)
+        return self.redirect_next(entity.list_url)
         
     @authenticated
     def put(self, entity_id_string):
@@ -667,15 +715,15 @@ class MangoEntityHandlerMixin(tornado.web.RequestHandler):
         if not old_entity.content_same(new_entity):
             old_entity.content_copy(new_entity, self.current_user)
             self.orm_commit()
-        self.redirect_next(old_entity.url)
+        return self.redirect_next(old_entity.url)
 
 
 
-class MangoEntityListHandlerMixin(tornado.web.RequestHandler):
+class MangoEntityListHandlerMixin(RequestHandler):
     @authenticated
     def post(self):
         new_entity = self._create()
         self.orm.add(new_entity)
         self.orm_commit()
-        self.redirect_next(new_entity.url)
+        return self.redirect_next(new_entity.url)
 

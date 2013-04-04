@@ -29,12 +29,12 @@ New Note
 %if obj:
 %if "linked" in obj and len(obj["linked"]) == 1:
 <a
-   href="${url_rewrite(obj["linked"][0]["url"], parameters)}"
+   href="${url_rewrite(obj["linked"][0]["url"])}"
    >${obj["linked"][0]["name"]}</a>
  | 
 %endif
 <a
-   href="${url_rewrite(obj["url"], parameters)}"
+   href="${url_rewrite(obj["url"])}"
    >Note ${obj["id"]}</a>
 %else:
 %if entity:
@@ -77,7 +77,7 @@ action = "/note"
 put = False
 if entity:
     action = entity["url"] + "/note"
-    next = url_rewrite(entity["url"], parameters)
+    next = url_rewrite(entity["url"], parameters={})
 elif obj:
     put = True
     action = obj["url"]
@@ -90,7 +90,7 @@ elif obj:
 
   <form
      class="mango"
-     action="${url_rewrite(action, parameters)}"
+     action="${url_rewrite(action)}"
      method="post"
      >
     <input name="_xsrf" type="hidden" value="${xsrf}">
@@ -131,13 +131,13 @@ elif obj:
 
   %if obj:
   <form
-     action="${url_rewrite(obj["url"], parameters)}"
+     action="${url_rewrite(obj["url"])}"
      method="post"
      >
     <input name="_xsrf" type="hidden" value="${xsrf}">
     <input name="_method" type="hidden" value="delete">
     %if next:
-    <input name="next" type="hidden" value="${url_rewrite(next, parameters)}">
+    <input name="next" type="hidden" value="${url_rewrite(next, parameters={})}">
     %endif
     <input type="submit" value="Delete">
   </form>

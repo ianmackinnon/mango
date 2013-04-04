@@ -30,7 +30,7 @@ class BaseOrgHandler(BaseHandler):
             query = query \
                 .options(*options)
 
-        if not self.current_user:
+        if not self.moderator:
             query = query \
                 .filter_by(public=True)
 
@@ -216,7 +216,7 @@ class BaseOrgHandler(BaseHandler):
                         }
                 if address:
                     orgs[org.org_id]["address_obj_list"].append(address.obj(
-                            public=bool(self.current_user)
+                            public=self.moderator
                             ))
 
             org_packet["org_list"] = []
@@ -229,7 +229,7 @@ class BaseOrgHandler(BaseHandler):
                     )
                 orgtag_obj_list = [orgtag.obj(public=True) for orgtag in org.orgtag_list_public]
                 org_packet["org_list"].append(org.obj(
-                        public=bool(self.current_user),
+                        public=self.moderator,
                         address_obj_list=address_obj_list,
                         orgtag_obj_list=orgtag_obj_list,
                         ))
