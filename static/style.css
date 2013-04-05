@@ -595,12 +595,12 @@ form.mango input[type="checkbox"]
 
 /* Entity */
 
-#mango .visibility
+#mango .visibility.bar
 {
+    opacity: .75;
     border-radius: 2px;
     padding: 2px;
     text-align: center;
-    opacity: .75;
 }
 #mango .visibility.public { background: #cfc; }
 #mango .visibility.private { background: #fcc; }
@@ -1009,23 +1009,24 @@ div.ui-timepicker td a.ui-state-active
     table-layout: fixed;
 }
 
-#mango table.history td
+#mango table.history td,
+#mango table.history th
 {
-    padding: 2px 6px;
+    border: 1px solid #ddd;
+    padding: 0 6px;
     
     line-height: 24px;
 }
 
-#mango table.history th.type {width: 100px;}
+#mango table.history th.type {width: 120px;}
 #mango table.history th.id {width: 100px;}
-#mango table.history th.content {width: 261px;}
+#mango table.history th.content {width: 241px;}
 #mango table.history th.user {width: 150px;}
 #mango table.history th.date {width: 150px;}
 
-#mango table.history td.content
+#mango table.history td .ellipsis
 {
     display: inline-block;
-    width: 311px;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -1037,11 +1038,36 @@ div.ui-timepicker td a.ui-state-active
 }
 
 
-/* Event markdown */
+/* Markdown */
 
-#mango .description.markdown-preview
+#mango .markdown
 {
+    text-align: left;
 }
+
+/* Revision */
+
+#mango table.revision,
+#mango table.revision tr,
+#mango table.revision th,
+#mango table.revision td
+{
+    border: 1px solid #ddd;
+}
+
+#mango table.revision th
+{
+    background: #f8f8f8;
+}
+
+#mango table.revision th,
+#mango table.revision td
+{
+    width: 375px;
+    text-align: center;
+    padding: 4px;
+}
+
 
 
 

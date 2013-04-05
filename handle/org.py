@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import json
+from collections import namedtuple
+
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.sql.expression import or_
+from tornado.web import HTTPError
 
 from base import authenticated, sha1_concat, \
     MangoEntityHandlerMixin, MangoEntityListHandlerMixin
@@ -19,6 +24,10 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
     @property
     def _create(self):
         return self._create_org
+
+    @property
+    def _create_v(self):
+        return self._create_org_v
 
     @property
     def _get(self):
@@ -113,6 +122,10 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
         return self._create_org
 
     @property
+    def _create_v(self):
+        return self._create_org_v
+
+    @property
     def _get(self):
         return self._get_org
 
@@ -128,41 +141,46 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
 
         public = self.moderator
 
-        org = self._get_org(org_id_string)
+        org = self._get_org(org_id_string, future_version=True)
 
-        if self.deep_visible():
-            address_list=org.address_list
-            orgtag_list=org.orgtag_list
-            event_list=org.event_list
-            orgalias_list=org.orgalias_list
+        if hasattr(org, "org_v_id"):
+            obj = org.obj(
+                public=public,
+                )
         else:
-            address_list=org.address_list_public
-            orgtag_list=org.orgtag_list_public
-            event_list=org.event_list_public
-            orgalias_list=org.orgalias_list_public
+            if self.deep_visible():
+                address_list=org.address_list
+                orgtag_list=org.orgtag_list
+                event_list=org.event_list
+                orgalias_list=org.orgalias_list
+            else:
+                address_list=org.address_list_public
+                orgtag_list=org.orgtag_list_public
+                event_list=org.event_list_public
+                orgalias_list=org.orgalias_list_public
 
-        note_list, note_count = org.note_list_filtered(
-            note_search=note_search,
-            note_order=note_order,
-            note_offset=note_offset,
-            all_visible=self.deep_visible(),
-            )
+            note_list, note_count = org.note_list_filtered(
+                note_search=note_search,
+                note_order=note_order,
+                note_offset=note_offset,
+                all_visible=self.deep_visible(),
+                )
 
-        address_list = [address.obj(public=public) for address in address_list]
-        orgtag_list = [orgtag.obj(public=public) for orgtag in orgtag_list]
-        note_list = [note.obj(public=public) for note in note_list]
-        event_list = [event.obj(public=public) for event in event_list]
-        orgalias_list = [orgalias.obj(public=public) for orgalias in orgalias_list]
+            address_list = [address.obj(public=public) for address in address_list]
+            orgtag_list = [orgtag.obj(public=public) for orgtag in orgtag_list]
+            note_list = [note.obj(public=public) for note in note_list]
+            event_list = [event.obj(public=public) for event in event_list]
+            orgalias_list = [orgalias.obj(public=public) for orgalias in orgalias_list]
 
-        obj = org.obj(
-            public=public,
-            address_obj_list=address_list,
-            orgtag_obj_list=orgtag_list,
-            note_obj_list=note_list,
-            note_count=note_count,
-            event_obj_list=event_list,
-            orgalias_obj_list=orgalias_list,
-            )
+            obj = org.obj(
+                public=public,
+                address_obj_list=address_list,
+                orgtag_obj_list=orgtag_list,
+                note_obj_list=note_list,
+                note_count=note_count,
+                event_obj_list=event_list,
+                orgalias_obj_list=orgalias_list,
+                )
 
         if self.accept_type("json"):
             self.write_json(obj)
@@ -173,7 +191,164 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
                 note_search=note_search,
                 note_order=note_order,
                 note_offset=note_offset,
+                version_url="%s/revision" % org.url,
                 )
+        
+
+
+from model_v import Org_v
+
+
+
+HistoryEntity = namedtuple(
+    "HistoryEntity",
+    [
+        "type",
+        "entity_id",
+        "entity_v_id",
+        "date",
+        "existence",
+        "existence_v",
+        "public",
+        "name",
+        "user_id",
+        "user_name",
+        "gravatar_hash",
+        "url",
+        "url_v",
+        ]
+    )
+        
+
+
+class OrgRevisionListHandler(BaseOrgHandler):
+    def _get_org_history(self, org_id_string):
+        org_id = int(org_id_string)
+
+        org_query = self.orm.query(Org) \
+            .filter_by(org_id=org_id)
+
+        try:
+            org = org_query.one()
+        except NoResultFound:
+            org = None
+
+        org_v_query = self.orm.query(Org_v) \
+            .filter_by(org_id=org_id) \
+
+        if not self.moderator:
+            filters = [
+                Org_v.moderation_user_id == self.current_user.user_id,
+                ]
+            if org:
+                filters.append(
+                    Org_v.a_time == org.a_time
+                    )
+            org_v_query = org_v_query \
+                .filter(or_(*filters))
+
+        org_v_query = org_v_query \
+            .order_by(Org_v.a_time.desc())
+
+        return org_v_query.all(), org
+
+    @authenticated
+    def get(self, org_id_string):
+        org_v_list, org = self._get_org_history(org_id_string)
+
+        history = []
+        for org_v in org_v_list:
+            user = org_v.moderation_user
+            entity = HistoryEntity(
+                type="organisation",
+                entity_id=org_v.org_id,
+                entity_v_id=(not org or org.a_time != org_v.a_time) and org_v.org_v_id or None,
+                date=org_v.a_time,
+                existence=bool(org),
+                existence_v=org_v.existence,
+                public=org_v.public,
+                name=org_v.name,
+                user_id=user.user_id,
+                user_name=user.name,
+                gravatar_hash=user.auth.gravatar_hash,
+                url=org_v.url,
+                url_v=org_v.url_v,
+                )
+            history.append(entity)
+
+        version_current_url = (org and org.url) or (not self.moderator and history and history[-1].url)
+
+        self.render(
+            'history.html',
+            entity=True,
+            version_current_url=version_current_url,
+            latest_a_time=org and org.a_time,
+            title_text="Revisions",
+            history=history,
+            )
+        
+
+
+class OrgRevisionHandler(BaseOrgHandler):
+    def _get_org_revision(self, org_id_string, org_v_id_string):
+        org_id = int(org_id_string)
+        org_v_id = int(org_v_id_string)
+
+        query = self.orm.query(Org_v) \
+            .filter_by(org_id=org_id) \
+            .filter_by(org_v_id=org_v_id)
+
+        try:
+            org_v = query.one()
+        except NoResultFound:
+            raise HTTPError(404, "%d:%d: No such org revision" % (org_id, org_v_id))
+
+        query = self.orm.query(Org) \
+            .filter_by(org_id=org_id)
+
+        try:
+            org = query.one()
+        except NoResultFound:
+            org = None
+
+        return org_v, org
+
+    @authenticated
+    def get(self, org_id_string, org_v_id_string):
+        org_v, org = self._get_org_revision(org_id_string, org_v_id_string)
+
+        if not self.moderator:
+            raise HTTPError(404)
+
+        if org and org.a_time == org_v.a_time:
+            self.next = org.url
+            return self.redirect_next()
+
+        obj = org and org.obj(
+            public=True,
+            )
+
+        obj_v = {
+            "entity_id": org_v.org_id,
+            "name": org_v.name,
+            "description": org_v.description,
+            "public": org_v.public,
+            }
+
+        fields = (
+            ("name", "name"),
+            ("description", "markdown"),
+            ("public", "public"),
+            )
+
+        self.render(
+            'revision.html',
+            version_url="/organisation/%s/revision" % (org_v.org_id),
+            version_current_url=org and org.url,
+            fields=fields,
+            obj=obj,
+            obj_v=obj_v,
+            )
         
 
 

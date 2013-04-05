@@ -9,9 +9,11 @@ from sqlalchemy.sql.expression import case
 
 from tornado.web import HTTPError
 
-from base import BaseHandler
+from base import BaseHandler, MangoBaseEntityHandlerMixin
 
 from model import Org, Address, Orgalias, Orgtag, detach
+
+from model_v import Org_v
 
 
 max_address_per_page = 26
@@ -19,36 +21,22 @@ max_address_pages = 3
 
 
 
-class BaseOrgHandler(BaseHandler):
-    def _get_org(self, org_id_string, options=None):
-        org_id = int(org_id_string)
+class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
+    def _get_org(self, id_string,
+                 required=True, future_version=False):
+        return self._get_entity(Org, "org", "org_id",
+                                Org_v, "org_v", "org_v_id",
+                                id_string,
+                                required, future_version
+                                )
 
-        query = self.orm.query(Org)\
-            .filter_by(org_id=org_id)
-
-        if options:
-            query = query \
-                .options(*options)
-
-        if not self.moderator:
-            query = query \
-                .filter_by(public=True)
-
-        try:
-            org = query.one()
-        except NoResultFound:
-            raise HTTPError(404, "%d: No such org" % org_id)
-
-        return org
-
-    def _create_org(self):
+    def _create_org(self, id_=None):
         is_json = self.content_type("application/json")
 
         name = self.get_argument("name", json=is_json)
         description = self.get_argument("description", None, json=is_json);
 
-        public = self.get_argument_public("public", json=is_json)
-        moderation_user = self.current_user
+        public, moderation_user = self._create_revision()
 
         org = Org(
             name, description,
@@ -56,7 +44,27 @@ class BaseOrgHandler(BaseHandler):
 
         detach(org)
 
+        if id_:
+            org.org_id = id_
+
         return org
+    
+    def _create_org_v(self, id_):
+        is_json = self.content_type("application/json")
+
+        name = self.get_argument("name", json=is_json)
+        description = self.get_argument("description", None, json=is_json);
+
+        public, moderation_user = self._create_revision()
+
+        org_v = Org_v(
+            id_,
+            name, description,
+            moderation_user=moderation_user, public=public)
+
+        detach(org_v)
+
+        return org_v
     
     def _get_name_search_query(self, name=None, name_search=None,
                                visibility=None):

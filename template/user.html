@@ -26,17 +26,19 @@ import datetime
   %endif
 </div>
 
-%if not current_user.moderator:
+%if not moderator:
 <div class="user-introduction">
   <h2>Welcome to CAAT's mapping application</h4>
-  <p>You can now submit organisation and event information, which will be reviewed by our moderators.</p>
-  <p>To enable adding or editing of content you see on the site, click the <strong>Edit</strong> button above. When you've finished editing, click the <strong>Browse</strong> button to return to normal viewing mode.</p>
-  <p>This page shows you a list of your submissions. You can click your username above to return here to see their progress or make further changes.</p>
+  <p>You can now submit information about organisations and events, which will be reviewed by our moderators.</p>
+  <p>To enable adding content, click the <strong>Edit</strong> button above.</p>
+  <p>When browsing the site in edit mode, you'll see buttons for adding organisations, events, addresses and notes.</p>
+  <p>When you've finished adding content, click the <strong>Browse</strong> button to return to normal viewing mode.</p>
+  <p>This page shows you a list of your submissions. You can click your username above at any time to return here and see their progress or make further changes.</p>
 </div>
 %endif
 
 <div class="user-entities">
-%if user.moderator:
+%if moderator:
   <h3>Edit history</h3>
 
 <table class="history">
@@ -74,8 +76,19 @@ user_link = url_rewrite("/user/%s" % (entity.user_id))
   
 %else:
   <h3>Submissions</h3>
+  <p>Your submissions will be shown here until they have been reviewed by our moderators.</p>
+  <p>Click on any of them to view or make further changes.</p>
   <div class="org">
     <h3>Organisations</h4>
+<ul>
+%for org in submissions["org"]:
+<li>
+  <a
+     href="${url_rewrite(org.url)}"
+     >${org.name}</a>
+</li>
+%endfor
+</ul>
     <h4>Addresses</h4>
     <h4>Notes</h4>
   </div>

@@ -93,9 +93,17 @@ ${header2.replace("/render-header-footer.php", uri) | n}
   %if current_user:
   <nav id="nav-content">
     <div id="nav-moderator">
-      %if current_user.moderator:
+      %if moderator:
       <a href="${url_rewrite("/user")}">Users</a>
       <a href="${url_rewrite("/history")}">History</a>
+      %endif
+      %if current_user:
+      %if version_current_url:
+      <a href="${url_rewrite(version_current_url)}">Latest</a>
+      %endif
+      %if version_url:
+      <a href="${url_rewrite(version_url)}">Revisions</a>
+      %endif
       %endif
     </div>
     

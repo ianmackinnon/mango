@@ -23,6 +23,11 @@ for each row begin
     set new.a_time = UNIX_TIMESTAMP();
 end $$
 
+create trigger org_v_insert_before before insert on org_v
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+end $$
+
 create trigger org_insert_after after insert on org
 for each row begin
     insert into org_v (
@@ -32,7 +37,7 @@ for each row begin
         )
         values (
 	new.org_id,
-	new.moderation_user_id, UNIX_TIMESTAMP(), new.public, 1,
+	new.moderation_user_id, 0, new.public, 1,
 	new.name, new.description
 	);
 end $$
@@ -47,7 +52,7 @@ for each row begin
         )
         values (
 	new.org_id,
-	new.moderation_user_id, UNIX_TIMESTAMP(), new.public, 1,
+	new.moderation_user_id, 0, new.public, 1,
 	new.name, new.description
 	);
 end $$
@@ -61,7 +66,7 @@ for each row begin
         )
         values (
 	old.org_id,
-	old.moderation_user_id, UNIX_TIMESTAMP(), old.public, 0,
+	old.moderation_user_id, 0, old.public, 0,
 	old.name, old.description
 	);
 end $$

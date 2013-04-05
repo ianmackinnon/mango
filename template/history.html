@@ -4,17 +4,28 @@
     import datetime
 %>
 
-<%def name="title()">History</%def>
+<%def name="title()">${title_text or "History"}</%def>
 
 <%def name="page()">
 
-<h1>History</h1>
+<h1>${title_text or "History"}</h1>
+
+<%
+titles = {
+   1: "Pending submissions",
+   0: "Latest version",
+   -1: "Previous versions",
+   }
+title_state = None
+%>
 
 <table class="history">
   <thead>
     <tr>
       <th class="type">Type</th>
-      <th class="id">ID</th>
+      <th class="current">ID</th>
+      <th class="revision">Restore</th>
+      <th class="public">Public</th>
       <th class="content">Content</th>
       <th class="user">User</th>
       <th class="date">Date</th>
@@ -23,13 +34,49 @@
   <tbody>
     %for entity in history:
 <%
-link = url_rewrite("/%s/%s" % (entity.type, entity.entity_id))
+title = None
+if entity:
+    if title_state is None:
+        title_state = 2
+    new_title_state = min(title_state or -1, 1)
+    if latest_a_time:
+        new_title_state = min(title_state, cmp(entity.date, latest_a_time))
+    if not entity.existence_v:
+        new_title_state = min(title_state, -1)
+    if new_title_state != title_state:
+        title = titles[new_title_state]
+        title_state = new_title_state
+if entity.existence:
+    link = url_rewrite(entity.url)
+if entity.entity_v_id:
+    revision_link = url_rewrite(entity.url_v)
 user_link = url_rewrite("/user/%s" % (entity.user_id))
 %>
+%if title:
     <tr>
-      <td class="type"><a href="${link}">${entity.type}</a></td>
-      <td class="id"><a href="${link}">${"%d%s" % (entity.entity_id, entity.entity_v_id and ":%d" % entity.entity_v_id or "")}</a></td>
-      <td class="content"><a href="${link}">${entity_name(entity)}</a></td>
+      <th colspan="7">${title}</th>
+    </tr>
+%endif
+    <tr>
+      <td class="type">${entity.type}</td>
+      <td class="current">
+        %if entity.existence:
+        <a href="${link}">
+          ${entity.entity_id}
+        </a>
+        %else:
+          ${entity.entity_id}
+        %endif
+      </td>
+      <td class="revision">
+        %if entity.entity_v_id:
+        <a href="${revision_link}">${"%d" % (entity.entity_v_id)}</a>
+        %endif
+      </td>
+      <td class="visibility ${self.mini.visibility_public(entity.public)}">
+        ${self.mini.visibility_public(entity.public)}
+      </td>
+      <td class="content"><div class="ellipsis">${entity_name(entity)}</div></td>
       <td class="user">
         <a href="${user_link}">
 	  <img width="24px" height="24px"

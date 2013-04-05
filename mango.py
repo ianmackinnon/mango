@@ -40,7 +40,9 @@ from handle.home import HomeHandler
 from handle.note import NoteHandler, NoteNewHandler, NoteListHandler
 from handle.address import AddressHandler, AddressListHandler, \
     AddressLookupHandler, AddressNoteListHandler, AddressNoteHandler
-from handle.org import OrgHandler, OrgNewHandler, OrgListHandler, \
+from handle.org import OrgHandler, OrgNewHandler, \
+    OrgRevisionListHandler, OrgRevisionHandler, \
+    OrgListHandler, \
     OrgOrgaliasListHandler, \
     OrgOrgtagListHandler, OrgOrgtagHandler, \
     OrgNoteListHandler, OrgNoteHandler, \
@@ -260,6 +262,9 @@ class Application(tornado.web.Application):
             (r"/organisation", OrgListHandler),
             (r"/organisation/new", OrgNewHandler),
             (r"/organisation/%s" % re_id, OrgHandler),
+            (r"/organisation/%s/revision" % re_id, OrgRevisionListHandler),
+            (r"/organisation/%s/revision/%s" % (re_id, re_id),
+             OrgRevisionHandler),
             (r"/organisation/%s/tag" % re_id, OrgOrgtagListHandler),
             (r"/organisation/%s/tag/%s" % (re_id, re_id), OrgOrgtagHandler),
             (r"/organisation/%s/alias" % re_id, OrgOrgaliasListHandler),

@@ -4,12 +4,18 @@ import datetime
 
 
 
+<%def name="visibility_public(public)">\
+${{True: "public", False: "private", None: "pending",}[public]}
+</%def>
+
+
+
 <%def name="visibility_bar(obj)">\
 %if obj and "public" in obj:
-<div class="visibility
-  ${{True: "public", False: "private", None: "pending",}[obj["public"]]}
+<div class="visibility bar
+            ${visibility_public(obj["public"])}
   ">\
-${{True: "Public", False: "Private", None: "Pending",}[obj["public"]]}\
+${visibility_public(obj["public"])}
 </div>\
 %endif
 </%def>
@@ -609,6 +615,9 @@ if not parameters:
 
 <%def name="visibility_input(entity=None, default='pending')">
 <%
+    if not moderator:
+        return ""
+
     default_options = {
         "public": "true",
         "pending": "null",

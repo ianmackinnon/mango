@@ -2,13 +2,13 @@
 
 from sqlalchemy.sql import func
 
-from base import BaseHandler
+from base import BaseHandler, MangoBaseEntityHandlerMixin
 
 from model import short_name
 
 
 
-class BaseTagHandler(BaseHandler):
+class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
     Tag = None
     Entity = None
     tag_id = None

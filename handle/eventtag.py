@@ -20,28 +20,11 @@ class BaseEventtagHandler(BaseTagHandler):
     entity_id = "event_id"
     cross_table = event_eventtag
 
-    def _get_eventtag(self, eventtag_id_string, options=None):
-        eventtag_id = int(eventtag_id_string)
+    def _get_eventtag(self, id_string, query_options=None, required=True):
+        return self._get_entity(Eventtag, "eventtag", "eventtag_id",
+                                id_string, query_options, required)
 
-        query = self.orm.query(Eventtag)\
-            .filter_by(eventtag_id=eventtag_id)
-
-        if not self.moderator:
-            query = query \
-                .filter_by(public=True)
-
-        if options:
-            query = query \
-                .options(*options)
-
-        try:
-            eventtag = query.one()
-        except NoResultFound:
-            raise HTTPError(404, "%d: No such eventtag" % eventtag_id)
-
-        return eventtag
-
-    def _create_eventtag(self):
+    def _create_eventtag(self, id_=None):
         name, public = BaseEventtagHandler._get_arguments(self)
 
         moderation_user = self.current_user
@@ -51,6 +34,9 @@ class BaseEventtagHandler(BaseTagHandler):
             moderation_user=moderation_user, public=public,)
 
         detach(eventtag)
+
+        if id_:
+            eventtag.eventtag_id = id_
 
         return eventtag
 

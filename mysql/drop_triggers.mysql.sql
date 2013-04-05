@@ -1,5 +1,6 @@
 drop trigger if exists session_update_before;
 drop trigger if exists org_insert_before;
+drop trigger if exists org_v_insert_before;
 drop trigger if exists org_insert_after;
 drop trigger if exists org_update_before;
 drop trigger if exists org_delete_before;

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+ #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import re
@@ -114,6 +114,26 @@ def short_name(name, allow_end_pipe=False):
 
 
 
+def sanitise_name(name):
+    return re.sub("[\s]+", " ", name).strip()
+
+
+
+def sanitise_address(address, allow_commas=True):
+    if not address:
+        return address
+    address = re.sub("(\r|\n)+", "\n", address)
+    address = re.sub("(^|\n)[\s,]+", "\n", address)
+    address = re.sub("[\s,]+($|\n)", "\n", address)
+    if (not allow_commas) or (not "\n" in address):
+        address = re.sub("(,|\n)+", "\n", address)
+        address = re.sub("(^|\n)[\s,]+", "\n", address)
+        address = re.sub("[\s,]+($|\n)", "\n", address)
+    address = re.sub("[ \t]+", " ", address).strip()
+    return address
+
+
+
 def assert_session_is_fresh(session):
     assert not session.new, "Session has new objects: %s" % repr(session.new)
     assert not session.dirty, "Session has dirty objects: %s" % repr(session.dirty)
@@ -167,20 +187,20 @@ where user.user_id = %d
 """ % user_id
 
     sql = """
-select type, entity_id, entity_v_id, a_time as date, T.name, user_id, user.name as user_name, auth.gravatar_hash
+select type, entity_id, entity_v_id, a_time as date, existence, T.name, user_id, user.name as user_name, auth.gravatar_hash
 from
   (
-  select "org" as type, org_id as entity_id, org_v_id as entity_v_id, a_time, name as name, moderation_user_id from org_v
+  select "organisation" as type, org_id as entity_id, org_v_id as entity_v_id, a_time, existence, name as name, moderation_user_id from org_v
   union
-  select "event" as type, event_id as entity_id, event_v_id as entity_v_id, a_time, name as name, moderation_user_id from event_v
+  select "event" as type, event_id as entity_id, event_v_id as entity_v_id, a_time, existence, name as name, moderation_user_id from event_v
   union
-  select "address" as type, address_id as entity_id, address_v_id as entity_v_id, a_time, postal as name, moderation_user_id from address_v
+  select "address" as type, address_id as entity_id, address_v_id as entity_v_id, a_time, existence, postal as name, moderation_user_id from address_v
   union
-  select "orgtag" as type, orgtag_id as entity_id, orgtag_v_id as entity_v_id, a_time, name as name, moderation_user_id from orgtag_v
+  select "organisation-tag" as type, orgtag_id as entity_id, orgtag_v_id as entity_v_id, a_time, existence, name as name, moderation_user_id from orgtag_v
   union
-  select "eventtag" as type, eventtag_id as entity_id, eventtag_v_id as entity_v_id, a_time, name as name, moderation_user_id from eventtag_v
+  select "event-tag" as type, eventtag_id as entity_id, eventtag_v_id as entity_v_id, a_time, existence, name as name, moderation_user_id from eventtag_v
   union
-  select "note" as type, note_id as entity_id, note_v_id as entity_v_id, a_time, text as name, moderation_user_id from note_v
+  select "note" as type, note_id as entity_id, note_v_id as entity_v_id, a_time, existence, text as name, moderation_user_id from note_v
   ) as T 
 join user on (moderation_user_id = user_id)
 join auth using (auth_id)
@@ -461,12 +481,11 @@ class Org(Base, MangoEntity, NotableEntity):
     org_id = Column(Integer, primary_key=True)
 
     name = Column(Unicode(), nullable=False)
+    description = Column(Unicode())
 
     moderation_user_id = Column(Integer, ForeignKey(User.user_id))
     a_time = Column(Float(), nullable=False)
     public = Column(Boolean)
-
-    description = Column(Unicode())
 
     moderation_user = relationship(User, backref='moderation_org_list')
     
@@ -566,7 +585,7 @@ class Org(Base, MangoEntity, NotableEntity):
     def __init__(self,
                  name, description=None,
                  moderation_user=None, public=None):
-        self.name = self.sanitise_name(name)
+        self.name = sanitise_name(name)
 
         self.description = description
 
@@ -657,12 +676,8 @@ class Org(Base, MangoEntity, NotableEntity):
         return "%s/%d" % (self.list_url, self.org_id)
 
     @staticmethod
-    def sanitise_name(name):
-        return re.sub("[\s]+", " ", name).strip()
-
-    @staticmethod
     def get(orm, name, accept_alias=None, moderation_user=None, public=None):
-        name = Org.sanitise_name(name)
+        name = sanitise_name(name)
 
         org = None
         try:
@@ -713,7 +728,7 @@ class Orgalias(Base, MangoEntity):
     list_url = "/organisation-alias"
 
     def __init__(self, name, org, moderation_user=None, public=None):
-        self.name = Org.sanitise_name(name)
+        self.name = sanitise_name(name)
         self.org = org
 
         self.moderation_user = moderation_user
@@ -756,7 +771,7 @@ class Orgalias(Base, MangoEntity):
 
     @staticmethod
     def get(orm, name, org, moderation_user=None, public=None):
-        name = Org.sanitise_name(name)
+        name = sanitise_name(name)
         try:
             orgalias = orm.query(Orgalias)\
                 .filter_by(name=name, org_id=org.org_id).one()
@@ -880,7 +895,7 @@ class Event(Base, MangoEntity, NotableEntity):
                  name, start_date, end_date,
                  description=None, start_time=None, end_time=None,
                  moderation_user=None, public=None):
-        self.name = self.sanitise_name(name)
+        self.name = sanitise_name(name)
         self.start_date = start_date
         self.end_date = end_date
 
@@ -950,12 +965,8 @@ class Event(Base, MangoEntity, NotableEntity):
         return "%s/%d" % (self.list_url, self.event_id)
 
     @staticmethod
-    def sanitise_name(name):
-        return re.sub("[\s]+", " ", name).strip()
-
-    @staticmethod
     def get(orm, name, moderation_user=None, public=None):
-        name = Event.sanitise_name(name)
+        name = sanitise_name(name)
         try:
             event = orm.query(Event).filter(Event.name == name).one()
         except NoResultFound:
@@ -970,8 +981,8 @@ class Event(Base, MangoEntity, NotableEntity):
 
 class AddressExtension(MapperExtension):
     def _sanitise(self, instance):
-        instance.postal = Address.sanitise_address(instance.postal)
-        instance.lookup = Address.sanitise_address(instance.lookup)
+        instance.postal = sanitise_address(instance.postal)
+        instance.lookup = sanitise_address(instance.lookup)
 
     def before_insert(self, mapper, connection, instance):
         self._sanitise(instance)
@@ -1153,20 +1164,6 @@ class Address(Base, MangoEntity, NotableEntity):
         if self.address_id is None:
             return None
         return "%s/%d" % (self.list_url, self.address_id)
-
-    @staticmethod
-    def sanitise_address(address, allow_commas=True):
-        if not address:
-            return address
-        address = re.sub("(\r|\n)+", "\n", address)
-        address = re.sub("(^|\n)[\s,]+", "\n", address)
-        address = re.sub("[\s,]+($|\n)", "\n", address)
-        if (not allow_commas) or (not "\n" in address):
-            address = re.sub("(,|\n)+", "\n", address)
-            address = re.sub("(^|\n)[\s,]+", "\n", address)
-            address = re.sub("[\s,]+($|\n)", "\n", address)
-        address = re.sub("[ \t]+", " ", address).strip()
-        return address
 
     @staticmethod
     def general(address):

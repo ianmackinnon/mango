@@ -695,7 +695,124 @@ class BaseHandler(RequestHandler):
 
 
 
+class MangoBaseEntityHandlerMixin(RequestHandler):
+    def _create_revision(self):
+        is_json = self.content_type("application/json")
+
+        if self.moderator:
+            public = self.get_argument_public("public", json=is_json)
+        else:
+            public = None
+        moderation_user = self.current_user
+
+        return public, moderation_user
+
+    def _get_entity(self,
+                    Entity, entity_type, entity_id,
+                    Entity_v, entity_v_type, entity_v_id,
+                    id_string,
+                    required=True, future_version=None,
+                    ):
+        """
+        future_version = True: prefer future versions
+        future_version = None: accept future versions
+        future_version = False: ignore future versions
+
+        future versions with existence == False are always ignored.
+        """
+
+        id_ = int(id_string)
+
+        query = self.orm.query(Entity) \
+            .filter(getattr(Entity, entity_id) == id_)
+
+        if not self.moderator:
+            query = query \
+                .filter_by(public=True)
+
+        try:
+            entity = query.one()
+        except NoResultFound:
+            entity = None
+
+        if self.current_user and not self.moderator and future_version is True:
+            query = self.orm.query(Entity_v) \
+                .filter(getattr(Entity_v, entity_id) == id_) \
+                .filter(Entity_v.moderation_user_id==self.current_user.user_id) \
+                .order_by(Entity_v.a_time.desc()) \
+                .limit(1)
+
+            try:
+                entity_v = query.one()
+            except NoResultFound:
+                entity_v = None
+
+            if entity_v and not (entity_v.existence and (entity is None or entity_v.a_time > entity.a_time)):
+                entity_v = None
+
+            if entity_v:
+                entity = entity_v
+            
+        if not entity and self.current_user:
+            if self.moderator:
+                if required:
+                    query = self.orm.query(Entity_v) \
+                        .filter(getattr(Entity_v, entity_id) == id_)
+                    if query.count():
+                        self.next = "%s/%d/revision" % (Entity.list_url, id_)
+                        return self.redirect_next()
+            elif future_version is not False:
+                query = self.orm.query(Entity_v) \
+                    .filter(getattr(Entity_v, entity_id) == id_) \
+                    .filter(Entity_v.moderation_user_id==self.current_user.user_id) \
+                    .order_by(Entity_v.a_time.desc()) \
+                    .limit(1)
+                
+                try:
+                    entity_v = query.one()
+                except NoResultFound:
+                    entity_v = None
+
+                if entity_v and not (entity_v.existence and (entity is None or entity_v.a_time > entity.a_time)):
+                    entity_v = None
+
+                if entity_v:
+                    entity = entity_v
+
+        if required and not entity:
+            raise HTTPError(404, "%d: No such %s" % (id_, entity_type))
+
+        return entity
+
+
+
 class MangoEntityHandlerMixin(RequestHandler):
+    def _get_entity(self, Entity, entity_type, entity_id, id_string, query_options, required=True):
+        id_ = int(id_string)
+
+        query = self.orm.query(Entity) \
+            .filter(
+            Entity.get(entity_id) == id_
+            )
+
+        if options:
+            query = query \
+                .options(*options)
+
+        if not self.moderator:
+            query = query \
+                .filter_by(public=True)
+
+        try:
+            entity = query.one()
+        except NoResultFound:
+            entity = None
+
+        if required and not entity:
+            raise HTTPError(404, "%d: No such %s" % (id_, entity_type))
+
+        return entity
+
     def _before_delete(self, entity):
         pass
 
@@ -710,12 +827,21 @@ class MangoEntityHandlerMixin(RequestHandler):
         
     @authenticated
     def put(self, entity_id_string):
-        old_entity = self._get(entity_id_string)
-        new_entity = self._create()
-        if not old_entity.content_same(new_entity):
-            old_entity.content_copy(new_entity, self.current_user)
-            self.orm_commit()
-        return self.redirect_next(old_entity.url)
+        old_entity = self._get(entity_id_string, required=False)
+        if self.moderator:
+            new_entity = self._create(id_=int(entity_id_string))
+        else:
+            new_entity = self._create_v(id_=int(entity_id_string))
+        if old_entity:
+            if old_entity.content_same(new_entity):
+                return self.redirect_next(old_entity.url)
+            if self.moderator:
+                old_entity.content_copy(new_entity, self.current_user)
+                self.orm_commit()
+                return self.redirect_next(old_entity.url)
+        self.orm.add(new_entity)
+        self.orm_commit()
+        return self.redirect_next(new_entity.url)
 
 
 
@@ -725,5 +851,26 @@ class MangoEntityListHandlerMixin(RequestHandler):
         new_entity = self._create()
         self.orm.add(new_entity)
         self.orm_commit()
-        return self.redirect_next(new_entity.url)
+        if self.moderator:
+            return self.redirect_next(new_entity.url)
+
+        # org only
+
+        from model_v import Org_v
+
+        id_ = new_entity.org_id
+
+        self.orm.delete(new_entity)
+        self.orm_commit()
+
+        org_v_query = self.orm.query(Org_v) \
+            .filter_by(org_id=id_) \
+            .delete()
+        self.orm_commit()
+
+        new_entity_v = self._create_v(id_)
+        self.orm.add(new_entity_v)
+        self.orm_commit()
+        return self.redirect_next(new_entity_v.url)
+
 
