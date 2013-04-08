@@ -2,7 +2,7 @@
 
 from collections import OrderedDict
 
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func, literal
 from sqlalchemy.sql.expression import case
@@ -66,6 +66,51 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
         return org_v
     
+    def _org_history_query(self, org_id_string):
+        org_id = int(org_id_string)
+
+        org_query = self.orm.query(Org) \
+            .filter_by(org_id=org_id)
+
+        try:
+            org = org_query.one()
+        except NoResultFound:
+            org = None
+
+        org_v_query = self.orm.query(Org_v) \
+            .filter_by(org_id=org_id) \
+
+        if not self.moderator:
+            filters = Org_v.moderation_user_id == self.current_user.user_id,
+            if org:
+                filters = or_(
+                    and_(
+                        Org_v.moderation_user_id == self.current_user.user_id,
+                        Org_v.a_time > org.a_time,
+                        ),
+                    and_(
+                        Org_v.a_time == org.a_time,
+                        Org_v.public == True,
+                        )
+                    )
+            org_v_query = org_v_query \
+                .filter(or_(*filters))
+
+        return org_v_query, org
+
+    def _get_org_history(self, org_id_string):
+        org_v_query, org = self._org_history_query(org_id_string)
+        
+        org_v_query = org_v_query \
+            .order_by(Org_v.a_time.desc())
+
+        return org_v_query.all(), org
+
+    def _count_org_history(self, org_id_string):
+        org_v_query, org = self._org_history_query(org_id_string)
+
+        return org_v_query.count() - int(bool(org))
+
     def _get_name_search_query(self, name=None, name_search=None,
                                visibility=None):
         u"""

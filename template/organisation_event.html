@@ -18,7 +18,9 @@
     ${self.mini.event_li(event,
       link_url="%s/event/%s" % (obj["url"], event["id"]),
       unlink=True,
-      visibility=True)}
+      visibility=True,
+      parameters=parameters,
+    )}
     %endfor
   </ul>
 </div>    
@@ -48,7 +50,8 @@
       link_url="%s/event/%s" % (obj["url"], event["id"]),
       link=True,
       visibility=True,
-      )}
+      parameters=parameters,
+    )}
     %endif
     %endfor
   </ul>

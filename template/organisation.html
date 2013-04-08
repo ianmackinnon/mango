@@ -37,7 +37,7 @@
     <div class="action-bar no-border">
       <h3>Events</h3>
 
-      %if current_user and (parameters.get("view", None) == "edit"):
+      %if moderator and (parameters.get("view", None) == "edit"):
       <div class="actions">
         <a
            href="${url_rewrite("%s/event" % obj["url"])}"
@@ -77,7 +77,7 @@
     <div class="action-bar no-border">
       <h3>Tags</h3>
 
-      %if current_user and (parameters.get("view", None) == "edit"):
+      %if moderator and (parameters.get("view", None) == "edit"):
       <div class="actions">
         <a
            href="${url_rewrite("%s/tag" % obj["url"])}"
@@ -160,19 +160,7 @@ if None in path_keys:
       <input type="submit">
     </form>
 
-    %if obj:
-    <form
-       class="mango"
-       action="${url_rewrite(obj["url"])}"
-       method="post"
-       >
-      <input name="_xsrf" type="hidden" value="${xsrf}">
-      <input name="_method" type="hidden" value="delete">
-      <input type="submit" value="Delete">
-    </form>
-    %endif
-
-
+    ${self.mini.delete_input(obj)}
 
     %else:
     ${self.mini.visibility_bar(obj)}
@@ -216,10 +204,10 @@ if None in path_keys:
     %endif
 
     %if obj:
-    %if ("orgalias_list" in obj and obj["orgalias_list"]) or (current_user and (parameters.get("view", None) == "edit")):
+    %if ("orgalias_list" in obj and obj["orgalias_list"]) or (moderator and (parameters.get("view", None) == "edit")):
     <div class="action-bar no-border">
       <h3>Aliases</h3>
-      %if current_user and (parameters.get("view", None) == "edit"):
+      %if moderator and (parameters.get("view", None) == "edit"):
       <div class="actions">
         <a
            href="${url_rewrite("%s/alias" % obj["url"])}"

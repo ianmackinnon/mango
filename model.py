@@ -220,14 +220,22 @@ offset %d
 
 
 class MangoEntity(object):
-    def content_same(self, other):
+    def content_same(self, other, ignore_list=None):
+        if not ignore_list:
+            ignore_list = []
         for name in self.content:
+            if name in ignore_list:
+                continue
             if getattr(self, name) != getattr(other, name):
                 return False
         return True
 
-    def content_copy(self, other, user):
+    def content_copy(self, other, user, ignore_list=None):
+        if not ignore_list:
+            ignore_list = []
         for name in self.content:
+            if name in ignore_list:
+                continue
             setattr(self, name, getattr(other, name))
         self.moderation_user = user
 

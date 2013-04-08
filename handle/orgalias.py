@@ -44,13 +44,20 @@ class BaseOrgaliasHandler(BaseHandler):
 class OrgaliasHandler(BaseOrgaliasHandler):
     @authenticated
     def get(self, orgalias_id_string):
-        public = self.moderator
+        if not self.moderator:
+            raise HTTPError(404)
+
+        public = True
 
         options = (
                 joinedload("org"),
                 )
 
         orgalias = self._get_orgalias(orgalias_id_string, options)
+
+        if self.parameters.get("view", None) != "edit":
+            self.next = orgalias.org.url
+            self.redirect_next()
 
         obj = orgalias.obj(
             public=public,
@@ -72,6 +79,9 @@ class OrgaliasHandler(BaseOrgaliasHandler):
 
     @authenticated
     def delete(self, orgalias_id_string):
+        if not self.moderator:
+            raise HTTPError(404)
+
         orgalias = self._get_orgalias(orgalias_id_string)
         self.orm.delete(orgalias)
         self.orm_commit()
@@ -79,6 +89,9 @@ class OrgaliasHandler(BaseOrgaliasHandler):
 
     @authenticated
     def put(self, orgalias_id_string):
+        if not self.moderator:
+            raise HTTPError(404)
+
         orgalias = self._get_orgalias(orgalias_id_string)
         name, public = BaseOrgaliasHandler._get_arguments(self)
 

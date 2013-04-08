@@ -170,12 +170,8 @@ ${header2.replace("/render-header-footer.php", uri) | n}
 <script type="text/javascript" src="${url_root}static/mango.js"></script>
 
 <script type="text/javascript">
-m.urlRoot = "${url_root}";
-m.parameters = {
-%if parameters.get("visibility", None):
-  visibility: "${parameters["visibility"]}"
-%endif
-};
+m.urlRoot = "${url_root | n}";
+m.parameters = ${parameters_json | n};
 </script>
 
 <script type="text/javascript" src="${url_root}static/map.js"></script>

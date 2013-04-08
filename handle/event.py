@@ -297,6 +297,8 @@ class EventNoteHandler(BaseEventHandler, BaseNoteHandler):
 class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
     @authenticated
     def get(self, event_id_string):
+        if not self.moderator:
+            raise HTTPError(404)
 
         # event...
 
@@ -341,6 +343,9 @@ class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
 class EventEventtagHandler(BaseEventHandler, BaseEventtagHandler):
     @authenticated
     def put(self, event_id_string, eventtag_id_string):
+        if not self.moderator:
+            raise HTTPError(405)
+
         event = self._get_event(event_id_string)
         eventtag = self._get_eventtag(eventtag_id_string)
         if eventtag not in event.eventtag_list:
@@ -350,6 +355,9 @@ class EventEventtagHandler(BaseEventHandler, BaseEventtagHandler):
 
     @authenticated
     def delete(self, event_id_string, eventtag_id_string):
+        if not self.moderator:
+            raise HTTPError(405)
+
         event = self._get_event(event_id_string)
         eventtag = self._get_eventtag(eventtag_id_string)
         if eventtag in event.eventtag_list:
@@ -362,7 +370,9 @@ class EventEventtagHandler(BaseEventHandler, BaseEventtagHandler):
 class EventOrgListHandler(BaseEventHandler, BaseOrgHandler):
     @authenticated
     def get(self, event_id_string):
-
+        if not self.moderator:
+            raise HTTPError(404)
+            
         is_json = self.content_type("application/json")
 
         # event...
@@ -392,7 +402,7 @@ class EventOrgListHandler(BaseEventHandler, BaseOrgHandler):
         org_alias_name_query = BaseOrgHandler._get_org_alias_search_query(
             self,
             name_search=org_name_search,
-            visibility=self.parameters["visibility"]
+            visibility=self.parameters.get("visibility", None),
             )
 
         org_list = []
@@ -419,6 +429,9 @@ class EventOrgListHandler(BaseEventHandler, BaseOrgHandler):
 class EventOrgHandler(BaseEventHandler, BaseOrgHandler):
     @authenticated
     def put(self, event_id_string, org_id_string):
+        if not self.moderator:
+            raise HTTPError(404)
+            
         event = self._get_event(event_id_string)
         org = self._get_org(org_id_string)
         if org not in event.org_list:
@@ -428,6 +441,9 @@ class EventOrgHandler(BaseEventHandler, BaseOrgHandler):
 
     @authenticated
     def delete(self, event_id_string, org_id_string):
+        if not self.moderator:
+            raise HTTPError(404)
+            
         event = self._get_event(event_id_string)
         org = self._get_org(org_id_string)
         if org in event.org_list:

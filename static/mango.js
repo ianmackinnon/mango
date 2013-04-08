@@ -438,7 +438,9 @@ var m = {
       throbber.show();
     };
 
-    m.on_change(search.input, id + "_" + field, change, 500);
+    if (search) {
+      m.on_change(search.input, id + "_" + field, change, 500);
+    }
     $path.change(change);
     visibility.change(change);
   },

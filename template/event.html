@@ -37,7 +37,7 @@
     <div class="action-bar no-border">
       <h3>Organisations</h3>
 
-      %if current_user and (parameters.get("view", None) == "edit"):
+      %if moderator and (parameters.get("view", None) == "edit"):
       <div class="actions">
         <a
            href="${url_rewrite("%s/organisation" % obj["url"])}"
@@ -67,7 +67,7 @@
     <div class="action-bar no-border">
       <h3>tags</h3>
 
-      %if current_user and (parameters.get("view", None) == "edit"):
+      %if moderator and (parameters.get("view", None) == "edit"):
       <div class="actions">
         <a
            href="${url_rewrite("%s/tag" % obj["url"])}"

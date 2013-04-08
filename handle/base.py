@@ -339,6 +339,7 @@ class BaseHandler(RequestHandler):
                 "query_rewrite": self.query_rewrite,
                 "url_rewrite": self.url_rewrite,
                 "parameters": self.parameters,
+                "parameters_json": json.dumps(self.parameters),
                 "url_root": self.application.url_root,
                 "skin_variables": self.application.skin_variables,
                 })
@@ -818,6 +819,9 @@ class MangoEntityHandlerMixin(RequestHandler):
 
     @authenticated
     def delete(self, entity_id_string):
+        if not self.moderator:
+            raise HTTPError(404)
+
         entity = self._get(entity_id_string)
         if self._before_delete:
             self._before_delete(entity)
@@ -828,15 +832,18 @@ class MangoEntityHandlerMixin(RequestHandler):
     @authenticated
     def put(self, entity_id_string):
         old_entity = self._get(entity_id_string, required=False)
+        ignore_list = None
         if self.moderator:
             new_entity = self._create(id_=int(entity_id_string))
         else:
             new_entity = self._create_v(id_=int(entity_id_string))
+            ignore_list = ["public"]
         if old_entity:
-            if old_entity.content_same(new_entity):
+            if old_entity.content_same(new_entity, ignore_list):
                 return self.redirect_next(old_entity.url)
             if self.moderator:
-                old_entity.content_copy(new_entity, self.current_user)
+                old_entity.content_copy(
+                    new_entity, self.current_user, ignore_list)
                 self.orm_commit()
                 return self.redirect_next(old_entity.url)
         self.orm.add(new_entity)

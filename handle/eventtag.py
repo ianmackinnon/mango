@@ -20,9 +20,26 @@ class BaseEventtagHandler(BaseTagHandler):
     entity_id = "event_id"
     cross_table = event_eventtag
 
-    def _get_eventtag(self, id_string, query_options=None, required=True):
-        return self._get_entity(Eventtag, "eventtag", "eventtag_id",
-                                id_string, query_options, required)
+    def _get_eventtag(self, eventtag_id_string, options=None):
+        eventtag_id = int(eventtag_id_string)
+
+        query = self.orm.query(Eventtag)\
+            .filter_by(eventtag_id=eventtag_id)
+
+        if not self.moderator:
+            query = query \
+                .filter_by(public=True)
+
+        if options:
+            query = query \
+                .options(*options)
+
+        try:
+            eventtag = query.one()
+        except NoResultFound:
+            raise HTTPError(404, "%d: No such eventtag" % eventtag_id)
+
+        return eventtag
 
     def _create_eventtag(self, id_=None):
         name, public = BaseEventtagHandler._get_arguments(self)
@@ -65,6 +82,13 @@ class EventtagListHandler(BaseEventtagHandler,
     def _get(self):
         return self._get_eventtag
 
+    @authenticated
+    def post(self):
+        if not self.moderator:
+            raise HTTPError(405)
+        
+        return MangoEntityListHandlerMixin.post(self)
+        
     def get(self):
         (eventtag_list, name, name_short, base, base_short, path, search) = \
             self._get_tag_search_args("event_len")
@@ -91,6 +115,9 @@ class EventtagListHandler(BaseEventtagHandler,
 class EventtagNewHandler(BaseEventtagHandler):
     @authenticated
     def get(self):
+        if not self.moderator:
+            raise HTTPError(404)
+
         path_list = self._get_path_list()
         self.render(
             'tag.html',
@@ -118,6 +145,13 @@ class EventtagHandler(BaseEventtagHandler,
         if eventtag.event_list:
             raise HTTPError(405, "Cannot delete tag because it has attached events.")
 
+    @authenticated
+    def put(self, entity_id_string):
+        if not self.moderator:
+            raise HTTPError(405)
+        
+        return MangoEntityHandlerMixin.put(self, entity_id_string)
+        
     def get(self, eventtag_id_string):
         note_search = self.get_argument("note_search", None)
         note_order = self.get_argument_order("note_order", None)

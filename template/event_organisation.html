@@ -19,6 +19,7 @@
       link_url="%s/organisation/%s" % (obj["url"], org["id"]),
       unlink=True,
       visibility=True,
+      parameters=parameters,
     )}
     %endfor
   </ul>
@@ -49,8 +50,9 @@
       link_url="%s/organisation/%s" % (obj["url"], org["id"]),
       link=True,
       visibility=True,
+      parameters=parameters,
       alias=True,
-      )}
+    )}
     %endif
     %endfor
   </ul>

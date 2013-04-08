@@ -1,0 +1,115 @@
+<%inherit file="base.html"/>
+
+<%!
+    import datetime
+%>
+
+<%def name="title()">Revision</%def>
+
+<%def name="page()">
+
+<h1>Revision</h1>
+
+<p>Choose to keep the current version (left) or replace it with the revision (right).</p>
+
+<p>Attributes which are the same for both versions are shown spanning both columns.</p>
+
+<form
+   action="${url_rewrite('/organisation/%s' % obj_v['entity_id'])}"
+   method="post"
+>
+  <input name="_xsrf" type="hidden" value="${xsrf}">
+  <input name="_method" type="hidden" value="put">
+  <table class="revision">
+    <thead>
+      <tr>
+        <th>Current${not obj and " (deleted)" or ""}</th>
+        <th>Revision</th>
+      </tr>
+    </thead>
+    <tfoot>
+      <tr>
+        <th>
+          <a href="">Keep Current${not obj and " (deleted)" or ""}</a>
+        </th>
+        <th>
+          <input type="submit" value="Replace with revision">
+        </th>
+      </tr>
+    </tfoot>
+    <tbody>
+      %for field_name, field in fields:
+      ${field_row(field_name, field)}
+      %endfor
+    </tbody>
+  </table>
+</form>
+
+</%def>
+
+
+<%def name="field_row(field_name, field_type)">
+<%
+content = obj and obj.get(field_name, None)
+content_v = obj_v.get(field_name, None)
+if field_name in ignore_list:
+    content_v = content
+%>
+${field_form(field_name, field_type, content_v)}
+<tr>
+  %if obj:
+  <th colspan="2">${field_name}</th>
+  %else:
+  <td></td>
+  <th>${field_name}</th>
+  %endif
+</tr>
+<tr>
+  %if obj and content == content_v:
+  <td colspan="2">
+    ${field_col(field_type, content)}
+  </th>
+  %else:
+  %if obj:
+  <td>
+    ${field_col(field_type, content)}
+  </td>
+  %else:
+  <td></td>
+  %endif
+  <td>
+    ${field_col(field_type, content_v)}
+  </td>
+  %endif
+</tr>
+</%def>
+
+
+
+<%def name="field_col(field_type, content)">
+%if field_type == "name":
+${content or ""}
+%elif field_type == "markdown":
+<div class="markdown">
+${content or ""| n, markdown_safe, convert_links}
+</div>
+%elif field_type == "public":
+${self.mini.visibility_public(content)}
+%else:
+Unknown type: ${field_type}
+%endif
+</%def>
+
+
+<%def name="field_form(field_name, field_type, content)">
+%if field_type in ["name", "markdown"]:
+<input type="hidden" name="${field_name}" value="${content or ""}">
+%elif field_type == "public":
+<input type="hidden" name="${field_name}"
+       value="${{False: 'false', None: 'null', True: 'true'}[content]}">
+%else:
+Unknown type: ${field_type}
+%endif
+</%def>
+
+

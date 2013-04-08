@@ -35,7 +35,7 @@ if obj:
 
 %>
 
-  %if current_user and (parameters.get("view", None) == "edit"):
+  %if moderator and (parameters.get("view", None) == "edit"):
   <div class="box left" id="tag-form">
     <form
        class="mango"
@@ -74,15 +74,8 @@ if obj:
       <input type="submit">
     </form>
 
-    %if current_user and obj and type_entity_list in obj and not obj[type_entity_list]:
-    <form
-       action="${url_rewrite(obj["url"])}"
-       method="post"
-       >
-      <input name="_xsrf" type="hidden" value="${xsrf}">
-      <input name="_method" type="hidden" value="delete">
-      <input type="submit" value="Delete">
-    </form>
+    %if obj and type_entity_list in obj and not obj[type_entity_list]:
+    ${self.mini.delete_input(obj)}
     %endif
 
   </div>
@@ -122,6 +115,7 @@ if obj:
 ${self.mini.render_note_section(obj["note_list"],
     obj["url"] + "/note", obj["url"],
     note_search, note_order, unlink_url=obj["url"],
+    add_button=moderator,
     parameters=parameters
 )}
 %endif

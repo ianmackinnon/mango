@@ -240,7 +240,7 @@ if not parameters:
 (${org["alias"]["name"] | n, h, unicode, nbsp})
 </span>\
 %endif
-%if current_user and (parameters.get("view", None) == "edit"):
+%if moderator and (parameters.get("view", None) == "edit"):
 %if link and link_url:
 &nbsp;\
 <span>\
@@ -292,7 +292,7 @@ if not parameters:
 &nbsp;\
 <span>${event["start_date"] | n, page_date, nbsp}</span>\
 %endif
-%if current_user and (parameters.get("view", None) == "edit"):
+%if moderator and (parameters.get("view", None) == "edit"):
 %if link and link_url:
 &nbsp;\
 <span>\
@@ -401,7 +401,7 @@ ${tag["base"] | n, h, unicode, nbsp}\
 &nbsp;\
 <span class="has-notes">…</span>\
 %endif
-%if current_user and (parameters.get("view", None) == "edit"):
+%if moderator and (parameters.get("view", None) == "edit"):
 %if link and link_url:
 <span>\
 <form
@@ -457,18 +457,18 @@ if not parameters:
 %>\
 <li class="alias">\
 <span class="alias_name">\
-%if current_user and (parameters.get("view", None) == "edit"):
+%if moderator and (parameters.get("view", None) == "edit"):
 <a
    href="${url_rewrite(alias["url"])}"
    >\
 %endif
 ${alias["name"] | n, h, unicode, nbsp}\
-%if current_user and (parameters.get("view", None) == "edit"):
+%if moderator and (parameters.get("view", None) == "edit"):
 </a>\
 %endif
 </span>\
 \
-%if current_user and (parameters.get("view", None) == "edit"):
+%if moderator and (parameters.get("view", None) == "edit"):
 %if unlink and link_url:
 &nbsp;\
 <span>\
@@ -479,7 +479,7 @@ ${alias["name"] | n, h, unicode, nbsp}\
 <input name="_xsrf" type="hidden" value="${xsrf}">\
 <input name="_method" type="hidden" value="delete">\
 %if next:
-<input name="next" type="hidden" value="${url_rewrite(next, parameters={})}">\
+<input name="next" type="hidden" value="${url_rewrite(next_, parameters={})}">\
 %endif
 &nbsp;\
 <input type="submit" value="✕">\
@@ -562,7 +562,7 @@ if not parameters:
 
 
 
-<%def name="render_note_section(note_list, new_url, next_url=None, note_search=None, note_order=None, unlink_url=None, parameters=None)">\
+<%def name="render_note_section(note_list, new_url, next_url=None, note_search=None, note_order=None, unlink_url=None, add_button=True, parameters=None)">\
 <%
 if not parameters:
     parameters = {}
@@ -592,7 +592,7 @@ if not parameters:
       
       %endif
       
-      %if current_user and (parameters.get("view", None) == "edit"):
+      %if add_button and current_user and (parameters.get("view", None) == "edit"):
       <ul class="actions">
 	<a
            class="action"
@@ -608,6 +608,32 @@ if not parameters:
     %endfor
   </div>
 </div>
+
+</%def>
+
+
+
+<%def name="delete_input(entity=None, next_=None)">
+<%
+    if not moderator:
+        return ""
+
+    if not entity:
+        return ""
+%>
+
+    <form
+       class="mango"
+       action="${url_rewrite(entity["url"])}"
+       method="post"
+       >
+      <input name="_xsrf" type="hidden" value="${xsrf}">
+      <input name="_method" type="hidden" value="delete">
+      %if next_:
+      <input name="next" type="hidden" value="${url_rewrite(next_)}">
+      %endif
+      <input type="submit" value="Delete">
+    </form>
 
 </%def>
 

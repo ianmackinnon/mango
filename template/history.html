@@ -13,7 +13,7 @@
 <%
 titles = {
    1: "Pending submissions",
-   0: "Latest version",
+   0: "Latest public version",
    -1: "Previous versions",
    }
 title_state = None
@@ -25,7 +25,9 @@ title_state = None
       <th class="type">Type</th>
       <th class="current">ID</th>
       <th class="revision">Restore</th>
+      %if moderator:
       <th class="public">Public</th>
+      %endif
       <th class="content">Content</th>
       <th class="user">User</th>
       <th class="date">Date</th>
@@ -69,13 +71,22 @@ user_link = url_rewrite("/user/%s" % (entity.user_id))
         %endif
       </td>
       <td class="revision">
-        %if entity.entity_v_id:
-        <a href="${revision_link}">${"%d" % (entity.entity_v_id)}</a>
+        %if entity.is_latest:
+        ${entity.entity_v_id}
+        %else:
+        <a href="${revision_link}">${entity.entity_v_id}</a>
         %endif
       </td>
+      %if moderator:
+      %if entity.user_moderator:
       <td class="visibility ${self.mini.visibility_public(entity.public)}">
         ${self.mini.visibility_public(entity.public)}
       </td>
+      %else:
+      <td class="visibility">
+      </td>
+      %endif
+      %endif
       <td class="content"><div class="ellipsis">${entity_name(entity)}</div></td>
       <td class="user">
         <a href="${user_link}">

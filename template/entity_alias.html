@@ -15,10 +15,14 @@
 
   <ul class="alias_list">
     %for alias in obj[type_alias_list]:
-    ${self.mini.alias_li(alias,
+    ${self.mini.alias_li(
+      alias,
       link_url="/organisation-alias/%s" % alias["id"],
-      unlink=True, next=uri,
-      visibility=True)}
+      unlink=True,
+      next_=uri,
+      visibility=True,
+      parameters=parameters,
+    )}
     %endfor
   </ul>
 </div>    

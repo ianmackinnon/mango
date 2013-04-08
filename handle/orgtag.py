@@ -79,6 +79,13 @@ class OrgtagListHandler(BaseOrgtagHandler,
     def _get(self):
         return self._get_orgtag
 
+    @authenticated
+    def post(self):
+        if not self.moderator:
+            raise HTTPError(405)
+        
+        return MangoEntityListHandlerMixin.post(self)
+        
     def get(self):
         (orgtag_list, name, name_short, base, base_short, path, search) = \
             self._get_tag_search_args("org_len")
@@ -105,6 +112,9 @@ class OrgtagListHandler(BaseOrgtagHandler,
 class OrgtagNewHandler(BaseOrgtagHandler):
     @authenticated
     def get(self):
+        if not self.moderator:
+            raise HTTPError(404)
+
         path_list = self._get_path_list()
         self.render(
             'tag.html',
@@ -132,6 +142,13 @@ class OrgtagHandler(BaseOrgtagHandler,
         if orgtag.org_list:
             raise HTTPError(405, "Cannot delete tag because it has attached organisations.")
 
+    @authenticated
+    def put(self, entity_id_string):
+        if not self.moderator:
+            raise HTTPError(405)
+        
+        return MangoEntityHandlerMixin.put(self, entity_id_string)
+        
     def get(self, orgtag_id_string):
         note_search = self.get_argument("note_search", None)
         note_order = self.get_argument_order("note_order", None)

@@ -1,0 +1,22 @@
+<%inherit file="base.html"/>
+
+<%def name="title()">Register</%def>
+
+<%def name="page()">
+<h1>Register</h1>
+
+<p>Register with CAAT's mapping application to be able to submit content and keep track of your submissions.</p>
+<p>Registration requires a Google or GMail account.</p>
+<p>CAAT does not store your email address.</p>
+<p>We do store the name associated with the account so we can show you which account you're logged in with.</p>
+<ul>
+  <li>
+    <a href="${url_root}auth/login/google?next=${next}">Register with Google</a>
+  </li>
+</ul>
+
+</%def>
+
+</body>
+
+</html>

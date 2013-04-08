@@ -4,7 +4,7 @@ import json
 from collections import namedtuple
 
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.sql.expression import or_
+from sqlalchemy.sql.expression import or_, and_
 from tornado.web import HTTPError
 
 from base import authenticated, sha1_concat, \
@@ -182,6 +182,10 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
                 orgalias_obj_list=orgalias_list,
                 )
 
+        version_url=None
+        if self.current_user and self._count_org_history(org_id_string):
+            version_url="%s/revision" % org.url
+
         if self.accept_type("json"):
             self.write_json(obj)
         else:
@@ -191,7 +195,7 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
                 note_search=note_search,
                 note_order=note_order,
                 note_offset=note_offset,
-                version_url="%s/revision" % org.url,
+                version_url=version_url,
                 )
         
 
@@ -209,10 +213,12 @@ HistoryEntity = namedtuple(
         "date",
         "existence",
         "existence_v",
+        "is_latest",
         "public",
         "name",
         "user_id",
         "user_name",
+        "user_moderator",
         "gravatar_hash",
         "url",
         "url_v",
@@ -222,36 +228,6 @@ HistoryEntity = namedtuple(
 
 
 class OrgRevisionListHandler(BaseOrgHandler):
-    def _get_org_history(self, org_id_string):
-        org_id = int(org_id_string)
-
-        org_query = self.orm.query(Org) \
-            .filter_by(org_id=org_id)
-
-        try:
-            org = org_query.one()
-        except NoResultFound:
-            org = None
-
-        org_v_query = self.orm.query(Org_v) \
-            .filter_by(org_id=org_id) \
-
-        if not self.moderator:
-            filters = [
-                Org_v.moderation_user_id == self.current_user.user_id,
-                ]
-            if org:
-                filters.append(
-                    Org_v.a_time == org.a_time
-                    )
-            org_v_query = org_v_query \
-                .filter(or_(*filters))
-
-        org_v_query = org_v_query \
-            .order_by(Org_v.a_time.desc())
-
-        return org_v_query.all(), org
-
     @authenticated
     def get(self, org_id_string):
         org_v_list, org = self._get_org_history(org_id_string)
@@ -259,23 +235,41 @@ class OrgRevisionListHandler(BaseOrgHandler):
         history = []
         for org_v in org_v_list:
             user = org_v.moderation_user
+
+            is_latest = False
+            if self.moderator:
+                if org and org.a_time == org_v.a_time:
+                    is_latest = True
+            else:
+                if not history:
+                    is_latest = True
+
             entity = HistoryEntity(
                 type="organisation",
                 entity_id=org_v.org_id,
-                entity_v_id=(not org or org.a_time != org_v.a_time) and org_v.org_v_id or None,
+                entity_v_id=org_v.org_v_id,
                 date=org_v.a_time,
                 existence=bool(org),
                 existence_v=org_v.existence,
+                is_latest=is_latest,
                 public=org_v.public,
                 name=org_v.name,
                 user_id=user.user_id,
                 user_name=user.name,
+                user_moderator=user.moderator,
                 gravatar_hash=user.auth.gravatar_hash,
                 url=org_v.url,
                 url_v=org_v.url_v,
                 )
             history.append(entity)
 
+        if not history:
+            raise HTTPError(404, "%s: No such org" % (org_id_string))
+
+        if not self.moderator:
+            if len(history) == int(bool(org)):
+                raise HTTPError(404)
+        
         version_current_url = (org and org.url) or (not self.moderator and history and history[-1].url)
 
         self.render(
@@ -283,7 +277,7 @@ class OrgRevisionListHandler(BaseOrgHandler):
             entity=True,
             version_current_url=version_current_url,
             latest_a_time=org and org.a_time,
-            title_text="Revisions",
+            title_text="Revision History",
             history=history,
             )
         
@@ -317,12 +311,23 @@ class OrgRevisionHandler(BaseOrgHandler):
     def get(self, org_id_string, org_v_id_string):
         org_v, org = self._get_org_revision(org_id_string, org_v_id_string)
 
-        if not self.moderator:
-            raise HTTPError(404)
-
-        if org and org.a_time == org_v.a_time:
-            self.next = org.url
-            return self.redirect_next()
+        if self.moderator:
+            if org and org.a_time == org_v.a_time:
+                self.next = org.url
+                return self.redirect_next()
+        else:
+            newest_org_v = self.orm.query(Org_v) \
+                .filter_by(moderation_user=self.current_user) \
+                .order_by(Org_v.a_time.desc()) \
+                .first()
+            if not newest_org_v:
+                raise HTTPError(404)
+            if org and newest_org_v.a_time < org.a_time:
+                raise HTTPError(404)
+            if newest_org_v == org_v:
+                self.next = org_v.url
+                return self.redirect_next()
+            org = newest_org_v
 
         obj = org and org.obj(
             public=True,
@@ -335,17 +340,24 @@ class OrgRevisionHandler(BaseOrgHandler):
             "public": org_v.public,
             }
 
+        ignore_list = []
         fields = (
             ("name", "name"),
             ("description", "markdown"),
-            ("public", "public"),
+            ("public", "public")
             )
+
+        if not self.moderator or not org_v.moderation_user.moderator:
+            ignore_list.append(
+                "public"
+                )
 
         self.render(
             'revision.html',
             version_url="/organisation/%s/revision" % (org_v.org_id),
             version_current_url=org and org.url,
             fields=fields,
+            ignore_list=ignore_list,
             obj=obj,
             obj_v=obj_v,
             )
@@ -463,6 +475,8 @@ class OrgNoteHandler(BaseOrgHandler, BaseNoteHandler):
 class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
     @authenticated
     def get(self, org_id_string):
+        if not self.moderator:
+            raise HTTPError(404)
 
         # org...
 
@@ -509,6 +523,9 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
 class OrgOrgtagHandler(BaseOrgHandler, BaseOrgtagHandler):
     @authenticated
     def put(self, org_id_string, orgtag_id_string):
+        if not self.moderator:
+            raise HTTPError(405)
+
         org = self._get_org(org_id_string)
         orgtag = self._get_orgtag(orgtag_id_string)
         if orgtag not in org.orgtag_list:
@@ -518,6 +535,9 @@ class OrgOrgtagHandler(BaseOrgHandler, BaseOrgtagHandler):
 
     @authenticated
     def delete(self, org_id_string, orgtag_id_string):
+        if not self.moderator:
+            raise HTTPError(405)
+
         org = self._get_org(org_id_string)
         orgtag = self._get_orgtag(orgtag_id_string)
         if orgtag in org.orgtag_list:
@@ -530,9 +550,16 @@ class OrgOrgtagHandler(BaseOrgHandler, BaseOrgtagHandler):
 class OrgOrgaliasListHandler(BaseOrgHandler, BaseOrgtagHandler):
     @authenticated
     def get(self, org_id_string):
+        if not self.moderator:
+            raise HTTPError(404)
+
         # org...
 
         org = self._get_org(org_id_string)
+
+        if self.parameters.get("view", None) != "edit":
+            self.next = org.url
+            self.redirect_next()
 
         if self.deep_visible():
             orgalias_list=org.orgalias_list
@@ -563,6 +590,9 @@ class OrgOrgaliasListHandler(BaseOrgHandler, BaseOrgtagHandler):
 
     @authenticated
     def post(self, org_id_string):
+        if not self.moderator:
+            raise HTTPError(404)
+            
         is_json = self.content_type("application/json")
         name = self.get_argument("name", json=is_json)
 
@@ -578,7 +608,9 @@ class OrgOrgaliasListHandler(BaseOrgHandler, BaseOrgtagHandler):
 class OrgEventListHandler(BaseOrgHandler, BaseEventHandler):
     @authenticated
     def get(self, org_id_string):
-
+        if not self.moderator:
+            raise HTTPError(404)
+            
         is_json = self.content_type("application/json")
 
         # org...
@@ -608,7 +640,7 @@ class OrgEventListHandler(BaseOrgHandler, BaseEventHandler):
         event_name_query = BaseEventHandler._get_event_search_query(
             self,
             name_search=event_name_search,
-            visibility=self.parameters["visibility"]
+            visibility=self.parameters.get("visibility", None),
             )
 
         event_list = []
@@ -632,6 +664,9 @@ class OrgEventListHandler(BaseOrgHandler, BaseEventHandler):
 class OrgEventHandler(BaseOrgHandler, BaseEventHandler):
     @authenticated
     def put(self, org_id_string, event_id_string):
+        if not self.moderator:
+            raise HTTPError(404)
+            
         org = self._get_org(org_id_string)
         event = self._get_event(event_id_string)
         if event not in org.event_list:
@@ -641,6 +676,9 @@ class OrgEventHandler(BaseOrgHandler, BaseEventHandler):
 
     @authenticated
     def delete(self, org_id_string, event_id_string):
+        if not self.moderator:
+            raise HTTPError(404)
+            
         org = self._get_org(org_id_string)
         event = self._get_event(event_id_string)
         if event in org.event_list:
