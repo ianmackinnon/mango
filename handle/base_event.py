@@ -1,21 +1,19 @@
 # -*- coding: utf-8 -*-
 
-
-
 import datetime
 
 from collections import OrderedDict
 
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
 from tornado.web import HTTPError
 
-from base import BaseHandler
-
+from base import BaseHandler, MangoBaseEntityHandlerMixin
 
 from model import Event, Address, Eventtag, detach
 
+from model_v import Event_v
 
 
 max_address_per_page = 26
@@ -23,30 +21,16 @@ max_address_pages = 3
 
 
 
-class BaseEventHandler(BaseHandler):
-    def _get_event(self, event_id_string, options=None):
-        event_id = int(event_id_string)
+class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
+    def _get_event(self, id_string,
+                   required=True, future_version=False):
+        return self._get_entity(Event, "event", "event_id",
+                                Event_v, "event_v", "event_v_id",
+                                id_string,
+                                required, future_version
+                                )
 
-        query = self.orm.query(Event)\
-            .filter_by(event_id=event_id)
-
-        if options:
-            query = query \
-                .options(*options)
-
-        if not self.moderator:
-            query = query \
-                .filter_by(public=True)
-
-        try:
-            event = query.one()
-        except NoResultFound:
-            raise HTTPError(404, "%d: No such event" % event_id)
-
-        return event
-
-
-    def _create_event(self):
+    def _create_event(self, id_=None, version=False):
         is_json = self.content_type("application/json")
 
         name = self.get_argument("name", json=is_json)
@@ -55,9 +39,6 @@ class BaseEventHandler(BaseHandler):
         description = self.get_argument("description", None, json=is_json);
         start_time = self.get_argument_time("start_time", None, json=is_json)
         end_time = self.get_argument_time("end_time", None, json=is_json)
-
-        public = self.get_argument_public("public", json=is_json)
-        moderation_user = self.current_user
 
         if end_date is None:
             end_date = start_date
@@ -70,15 +51,48 @@ class BaseEventHandler(BaseHandler):
         if end_date == start_date and start_time and end_time and end_time < start_time:
             raise HTTPError(400, "End time is earlier than start time on the same date.")
 
-        event = Event(
-            name, start_date, end_date,
-            description, start_time, end_time,
-            moderation_user=moderation_user, public=public)
+        public, moderation_user = self._create_revision()
+
+        if version:
+            event = Event_v(
+                id_,
+                name, start_date, end_date,
+                description, start_time, end_time,
+                moderation_user=moderation_user, public=public)
+        else:
+            event = Event(
+                name, start_date, end_date,
+                description, start_time, end_time,
+                moderation_user=moderation_user, public=public)
+            
+            if id_:
+                event.event_id = id_
 
         detach(event)
 
         return event
     
+    def _create_event_v(self, id_):
+        return self._create_event(id_, version=True)
+
+    def _event_history_query(self, event_id_string):
+        return self._history_query(
+            Event, "event_id",
+            Event_v,
+            event_id_string)
+
+    def _get_event_history(self, event_id_string):
+        event_v_query, event = self._event_history_query(event_id_string)
+        
+        event_v_query = event_v_query \
+            .order_by(Event_v.a_time.desc())
+
+        return event_v_query.all(), event
+
+    def _count_event_history(self, event_id_string):
+        event_v_query, event = self._event_history_query(event_id_string)
+
+        return event_v_query.count() - int(bool(event))
 
     def _get_event_search_query(
         self, name=None, name_search=None,

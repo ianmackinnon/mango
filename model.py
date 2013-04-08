@@ -808,7 +808,6 @@ class Event(Base, MangoEntity, NotableEntity):
                       CheckConstraint("end_date >= start_date"),
                       nullable=False,
                       )
-
     description = Column(Unicode())
     start_time = Column(Time)
     end_time = Column(Time)

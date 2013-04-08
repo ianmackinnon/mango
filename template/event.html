@@ -113,7 +113,6 @@ if None in path_keys:
   <div class="form-by-map" id="event-form">
     
     <h3>Event</h3>
-    
     %if current_user and (parameters.get("view", None) == "edit"):
     <form
        class="mango"
@@ -189,21 +188,10 @@ if None in path_keys:
       <input type="submit">
     </form>
 
-    %if obj:
-    <form
-       class="mango"
-       action="${url_rewrite(obj["url"])}"
-       method="post"
-       >
-      <input name="_xsrf" type="hidden" value="${xsrf}">
-      <input name="_method" type="hidden" value="delete">
-      <input type="submit" value="Delete">
-    </form>
-    %endif
-
-
+    ${self.mini.delete_input(obj)}
 
     %else :
+    ${self.mini.visibility_bar(obj)}
     ${obj["name"]}
 
     <h3>Time</h3>

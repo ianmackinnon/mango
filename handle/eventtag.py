@@ -212,6 +212,9 @@ class EventtagHandler(BaseEventtagHandler,
 class EventtagNoteListHandler(BaseEventtagHandler, BaseNoteHandler):
     @authenticated
     def post(self, eventtag_id_string):
+        if not self.moderator:
+            raise HTTPError(405)
+
         eventtag = self._get_eventtag(eventtag_id_string)
 
         text, source, public = BaseNoteHandler._get_arguments(self)
@@ -242,6 +245,9 @@ class EventtagNoteListHandler(BaseEventtagHandler, BaseNoteHandler):
 class EventtagNoteHandler(BaseEventtagHandler, BaseNoteHandler):
     @authenticated
     def put(self, eventtag_id_string, note_id_string):
+        if not self.moderator:
+            raise HTTPError(405)
+
         eventtag = self._get_eventtag(eventtag_id_string)
         note = self._get_note(note_id_string)
         if note not in eventtag.note_list:
@@ -251,6 +257,9 @@ class EventtagNoteHandler(BaseEventtagHandler, BaseNoteHandler):
 
     @authenticated
     def delete(self, eventtag_id_string, note_id_string):
+        if not self.moderator:
+            raise HTTPError(405)
+
         eventtag = self._get_eventtag(eventtag_id_string)
         note = self._get_note(note_id_string)
         if note in eventtag.note_list:

@@ -15,7 +15,7 @@
 <p>Attributes which are the same for both versions are shown spanning both columns.</p>
 
 <form
-   action="${url_rewrite('/organisation/%s' % obj_v['entity_id'])}"
+   action="${url_rewrite(action_url)}"
    method="post"
 >
   <input name="_xsrf" type="hidden" value="${xsrf}">
@@ -93,6 +93,10 @@ ${content or ""}
 <div class="markdown">
 ${content or ""| n, markdown_safe, convert_links}
 </div>
+%elif field_type == "date":
+${content | n, page_date}
+%elif field_type == "time":
+${content | n, page_time}
 %elif field_type == "public":
 ${self.mini.visibility_public(content)}
 %else:
@@ -104,6 +108,10 @@ Unknown type: ${field_type}
 <%def name="field_form(field_name, field_type, content)">
 %if field_type in ["name", "markdown"]:
 <input type="hidden" name="${field_name}" value="${content or ""}">
+%elif field_type == "date":
+<input type="hidden" name="${field_name}" value="${content | n, form_date}">
+%elif field_type == "time":
+<input type="hidden" name="${field_name}" value="${content | n, form_time}">
 %elif field_type == "public":
 <input type="hidden" name="${field_name}"
        value="${{False: 'false', None: 'null', True: 'true'}[content]}">

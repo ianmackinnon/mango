@@ -198,18 +198,7 @@ if not parameters:
                  class="action"
                  >Edit</a>
 
-    %if unlink and link_url:
-    <span>
-      <form
-         action="${url_rewrite(link_url, next_=uri)}"
-         method="post"
-         >
-	<input name="_xsrf" type="hidden" value="${xsrf}">
-	<input name="_method" type="hidden" value="delete">
-	<input type="submit" value="Delete">
-      </form>
-    </span>
-    %endif
+              ${delete_input(obj, next_=uri)}
 
               %else:
               <a href="${url_rewrite(address["url"])}">

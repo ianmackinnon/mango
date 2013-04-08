@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import json
-from collections import namedtuple
 
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.expression import or_, and_
 from tornado.web import HTTPError
 
 from base import authenticated, sha1_concat, \
+    HistoryEntity, \
     MangoEntityHandlerMixin, MangoEntityListHandlerMixin
 from base_note import BaseNoteHandler
 from base_org import BaseOrgHandler
@@ -17,10 +17,17 @@ from address import BaseAddressHandler
 
 from model import Org, Note, Address, Orgalias, Event
 
+from model_v import Org_v
+
 
 
 class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
                        MangoEntityListHandlerMixin):
+    Entity = Org
+    Entity_v = Org_v
+    entity_id = "org_id"
+    entity_v_id = "org_v_id"
+
     @property
     def _create(self):
         return self._create_org
@@ -142,6 +149,8 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
         public = self.moderator
 
         org = self._get_org(org_id_string, future_version=True)
+        if self._finished:
+            return
 
         if hasattr(org, "org_v_id"):
             obj = org.obj(
@@ -197,33 +206,6 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
                 note_offset=note_offset,
                 version_url=version_url,
                 )
-        
-
-
-from model_v import Org_v
-
-
-
-HistoryEntity = namedtuple(
-    "HistoryEntity",
-    [
-        "type",
-        "entity_id",
-        "entity_v_id",
-        "date",
-        "existence",
-        "existence_v",
-        "is_latest",
-        "public",
-        "name",
-        "user_id",
-        "user_name",
-        "user_moderator",
-        "gravatar_hash",
-        "url",
-        "url_v",
-        ]
-    )
         
 
 
@@ -333,12 +315,9 @@ class OrgRevisionHandler(BaseOrgHandler):
             public=True,
             )
 
-        obj_v = {
-            "entity_id": org_v.org_id,
-            "name": org_v.name,
-            "description": org_v.description,
-            "public": org_v.public,
-            }
+        obj_v = org_v.obj(
+            public=True,
+            )
 
         ignore_list = []
         fields = (
@@ -354,7 +333,8 @@ class OrgRevisionHandler(BaseOrgHandler):
 
         self.render(
             'revision.html',
-            version_url="/organisation/%s/revision" % (org_v.org_id),
+            action_url=org_v.url,
+            version_url="%s/revision" % (org_v.url),
             version_current_url=org and org.url,
             fields=fields,
             ignore_list=ignore_list,
@@ -413,6 +393,9 @@ class OrgAddressHandler(BaseOrgHandler, BaseAddressHandler):
 
     @authenticated
     def delete(self, org_id_string, address_id_string):
+        if not self.moderator:
+            raise HTTPError(405)
+
         org = self._get_org(org_id_string)
         address = self._get_address(address_id_string)
         if address in org.address_list:
@@ -463,6 +446,9 @@ class OrgNoteHandler(BaseOrgHandler, BaseNoteHandler):
 
     @authenticated
     def delete(self, org_id_string, note_id_string):
+        if not self.moderator:
+            raise HTTPError(405)
+
         org = self._get_org(org_id_string)
         note = self._get_note(note_id_string)
         if note in org.note_list:

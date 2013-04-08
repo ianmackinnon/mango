@@ -9,9 +9,10 @@ import markdown
 import datetime
 import urlparse
 from urllib import urlencode
+from collections import namedtuple
 
 from bs4 import BeautifulSoup
-from sqlalchemy import or_, not_
+from sqlalchemy import and_, or_, not_
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
 from mako import exceptions
@@ -696,6 +697,29 @@ class BaseHandler(RequestHandler):
 
 
 
+HistoryEntity = namedtuple(
+    "HistoryEntity",
+    [
+        "type",
+        "entity_id",
+        "entity_v_id",
+        "date",
+        "existence",
+        "existence_v",
+        "is_latest",
+        "public",
+        "name",
+        "user_id",
+        "user_name",
+        "user_moderator",
+        "gravatar_hash",
+        "url",
+        "url_v",
+        ]
+    )
+        
+
+
 class MangoBaseEntityHandlerMixin(RequestHandler):
     def _create_revision(self):
         is_json = self.content_type("application/json")
@@ -707,6 +731,44 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
         moderation_user = self.current_user
 
         return public, moderation_user
+
+    def _history_query(self,
+                       Entity, entity_id,
+                       Entity_v,
+                       id_string):
+        id_ = int(id_string)
+
+        entity_query = self.orm.query(Entity) \
+            .filter(getattr(Entity, entity_id) == id_)
+
+        try:
+            entity = entity_query.one()
+        except NoResultFound:
+            entity = None
+
+        entity_v_query = self.orm.query(Entity_v) \
+            .filter(getattr(Entity_v, entity_id) == id_)
+
+        if not self.moderator:
+            if entity:
+                filters = or_(
+                    and_(
+                        Entity_v.moderation_user_id == self.current_user.user_id,
+                        Entity_v.a_time > entity.a_time,
+                        ),
+                    and_(
+                        Entity_v.a_time == entity.a_time,
+                        Entity_v.public == True,
+                        ),
+                    )
+            else:
+                filters = Entity_v.moderation_user_id == self.current_user.user_id
+            entity_v_query = entity_v_query \
+                .filter(filters)
+
+        return entity_v_query, entity
+
+
 
     def _get_entity(self,
                     Entity, entity_type, entity_id,
@@ -724,18 +786,16 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
 
         id_ = int(id_string)
 
+        entity = None
+
         query = self.orm.query(Entity) \
             .filter(getattr(Entity, entity_id) == id_)
-
-        if not self.moderator:
-            query = query \
-                .filter_by(public=True)
-
+        
         try:
-            entity = query.one()
+            entity_any = query.one()
         except NoResultFound:
-            entity = None
-
+            entity_any = None
+            
         if self.current_user and not self.moderator and future_version is True:
             query = self.orm.query(Entity_v) \
                 .filter(getattr(Entity_v, entity_id) == id_) \
@@ -748,12 +808,25 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
             except NoResultFound:
                 entity_v = None
 
-            if entity_v and not (entity_v.existence and (entity is None or entity_v.a_time > entity.a_time)):
+            if entity_v and not (entity_v.existence and (entity_any is None or entity_v.a_time > entity_any.a_time)):
                 entity_v = None
 
             if entity_v:
                 entity = entity_v
-            
+
+        if not entity:
+            query = self.orm.query(Entity) \
+                .filter(getattr(Entity, entity_id) == id_)
+
+            if not self.moderator:
+                query = query \
+                    .filter_by(public=True)
+
+            try:
+                entity = query.one()
+            except NoResultFound:
+                entity = None
+
         if not entity and self.current_user:
             if self.moderator:
                 if required:
@@ -774,7 +847,7 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
                 except NoResultFound:
                     entity_v = None
 
-                if entity_v and not (entity_v.existence and (entity is None or entity_v.a_time > entity.a_time)):
+                if entity_v and not (entity_v.existence and (entity_any is None or entity_v.a_time > entity_any.a_time)):
                     entity_v = None
 
                 if entity_v:
@@ -788,7 +861,10 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
 
 
 class MangoEntityHandlerMixin(RequestHandler):
-    def _get_entity(self, Entity, entity_type, entity_id, id_string, query_options, required=True):
+    def _get_entity(self,
+                    Entity, entity_type, entity_id,
+                    id_string, query_options, required=True):
+        print "MangoEntityHandlerMixin._get_entity"
         id_ = int(id_string)
 
         query = self.orm.query(Entity) \
@@ -861,17 +937,13 @@ class MangoEntityListHandlerMixin(RequestHandler):
         if self.moderator:
             return self.redirect_next(new_entity.url)
 
-        # org only
-
-        from model_v import Org_v
-
-        id_ = new_entity.org_id
+        id_ = getattr(new_entity, self.entity_id)
 
         self.orm.delete(new_entity)
         self.orm_commit()
 
-        org_v_query = self.orm.query(Org_v) \
-            .filter_by(org_id=id_) \
+        self.orm.query(self.Entity_v) \
+            .filter(getattr(self.Entity_v, self.entity_id)==id_) \
             .delete()
         self.orm_commit()
 

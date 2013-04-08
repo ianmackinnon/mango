@@ -209,6 +209,9 @@ class OrgtagHandler(BaseOrgtagHandler,
 class OrgtagNoteListHandler(BaseOrgtagHandler, BaseNoteHandler):
     @authenticated
     def post(self, orgtag_id_string):
+        if not self.moderator:
+            raise HTTPError(405)
+
         orgtag = self._get_orgtag(orgtag_id_string)
 
         text, source, public = BaseNoteHandler._get_arguments(self)
@@ -239,6 +242,9 @@ class OrgtagNoteListHandler(BaseOrgtagHandler, BaseNoteHandler):
 class OrgtagNoteHandler(BaseOrgtagHandler, BaseNoteHandler):
     @authenticated
     def put(self, orgtag_id_string, note_id_string):
+        if not self.moderator:
+            raise HTTPError(405)
+
         orgtag = self._get_orgtag(orgtag_id_string)
         note = self._get_note(note_id_string)
         if note not in orgtag.note_list:
@@ -248,6 +254,9 @@ class OrgtagNoteHandler(BaseOrgtagHandler, BaseNoteHandler):
 
     @authenticated
     def delete(self, orgtag_id_string, note_id_string):
+        if not self.moderator:
+            raise HTTPError(405)
+
         orgtag = self._get_orgtag(orgtag_id_string)
         note = self._get_note(note_id_string)
         if note in orgtag.note_list:

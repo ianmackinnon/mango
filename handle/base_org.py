@@ -30,7 +30,7 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                                 required, future_version
                                 )
 
-    def _create_org(self, id_=None):
+    def _create_org(self, id_=None, version=False):
         is_json = self.content_type("application/json")
 
         name = self.get_argument("name", json=is_json)
@@ -38,65 +38,31 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
         public, moderation_user = self._create_revision()
 
-        org = Org(
-            name, description,
-            moderation_user=moderation_user, public=public)
+        if version:
+            org = Org_v(
+                id_,
+                name, description,
+                moderation_user=moderation_user, public=public)
+        else:
+            org = Org(
+                name, description,
+                moderation_user=moderation_user, public=public)
+            
+            if id_:
+                org.org_id = id_
 
         detach(org)
-
-        if id_:
-            org.org_id = id_
-
+        
         return org
     
     def _create_org_v(self, id_):
-        is_json = self.content_type("application/json")
-
-        name = self.get_argument("name", json=is_json)
-        description = self.get_argument("description", None, json=is_json);
-
-        public, moderation_user = self._create_revision()
-
-        org_v = Org_v(
-            id_,
-            name, description,
-            moderation_user=moderation_user, public=public)
-
-        detach(org_v)
-
-        return org_v
+        return self._create_org(id_, version=True)
     
     def _org_history_query(self, org_id_string):
-        org_id = int(org_id_string)
-
-        org_query = self.orm.query(Org) \
-            .filter_by(org_id=org_id)
-
-        try:
-            org = org_query.one()
-        except NoResultFound:
-            org = None
-
-        org_v_query = self.orm.query(Org_v) \
-            .filter_by(org_id=org_id) \
-
-        if not self.moderator:
-            filters = Org_v.moderation_user_id == self.current_user.user_id,
-            if org:
-                filters = or_(
-                    and_(
-                        Org_v.moderation_user_id == self.current_user.user_id,
-                        Org_v.a_time > org.a_time,
-                        ),
-                    and_(
-                        Org_v.a_time == org.a_time,
-                        Org_v.public == True,
-                        )
-                    )
-            org_v_query = org_v_query \
-                .filter(or_(*filters))
-
-        return org_v_query, org
+        return self._history_query(
+            Org, "org_id",
+            Org_v,
+            org_id_string)
 
     def _get_org_history(self, org_id_string):
         org_v_query, org = self._org_history_query(org_id_string)

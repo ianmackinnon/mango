@@ -7,8 +7,8 @@ from sqlalchemy.sql.expression import exists, and_, or_
 from base import BaseHandler, authenticated
 from model import User, get_history
 
-from model import Org
-from model_v import Org_v
+from model import Org, Event
+from model_v import Org_v, Event_v
 
 
 
@@ -65,9 +65,23 @@ class UserHandler(BaseHandler):
 
             submissions["org"] = query.all()
 
-            """select * from org_v as s1 where s1.moderation_user_id = 10 and not exists (select * from org_v as s2 where s2.org_id = s1.org_id and s2.a_time > s1.a_time) order by a_time desc;"""
+            Event_v_all = aliased(Event_v)
+            Event_v_new = aliased(Event_v)
 
-            """select s1.*, org.a_time from org_v as s1 left outer join org using (org_id) where s1.moderation_user_id = 10 and not exists (select * from org_v as s2 where s2.org_id = s1.org_id and s2.a_time > s1.a_time) and (org.a_time is null or s1.a_time > org.a_time) order by s1.a_time desc;"""
+            query = self.orm.query(Event_v_all) \
+                .outerjoin((Event, Event.event_id == Event_v_all.event_id)) \
+                .filter(Event_v_all.moderation_user_id==self.current_user.user_id) \
+                .filter(~exists().where(and_( \
+                        Event_v_new.event_id == Event_v_all.event_id,
+                        Event_v_new.a_time > Event_v_all.a_time,
+                        ))) \
+                .filter(or_(
+                        Event.a_time == None,
+                        Event_v_all.a_time > Event.a_time,
+                        )) \
+                .order_by(Event_v_all.a_time.desc()) \
+
+            submissions["event"] = query.all()
 
         self.render(
             'user.html',

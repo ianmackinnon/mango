@@ -2,9 +2,11 @@
 
 import json
 
+from sqlalchemy.orm.exc import NoResultFound
 from tornado.web import HTTPError
 
 from base import authenticated, sha1_concat, \
+    HistoryEntity, \
     MangoEntityHandlerMixin, MangoEntityListHandlerMixin
 from base_event import BaseEventHandler
 from base_org import BaseOrgHandler
@@ -14,13 +16,24 @@ from address import BaseAddressHandler
 
 from model import Event, Note, Address, Org
 
+from model_v import Event_v
+
 
 
 class EventListHandler(BaseEventHandler, BaseEventtagHandler,
                        MangoEntityListHandlerMixin):
+    Entity = Event
+    Entity_v = Event_v
+    entity_id = "event_id"
+    entity_v_id = "event_v_id"
+
     @property
     def _create(self):
         return self._create_event
+
+    @property
+    def _create_v(self):
+        return self._create_event_v
 
     @property
     def _get(self):
@@ -118,7 +131,7 @@ class DiaryHandler(EventListHandler):
 
 
 
-class EventNewHandler(BaseEventHandler):
+class EventNewHandler(BaseOrgHandler):
     @authenticated
     def get(self):
         self.render(
@@ -133,6 +146,10 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
         return self._create_event
 
     @property
+    def _create_v(self):
+        return self._create_event_v
+
+    @property
     def _get(self):
         return self._get_event
 
@@ -143,37 +160,50 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
 
         public = self.moderator
 
-        event = self._get_event(event_id_string)
+        event = self._get_event(event_id_string, future_version=True)
 
-        if self.deep_visible():
-            org_list=event.org_list
-            address_list=event.address_list
-            eventtag_list=event.eventtag_list
+        if self._finished:
+            return
+
+        if hasattr(event, "event_v_id"):
+            obj = event.obj(
+                public=public,
+                )
         else:
-            org_list=event.org_list_public
-            address_list=event.address_list_public
-            eventtag_list=event.eventtag_list_public
+            if self.deep_visible():
+                org_list=event.org_list
+                address_list=event.address_list
+                eventtag_list=event.eventtag_list
+            else:
+                org_list=event.org_list_public
+                address_list=event.address_list_public
+                eventtag_list=event.eventtag_list_public
 
-        note_list, note_count = event.note_list_filtered(
-            note_search=note_search,
-            note_order=note_order,
-            note_offset=note_offset,
-            all_visible=self.deep_visible(),
-            )
+            note_list, note_count = event.note_list_filtered(
+                note_search=note_search,
+                note_order=note_order,
+                note_offset=note_offset,
+                all_visible=self.deep_visible(),
+                )
 
-        org_list = [org.obj(public=public) for org in org_list]
-        address_list = [address.obj(public=public) for address in address_list]
-        eventtag_list = [eventtag.obj(public=public) for eventtag in eventtag_list]
-        note_list = [note.obj(public=public) for note in note_list]
+            org_list = [org.obj(public=public) for org in org_list]
+            address_list = [address.obj(public=public) for address in address_list]
+            eventtag_list = [eventtag.obj(public=public) for eventtag in eventtag_list]
+            note_list = [note.obj(public=public) for note in note_list]
 
-        obj = event.obj(
-            public=public,
-            org_obj_list=org_list,
-            address_obj_list=address_list,
-            eventtag_obj_list=eventtag_list,
-            note_obj_list=note_list,
-            note_count=note_count,
-            )
+            obj = event.obj(
+                public=public,
+                org_obj_list=org_list,
+                address_obj_list=address_list,
+                eventtag_obj_list=eventtag_list,
+                note_obj_list=note_list,
+                note_count=note_count,
+                )
+
+        version_url=None
+
+        if self.current_user and self._count_event_history(event_id_string):
+            version_url="%s/revision" % event.url
 
         if self.accept_type("json"):
             self.write_json(obj)
@@ -184,8 +214,148 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
                 note_search=note_search,
                 note_order=note_order,
                 note_offset=note_offset,
+                version_url=version_url,
                 )
 
+
+
+class EventRevisionListHandler(BaseEventHandler):
+    @authenticated
+    def get(self, event_id_string):
+        event_v_list, event = self._get_event_history(event_id_string)
+
+        history = []
+        for event_v in event_v_list:
+            user = event_v.moderation_user
+
+            is_latest = False
+            if self.moderator:
+                if event and event.a_time == event_v.a_time:
+                    is_latest = True
+            else:
+                if not history:
+                    is_latest = True
+
+            entity = HistoryEntity(
+                type="event",
+                entity_id=event_v.event_id,
+                entity_v_id=event_v.event_v_id,
+                date=event_v.a_time,
+                existence=bool(event),
+                existence_v=event_v.existence,
+                is_latest=is_latest,
+                public=event_v.public,
+                name=event_v.name,
+                user_id=user.user_id,
+                user_name=user.name,
+                user_moderator=user.moderator,
+                gravatar_hash=user.auth.gravatar_hash,
+                url=event_v.url,
+                url_v=event_v.url_v,
+                )
+            history.append(entity)
+
+        if not history:
+            raise HTTPError(404, "%s: No such event" % (event_id_string))
+
+        if not self.moderator:
+            if len(history) == int(bool(event)):
+                raise HTTPError(404)
+        
+        version_current_url = (event and event.url) or (not self.moderator and history and history[-1].url)
+
+        self.render(
+            'history.html',
+            entity=True,
+            version_current_url=version_current_url,
+            latest_a_time=event and event.a_time,
+            title_text="Revision History",
+            history=history,
+            )
+        
+
+
+class EventRevisionHandler(BaseEventHandler):
+    def _get_event_revision(self, event_id_string, event_v_id_string):
+        event_id = int(event_id_string)
+        event_v_id = int(event_v_id_string)
+
+        query = self.orm.query(Event_v) \
+            .filter_by(event_id=event_id) \
+            .filter_by(event_v_id=event_v_id)
+
+        try:
+            event_v = query.one()
+        except NoResultFound:
+            raise HTTPError(404, "%d:%d: No such event revision" % (event_id, event_v_id))
+
+        query = self.orm.query(Event) \
+            .filter_by(event_id=event_id)
+
+        try:
+            event = query.one()
+        except NoResultFound:
+            event = None
+
+        return event_v, event
+
+    @authenticated
+    def get(self, event_id_string, event_v_id_string):
+        event_v, event = self._get_event_revision(event_id_string, event_v_id_string)
+
+        if self.moderator:
+            if event and event.a_time == event_v.a_time:
+                self.next = event.url
+                return self.redirect_next()
+        else:
+            newest_event_v = self.orm.query(Event_v) \
+                .filter_by(moderation_user=self.current_user) \
+                .order_by(Event_v.a_time.desc()) \
+                .first()
+            if not newest_event_v:
+                raise HTTPError(404)
+            if event and newest_event_v.a_time < event.a_time:
+                raise HTTPError(404)
+            if newest_event_v == event_v:
+                self.next = event_v.url
+                return self.redirect_next()
+            event = newest_event_v
+
+        obj = event and event.obj(
+            public=True,
+            )
+
+        obj_v = event_v.obj(
+            public=True,
+            )
+
+        ignore_list = []
+        fields = (
+            ("name", "name"),
+            ("start_date", "date"),
+            ("end_date", "date"),
+            ("description", "markdown"),
+            ("start_time", "time"),
+            ("end_time", "time"),
+            ("public", "public")
+            )
+
+        if not self.moderator or not event_v.moderation_user.moderator:
+            ignore_list.append(
+                "public"
+                )
+
+        self.render(
+            'revision.html',
+            action_url=event_v.url,
+            version_url="%s/revision" % (event_v.url),
+            version_current_url=event and event.url,
+            fields=fields,
+            ignore_list=ignore_list,
+            obj=obj,
+            obj_v=obj_v,
+            )
+        
 
 
 class EventAddressListHandler(BaseEventHandler, BaseAddressHandler):
@@ -264,6 +434,9 @@ class EventAddressHandler(BaseEventHandler, BaseAddressHandler):
 
     @authenticated
     def delete(self, event_id_string, address_id_string):
+        if not self.moderator:
+            raise HTTPError(405)
+
         event = self._get_event(event_id_string)
         address = self._get_address(address_id_string)
         if address in event.address_list:
@@ -285,6 +458,9 @@ class EventNoteHandler(BaseEventHandler, BaseNoteHandler):
 
     @authenticated
     def delete(self, event_id_string, note_id_string):
+        if not self.moderator:
+            raise HTTPError(405)
+
         event = self._get_event(event_id_string)
         note = self._get_note(note_id_string)
         if note in event.note_list:

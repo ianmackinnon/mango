@@ -94,6 +94,15 @@ user_link = url_rewrite("/user/%s" % (entity.user_id))
   </div>
   <div class="event">
     <h3>Events</h4>
+<ul>
+%for event in submissions["event"]:
+<li>
+  <a
+     href="${url_rewrite(event.url)}"
+     >${event.name}</a>
+</li>
+%endfor
+</ul>
     <h4>Addresses</h4>
     <h4>Notes</h4>
   </div>

@@ -33,7 +33,7 @@ class Org_v(Base, MangoEntity):
     org_v_id = Column(Integer, primary_key=True)
     existence = Column(Boolean)
 
-    org_id = Column(Integer)
+    org_id = Column(Integer, nullable=False)
 
     name = Column(Unicode(), nullable=False)
     description = Column(Unicode())
@@ -138,6 +138,7 @@ class Orgtag_v(Base):
 
 class Event_v(Base):
     __tablename__ = 'event_v'
+    __table_args__ = {'sqlite_autoincrement': True}
 
     event_v_id = Column(Integer, primary_key=True)
     existence = Column(Boolean)
@@ -146,8 +147,10 @@ class Event_v(Base):
 
     name = Column(Unicode(), nullable=False)
     start_date = Column(Date, nullable=False)
-    end_date = Column(Date, nullable=False)
-
+    end_date = Column(Date,
+                      CheckConstraint("end_date >= start_date"),
+                      nullable=False,
+                      )
     description = Column(Unicode())
     start_time = Column(Time)
     end_time = Column(Time)
@@ -155,6 +158,69 @@ class Event_v(Base):
     moderation_user_id = Column(Integer, ForeignKey(User.user_id))
     a_time = Column(Float(), nullable=False)
     public = Column(Boolean)
+
+    moderation_user = relationship(User, backref='moderation_event_v_list')
+
+    content = [
+        "name",
+        "start_date",
+        "end_date",
+        "description",
+        "start_time",
+        "end_time",
+        "public",
+        ]
+
+    list_url = "/event"
+    
+    def __init__(self,
+                 event_id,
+                 name, start_date, end_date,
+                 description=None, start_time=None, end_time=None,
+                 moderation_user=None, public=None):
+
+        #
+        self.event_id = event_id
+        self.existence = True
+        #
+
+        self.name = sanitise_name(name)
+        self.start_date = start_date
+        self.end_date = end_date
+
+        self.description = description
+        self.start_time = start_time
+        self.end_time = end_time
+
+        self.moderation_user = moderation_user
+        self.a_time = 0
+        self.public = public
+        
+    def obj(self, public=False,
+            ):
+        obj = {
+            "id": self.event_v_id,
+            "entity_id": self.event_id,
+            "url": self.url,
+            "date": self.a_time,
+            "name": self.name,
+            "start_date": self.start_date.strftime("%Y-%m-%d"),
+            "end_date": self.end_date.strftime("%Y-%m-%d"),
+            "description": self.description,
+            "start_time": self.start_time and self.start_time.strftime("%H:%M"),
+            "end_time": self.end_time and self.end_time.strftime("%H:%M"),
+            }
+        if public:
+            obj["public"] = self.public
+        return obj
+
+    @property
+    def url(self):
+        return "%s/%d" % (self.list_url, self.event_id)
+
+    @property
+    def url_v(self):
+        return "%s/%d/revision/%d" % (self.list_url, self.event_id, self.event_v_id)
 
 
 
