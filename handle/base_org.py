@@ -11,7 +11,7 @@ from tornado.web import HTTPError
 
 from base import BaseHandler, MangoBaseEntityHandlerMixin
 
-from model import Org, Address, Orgalias, Orgtag, detach
+from model import User, Org, Address, Orgalias, Orgtag, detach
 
 from model_v import Org_v
 
@@ -68,7 +68,7 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         org_v_query, org = self._org_history_query(org_id_string)
         
         org_v_query = org_v_query \
-            .order_by(Org_v.a_time.desc())
+            .order_by(Org_v.org_v_id.desc())
 
         return org_v_query.all(), org
 
@@ -76,6 +76,17 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         org_v_query, org = self._org_history_query(org_id_string)
 
         return org_v_query.count() - int(bool(org))
+
+    def _get_org_latest_a_time(self, org_id_string):
+        id_ = int(org_id_string)
+        org_v = self.orm.query(Org_v.a_time) \
+            .join((User, Org_v.moderation_user)) \
+            .filter(Org_v.org_id == id_) \
+            .filter(User.moderator == True) \
+            .order_by(Org_v.org_v_id.desc()) \
+            .first()
+
+        return org_v and org_v.a_time or None
 
     def _get_name_search_query(self, name=None, name_search=None,
                                visibility=None):

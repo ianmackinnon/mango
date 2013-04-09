@@ -300,7 +300,7 @@ class OrgRevisionHandler(BaseOrgHandler):
         else:
             newest_org_v = self.orm.query(Org_v) \
                 .filter_by(moderation_user=self.current_user) \
-                .order_by(Org_v.a_time.desc()) \
+                .order_by(Org_v.org_v_id.desc()) \
                 .first()
             if not newest_org_v:
                 raise HTTPError(404)
@@ -331,11 +331,14 @@ class OrgRevisionHandler(BaseOrgHandler):
                 "public"
                 )
 
+        latest_a_time = self._get_org_latest_a_time(org_id_string)
+
         self.render(
             'revision.html',
             action_url=org_v.url,
             version_url="%s/revision" % (org_v.url),
             version_current_url=org and org.url,
+            latest_a_time=latest_a_time,
             fields=fields,
             ignore_list=ignore_list,
             obj=obj,

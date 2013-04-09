@@ -11,7 +11,7 @@ from tornado.web import HTTPError
 
 from base import BaseHandler, MangoBaseEntityHandlerMixin
 
-from model import Event, Address, Eventtag, detach
+from model import User, Event, Address, Eventtag, detach
 
 from model_v import Event_v
 
@@ -85,7 +85,7 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         event_v_query, event = self._event_history_query(event_id_string)
         
         event_v_query = event_v_query \
-            .order_by(Event_v.a_time.desc())
+            .order_by(Event_v.event_v_id.desc())
 
         return event_v_query.all(), event
 
@@ -93,6 +93,17 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         event_v_query, event = self._event_history_query(event_id_string)
 
         return event_v_query.count() - int(bool(event))
+
+    def _get_event_latest_a_time(self, event_id_string):
+        id_ = int(event_id_string)
+        event_v = self.orm.query(Event_v.a_time) \
+            .join((User, Event_v.moderation_user)) \
+            .filter(Event_v.event_id == id_) \
+            .filter(User.moderator == True) \
+            .order_by(Event_v.event_v_id.desc()) \
+            .first()
+
+        return event_v and event_v.a_time or None
 
     def _get_event_search_query(
         self, name=None, name_search=None,

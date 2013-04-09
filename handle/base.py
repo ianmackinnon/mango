@@ -152,6 +152,7 @@ def convert_links(text, quote="\""):
 class BaseHandler(RequestHandler):
 
     def __init__(self, *args, **kwargs):
+        self.SUPPORTED_METHODS += ("TOUCH", )
         self.messages = []
         self.scripts = []
         RequestHandler.__init__(self, *args, **kwargs)
@@ -800,7 +801,7 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
             query = self.orm.query(Entity_v) \
                 .filter(getattr(Entity_v, entity_id) == id_) \
                 .filter(Entity_v.moderation_user_id==self.current_user.user_id) \
-                .order_by(Entity_v.a_time.desc()) \
+                .order_by(getattr(Entity_v, entity_v_id).desc()) \
                 .limit(1)
 
             try:
@@ -839,7 +840,7 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
                 query = self.orm.query(Entity_v) \
                     .filter(getattr(Entity_v, entity_id) == id_) \
                     .filter(Entity_v.moderation_user_id==self.current_user.user_id) \
-                    .order_by(Entity_v.a_time.desc()) \
+                    .order_by(getattr(Entity_v, entity_v_id).desc()) \
                     .limit(1)
                 
                 try:
@@ -896,7 +897,7 @@ class MangoEntityHandlerMixin(RequestHandler):
     @authenticated
     def delete(self, entity_id_string):
         if not self.moderator:
-            raise HTTPError(404)
+            raise HTTPError(405)
 
         entity = self._get(entity_id_string)
         if self._before_delete:
@@ -904,6 +905,17 @@ class MangoEntityHandlerMixin(RequestHandler):
         self.orm.delete(entity)
         self.orm_commit()
         return self.redirect_next(entity.list_url)
+        
+    @authenticated
+    def touch(self, entity_id_string):
+        if not self.moderator:
+            raise HTTPError(405)
+
+        entity = self._get(entity_id_string)
+        entity.a_time = 0;
+        entity.moderation_user = self.current_user
+        self.orm_commit()
+        return self.redirect_next(entity.url)
         
     @authenticated
     def put(self, entity_id_string):

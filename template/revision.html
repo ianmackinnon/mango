@@ -14,10 +14,14 @@
 
 <p>Attributes which are the same for both versions are shown spanning both columns.</p>
 
+<%
+suggestion = (not latest_a_time) or (obj_v.get("date") > latest_a_time)
+%>
+
 <form
    action="${url_rewrite(action_url)}"
    method="post"
->
+   >
   <input name="_xsrf" type="hidden" value="${xsrf}">
   <input name="_method" type="hidden" value="put">
   <table class="revision">
@@ -30,10 +34,18 @@
     <tfoot>
       <tr>
         <th>
-          <a href="">Keep Current${not obj and " (deleted)" or ""}</a>
+          %if not suggestion:
+          <a href="${url_rewrite(version_url)}">Keep Current${not obj and " (deleted)" or ""}</a>
+          %endif
         </th>
         <th>
-          <input type="submit" value="Replace with revision">
+          %if suggestion:
+          <input type="submit" value="Accept this suggestion">
+          %elif not obj:
+          <input type="submit" value="Restore this revision">
+          %else:
+          <input type="submit" value="Replace with this revision">
+          %endif
         </th>
       </tr>
     </tfoot>
@@ -44,6 +56,27 @@
     </tbody>
   </table>
 </form>
+
+%if suggestion:
+<br>
+<form
+   action="${url_rewrite(action_url)}"
+   method="post"
+   >
+  <input name="_method" type="hidden" value="touch">
+  <table class="revision">
+    <tfoot>
+      <tr>
+        <th>
+          <input type="submit" value="Decline all pending suggestions">
+        </th>
+        <th>
+        </th>
+      </tr>
+    </tfoot>
+  </table>
+</form>
+%endif
 
 </%def>
 

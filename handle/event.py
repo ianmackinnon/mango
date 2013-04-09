@@ -310,7 +310,7 @@ class EventRevisionHandler(BaseEventHandler):
         else:
             newest_event_v = self.orm.query(Event_v) \
                 .filter_by(moderation_user=self.current_user) \
-                .order_by(Event_v.a_time.desc()) \
+                .order_by(Event_v.event_v_id.desc()) \
                 .first()
             if not newest_event_v:
                 raise HTTPError(404)
@@ -345,11 +345,14 @@ class EventRevisionHandler(BaseEventHandler):
                 "public"
                 )
 
+        latest_a_time = self._get_event_latest_a_time(event_id_string)
+
         self.render(
             'revision.html',
             action_url=event_v.url,
             version_url="%s/revision" % (event_v.url),
             version_current_url=event and event.url,
+            latest_a_time=latest_a_time,
             fields=fields,
             ignore_list=ignore_list,
             obj=obj,
