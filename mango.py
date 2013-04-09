@@ -38,7 +38,9 @@ from handle.auth import AuthRegisterHandler, \
 from handle.user import UserHandler, UserListHandler
 from handle.home import HomeHandler
 from handle.note import NoteHandler, NoteNewHandler, NoteListHandler
-from handle.address import AddressHandler, AddressListHandler, \
+from handle.address import AddressHandler, \
+    AddressRevisionListHandler, AddressRevisionHandler, \
+    AddressEntityListHandler, \
     AddressLookupHandler, AddressNoteListHandler, AddressNoteHandler
 from handle.org import OrgHandler, OrgNewHandler, \
     OrgRevisionListHandler, OrgRevisionHandler, \
@@ -301,8 +303,11 @@ class Application(tornado.web.Application):
             (r"/task/address", OrgListTaskAddressHandler),
             (r"/task/visibility", OrgListTaskVisibilityHandler),
 
-            (r"/address", AddressListHandler),
+            (r"/address", AddressEntityListHandler),
             (r"/address/lookup", AddressLookupHandler),
+            (r"/address/%s/revision" % re_id, AddressRevisionListHandler),
+            (r"/address/%s/revision/%s" % (re_id, re_id),
+             AddressRevisionHandler),
             (r"/address/%s" % re_id, AddressHandler),
             (r"/address/%s/note" % re_id, AddressNoteListHandler),
             (r"/address/%s/note/%s" % (re_id, re_id), AddressNoteHandler),

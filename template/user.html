@@ -79,34 +79,47 @@ user_link = url_rewrite("/user/%s" % (entity.user_id))
   <p>Your submissions will be shown here until they have been reviewed by our moderators.</p>
   <p>Click on any of them to view or make further changes.</p>
   <div class="org">
-    <h3>Organisations</h4>
-<ul>
-%for org in submissions["org"]:
-<li>
-  <a
-     href="${url_rewrite(org.url)}"
-     >${org.name}</a>
-</li>
-%endfor
-</ul>
+    <h3>Organisations</h3>
+    <ul>
+      %for org in submissions["org"]:
+      <li>
+        <a
+           href="${url_rewrite(org.url)}"
+           >${org.name}</a>
+      </li>
+      %endfor
+    </ul>
     <h4>Addresses</h4>
     <h4>Notes</h4>
   </div>
   <div class="event">
-    <h3>Events</h4>
-<ul>
-%for event in submissions["event"]:
-<li>
-  <a
-     href="${url_rewrite(event.url)}"
-     >${event.name}</a>
-</li>
-%endfor
-</ul>
+    <h3>Events</h3>
+    <ul>
+      %for event in submissions["event"]:
+      <li>
+        <a
+           href="${url_rewrite(event.url)}"
+           >${event.name}</a>
+      </li>
+      %endfor
+    </ul>
     <h4>Addresses</h4>
     <h4>Notes</h4>
   </div>
-%endif
+  <div class="address">
+    <h3>Addresses</h3>
+    <ul>
+      %for address in submissions["address"]:
+      <li>
+        <a
+           href="${url_rewrite(address.url)}"
+           >${address.postal}</a>
+      </li>
+      %endfor
+    </ul>
+    <h4>Notes</h4>
+  </div>
+  %endif
 </div>
 
 </%def>

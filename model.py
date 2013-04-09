@@ -8,8 +8,6 @@ import time
 import logging
 import mysql.mysql_init
 
-import geo
-
 from hashlib import sha1, md5
 from optparse import OptionParser
 from urllib import urlencode
@@ -27,6 +25,8 @@ from sqlalchemy.sql import func
 from sqlalchemy import Boolean, Integer, Float as FloatOrig, Numeric, Date, Time
 from sqlalchemy import Unicode as UnicodeOrig, String as StringOrig
 from sqlalchemy.dialects.mysql import LONGTEXT, DOUBLE, VARCHAR
+
+import geo
 
 log = logging.getLogger('model')
 

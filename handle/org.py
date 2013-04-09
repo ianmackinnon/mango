@@ -136,13 +136,6 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
     def _get(self):
         return self._get_org
 
-    def get_note_arguments(self):
-        is_json = self.content_type("application/json")
-        note_search = self.get_argument("note_search", None, json=is_json)
-        note_order = self.get_argument_order("note_order", None, json=is_json)
-        note_offset = self.get_argument_int("note_offset", None, json=is_json)
-        return note_search, note_order, note_offset
-
     def get(self, org_id_string):
         note_search, note_order, note_offset = self.get_note_arguments()
 

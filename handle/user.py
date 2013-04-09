@@ -7,8 +7,8 @@ from sqlalchemy.sql.expression import exists, and_, or_
 from base import BaseHandler, authenticated
 from model import User, get_history
 
-from model import Org, Event
-from model_v import Org_v, Event_v
+from model import Org, Event, Address
+from model_v import Org_v, Event_v, Address_v
 
 
 
@@ -82,6 +82,24 @@ class UserHandler(BaseHandler):
                 .order_by(Event_v_all.a_time.desc()) \
 
             submissions["event"] = query.all()
+
+            Address_v_all = aliased(Address_v)
+            Address_v_new = aliased(Address_v)
+
+            query = self.orm.query(Address_v_all) \
+                .outerjoin((Address, Address.address_id == Address_v_all.address_id)) \
+                .filter(Address_v_all.moderation_user_id==self.current_user.user_id) \
+                .filter(~exists().where(and_( \
+                        Address_v_new.address_id == Address_v_all.address_id,
+                        Address_v_new.a_time > Address_v_all.a_time,
+                        ))) \
+                .filter(or_(
+                        Address.a_time == None,
+                        Address_v_all.a_time > Address.a_time,
+                        )) \
+                .order_by(Address_v_all.a_time.desc()) \
+
+            submissions["address"] = query.all()
 
         self.render(
             'user.html',

@@ -849,6 +849,13 @@ class MangoEntityHandlerMixin(RequestHandler):
     def _before_delete(self, entity):
         pass
 
+    def get_note_arguments(self):
+        is_json = self.content_type("application/json")
+        note_search = self.get_argument("note_search", None, json=is_json)
+        note_order = self.get_argument_order("note_order", None, json=is_json)
+        note_offset = self.get_argument_int("note_offset", None, json=is_json)
+        return note_search, note_order, note_offset
+
     @authenticated
     def delete(self, entity_id_string):
         if not self.moderator:
@@ -879,8 +886,11 @@ class MangoEntityHandlerMixin(RequestHandler):
         if self.moderator:
             new_entity = self._create(id_=int(entity_id_string))
         else:
+            print entity_id_string
             new_entity = self._create_v(id_=int(entity_id_string))
             ignore_list = ["public"]
+        if self._before_put:
+            self._before_put(new_entity)
         if old_entity:
             if old_entity.content_same(new_entity, ignore_list):
                 return self.redirect_next(old_entity.url)

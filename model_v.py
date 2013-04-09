@@ -10,9 +10,11 @@ from sqlalchemy import Unicode as UnicodeOrig, String as StringOrig
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.mysql import LONGTEXT, DOUBLE
 
+import geo
+
 from model import Base, User, MangoEntity
 
-from model import sanitise_name
+from model import sanitise_name, sanitise_address
 
 Float = lambda : FloatOrig
 String = lambda : StringOrig
@@ -278,15 +280,12 @@ class Eventtag_v(Base):
 
 class Address_v(Base):
     __tablename__ = 'address_v'
+    __table_args__ = {'sqlite_autoincrement': True}
 
     address_v_id = Column(Integer, primary_key=True)
     existence = Column(Boolean)
 
     address_id = Column(Integer, nullable=False)
-
-    moderation_user_id = Column(Integer, ForeignKey(User.user_id))
-    a_time = Column(Float(), nullable=False)
-    public = Column(Boolean)
 
     postal = Column(Unicode(), nullable=False)
     source = Column(Unicode(), nullable=False)
@@ -295,6 +294,104 @@ class Address_v(Base):
     manual_latitude = Column(Float())
     longitude = Column(Float())
     latitude = Column(Float())
+
+    moderation_user_id = Column(Integer, ForeignKey(User.user_id))
+    a_time = Column(Float(), nullable=False)
+    public = Column(Boolean)
+
+    moderation_user = relationship(User, backref='moderation_address_v_list')
+
+    content = [
+        "postal",
+        "source",
+        "lookup",
+        "manual_longitude",
+        "manual_latitude",
+        "longitude",
+        "latitude",
+        "public",
+        ]
+
+    list_url = "/address"
+    
+    def __init__(self,
+                 address_id,
+                 postal=None, source=None, lookup=None,
+                 manual_longitude=None, manual_latitude=None,
+                 longitude=None, latitude=None,
+                 moderation_user=None, public=None):
+
+        #
+        self.address_id = address_id
+        self.existence = True
+        #
+
+        self.postal = sanitise_address(postal)
+        self.source = source
+        self.lookup = sanitise_address(lookup)
+        self.manual_longitude = manual_longitude
+        self.manual_latitude = manual_latitude
+        self.longitude = longitude
+        self.latitude = latitude
+
+        self.moderation_user = moderation_user
+        self.a_time = 0
+        self.public = public
+        
+    def geocode(self):
+        if self.manual_longitude is not None and self.manual_latitude is not None:
+            self.longitude = self.manual_longitude
+            self.latitude = self.manual_latitude
+            return
+        
+        if self.lookup:
+            coords = geo.coords(self.lookup)
+            if coords:
+                (self.latitude, self.longitude) = coords
+        else:
+            coords = geo.coords(self.postal)
+            if coords:
+                (self.latitude, self.longitude) = coords
+
+    def obj(self, public=False,
+            note_obj_list=None, note_count=None,
+            org_obj_list=None, event_obj_list=None,
+            ):
+        obj = {
+            "v_id": self.address_v_id,
+            "id": self.address_id,
+            "url": self.url,
+            "date": self.a_time,
+            "name": self.postal,
+            "source": self.source,
+            "postal": self.postal,
+            "lookup": self.lookup,
+            "manual_longitude": self.manual_longitude,
+            "manual_latitude": self.manual_latitude,
+            "longitude": self.longitude,
+            "latitude": self.latitude,
+            }
+        if public:
+            obj["public"] = self.public
+        if note_obj_list is not None:
+            obj["note_list"] = note_obj_list
+        if note_count is not None:
+            obj["note_count"] = note_count
+        if org_obj_list is not None:
+            obj["org_list"] = org_obj_list
+            obj["entity_list"] = obj.get("entity_list", []) + org_obj_list
+        if event_obj_list is not None:
+            obj["event_list"] = event_obj_list
+            obj["entity_list"] = obj.get("entity_list", []) + event_obj_list
+        return obj
+
+    @property
+    def url(self):
+        return "%s/%d" % (self.list_url, self.address_id)
+
+    @property
+    def url_v(self):
+        return "%s/%d/revision/%d" % (self.list_url, self.address_id, self.address_v_id)
 
 
 
