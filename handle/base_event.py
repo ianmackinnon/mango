@@ -23,12 +23,20 @@ max_address_pages = 3
 
 class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
     def _get_event(self, id_string,
-                   required=True, future_version=False):
-        return self._get_entity(Event, "event", "event_id",
-                                Event_v, "event_v", "event_v_id",
+                 required=True, future_version=False):
+        return self._get_entity(Event, "event_id",
+                                "event",
                                 id_string,
-                                required, future_version
+                                required,
                                 )
+
+    def _get_event_v(self, id_string,
+                 required=True, future_version=False):
+        return self._get_entity_v(Event, "event_id",
+                                  Event_v, "event_v_id",
+                                  "event",
+                                  id_string,
+                                  )
 
     def _create_event(self, id_=None, version=False):
         is_json = self.content_type("application/json")
@@ -92,7 +100,7 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
     def _count_event_history(self, event_id_string):
         event_v_query, event = self._event_history_query(event_id_string)
 
-        return event_v_query.count() - int(bool(event))
+        return event_v_query.count()
 
     def _get_event_latest_a_time(self, event_id_string):
         id_ = int(event_id_string)

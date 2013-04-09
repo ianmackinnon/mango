@@ -15,12 +15,13 @@ from bs4 import BeautifulSoup
 from sqlalchemy import and_, or_, not_
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.sql.expression import exists, and_, or_
 from mako import exceptions
 from tornado.web import authenticated as tornado_authenticated, RequestHandler, HTTPError
 
 import geo
 
-from model import Session, Address
+from model import Session, Address, User
 
 
 
@@ -335,6 +336,7 @@ class BaseHandler(RequestHandler):
                 "convert_links": convert_links,
                 "current_user": self.current_user,
                 "moderator": self.moderator,
+                "contributor": self.contributor,
                 "uri": self.request.uri,
                 "xsrf": self.xsrf_token,
                 "json_dumps": json.dumps,
@@ -685,6 +687,10 @@ class BaseHandler(RequestHandler):
         return bool(self.current_user and self.current_user.moderator)
 
     @property
+    def contributor(self):
+        return bool(self.current_user and not self.current_user.moderator)
+
+    @property
     def orm(self):
         return self.application.orm
 
@@ -770,127 +776,76 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
         return entity_v_query, entity
 
 
-
     def _get_entity(self,
-                    Entity, entity_type, entity_id,
-                    Entity_v, entity_v_type, entity_v_id,
+                    Entity, entity_id,
+                    entity_type,
                     id_string,
-                    required=True, future_version=None,
+                    required=True,
                     ):
-        """
-        future_version = True: prefer future versions
-        future_version = None: accept future versions
-        future_version = False: ignore future versions
-
-        future versions with existence == False are always ignored.
-        """
-
         id_ = int(id_string)
-
-        entity = None
 
         query = self.orm.query(Entity) \
             .filter(getattr(Entity, entity_id) == id_)
         
-        try:
-            entity_any = query.one()
-        except NoResultFound:
-            entity_any = None
-            
-        if self.current_user and not self.moderator and future_version is True:
-            query = self.orm.query(Entity_v) \
-                .filter(getattr(Entity_v, entity_id) == id_) \
-                .filter(Entity_v.moderation_user_id==self.current_user.user_id) \
-                .order_by(getattr(Entity_v, entity_v_id).desc()) \
-                .limit(1)
-
-            try:
-                entity_v = query.one()
-            except NoResultFound:
-                entity_v = None
-
-            if entity_v and not (entity_v.existence and (entity_any is None or entity_v.a_time > entity_any.a_time)):
-                entity_v = None
-
-            if entity_v:
-                entity = entity_v
-
-        if not entity:
-            query = self.orm.query(Entity) \
-                .filter(getattr(Entity, entity_id) == id_)
-
-            if not self.moderator:
-                query = query \
-                    .filter_by(public=True)
-
-            try:
-                entity = query.one()
-            except NoResultFound:
-                entity = None
-
-        if not entity and self.current_user:
-            if self.moderator:
-                if required:
-                    query = self.orm.query(Entity_v) \
-                        .filter(getattr(Entity_v, entity_id) == id_)
-                    if query.count():
-                        self.next = "%s/%d/revision" % (Entity.list_url, id_)
-                        return self.redirect_next()
-            elif future_version is not False:
-                query = self.orm.query(Entity_v) \
-                    .filter(getattr(Entity_v, entity_id) == id_) \
-                    .filter(Entity_v.moderation_user_id==self.current_user.user_id) \
-                    .order_by(getattr(Entity_v, entity_v_id).desc()) \
-                    .limit(1)
-                
-                try:
-                    entity_v = query.one()
-                except NoResultFound:
-                    entity_v = None
-
-                if entity_v and not (entity_v.existence and (entity_any is None or entity_v.a_time > entity_any.a_time)):
-                    entity_v = None
-
-                if entity_v:
-                    entity = entity_v
-
-        if required and not entity:
-            raise HTTPError(404, "%d: No such %s" % (id_, entity_type))
-
-        return entity
-
-
-
-class MangoEntityHandlerMixin(RequestHandler):
-    def _get_entity(self,
-                    Entity, entity_type, entity_id,
-                    id_string, query_options, required=True):
-        print "MangoEntityHandlerMixin._get_entity"
-        id_ = int(id_string)
-
-        query = self.orm.query(Entity) \
-            .filter(
-            Entity.get(entity_id) == id_
-            )
-
-        if options:
-            query = query \
-                .options(*options)
-
         if not self.moderator:
             query = query \
                 .filter_by(public=True)
-
+            
         try:
             entity = query.one()
         except NoResultFound:
             entity = None
-
+            
         if required and not entity:
             raise HTTPError(404, "%d: No such %s" % (id_, entity_type))
 
         return entity
 
+
+
+    def _get_entity_v(self,
+                      Entity, entity_id,
+                      Entity_v, entity_v_id,
+                      entity_type,
+                      id_string,
+                      ):
+        if not self.current_user:
+            raise HTTPError(404)
+        
+        id_ = int(id_string)
+
+        entity_v_mod = self.orm.query(Entity_v) \
+            .join((User, Entity_v.moderation_user)) \
+            .filter(getattr(Entity_v, entity_id) == id_) \
+            .filter(User.moderator == True) \
+            .subquery()
+
+        query = self.orm.query(Entity_v) \
+            .filter(getattr(Entity_v, entity_id) == id_)
+        
+        if not self.moderator:
+            query = query \
+                .filter(Entity_v.moderation_user_id==self.current_user.user_id)
+        query = query \
+            .filter(~exists().where(
+                entity_v_mod.c.a_time >= Entity_v.a_time
+                )) \
+            .order_by(getattr(Entity_v, entity_v_id).desc()) \
+            .limit(1)
+
+        try:
+            entity_v = query.one()
+        except NoResultFound:
+            entity_v = None
+
+        if entity_v and not entity_v.existence:
+            entity_v = None
+
+        return entity_v
+
+
+
+class MangoEntityHandlerMixin(RequestHandler):
     def _before_delete(self, entity):
         pass
 

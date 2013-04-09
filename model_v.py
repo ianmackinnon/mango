@@ -71,10 +71,14 @@ class Org_v(Base, MangoEntity):
         self.public = public
         
     def obj(self, public=False,
+            note_obj_list=None, note_count=None,
+            address_obj_list=None,
+            orgtag_obj_list=None, event_obj_list=None,
+            orgalias_obj_list=None, alias=None,
             ):
         obj = {
-            "id": self.org_v_id,
-            "entity_id": self.org_id,
+            "v_id": self.org_v_id,
+            "id": self.org_id,
             "url": self.url,
             "date": self.a_time,
             "name": self.name,
@@ -82,6 +86,20 @@ class Org_v(Base, MangoEntity):
             }
         if public:
             obj["public"] = self.public
+        if note_obj_list is not None:
+            obj["note_list"] = note_obj_list
+        if note_count is not None:
+            obj["note_count"] = note_count
+        if address_obj_list is not None:
+            obj["address_list"] = address_obj_list
+        if orgtag_obj_list is not None:
+            obj["orgtag_list"] = orgtag_obj_list
+        if event_obj_list is not None:
+            obj["event_list"] = event_obj_list
+        if orgalias_obj_list is not None:
+            obj["orgalias_list"] = orgalias_obj_list
+        if alias is not None:
+            obj["alias"] = alias;
         return obj
 
     @property
@@ -197,10 +215,13 @@ class Event_v(Base):
         self.public = public
         
     def obj(self, public=False,
+            note_obj_list=None, note_count=None,
+            address_obj_list=None,
+            eventtag_obj_list=None, org_obj_list=None,
             ):
         obj = {
-            "id": self.event_v_id,
-            "entity_id": self.event_id,
+            "v_id": self.event_v_id,
+            "id": self.event_id,
             "url": self.url,
             "date": self.a_time,
             "name": self.name,
@@ -212,6 +233,16 @@ class Event_v(Base):
             }
         if public:
             obj["public"] = self.public
+        if note_obj_list is not None:
+            obj["note_list"] = note_obj_list
+        if note_count is not None:
+            obj["note_count"] = note_count
+        if address_obj_list is not None:
+            obj["address_list"] = address_obj_list
+        if eventtag_obj_list is not None:
+            obj["eventtag_list"] = eventtag_obj_list
+        if org_obj_list is not None:
+            obj["org_list"] = org_obj_list
         return obj
 
     @property

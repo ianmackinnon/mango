@@ -24,11 +24,19 @@ max_address_pages = 3
 class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
     def _get_org(self, id_string,
                  required=True, future_version=False):
-        return self._get_entity(Org, "org", "org_id",
-                                Org_v, "org_v", "org_v_id",
+        return self._get_entity(Org, "org_id",
+                                "org",
                                 id_string,
-                                required, future_version
+                                required,
                                 )
+
+    def _get_org_v(self, id_string,
+                 required=True, future_version=False):
+        return self._get_entity_v(Org, "org_id",
+                                  Org_v, "org_v_id",
+                                  "org",
+                                  id_string,
+                                  )
 
     def _create_org(self, id_=None, version=False):
         is_json = self.content_type("application/json")
@@ -75,7 +83,7 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
     def _count_org_history(self, org_id_string):
         org_v_query, org = self._org_history_query(org_id_string)
 
-        return org_v_query.count() - int(bool(org))
+        return org_v_query.count()
 
     def _get_org_latest_a_time(self, org_id_string):
         id_ = int(org_id_string)

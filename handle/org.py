@@ -148,15 +148,18 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
 
         public = self.moderator
 
-        org = self._get_org(org_id_string, future_version=True)
-        if self._finished:
-            return
+        required = True
+        if self.current_user:
+            org_v = self._get_org_v(org_id_string)
+            if org_v:
+                required = False
+        org = self._get_org(org_id_string, required=required)
 
-        if hasattr(org, "org_v_id"):
-            obj = org.obj(
-                public=public,
-                )
-        else:
+        if self.moderator and not org:
+            self.next = "%s/revision" % org_v.url
+            return self.redirect_next()
+
+        if org:
             if self.deep_visible():
                 address_list=org.address_list
                 orgtag_list=org.orgtag_list
@@ -174,25 +177,36 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
                 note_offset=note_offset,
                 all_visible=self.deep_visible(),
                 )
+        else:
+            address_list=[]
+            orgtag_list=[]
+            event_list=[]
+            orgalias_list=[]
+            note_list=[]
+            note_count = 0
 
-            address_list = [address.obj(public=public) for address in address_list]
-            orgtag_list = [orgtag.obj(public=public) for orgtag in orgtag_list]
-            note_list = [note.obj(public=public) for note in note_list]
-            event_list = [event.obj(public=public) for event in event_list]
-            orgalias_list = [orgalias.obj(public=public) for orgalias in orgalias_list]
+        address_list = [address.obj(public=public) for address in address_list]
+        orgtag_list = [orgtag.obj(public=public) for orgtag in orgtag_list]
+        note_list = [note.obj(public=public) for note in note_list]
+        event_list = [event.obj(public=public) for event in event_list]
+        orgalias_list = [orgalias.obj(public=public) for orgalias in orgalias_list]
 
-            obj = org.obj(
-                public=public,
-                address_obj_list=address_list,
-                orgtag_obj_list=orgtag_list,
-                note_obj_list=note_list,
-                note_count=note_count,
-                event_obj_list=event_list,
-                orgalias_obj_list=orgalias_list,
-                )
+        if not self.moderator and org_v:
+            org = org_v
+
+        obj = org.obj(
+            public=public,
+            address_obj_list=address_list,
+            orgtag_obj_list=orgtag_list,
+            note_obj_list=note_list,
+            note_count=note_count,
+            event_obj_list=event_list,
+            orgalias_obj_list=orgalias_list,
+            )
 
         version_url=None
-        if self.current_user and self._count_org_history(org_id_string):
+
+        if self.current_user and self._count_org_history(org_id_string) > 1:
             version_url="%s/revision" % org.url
 
         if self.accept_type("json"):

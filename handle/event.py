@@ -160,16 +160,18 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
 
         public = self.moderator
 
-        event = self._get_event(event_id_string, future_version=True)
+        required = True
+        if self.current_user:
+            event_v = self._get_event_v(event_id_string)
+            if event_v:
+                required = False
+        event = self._get_event(event_id_string, required=required)
 
-        if self._finished:
-            return
+        if self.moderator and not event:
+            self.next = "%s/revision" % event_v.url
+            return self.redirect_next()
 
-        if hasattr(event, "event_v_id"):
-            obj = event.obj(
-                public=public,
-                )
-        else:
+        if event:
             if self.deep_visible():
                 org_list=event.org_list
                 address_list=event.address_list
@@ -185,24 +187,33 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
                 note_offset=note_offset,
                 all_visible=self.deep_visible(),
                 )
+        else:
+            org_list=[]
+            address_list=[]
+            orgtag_list=[]
+            note_list=[]
+            note_count = 0
 
-            org_list = [org.obj(public=public) for org in org_list]
-            address_list = [address.obj(public=public) for address in address_list]
-            eventtag_list = [eventtag.obj(public=public) for eventtag in eventtag_list]
-            note_list = [note.obj(public=public) for note in note_list]
+        org_list = [org.obj(public=public) for org in org_list]
+        address_list = [address.obj(public=public) for address in address_list]
+        eventtag_list = [eventtag.obj(public=public) for eventtag in eventtag_list]
+        note_list = [note.obj(public=public) for note in note_list]
 
-            obj = event.obj(
-                public=public,
-                org_obj_list=org_list,
-                address_obj_list=address_list,
-                eventtag_obj_list=eventtag_list,
-                note_obj_list=note_list,
-                note_count=note_count,
-                )
+        if not self.moderator and event_v:
+            event = event_v
+
+        obj = event.obj(
+            public=public,
+            org_obj_list=org_list,
+            address_obj_list=address_list,
+            eventtag_obj_list=eventtag_list,
+            note_obj_list=note_list,
+            note_count=note_count,
+            )
 
         version_url=None
 
-        if self.current_user and self._count_event_history(event_id_string):
+        if self.current_user and self._count_event_history(event_id_string) > 1:
             version_url="%s/revision" % event.url
 
         if self.accept_type("json"):
