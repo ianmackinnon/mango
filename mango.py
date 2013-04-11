@@ -37,7 +37,8 @@ from handle.auth import AuthRegisterHandler, \
     AuthLogoutHandler
 from handle.user import UserHandler, UserListHandler
 from handle.home import HomeHandler
-from handle.note import NoteHandler, NoteNewHandler, NoteListHandler
+from handle.note import NoteHandler, NoteNewHandler, NoteListHandler, \
+    NoteRevisionListHandler, NoteRevisionHandler
 from handle.address import AddressHandler, \
     AddressRevisionListHandler, AddressRevisionHandler, \
     AddressEntityListHandler, \
@@ -262,6 +263,9 @@ class Application(tornado.web.Application):
             (r"/note", NoteListHandler),
             (r"/note/new", NoteNewHandler),
             (r"/note/%s" % re_id, NoteHandler),
+            (r"/note/%s/revision" % re_id, NoteRevisionListHandler),
+            (r"/note/%s/revision/%s" % (re_id, re_id),
+             NoteRevisionHandler),
 
             (r"/organisation", OrgListHandler),
             (r"/organisation/new", OrgNewHandler),

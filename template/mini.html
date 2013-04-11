@@ -502,17 +502,13 @@ if not parameters:
 	${obj["source"] | n, markdown_safe, convert_links}
       </div>
       <div class="note-date">
-	<a
-           href="${url_rewrite(obj["url"])}"
-           >
 	${datetime.datetime.fromtimestamp(obj["date"]).strftime("%Y/%m/%d %H:%M")}
 	%if "linked" in obj and len(obj["linked"]) != 1:
 	|
 	${len(obj["linked"])} links
 	%endif
-	</a>
       </div>
-      %if current_user and (parameters.get("view", None) == "edit"):
+      %if moderator and (parameters.get("view", None) == "edit"):
       %if action:
       <div class="action-bar no-border right">
 	<a
@@ -544,6 +540,14 @@ if not parameters:
 	  <input type="submit" value="Delete">
 	</form>
       </div>
+      %endif
+      %else:
+      %if action:
+	<a
+           href="${url_rewrite(obj["url"])}"
+           >
+          View
+	</a>
       %endif
       %endif
     </div>
@@ -581,7 +585,7 @@ if not parameters:
       
       %endif
       
-      %if add_button and current_user and (parameters.get("view", None) == "edit"):
+      %if add_button and moderator and (parameters.get("view", None) == "edit"):
       <ul class="actions">
 	<a
            class="action"

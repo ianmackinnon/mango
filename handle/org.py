@@ -24,7 +24,7 @@ from handle.user import get_user_pending_org_address
 
 
 class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
-                       MangoEntityListHandlerMixin):
+                     MangoEntityListHandlerMixin):
     Entity = Org
     Entity_v = Org_v
     entity_id = "org_id"
@@ -217,7 +217,6 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
             )
 
         version_url=None
-
         if self.current_user and self._count_org_history(org_id_string) > 1:
             version_url="%s/revision" % org.url
 
@@ -478,6 +477,9 @@ class OrgAddressHandler(BaseOrgHandler, BaseAddressHandler):
 class OrgNoteListHandler(BaseOrgHandler, BaseNoteHandler):
     @authenticated
     def post(self, org_id_string):
+        if not self.moderator:
+            raise HTTPError(404)
+
         org = self._get_org(org_id_string)
 
         text, source, public = BaseNoteHandler._get_arguments(self)
@@ -492,6 +494,9 @@ class OrgNoteListHandler(BaseOrgHandler, BaseNoteHandler):
 
     @authenticated
     def get(self, org_id_string):
+        if not self.moderator:
+            raise HTTPError(404)
+
         org = self._get_org(org_id_string)
         obj = org.obj(
             public=self.moderator,
@@ -507,6 +512,9 @@ class OrgNoteListHandler(BaseOrgHandler, BaseNoteHandler):
 class OrgNoteHandler(BaseOrgHandler, BaseNoteHandler):
     @authenticated
     def put(self, org_id_string, note_id_string):
+        if not self.moderator:
+            raise HTTPError(404)
+
         org = self._get_org(org_id_string)
         note = self._get_note(note_id_string)
         if note not in org.note_list:

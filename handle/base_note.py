@@ -3,40 +3,86 @@
 from sqlalchemy.orm.exc import NoResultFound
 from tornado.web import HTTPError
 
-from base import BaseHandler
-from model import Note, note_fts
+from base import BaseHandler, MangoBaseEntityHandlerMixin
+
+from model import User, Note, note_fts, detach
+
+from model_v import Note_v
 
 
-class BaseNoteHandler(BaseHandler):
-    def _get_note(self, note_id_string, options=None):
-        note_id = int(note_id_string)
 
-        query = self.orm.query(Note)\
-            .filter_by(note_id=note_id)
+class BaseNoteHandler(BaseHandler, MangoBaseEntityHandlerMixin):
+    def _get_note(self, id_string,
+                  required=True, future_version=False):
+        return self._get_entity(Note, "note_id",
+                                "note",
+                                id_string,
+                                required,
+                                )
+    
+    def _get_note_v(self, id_string,
+                    required=True, future_version=False):
+        return self._get_entity_v(Note, "note_id",
+                                  Note_v, "note_v_id",
+                                  "note",
+                                  id_string,
+                                  )
 
-        if options:
-            query = query \
-                .options(*options)
-
-        if not self.moderator:
-            query = query \
-                .filter_by(public=True)
-
-        try:
-            note = query.one()
-        except NoResultFound:
-            raise HTTPError(404, "%d: No such note" % note_id)
-
-        return note
-
-    def _get_arguments(self):
+    def _create_note(self, id_=None, version=False):
         is_json = self.content_type("application/json")
+
         text = self.get_argument("text", json=is_json)
         source = self.get_argument("source", json=is_json)
-        public = self.get_argument_public("public", json=is_json)
 
-        return text, source, public
+        public, moderation_user = self._create_revision()
 
+        if version:
+            note = Note_v(
+                id_,
+                text, source,
+                moderation_user=moderation_user, public=public)
+        else:
+            note = Note(
+                text, source,
+                moderation_user=moderation_user, public=public)
+            
+            if id_:
+                note.note_id = id_
+
+        detach(note)
+        
+        return note
+    
+    def _note_history_query(self, note_id_string):
+        return self._history_query(
+            Note, "note_id",
+            Note_v,
+            note_id_string)
+    
+    def _get_note_history(self, note_id_string):
+        note_v_query, note = self._note_history_query(note_id_string)
+        
+        note_v_query = note_v_query \
+            .order_by(Note_v.note_v_id.desc())
+        
+        return note_v_query.all(), note
+    
+    def _count_note_history(self, note_id_string):
+        note_v_query, note = self._note_history_query(note_id_string)
+        
+        return note_v_query.count()
+    
+    def _get_note_latest_a_time(self, note_id_string):
+        id_ = int(note_id_string)
+        note_v = self.orm.query(Note_v.a_time) \
+            .join((User, Note_v.moderation_user)) \
+            .filter(Note_v.note_id == id_) \
+            .filter(User.moderator == True) \
+            .order_by(Note_v.note_v_id.desc()) \
+            .first()
+        
+        return note_v and note_v.a_time or None
+    
     def _filter_search(self, query, note_search, note_order=None):
         if note_search:
             query = query \

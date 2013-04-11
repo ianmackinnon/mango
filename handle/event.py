@@ -497,6 +497,9 @@ class EventAddressHandler(BaseEventHandler, BaseAddressHandler):
 class EventNoteListHandler(BaseEventHandler, BaseNoteHandler):
     @authenticated
     def post(self, event_id_string):
+        if not self.moderator:
+            raise HTTPError(404)
+
         event = self._get_event(event_id_string)
 
         text, source, public = BaseNoteHandler._get_arguments(self)
@@ -511,6 +514,9 @@ class EventNoteListHandler(BaseEventHandler, BaseNoteHandler):
 
     @authenticated
     def get(self, event_id_string):
+        if not self.moderator:
+            raise HTTPError(404)
+
         event = self._get_event(event_id_string)
         obj = event.obj(
             public=self.moderator,
@@ -526,6 +532,9 @@ class EventNoteListHandler(BaseEventHandler, BaseNoteHandler):
 class EventNoteHandler(BaseEventHandler, BaseNoteHandler):
     @authenticated
     def put(self, event_id_string, note_id_string):
+        if not self.moderator:
+            raise HTTPError(404)
+
         event = self._get_event(event_id_string)
         note = self._get_note(note_id_string)
         if note not in event.note_list:

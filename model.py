@@ -1621,8 +1621,10 @@ class Note(Base, MangoEntity):
 
     list_url = "/note"
 
-    def __init__(self, text=None, source=None,
+    def __init__(self,
+                 text, source,
                  moderation_user=None, public=None):
+
         self.text = text
         self.source = source
 
@@ -1642,7 +1644,10 @@ class Note(Base, MangoEntity):
         return unicode(self).encode("utf8")
 
     def obj(self, public=False,
-            org_obj_list=None, event_obj_list=None, address_obj_list=None, orgtag_obj_list=None, eventtag_obj_list=None):
+            org_obj_list=None, event_obj_list=None,
+            address_obj_list=None,
+            orgtag_obj_list=None, eventtag_obj_list=None
+            ):
         obj = {
             "id": self.note_id,
             "url": self.url,

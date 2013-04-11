@@ -45,12 +45,12 @@ New Note
 %endif
 </h1>
 
-%if current_user:
+%if moderator and (parameters.get("view", None) == "edit"):
 ${note_form(obj=obj, entity=entity, next=next)}
 %endif
 
 <div class="box full">
-  %if current_user:
+  %if moderator and (parameters.get("view", None) == "edit"):
   <div class="action-bar no-border">
     <h3>Preview</h3>
   </div>

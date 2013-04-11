@@ -1066,6 +1066,7 @@ div.ui-timepicker td a.ui-state-active
     width: 375px;
     text-align: center;
     padding: 4px;
+    vertical-align: top;
 }
 
 

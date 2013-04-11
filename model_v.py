@@ -483,15 +483,88 @@ class Address_v(Base):
 
 class Note_v(Base):
     __tablename__ = 'note_v'
+    __table_args__ = {'sqlite_autoincrement': True}
 
     note_v_id = Column(Integer, primary_key=True)
     existence = Column(Boolean)
 
     note_id = Column(Integer, nullable=False)
 
+    text = Column(Unicode(), nullable=False)
+    source = Column(Unicode(), nullable=False)
+
     moderation_user_id = Column(Integer, ForeignKey(User.user_id))
     a_time = Column(Float(), nullable=False)
     public = Column(Boolean)
 
-    text = Column(Unicode(), nullable=False)
-    source = Column(Unicode(), nullable=False)
+
+
+    moderation_user = relationship(User, backref='moderation_note_v_list')
+
+    content = [
+        "text",
+        "source",
+        "public",
+        ]
+
+    list_url = "/note"
+    
+    def __init__(self,
+                 note_id,
+                 text, source,
+                 moderation_user=None, public=None):
+
+        #
+        self.note_id = note_id
+        self.existence = True
+        #
+
+        self.text = text
+        self.source = source
+
+        self.moderation_user = moderation_user
+        self.a_time = 0
+        self.public = public
+        
+    def obj(self, public=False,
+            org_obj_list=None, event_obj_list=None,
+            address_obj_list=None,
+            orgtag_obj_list=None, eventtag_obj_list=None
+            ):
+        obj = {
+            "v_id": self.note_v_id,
+            "id": self.note_id,
+            "url": self.url,
+            "date": self.a_time,
+            "text": self.text,
+            "source": self.source,
+            }
+        linked = False
+        if public:
+            obj["public"] = self.public
+        if org_obj_list is not None:
+            obj["org_list"] = org_obj_list
+            linked = (linked or []) + org_obj_list
+        if event_obj_list is not None:
+            obj["event_list"] = event_obj_list
+            linked = (linked or []) + event_obj_list
+        if address_obj_list is not None:
+            obj["address_list"] = address_obj_list
+            linked = (linked or []) + address_obj_list
+        if orgtag_obj_list is not None:
+            obj["orgtag_list"] = orgtag_obj_list
+            linked = (linked or []) + orgtag_obj_list
+        if eventtag_obj_list is not None:
+            obj["eventtag_list"] = eventtag_obj_list
+            linked = (linked or []) + eventtag_obj_list
+        if linked is not False:
+            obj["linked"] = linked
+        return obj
+
+    @property
+    def url(self):
+        return "%s/%d" % (self.list_url, self.note_id)
+
+    @property
+    def url_v(self):
+        return "%s/%d/revision/%d" % (self.list_url, self.note_id, self.note_v_id)

@@ -448,6 +448,9 @@ class AddressLookupHandler(BaseAddressHandler):
 class AddressNoteListHandler(BaseAddressHandler, BaseNoteHandler):
     @authenticated
     def post(self, address_id_string):
+        if not self.moderator:
+            raise HTTPError(404)
+
         address = self._get_address(address_id_string)
 
         text, source, public = BaseNoteHandler._get_arguments(self)
@@ -460,7 +463,11 @@ class AddressNoteListHandler(BaseAddressHandler, BaseNoteHandler):
         self.orm_commit()
         return self.redirect_next(address.url)
 
+    @authenticated
     def get(self, address_id_string):
+        if not self.moderator:
+            raise HTTPError(404)
+
         address = self._get_address(address_id_string)
 
         obj = address.obj(
@@ -477,6 +484,9 @@ class AddressNoteListHandler(BaseAddressHandler, BaseNoteHandler):
 class AddressNoteHandler(BaseAddressHandler, BaseNoteHandler):
     @authenticated
     def put(self, address_id_string, note_id_string):
+        if not self.moderator:
+            raise HTTPError(404)
+
         address = self._get_address(address_id_string)
         note = self._get_note(note_id_string)
         if note not in address.note_list:
@@ -486,6 +496,9 @@ class AddressNoteHandler(BaseAddressHandler, BaseNoteHandler):
 
     @authenticated
     def delete(self, address_id_string, note_id_string):
+        if not self.moderator:
+            raise HTTPError(404)
+
         address = self._get_address(address_id_string)
         note = self._get_note(note_id_string)
         if note in address.note_list:
