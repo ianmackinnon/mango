@@ -110,6 +110,9 @@ def accept_event_address_v(orm, address_id):
     return True
         
 
+class classproperty(property):
+    def __get__(self, cls, owner):
+        return self.fget.__get__(None, owner)()
 
 
 
@@ -138,6 +141,16 @@ class Org_v(Base, MangoEntity):
         ]
 
     list_url = "/organisation"
+
+    @classproperty
+    @classmethod
+    def entity_id(cls):
+        return cls.org_id
+
+    @classproperty
+    @classmethod
+    def entity_v_id(cls):
+        return cls.org_v_id
     
     def __init__(self,
                  org_id,
@@ -278,6 +291,16 @@ class Event_v(Base):
 
     list_url = "/event"
     
+    @classproperty
+    @classmethod
+    def entity_id(cls):
+        return cls.event_id
+
+    @classproperty
+    @classmethod
+    def entity_v_id(cls):
+        return cls.event_v_id
+    
     def __init__(self,
                  event_id,
                  name, start_date, end_date,
@@ -399,6 +422,16 @@ class Address_v(Base):
 
     list_url = "/address"
     
+    @classproperty
+    @classmethod
+    def entity_id(cls):
+        return cls.address_id
+
+    @classproperty
+    @classmethod
+    def entity_v_id(cls):
+        return cls.address_v_id
+    
     def __init__(self,
                  address_id,
                  postal, source,
@@ -508,6 +541,16 @@ class Note_v(Base):
         ]
 
     list_url = "/note"
+    
+    @classproperty
+    @classmethod
+    def entity_id(cls):
+        return cls.note_id
+
+    @classproperty
+    @classmethod
+    def entity_v_id(cls):
+        return cls.note_v_id
     
     def __init__(self,
                  note_id,

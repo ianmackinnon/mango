@@ -1,0 +1,95 @@
+<%inherit file="base.html"/>
+
+<%def name="title()">Moderation Queue</%def>
+
+<%def name="page()">
+
+<h1>Moderation Queue</h1>
+
+<p>
+
+<table class="queue">
+  <thead>
+    <tr>
+      <th>Organisation</th>
+      <th>Event</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <ul>
+          %for org_id, org in queue["org"].items():
+          ${org_list(org_id, org)}
+          %endfor
+        </ul>
+      </td>
+
+      <td>
+        <ul>
+          %for event_id, event in queue["event"].items():
+          ${event_list(event_id, event)}
+          %endfor
+        </ul>
+      </td>
+  </tbody>
+</table>
+
+</%def>
+
+
+<%def name="org_list(org_id, org, open=True)">
+<li>
+  org:
+  ${org_id}
+  %if open:
+  <a href="${url_rewrite(org["url"])}">view</a>
+  :
+  %if org["revision_url"]:
+  <a href="${url_rewrite(org["revision_url"])}">moderate</a>
+  %endif
+  %endif
+  <ul>
+    %for address_id, address in org["address"].items():
+    ${address_list(address_id, address, not org["revision_url"])}
+    %endfor
+  </ul>
+</li>
+</%def>
+
+
+
+<%def name="event_list(event_id, event, open=True)">
+<li>
+  event:
+  ${event_id}
+  %if open:
+  <a href="${url_rewrite(event["url"])}">view</a>
+  :
+  %if event["revision_url"]:
+  <a href="${url_rewrite(event["revision_url"])}">moderate</a>
+  %endif
+  %endif
+  <ul>
+    %for address_id, address in event["address"].items():
+    ${address_list(address_id, address, not event["revision_url"])}
+    %endfor
+  </ul>
+</li>
+</%def>
+
+
+
+<%def name="address_list(address_id, address, open=True)">
+<li>
+  address:
+  ${address_id}
+  %if open:
+  <a href="${url_rewrite(address["url"])}">view</a>
+  :
+  %if open and address["revision_url"]:
+  <a href="${url_rewrite(address["revision_url"])}">moderate</a>
+  %endif
+  %endif
+</li>
+</%def>

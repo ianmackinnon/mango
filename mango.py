@@ -66,6 +66,7 @@ from handle.orgtag import OrgtagHandler, OrgtagListHandler, \
 from handle.eventtag import EventtagHandler, EventtagListHandler, \
     EventtagNewHandler, EventtagNoteListHandler, EventtagNoteHandler
 from handle.history import HistoryHandler
+from handle.moderation import ModerationQueueHandler
 
 
 define("port", default=8802, help="Run on the given port", type=int)
@@ -335,6 +336,7 @@ class Application(tornado.web.Application):
             (r"/auth/logout", AuthLogoutHandler),
 
             (r"/history", HistoryHandler),
+            (r"/moderation/queue", ModerationQueueHandler),
             ]
         
         self.skin = options.skin

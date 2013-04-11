@@ -1069,6 +1069,33 @@ div.ui-timepicker td a.ui-state-active
     vertical-align: top;
 }
 
+/* Queue */
+
+#mango table.queue
+{
+    width: 100%
+}
+
+#mango table.queue th,
+#mango table.queue td
+{
+    width: 50%;
+    border: 1px solid #ddd;
+    vertical-align: top;
+    line-height: 22px;
+
+}
+
+#mango table.queue ul
+{
+    margin: 0;
+    padding-left: 12px;
+}
+#mango table.queue li
+{
+    padding: 4px;
+    list-style: none;
+}
 
 
 
