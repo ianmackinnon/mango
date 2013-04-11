@@ -49,11 +49,13 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         if version:
             org = Org_v(
                 id_,
-                name, description,
+                name,
+                description,
                 moderation_user=moderation_user, public=public)
         else:
             org = Org(
-                name, description,
+                name,
+                description,
                 moderation_user=moderation_user, public=public)
             
             if id_:
@@ -66,6 +68,19 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
     def _create_org_v(self, id_):
         return self._create_org(id_, version=True)
     
+    def _decline_org_v(self, id_string):
+        id_ = int(id_string)
+
+        org = Org_v(
+            id_,
+            "DECLINED",
+            moderation_user=self.current_user, public=None)
+        org.existence = False
+
+        detach(org)
+        
+        return org
+
     def _org_history_query(self, org_id_string):
         return self._history_query(
             Org, "org_id",

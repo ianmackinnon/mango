@@ -2,17 +2,20 @@
 # -*- coding: utf-8 -*-
 
 
-from sqlalchemy import Column
+from sqlalchemy import Column, Table
+from sqlalchemy import and_
 from sqlalchemy import ForeignKey, ForeignKeyConstraint, UniqueConstraint, CheckConstraint, PrimaryKeyConstraint
 
 from sqlalchemy import Boolean, Integer, Float as FloatOrig, Numeric, Date, Time
 from sqlalchemy import Unicode as UnicodeOrig, String as StringOrig
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.mysql import LONGTEXT, DOUBLE
+from sqlalchemy.orm.exc import NoResultFound
 
 import geo
 
-from model import Base, User, MangoEntity
+from model import Base, User, MangoEntity, \
+    org_address, event_address
 
 from model import sanitise_name, sanitise_address
 
@@ -25,6 +28,88 @@ def use_mysql():
     Float = lambda : DOUBLE()
     String = lambda : LONGTEXT(charset="latin1", collation="latin1_swedish_ci")
     Unicode = lambda : LONGTEXT(charset="utf8", collation="utf8_general_ci")
+
+
+
+org_address_v = Table(
+    'org_address_v', Base.metadata,
+    Column('org_id', Integer, nullable=False),
+    Column('address_id', Integer, nullable=False),
+    Column('a_time', Float(), nullable=False),
+    Column('existence', Boolean, nullable=False),
+    )
+
+
+
+event_address_v = Table(
+    'event_address_v', Base.metadata,
+    Column('event_id', Integer, nullable=False),
+    Column('address_id', Integer, nullable=False),
+    Column('a_time', Float(), nullable=False),
+    Column('existence', Boolean, nullable=False),
+    )
+
+
+
+def accept_org_address_v(orm, address_id):
+    query = orm.query(org_address_v.c.org_id) \
+        .filter(and_(
+            org_address_v.c.address_id == address_id,
+            org_address_v.c.existence == True,
+            )) \
+        .order_by(org_address_v.c.a_time.desc()) \
+        .limit(1)
+    try:
+        (org_id, ) = query.one()
+    except NoResultFound as e:
+        return False
+    
+    query = orm.query(org_address) \
+        .filter(and_(
+            org_address.c.address_id == address_id,
+            org_address.c.org_id == org_id,
+            ))
+    if query.count():
+        return False
+    items = [{
+            "address_id": address_id,
+            "org_id": org_id,
+            "a_time": 0,
+            }]
+    orm.connection().execute(org_address.insert(), *items)
+    return True
+        
+
+
+def accept_event_address_v(orm, address_id):
+    query = orm.query(event_address_v.c.event_id) \
+        .filter(and_(
+            event_address_v.c.address_id == address_id,
+            event_address_v.c.existence == True,
+            )) \
+        .order_by(event_address_v.c.a_time.desc()) \
+        .limit(1)
+    try:
+        (event_id, ) = query.one()
+    except NoResultFound as e:
+        return False
+    
+    query = orm.query(event_address) \
+        .filter(and_(
+            event_address.c.address_id == address_id,
+            event_address.c.event_id == event_id,
+            ))
+    if query.count():
+        return False
+    items = [{
+            "address_id": address_id,
+            "event_id": event_id,
+            "a_time": 0,
+            }]
+    orm.connection().execute(event_address.insert(), *items)
+    return True
+        
+
 
 
 
@@ -316,7 +401,8 @@ class Address_v(Base):
     
     def __init__(self,
                  address_id,
-                 postal=None, source=None, lookup=None,
+                 postal, source,
+                 lookup=None,
                  manual_longitude=None, manual_latitude=None,
                  longitude=None, latitude=None,
                  moderation_user=None, public=None):

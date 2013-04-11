@@ -59,6 +59,7 @@ user_link = url_rewrite("/user/%s" % (entity.user_id))
       <th colspan="7">${title}</th>
     </tr>
 %endif
+%if entity.existence_v:
     <tr>
       <td class="type">${entity.type}</td>
       <td class="current">
@@ -97,6 +98,7 @@ user_link = url_rewrite("/user/%s" % (entity.user_id))
       </td>
       <td class="date">${datetime.datetime.fromtimestamp(entity.date).strftime("%Y/%m/%d %H:%M:%S")}</td>
     </tr>
+%endif
     %endfor
   </tbody>
 </table>

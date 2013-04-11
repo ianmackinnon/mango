@@ -9,6 +9,144 @@ from model import User, get_history
 
 from model import Org, Event, Address
 from model_v import Org_v, Event_v, Address_v
+from model_v import org_address_v, event_address_v
+
+
+
+
+def get_user_pending_org(orm, user):
+    Org_v_all = aliased(Org_v)
+    Org_v_new = aliased(Org_v)
+    
+    query = orm.query(Org_v_all) \
+        .outerjoin((
+            Org, 
+            Org.org_id == Org_v_all.org_id
+            )) \
+        .filter(Org_v_all.moderation_user_id==user.user_id) \
+        .filter(~exists().where(and_(
+                Org_v_new.org_id == Org_v_all.org_id,
+                Org_v_new.a_time > Org_v_all.a_time,
+                ))) \
+        .filter(or_(
+                Org.a_time == None,
+                Org_v_all.a_time > Org.a_time,
+                )) \
+         .order_by(Org_v_all.a_time.desc()) \
+
+    return query.all()
+
+
+
+def get_user_pending_event(orm, user):
+    Event_v_all = aliased(Event_v)
+    Event_v_new = aliased(Event_v)
+
+    query = orm.query(Event_v_all) \
+        .outerjoin((
+            Event,
+            Event.event_id == Event_v_all.event_id
+            )) \
+        .filter(Event_v_all.moderation_user_id==user.user_id) \
+        .filter(~exists().where(and_(
+                Event_v_new.event_id == Event_v_all.event_id,
+                Event_v_new.a_time > Event_v_all.a_time,
+                ))) \
+        .filter(or_(
+                Event.a_time == None,
+                Event_v_all.a_time > Event.a_time,
+                )) \
+        .order_by(Event_v_all.a_time.desc()) \
+
+    return query.all()
+
+
+
+def get_user_pending_address(orm, user):
+    Address_v_all = aliased(Address_v)
+    Address_v_new = aliased(Address_v)
+
+    query = orm.query(Address_v_all) \
+        .outerjoin((
+            Address,
+            Address.address_id == Address_v_all.address_id
+            )) \
+        .filter(Address_v_all.moderation_user_id==user.user_id) \
+        .filter(~exists().where(and_(
+                Address_v_new.address_id == Address_v_all.address_id,
+                Address_v_new.a_time > Address_v_all.a_time,
+                ))) \
+        .filter(or_(
+                Address.a_time == None,
+                Address_v_all.a_time > Address.a_time,
+                )) \
+        .order_by(Address_v_all.a_time.desc()) \
+
+    return query.all()
+
+
+
+def get_user_pending_org_address(orm, user, org_id):
+    Address_v_all = aliased(Address_v)
+    Address_v_new = aliased(Address_v)
+
+    query = orm.query(Address_v_all) \
+        .outerjoin((
+            Address,
+            Address.address_id == Address_v_all.address_id
+            )) \
+        .join((
+            org_address_v,
+            and_(
+                org_address_v.c.address_id == Address_v_all.address_id,
+                org_address_v.c.org_id == org_id,
+                org_address_v.c.existence == 1,
+                )
+            )) \
+        .filter(Address_v_all.moderation_user_id==user.user_id) \
+        .filter(~exists().where(and_(
+                Address_v_new.address_id == Address_v_all.address_id,
+                Address_v_new.a_time > Address_v_all.a_time,
+                ))) \
+        .filter(or_(
+                Address.a_time == None,
+                Address_v_all.a_time > Address.a_time,
+                )) \
+        .order_by(Address_v_all.a_time.desc()) \
+
+    return query.all()
+
+
+
+def get_user_pending_event_address(orm, user, event_id):
+    Address_v_all = aliased(Address_v)
+    Address_v_new = aliased(Address_v)
+
+    query = orm.query(Address_v_all) \
+        .outerjoin((
+            Address,
+            Address.address_id == Address_v_all.address_id
+            )) \
+        .join((
+            event_address_v,
+            and_(
+                event_address_v.c.address_id == Address_v_all.address_id,
+                event_address_v.c.event_id == event_id,
+                event_address_v.c.existence == 1,
+                )
+            )) \
+        .filter(Address_v_all.moderation_user_id==user.user_id) \
+        .filter(~exists().where(and_(
+                Address_v_new.address_id == Address_v_all.address_id,
+                Address_v_new.a_time > Address_v_all.a_time,
+                ))) \
+        .filter(or_(
+                Address.a_time == None,
+                Address_v_all.a_time > Address.a_time,
+                )) \
+        .order_by(Address_v_all.a_time.desc()) \
+
+    return query.all()
 
 
 
@@ -47,59 +185,12 @@ class UserHandler(BaseHandler):
             if user != self.current_user:
                 raise HTTPError(404)
 
-            Org_v_all = aliased(Org_v)
-            Org_v_new = aliased(Org_v)
-
-            query = self.orm.query(Org_v_all) \
-                .outerjoin((Org, Org.org_id == Org_v_all.org_id)) \
-                .filter(Org_v_all.moderation_user_id==self.current_user.user_id) \
-                .filter(~exists().where(and_( \
-                        Org_v_new.org_id == Org_v_all.org_id,
-                        Org_v_new.a_time > Org_v_all.a_time,
-                        ))) \
-                .filter(or_(
-                        Org.a_time == None,
-                        Org_v_all.a_time > Org.a_time,
-                        )) \
-                .order_by(Org_v_all.a_time.desc()) \
-
-            submissions["org"] = query.all()
-
-            Event_v_all = aliased(Event_v)
-            Event_v_new = aliased(Event_v)
-
-            query = self.orm.query(Event_v_all) \
-                .outerjoin((Event, Event.event_id == Event_v_all.event_id)) \
-                .filter(Event_v_all.moderation_user_id==self.current_user.user_id) \
-                .filter(~exists().where(and_( \
-                        Event_v_new.event_id == Event_v_all.event_id,
-                        Event_v_new.a_time > Event_v_all.a_time,
-                        ))) \
-                .filter(or_(
-                        Event.a_time == None,
-                        Event_v_all.a_time > Event.a_time,
-                        )) \
-                .order_by(Event_v_all.a_time.desc()) \
-
-            submissions["event"] = query.all()
-
-            Address_v_all = aliased(Address_v)
-            Address_v_new = aliased(Address_v)
-
-            query = self.orm.query(Address_v_all) \
-                .outerjoin((Address, Address.address_id == Address_v_all.address_id)) \
-                .filter(Address_v_all.moderation_user_id==self.current_user.user_id) \
-                .filter(~exists().where(and_( \
-                        Address_v_new.address_id == Address_v_all.address_id,
-                        Address_v_new.a_time > Address_v_all.a_time,
-                        ))) \
-                .filter(or_(
-                        Address.a_time == None,
-                        Address_v_all.a_time > Address.a_time,
-                        )) \
-                .order_by(Address_v_all.a_time.desc()) \
-
-            submissions["address"] = query.all()
+            submissions["org"] = get_user_pending_org(
+                self.orm, self.current_user)
+            submissions["event"] = get_user_pending_event(
+                self.orm, self.current_user)
+            submissions["address"] = get_user_pending_address(
+                self.orm, self.current_user)
 
         self.render(
             'user.html',

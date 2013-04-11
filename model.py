@@ -1072,7 +1072,8 @@ class Address(Base, MangoEntity, NotableEntity):
     list_url = "/address"
 
     def __init__(self,
-                 postal=None, source=None, lookup=None,
+                 postal, source,
+                 lookup=None,
                  manual_longitude=None, manual_latitude=None,
                  longitude=None, latitude=None,
                  moderation_user=None, public=None):

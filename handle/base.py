@@ -849,6 +849,12 @@ class MangoEntityHandlerMixin(RequestHandler):
     def _before_delete(self, entity):
         pass
 
+    def _before_set(self, entity):
+        pass
+
+    def _after_accept_new(self, entity):
+        pass
+
     def get_note_arguments(self):
         is_json = self.content_type("application/json")
         note_search = self.get_argument("note_search", None, json=is_json)
@@ -873,11 +879,17 @@ class MangoEntityHandlerMixin(RequestHandler):
         if not self.moderator:
             raise HTTPError(405)
 
-        entity = self._get(entity_id_string)
-        entity.a_time = 0;
-        entity.moderation_user = self.current_user
-        self.orm_commit()
-        return self.redirect_next(entity.url)
+        entity = self._get(entity_id_string, required=False)
+        if entity:
+            entity.a_time = 0;
+            entity.moderation_user = self.current_user
+            self.orm_commit()
+            return self.redirect_next(entity.url)
+
+        declined_entity_v = self._decline_v(entity_id_string)
+        self.orm.add(declined_entity_v)
+        self.orm.commit()
+        return self.redirect_next("%s/revision" % declined_entity_v.url)
         
     @authenticated
     def put(self, entity_id_string):
@@ -889,8 +901,8 @@ class MangoEntityHandlerMixin(RequestHandler):
             print entity_id_string
             new_entity = self._create_v(id_=int(entity_id_string))
             ignore_list = ["public"]
-        if self._before_put:
-            self._before_put(new_entity)
+        if self._before_set:
+            self._before_set(new_entity)
         if old_entity:
             if old_entity.content_same(new_entity, ignore_list):
                 return self.redirect_next(old_entity.url)
@@ -901,14 +913,21 @@ class MangoEntityHandlerMixin(RequestHandler):
                 return self.redirect_next(old_entity.url)
         self.orm.add(new_entity)
         self.orm_commit()
+        if self.moderator and self._after_accept_new:
+            self._after_accept_new(new_entity)
         return self.redirect_next(new_entity.url)
 
 
 
 class MangoEntityListHandlerMixin(RequestHandler):
+    def _before_set(self, entity):
+        pass
+
     @authenticated
     def post(self):
         new_entity = self._create()
+        if self._before_set:
+            self._before_set(new_entity)
         self.orm.add(new_entity)
         self.orm_commit()
         if self.moderator:
@@ -925,6 +944,8 @@ class MangoEntityListHandlerMixin(RequestHandler):
         self.orm_commit()
 
         new_entity_v = self._create_v(id_)
+        if self._before_set:
+            self._before_set(new_entity_v)
         self.orm.add(new_entity_v)
         self.orm_commit()
         return self.redirect_next(new_entity_v.url)

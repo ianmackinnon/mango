@@ -3,6 +3,7 @@
 import json
 
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.sql.expression import or_, and_
 from tornado.web import HTTPError
 
 from base import authenticated, sha1_concat, \
@@ -16,7 +17,9 @@ from address import BaseAddressHandler
 
 from model import Event, Note, Address, Org
 
-from model_v import Event_v
+from model_v import Event_v, Address_v
+
+from handle.user import get_user_pending_event_address
 
 
 
@@ -150,6 +153,10 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
         return self._create_event_v
 
     @property
+    def _decline_v(self):
+        return self._decline_event_v
+
+    @property
     def _get(self):
         return self._get_event
 
@@ -190,9 +197,22 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
         else:
             org_list=[]
             address_list=[]
-            orgtag_list=[]
+            eventtag_list=[]
             note_list=[]
             note_count = 0
+
+        if self.contributor:
+            event_id = event and event.event_id or event_v.event_id
+            
+            for address_v in get_user_pending_event_address(
+                self.orm, self.current_user, event_id):
+                
+                for a, address in enumerate(address_list):
+                    if address.address_id == address_v.address_id:
+                        address_list[a] = address_v
+                        break
+                else:
+                    address_list.append(address_v)
 
         org_list = [org.obj(public=public) for org in org_list]
         address_list = [address.obj(public=public) for address in address_list]
@@ -314,16 +334,25 @@ class EventRevisionHandler(BaseEventHandler):
     def get(self, event_id_string, event_v_id_string):
         event_v, event = self._get_event_revision(event_id_string, event_v_id_string)
 
+        if not event_v.existence:
+            raise HTTPError(404)
+
         if self.moderator:
             if event and event.a_time == event_v.a_time:
                 self.next = event.url
                 return self.redirect_next()
         else:
+            if not ((event_v.moderation_user == self.current_user) or \
+                        (event and event_v.a_time == event.a_time)):
+                raise HTTPError(404)
             newest_event_v = self.orm.query(Event_v) \
                 .filter_by(moderation_user=self.current_user) \
                 .order_by(Event_v.event_v_id.desc()) \
                 .first()
             if not newest_event_v:
+                raise HTTPError(404)
+            latest_a_time = self._get_event_latest_a_time(event_id_string)
+            if latest_a_time and event_v.a_time < latest_a_time:
                 raise HTTPError(404)
             if event and newest_event_v.a_time < event.a_time:
                 raise HTTPError(404)
@@ -375,10 +404,20 @@ class EventRevisionHandler(BaseEventHandler):
 class EventAddressListHandler(BaseEventHandler, BaseAddressHandler):
     @authenticated
     def get(self, event_id_string):
-        event = self._get_event(event_id_string)
+        required = True
+        if self.contributor:
+            event_v = self._get_event_v(event_id_string)
+            if event_v:
+                required = False
+        event = self._get_event(event_id_string, required=required)
+
+        if not self.moderator and event_v:
+            event = event_v
+
         obj = event.obj(
             public=self.moderator,
             )
+
         self.render(
             'address.html',
             address=None,
@@ -388,21 +427,69 @@ class EventAddressListHandler(BaseEventHandler, BaseAddressHandler):
         
     @authenticated
     def post(self, event_id_string):
-        event = self._get_event(event_id_string)
+        required = True
+        if self.contributor:
+            event_v = self._get_event_v(event_id_string)
+            if event_v:
+                required = False
+        event = self._get_event(event_id_string, required=required)
 
-        postal, source, lookup, manual_longitude, manual_latitude, \
-            public = \
-            BaseAddressHandler._get_arguments(self)
-
-        address = Address(postal, source, lookup,
-                              manual_longitude=manual_longitude,
-                              manual_latitude=manual_latitude,
-                              moderation_user=self.current_user,
-                              public=public,
-                              )
-        address.geocode()
-        event.address_list.append(address)
+        address = self._create_address()
+        self._before_address_set(address)
+        self.orm.add(address)
         self.orm_commit()
+        if self.moderator:
+            event.address_list.append(address)
+            self.orm_commit()
+            return self.redirect_next(event.url)
+
+        id_ = address.address_id
+
+        self.orm.delete(address)
+        self.orm_commit()
+
+        self.orm.query(Address_v) \
+            .filter(Address_v.address_id==id_) \
+            .delete()
+        self.orm_commit()
+
+        address_v = self._create_address_v(id_)
+        self.orm.add(address_v)
+        self.orm_commit()
+
+        event_id = event and event.event_id or event_v.event_id
+        address_id = id_
+
+        engine = self.orm.connection().engine
+        sql = """
+insert into event_address_v (event_id, address_id, a_time, existence)
+values (%d, %d, 0, 1)""" % (event_id, address_id)
+        engine.execute(sql)
+
+        return self.redirect_next(address_v.url)
+
+
+
+class EventAddressHandler(BaseEventHandler, BaseAddressHandler):
+    @authenticated
+    def put(self, event_id_string, address_id_string):
+        event = self._get_event(event_id_string)
+        address = self._get_address(address_id_string)
+        if address not in event.address_list:
+            event.address_list.append(address)
+            self.orm_commit()
+        return self.redirect_next(event.url)
+
+    @authenticated
+    def delete(self, event_id_string, address_id_string):
+        if not self.moderator:
+            raise HTTPError(405)
+
+        event = self._get_event(event_id_string)
+        address = self._get_address(address_id_string)
+        if address in event.address_list:
+            event.address_list.remove(address)
+            self.orm_commit()
         return self.redirect_next(event.url)
 
 
@@ -433,30 +520,6 @@ class EventNoteListHandler(BaseEventHandler, BaseNoteHandler):
             'note.html',
             entity=obj,
             )
-
-
-
-class EventAddressHandler(BaseEventHandler, BaseAddressHandler):
-    @authenticated
-    def put(self, event_id_string, address_id_string):
-        event = self._get_event(event_id_string)
-        address = self._get_address(address_id_string)
-        if address not in event.address_list:
-            event.address_list.append(address)
-            self.orm_commit()
-        return self.redirect_next(event.url)
-
-    @authenticated
-    def delete(self, event_id_string, address_id_string):
-        if not self.moderator:
-            raise HTTPError(405)
-
-        event = self._get_event(event_id_string)
-        address = self._get_address(address_id_string)
-        if address in event.address_list:
-            event.address_list.remove(address)
-            self.orm_commit()
-        return self.redirect_next(event.url)
 
 
 

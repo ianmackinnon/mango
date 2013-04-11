@@ -17,7 +17,9 @@ from address import BaseAddressHandler
 
 from model import Org, Note, Address, Orgalias, Event
 
-from model_v import Org_v
+from model_v import Org_v, Address_v
+
+from handle.user import get_user_pending_org_address
 
 
 
@@ -133,6 +135,10 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
         return self._create_org_v
 
     @property
+    def _decline_v(self):
+        return self._decline_org_v
+
+    @property
     def _get(self):
         return self._get_org
 
@@ -177,6 +183,19 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
             orgalias_list=[]
             note_list=[]
             note_count = 0
+
+        if self.contributor:
+            org_id = org and org.org_id or org_v.org_id
+            
+            for address_v in get_user_pending_org_address(
+                self.orm, self.current_user, org_id):
+                
+                for a, address in enumerate(address_list):
+                    if address.address_id == address_v.address_id:
+                        address_list[a] = address_v
+                        break
+                else:
+                    address_list.append(address_v)
 
         address_list = [address.obj(public=public) for address in address_list]
         orgtag_list = [orgtag.obj(public=public) for orgtag in orgtag_list]
@@ -300,16 +319,25 @@ class OrgRevisionHandler(BaseOrgHandler):
     def get(self, org_id_string, org_v_id_string):
         org_v, org = self._get_org_revision(org_id_string, org_v_id_string)
 
+        if not org_v.existence:
+            raise HTTPError(404)
+
         if self.moderator:
             if org and org.a_time == org_v.a_time:
                 self.next = org.url
                 return self.redirect_next()
         else:
+            if not ((org_v.moderation_user == self.current_user) or \
+                        (org and org_v.a_time == org.a_time)):
+                raise HTTPError(404)
             newest_org_v = self.orm.query(Org_v) \
                 .filter_by(moderation_user=self.current_user) \
                 .order_by(Org_v.org_v_id.desc()) \
                 .first()
             if not newest_org_v:
+                raise HTTPError(404)
+            latest_a_time = self._get_org_latest_a_time(org_id_string)
+            if latest_a_time and org_v.a_time < latest_a_time:
                 raise HTTPError(404)
             if org and newest_org_v.a_time < org.a_time:
                 raise HTTPError(404)
@@ -357,7 +385,15 @@ class OrgRevisionHandler(BaseOrgHandler):
 class OrgAddressListHandler(BaseOrgHandler, BaseAddressHandler):
     @authenticated
     def get(self, org_id_string):
-        org = self._get_org(org_id_string)
+        required = True
+        if self.contributor:
+            org_v = self._get_org_v(org_id_string)
+            if org_v:
+                required = False
+        org = self._get_org(org_id_string, required=required)
+
+        if not self.moderator and org_v:
+            org = org_v
 
         obj = org.obj(
             public=self.moderator,
@@ -372,22 +408,46 @@ class OrgAddressListHandler(BaseOrgHandler, BaseAddressHandler):
         
     @authenticated
     def post(self, org_id_string):
-        org = self._get_org(org_id_string)
+        required = True
+        if self.contributor:
+            org_v = self._get_org_v(org_id_string)
+            if org_v:
+                required = False
+        org = self._get_org(org_id_string, required=required)
 
-        postal, source, lookup, manual_longitude, manual_latitude, \
-            public = \
-            BaseAddressHandler._get_arguments(self)
-
-        address = Address(postal, source, lookup,
-                              manual_longitude=manual_longitude,
-                              manual_latitude=manual_latitude,
-                              moderation_user=self.current_user,
-                              public=public,
-                              )
-        address.geocode()
-        org.address_list.append(address)
+        address = self._create_address()
+        self._before_address_set(address)
+        self.orm.add(address)
         self.orm_commit()
-        return self.redirect_next(org.url)
+        if self.moderator:
+            org.address_list.append(address)
+            self.orm_commit()
+            return self.redirect_next(org.url)
+
+        id_ = address.address_id
+
+        self.orm.delete(address)
+        self.orm_commit()
+
+        self.orm.query(Address_v) \
+            .filter(Address_v.address_id==id_) \
+            .delete()
+        self.orm_commit()
+
+        address_v = self._create_address_v(id_)
+        self.orm.add(address_v)
+        self.orm_commit()
+
+        org_id = org and org.org_id or org_v.org_id
+        address_id = id_
+
+        engine = self.orm.connection().engine
+        sql = """
+insert into org_address_v (org_id, address_id, a_time, existence)
+values (%d, %d, 0, 1)""" % (org_id, address_id)
+        engine.execute(sql)
+
+        return self.redirect_next(address_v.url)
 
 
 

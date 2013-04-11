@@ -83,6 +83,21 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
     def _create_event_v(self, id_):
         return self._create_event(id_, version=True)
 
+    def _decline_event_v(self, id_string):
+        id_ = int(id_string)
+
+        date = datetime.datetime.utcnow().date()
+
+        event = Event_v(
+            id_,
+            "DECLINED", date, date,
+            moderation_user=self.current_user, public=None)
+        event.existence = False
+
+        detach(event)
+        
+        return event
+
     def _event_history_query(self, event_id_string):
         return self._history_query(
             Event, "event_id",

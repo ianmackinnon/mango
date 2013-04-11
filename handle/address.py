@@ -2,6 +2,7 @@
 
 import datetime
 
+from sqlalchemy import and_
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import literal
@@ -20,7 +21,8 @@ from note import BaseNoteHandler
 from model import User, Address, Note, Org, Orgtag, Event, \
     org_address, event_address, detach
 
-from model_v import Address_v
+from model_v import Address_v, \
+    accept_org_address_v, accept_event_address_v
 
 
 
@@ -55,12 +57,14 @@ class BaseAddressHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         if version:
             address = Address_v(
                 id_,
-                postal, source, lookup,
+                postal, source,
+                lookup,
                 manual_longitude, manual_latitude,
                 moderation_user=moderation_user, public=public)
         else:
             address = Address(
-                postal, source, lookup,
+                postal, source,
+                lookup,
                 manual_longitude, manual_latitude,
                 moderation_user=moderation_user, public=public)
             
@@ -74,6 +78,19 @@ class BaseAddressHandler(BaseHandler, MangoBaseEntityHandlerMixin):
     def _create_address_v(self, id_):
         return self._create_address(id_, version=True)
     
+    def _decline_address_v(self, id_string):
+        id_ = int(id_string)
+
+        address = Address_v(
+            id_,
+            "DECLINED", "DECLINED",
+            moderation_user=self.current_user, public=None)
+        address.existence = False
+
+        detach(address)
+        
+        return address
+
     def _address_history_query(self, address_id_string):
         return self._history_query(
             Address, "address_id",
@@ -104,6 +121,19 @@ class BaseAddressHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
         return address_v and address_v.a_time or None
 
+    def _before_address_set(self, address):
+        address.geocode()
+
+    def _after_address_accept_new(self, address):
+        accept_list = [
+            accept_org_address_v,
+            accept_event_address_v,
+            ]
+        for accept in accept_list:
+            print accept
+            if accept(self.orm, address.address_id):
+                break
+
 
 
 class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
@@ -116,8 +146,20 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
         return self._create_address_v
 
     @property
+    def _decline_v(self):
+        return self._decline_address_v
+
+    @property
     def _get(self):
         return self._get_address
+
+    @property
+    def _before_set(self):
+        return self._before_address_set
+
+    @property
+    def _after_accept_new(self):
+        return self._after_address_accept_new
 
     def get(self, address_id_string):
         note_search, note_order, note_offset = self.get_note_arguments()
@@ -187,10 +229,6 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
                 version_url=version_url,
                 entity_list="entity_list",  # What's this?
                 )
-
-    def _before_put(self, address):
-        address.geocode()
-
 
 
 class AddressRevisionListHandler(BaseAddressHandler):
@@ -276,17 +314,26 @@ class AddressRevisionHandler(BaseAddressHandler):
     @authenticated
     def get(self, address_id_string, address_v_id_string):
         address_v, address = self._get_address_revision(address_id_string, address_v_id_string)
+        
+        if not address_v.existence:
+            raise HTTPError(404)
 
         if self.moderator:
             if address and address.a_time == address_v.a_time:
                 self.next = address.url
                 return self.redirect_next()
         else:
+            if not ((address_v.moderation_user == self.current_user) or \
+                        (address and address_v.a_time == address.a_time)):
+                raise HTTPError(404)
             newest_address_v = self.orm.query(Address_v) \
                 .filter_by(moderation_user=self.current_user) \
                 .order_by(Address_v.address_v_id.desc()) \
                 .first()
             if not newest_address_v:
+                raise HTTPError(404)
+            latest_a_time = self._get_address_latest_a_time(address_id_string)
+            if latest_a_time and address_v.a_time < latest_a_time:
                 raise HTTPError(404)
             if address and newest_address_v.a_time < address.a_time:
                 raise HTTPError(404)
