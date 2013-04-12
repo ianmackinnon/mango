@@ -3,17 +3,108 @@
 <%def name="title()">Register</%def>
 
 <%def name="page()">
-<h1>Register</h1>
+<h1>Submit content</h1>
 
-<p>Register with CAAT's mapping application to be able to submit content and keep track of your submissions.</p>
-<p>Registration requires a Google or GMail account.</p>
-<p>CAAT does not store your email address.</p>
-<p>We do store the name associated with the account so we can show you which account you're logged in with.</p>
-<ul>
-  <li>
-    <a href="${url_root}auth/login/google?next=${next}">Register with Google</a>
-  </li>
-</ul>
+
+<table class="register">
+  <thead>
+    <tr>
+      <th>
+        <h2>Register</h2>
+      </th>
+      <th>
+        <h2>Continue anonymously</h2>
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+
+    <tr>
+      <th>You'll be able to:</th>
+      <th>You'll be able to:</th>
+    </tr>
+
+    <tr>
+      <td>
+        <ul>
+          <li>Submit content</li>
+          <li>Log in anytime, from anywhere to keep track of your submissions</li>
+        </ul>
+      </td>
+      <td>
+        <ul>
+          <li>Submit content</li>
+          <li>Keep track of your submissions from this browser until you log out or delete your browser's <a href="http://en.wikipedia.org/wiki/HTTP_cookie">cookies</a>.</li>
+        </ul>
+      </td>
+    </tr>
+
+    <tr>
+      <th>You'll need:</th>
+      <th></th>
+    </tr>
+
+    <tr>
+      <td>
+        <ul>
+          <li>A Google or Gmail account</li>
+        </ul>
+      </td>
+      <td>
+        <ul>
+        </ul>
+      </td>
+    </tr>
+
+    <tr>
+      <th>We store:</th>
+      <th>We store:</th>
+    </tr>
+
+    <tr>
+      <td>
+        <ul>
+          <li>The name associated with your account</li>
+          <li>Your IP address each time you log on</li>
+        </ul>
+      </td>
+      <td>
+        <ul>
+          <li>Your IP address each time you log on</li>
+        </ul>
+      </td>
+    </tr>
+
+    <tr>
+      <th>We don't store:</th>
+      <th></th>
+    </tr>
+
+    <tr>
+      <td>
+        <ul>
+          <li>Your email address</li>
+        </ul>
+      </td>
+      <td>
+        <ul>
+        </ul>
+      </td>
+    </tr>
+
+    <tr>
+      <td class="action">
+        <a class="action" href="${url_root}auth/login/google?next=${next}">Register with Google</a>
+      </td>
+      <td class="action">
+        <a class="action" href="${url_root}auth/visit?next=${next}">Continue anonymously</a>
+      </td>
+    </tr>
+
+  </tbody>
+</table>
+
+
 
 </%def>
 

@@ -71,7 +71,7 @@ if obj:
 	<input name="name_short" disabled value="${obj and obj["name_short"] or ''}">
       </label>
       ${self.mini.visibility_input(obj, "public")}
-      <input type="submit">
+      <input type="submit" value="Submit">
     </form>
 
     %if obj and type_entity_list in obj and not obj[type_entity_list]:

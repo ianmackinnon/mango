@@ -261,7 +261,7 @@ class AddressRevisionListHandler(BaseAddressHandler):
                 user_id=user.user_id,
                 user_name=user.name,
                 user_moderator=user.moderator,
-                gravatar_hash=user.auth.gravatar_hash,
+                gravatar_hash=user.gravatar_hash(),
                 url=address_v.url,
                 url_v=address_v.url_v,
                 )

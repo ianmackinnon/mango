@@ -208,7 +208,7 @@ from
   select "note" as type, note_v.note_id as entity_id, note_v_id as entity_v_id, note_v.a_time, note.note_id and 1 as existence, existence as existence_v, note_v.text as name, note_v.moderation_user_id from note_v left outer join note using (note_id)
   ) as T 
 join user on (moderation_user_id = user_id)
-join auth using (auth_id)
+left outer join auth using (auth_id)
 %s
 order by a_time desc
 limit %d
@@ -220,7 +220,16 @@ offset %d
         offset
         )
 
-    history = session.connection().execute(sql)
+    results = session.connection().execute(sql)
+
+    history = []
+    for row in results:
+        row_dict = {}
+        for column in row.keys():
+            row_dict[column] = getattr(row, column)
+        if not user_id and not row_dict.get("gravatar_hash", None):
+            row_dict["gravatar_hash"] = gravatar_hash(str(row.user_id))
+        history.append(row_dict)
     return history
 
 
@@ -415,7 +424,7 @@ class User(Base):
     __table_args__ = {'sqlite_autoincrement':True}
      
     user_id = Column(Integer, primary_key=True)
-    auth_id = Column(Integer, ForeignKey(Auth.auth_id), nullable=False)
+    auth_id = Column(Integer, ForeignKey(Auth.auth_id), nullable=True)
     
     PrimaryKeyConstraint(auth_id)
 
@@ -432,6 +441,9 @@ class User(Base):
 
     def verify_auth_name(self, auth_name):
         return verify_hash(auth_name, self.auth.name_hash)
+
+    def gravatar_hash(self):
+        return self.auth and self.auth.gravatar_hash or gravatar_hash(str(self.user_id))
 
     @staticmethod
     def get_from_auth(session, auth_url, auth_name):

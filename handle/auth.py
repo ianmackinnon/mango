@@ -45,6 +45,9 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
     
     @tornado.web.asynchronous
     def get(self):
+        if self.current_user:
+            return self.redirect_next()
+
         if self.get_argument("openid.mode", None):
             self.get_authenticated_user(self.async_callback(self._on_auth))
             return
@@ -84,6 +87,34 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
         self.start_session(str(session.session_id))
 
         return self.redirect_next()
+
+
+
+class AuthVisitHandler(BaseHandler):
+    def get(self):
+        if self.current_user:
+            return self.redirect_next()
+        
+        user_name = "NEW USER"
+        user = User(None, user_name, moderator=False)
+        self.orm.add(user)
+        self.orm.commit()
+        user.name = "Anonymous %d" % user.user_id
+        self.orm.commit()
+        self.next = "/user/%d" % user.user_id
+
+        session = Session(
+                user,
+                self.get_remote_ip(),
+                self.get_accept_language(),
+                self.get_user_agent(),
+                )
+        self.orm.add(session)
+        self.orm.flush()
+        self.start_session(str(session.session_id))
+
+        return self.redirect_next()
+
 
 
 

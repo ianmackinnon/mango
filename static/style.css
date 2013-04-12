@@ -1097,6 +1097,22 @@ div.ui-timepicker td a.ui-state-active
     list-style: none;
 }
 
+/* Register */
+
+#mango table.register
+{
+    table-layout: fixed;
+}
+#mango table.register td
+{
+    vertical-align: top;
+    width: 50%;
+}
+#mango table.register td.action
+{
+    padding: 12px;
+    text-align: center;
+}
 
 
 

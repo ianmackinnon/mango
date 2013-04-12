@@ -174,7 +174,7 @@ class NoteRevisionListHandler(BaseNoteHandler):
                 user_id=user.user_id,
                 user_name=user.name,
                 user_moderator=user.moderator,
-                gravatar_hash=user.auth.gravatar_hash,
+                gravatar_hash=user.gravatar_hash(),
                 url=note_v.url,
                 url_v=note_v.url_v,
                 )

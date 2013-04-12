@@ -11,7 +11,7 @@
 </h1>
 
 <div class="user-icon">
-  <% hash = user.auth.gravatar_hash %>
+  <% hash = user.gravatar_hash() %>
   <img width="96px" height="96px"
        src="http://gravatar.com/avatar/${hash}?d=identicon&s=96">
   %if user == current_user:

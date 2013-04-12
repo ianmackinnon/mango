@@ -580,7 +580,7 @@ if not parameters:
 		    >Oldest</option>
           </select>
         </label>
-        <input type="submit">
+        <input type="submit" value="Submit">
       </form>
       
       %endif
@@ -716,36 +716,37 @@ if not parameters:
     </tr>
   </thead>
   <tbody>
+
     %for entity in history:
 <%
 url = None
-if entity.existence:
-    url = url_rewrite("/%s/%d" % (entity.type, entity.entity_id))
-revision_url = url_rewrite("/%s/%d/revision" % (entity.type, entity.entity_id))
+if entity["existence"]:
+    url = url_rewrite("/%s/%d" % (entity["type"], entity["entity_id"]))
+revision_url = url_rewrite("/%s/%d/revision" % (entity["type"], entity["entity_id"]))
 if user:
-    user_link = url_rewrite("/user/%s" % (entity.user_id))
+    user_link = url_rewrite("/user/%s" % (entity["user_id"]))
 %>
     <tr>
-      <td class="type">${entity.type}</td>
+      <td class="type">${entity["type"]}</td>
       <td class="id">
         %if url:
-        <a href="${url}">${entity.entity_id}</a>
+        <a href="${url}">${entity["entity_id"]}</a>
         %else:
-        ${entity.entity_id}
+        ${entity["entity_id"]}
         %endif
       </td>
-      <td class="revision${not entity.existence_v and " deleted" or ""}"><a href="${revision_url}">${entity.existence_v and entity.entity_v_id or "deleted"}</a></td>
+      <td class="revision${not entity["existence_v"] and " deleted" or ""}"><a href="${revision_url}">${entity["existence_v"] and entity["entity_v_id"] or "deleted"}</a></td>
       <td class="content"><div class="ellipsis">${history_entity_name(entity)}</div></td>
       %if user:
       <td class="user">
         <a href="${user_link}">
 	  <img width="24px" height="24px"
-	       src="http://gravatar.com/avatar/${entity.gravatar_hash}?d=identicon&s=24">
-	  ${entity.user_name}
+	       src="http://gravatar.com/avatar/${entity["gravatar_hash"]}?d=identicon&s=24">
+	  ${entity["user_name"]}
         </a>
       </td>
       %endif
-      <td class="date">${datetime.datetime.fromtimestamp(entity.date).strftime("%Y/%m/%d %H:%M:%S")}</td>
+      <td class="date">${datetime.datetime.fromtimestamp(entity["date"]).strftime("%Y/%m/%d %H:%M:%S")}</td>
     </tr>
     %endfor
   </tbody>
@@ -756,10 +757,10 @@ if user:
 
 
 <%def name="history_entity_name(entity)">
-%if entity.type == "address":
-${entity.name | n, h, unicode, newline_comma}
+%if entity["type"] == "address":
+${entity["name"] | n, h, unicode, newline_comma}
 %else:
-${entity.name | n, h, unicode}
+${entity["name"] | n, h, unicode}
 %endif
 <% return "" %>
 </%def>

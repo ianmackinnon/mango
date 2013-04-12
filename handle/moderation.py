@@ -102,7 +102,7 @@ class ModerationQueueHandler(BaseHandler):
         queue["event"] = {}
         for event_id in get_pending_event_id(self.orm):
             queue["event"][event_id] = {
-                "url": "/event/%s" % org_id,
+                "url": "/event/%s" % event_id,
                 "revision_url": "/event/%s/revision" % event_id,
                 "address": {},
                 }

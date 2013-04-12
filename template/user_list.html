@@ -13,7 +13,7 @@
 <ul id="all_users">
   % for user in user_list:
   <li class="user${current_user == user and ' current' or ''}">
-    <% hash = user.auth.gravatar_hash %>
+    <% hash = user.gravatar_hash() %>
     <a
        href="${url_rewrite("/user/%d" % user.user_id)}"
        >

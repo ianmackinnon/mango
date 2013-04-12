@@ -34,6 +34,7 @@ from handle.base import BaseHandler, authenticated, sha1_concat
 from handle.generate import GenerateMarkerHandler
 from handle.auth import AuthRegisterHandler, \
     AuthLoginLocalHandler, AuthLoginGoogleHandler, \
+    AuthVisitHandler, \
     AuthLogoutHandler
 from handle.user import UserHandler, UserListHandler
 from handle.home import HomeHandler
@@ -333,8 +334,8 @@ class Application(tornado.web.Application):
             (r"/auth/login", AuthLoginGoogleHandler),
             (r"/auth/login/google", AuthLoginGoogleHandler),
             (r"/auth/login/local", AuthLoginLocalHandler),
+            (r"/auth/visit", AuthVisitHandler),
             (r"/auth/logout", AuthLogoutHandler),
-
             (r"/history", HistoryHandler),
             (r"/moderation/queue", ModerationQueueHandler),
             ]

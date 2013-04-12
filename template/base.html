@@ -75,17 +75,15 @@ ${header2.replace("/render-header-footer.php", uri) | n}
       %if current_user:
       <div class="nav-group">
       <a href="${url_rewrite("/user/%d" % current_user.user_id)}">
-        <% hash = current_user.auth.gravatar_hash %>
+        <% hash = current_user.gravatar_hash() %>
         <img width="24px" height="24px"
 	     src="http://gravatar.com/avatar/${hash}?d=identicon&s=24">
         ${current_user.name}
-      </a><!-- <a href="${url_rewrite("/user/%d" % current_user.user_id)}"> -->
-      <!--   My content -->
-      <!-- </a> -->
+      </a>
       </div>
       <a href="${url_rewrite("/auth/logout", next_=uri)}">Log out</a>
       %else:
-      <a href="${url_rewrite("/auth/register")}">Register</a>
+      <a href="${url_rewrite("/auth/register")}">Submit content</a>
       <a href="${url_rewrite("/auth/login", next_=uri)}">Log in</a>
       %endif
     </div>
