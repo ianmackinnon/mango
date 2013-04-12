@@ -201,7 +201,7 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
         event_list = [event.obj(public=public) for event in event_list]
         note_list = [note.obj(public=public) for note in note_list]
 
-        if not self.moderator and address_v:
+        if self.contributor and address_v:
             address = address_v
 
         obj = address.obj(
@@ -277,7 +277,7 @@ class AddressRevisionListHandler(BaseAddressHandler):
         version_current_url = (address and address.url) or (not self.moderator and history and history[-1].url)
 
         self.render(
-            'history.html',
+            'revision-history.html',
             entity=True,
             version_current_url=version_current_url,
             latest_a_time=address and address.a_time,

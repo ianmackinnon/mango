@@ -898,7 +898,6 @@ class MangoEntityHandlerMixin(RequestHandler):
         if self.moderator:
             new_entity = self._create(id_=int(entity_id_string))
         else:
-            print entity_id_string
             new_entity = self._create_v(id_=int(entity_id_string))
             ignore_list = ["public"]
         if self._before_set:

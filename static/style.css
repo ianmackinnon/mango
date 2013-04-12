@@ -1005,8 +1005,8 @@ div.ui-timepicker td a.ui-state-active
 
 #mango table.history
 {
+    width: 100%;
     margin: 0;
-    table-layout: fixed;
 }
 
 #mango table.history td,
@@ -1018,15 +1018,10 @@ div.ui-timepicker td a.ui-state-active
     line-height: 24px;
 }
 
-#mango table.history th.type {width: 120px;}
-#mango table.history th.id {width: 100px;}
-#mango table.history th.content {width: 241px;}
-#mango table.history th.user {width: 150px;}
-#mango table.history th.date {width: 150px;}
-
 #mango table.history td .ellipsis
 {
     display: inline-block;
+    width: 150px;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -1035,6 +1030,11 @@ div.ui-timepicker td a.ui-state-active
 #mango table.history td.user img
 {
     vertical-align: bottom;
+}
+
+#mango table.history td.revision.deleted
+{
+    background: #ddd;
 }
 
 
@@ -1096,6 +1096,7 @@ div.ui-timepicker td a.ui-state-active
     padding: 4px;
     list-style: none;
 }
+
 
 
 

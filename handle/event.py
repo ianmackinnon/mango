@@ -219,7 +219,7 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
         eventtag_list = [eventtag.obj(public=public) for eventtag in eventtag_list]
         note_list = [note.obj(public=public) for note in note_list]
 
-        if not self.moderator and event_v:
+        if self.contributor and event_v:
             event = event_v
 
         obj = event.obj(
@@ -296,7 +296,7 @@ class EventRevisionListHandler(BaseEventHandler):
         version_current_url = (event and event.url) or (not self.moderator and history and history[-1].url)
 
         self.render(
-            'history.html',
+            'revision-history.html',
             entity=True,
             version_current_url=version_current_url,
             latest_a_time=event and event.a_time,
@@ -718,6 +718,9 @@ class EventOrgHandler(BaseEventHandler, BaseOrgHandler):
 class EventDuplicateHandler(BaseEventHandler):
     @authenticated
     def post(self, event_id_string):
+        if not self.moderator:
+            raise HTTPError(404)
+            
         event = self._get_event(event_id_string)
 
         is_json = self.content_type("application/json")

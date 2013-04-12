@@ -1,11 +1,5 @@
 <%inherit file="base.html"/>
 
-<%!
-
-import datetime
-
-%>
-
 <%def name="title()">${user.name}</%def>
 
 <%def name="page()">
@@ -41,39 +35,9 @@ import datetime
 %if moderator:
   <h3>Edit history</h3>
 
-<table class="history">
-  <thead>
-    <tr>
-      <th class="type">Type</th>
-      <th class="id">ID</th>
-      <th class="content">Content</th>
-      <th class="user">User</th>
-      <th class="date">Date</th>
-    </tr>
-  </thead>
-  <tbody>
-    %for entity in history:
-<%
-link = url_rewrite("/%s/%s" % (entity.type, entity.entity_id))
-user_link = url_rewrite("/user/%s" % (entity.user_id))
-%>
-    <tr>
-      <td class="type"><a href="${link}">${entity.type}</a></td>
-      <td class="id"><a href="${link}">${"%d%s" % (entity.entity_id, entity.entity_v_id and ":%d" % entity.entity_v_id or "")}</a></td>
-      <td class="content"><a href="${link}">${entity_name(entity)}</a></td>
-      <td class="user">
-        <a href="${user_link}">
-	  <img width="24px" height="24px"
-	       src="http://gravatar.com/avatar/${entity.gravatar_hash}?d=identicon&s=24">
-	  ${entity.user_name}
-        </a>
-      </td>
-      <td class="date">${datetime.datetime.fromtimestamp(entity.date).strftime("%Y/%m/%d %H:%M:%S")}</td>
-    </tr>
-    %endfor
-  </tbody>
-</table>
-  
+${self.mini.history_table(history, user=False)}
+
+
 %else:
   <h3>Submissions</h3>
   <p>Your submissions will be shown here until they have been reviewed by our moderators.</p>
@@ -124,19 +88,8 @@ user_link = url_rewrite("/user/%s" % (entity.user_id))
 
 </%def>
 
-</body>
-
-</html>
 
 
-<%def name="entity_name(entity)">
-%if entity.type == "address":
-${entity.name | n, h, unicode, newline_comma}
-%else:
-${entity.name | n, h, unicode}
-%endif
-<% return "" %>
-</%def>
 
 
 

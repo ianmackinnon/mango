@@ -236,7 +236,7 @@ if None in path_keys:
     %endif
 
     %if obj:
-    %if current_user and (parameters.get("view", None) == "edit"):
+    %if moderator and (parameters.get("view", None) == "edit"):
     <h3>Duplicate Event</h3>
 
     <form

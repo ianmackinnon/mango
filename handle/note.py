@@ -59,6 +59,8 @@ class NoteListHandler(BaseNoteHandler,
 class NoteNewHandler(BaseNoteHandler):
     @authenticated
     def get(self):
+        if not self.moderator:
+            raise HTTPError(404)
         self.render('note.html')
 
 
@@ -188,7 +190,7 @@ class NoteRevisionListHandler(BaseNoteHandler):
         version_current_url = (note and note.url) or (not self.moderator and history and history[-1].url)
 
         self.render(
-            'history.html',
+            'revision-history.html',
             entity=True,
             version_current_url=version_current_url,
             latest_a_time=note and note.a_time,

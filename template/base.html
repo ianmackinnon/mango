@@ -25,14 +25,13 @@ ${header1.replace("/render-header-footer.php", uri) | n}
 %if header2:
 ${header2.replace("/render-header-footer.php", uri) | n}
 <div id="caat-page-links">
+<a href="${url_root}">Home</a> |
 <a href="${url_root}about-this-map.php">About the map</a> |
 <a href="${url_root}why-take-action.php">Why take action?</a> |
 <a href="${url_root}expose-the-arms-trade.php">Expose the arms trade</a> | 
 <a href="${url_root}creative-action.php">Creative action</a> |
 <a href="${url_root}make-links-with-others.php">Make links with others</a> | 
-<a href="${url_root}doing-more-digging.php">Doing more digging</a> | 
-<a href="${url_root}event">Events</a> | 
-<a href="${url_root}submit.php">Submit content</a>
+<a href="${url_root}doing-more-digging.php">Doing more digging</a>
 </div>
 
 %else:
@@ -55,7 +54,9 @@ ${header2.replace("/render-header-footer.php", uri) | n}
 
   <nav id="nav-main">
     <div id="nav-pages">
+      %if not header2:
       <a href="${url_rewrite("/")}">Arms trade map</a>
+      %endif
       <div class="nav-group">
         <a
            href="${url_rewrite("/organisation")}"
@@ -194,3 +195,6 @@ ${footer.replace("/render-header-footer.php", uri) | n}
 %endif
 
 <%namespace name="mini" file="mini.html" inheritable="True"/>
+
+
+

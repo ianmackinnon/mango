@@ -203,7 +203,7 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
         event_list = [event.obj(public=public) for event in event_list]
         orgalias_list = [orgalias.obj(public=public) for orgalias in orgalias_list]
 
-        if not self.moderator and org_v:
+        if self.contributor and org_v:
             org = org_v
 
         obj = org.obj(
@@ -280,7 +280,7 @@ class OrgRevisionListHandler(BaseOrgHandler):
         version_current_url = (org and org.url) or (not self.moderator and history and history[-1].url)
 
         self.render(
-            'history.html',
+            'revision-history.html',
             entity=True,
             version_current_url=version_current_url,
             latest_a_time=org and org.a_time,

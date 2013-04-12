@@ -1,0 +1,126 @@
+<%inherit file="base.html"/>
+
+<%!
+    import datetime
+%>
+
+<%def name="title()">Revision History</%def>
+
+<%def name="page()">
+
+<h1>Revision History</h1>
+
+<%
+titles = {
+   1: "Pending submissions",
+   0: "Latest public version",
+   -1: "Previous versions",
+   }
+title_state = None
+%>
+
+<table class="history">
+  <thead>
+    <tr>
+      <th class="type">Type</th>
+      <th class="current">ID</th>
+      <th class="revision">Restore</th>
+      %if moderator:
+      <th class="public">Public</th>
+      %endif
+      <th class="content">Content</th>
+      %if moderator:
+      <th class="user">User</th>
+      %endif
+      <th class="date">Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    %for entity in history:
+<%
+title = None
+if entity:
+    if title_state is None:
+        title_state = 2
+    new_title_state = min(title_state or -1, 1)
+    if latest_a_time:
+        new_title_state = min(title_state, cmp(entity.date, latest_a_time))
+    if not entity.existence_v:
+        new_title_state = min(title_state, -1)
+    if new_title_state != title_state:
+        title = titles[new_title_state]
+        title_state = new_title_state
+if entity.existence:
+    link = url_rewrite(entity.url)
+if entity.entity_v_id:
+    revision_link = url_rewrite(entity.url_v)
+user_link = url_rewrite("/user/%s" % (entity.user_id))
+%>
+%if title:
+    <tr>
+      <th colspan="7">${title}</th>
+    </tr>
+%endif
+%if entity.existence_v:
+    <tr>
+      <td class="type">${entity.type}</td>
+      <td class="current">
+        %if entity.existence:
+        <a href="${link}">
+          ${entity.entity_id}
+        </a>
+        %else:
+          ${entity.entity_id}
+        %endif
+      </td>
+      <td class="revision">
+        %if entity.is_latest:
+        ${entity.entity_v_id}
+        %else:
+        <a href="${revision_link}">${entity.entity_v_id}</a>
+        %endif
+      </td>
+      %if moderator:
+      %if entity.user_moderator:
+      <td class="visibility ${self.mini.visibility_public(entity.public)}">
+        ${self.mini.visibility_public(entity.public)}
+      </td>
+      %else:
+      <td class="visibility">
+      </td>
+      %endif
+      %endif
+      <td class="content"><div class="ellipsis">${entity_name(entity)}</div></td>
+      %if moderator:
+      <td class="user">
+        <a href="${user_link}">
+	  <img width="24px" height="24px"
+	       src="http://gravatar.com/avatar/${entity.gravatar_hash}?d=identicon&s=24">
+	  ${entity.user_name}
+        </a>
+      </td>
+      %endif
+      <td class="date">${datetime.datetime.fromtimestamp(entity.date).strftime("%Y/%m/%d %H:%M:%S")}</td>
+    </tr>
+%endif
+    %endfor
+  </tbody>
+</table>
+  
+
+</div>
+
+</%def>
+
+
+<%def name="entity_name(entity)">
+%if entity.type == "address":
+${entity.name | n, h, unicode, newline_comma}
+%else:
+${entity.name | n, h, unicode}
+%endif
+<% return "" %>
+</%def>
+
+
+
