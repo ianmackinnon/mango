@@ -13,7 +13,8 @@ from base import BaseHandler, MangoBaseEntityHandlerMixin
 
 from model import User, Org, Address, Orgalias, Orgtag, detach
 
-from model_v import Org_v
+from model_v import Org_v, \
+    accept_org_address_v
 
 
 max_address_per_page = 26
@@ -110,6 +111,9 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
             .first()
 
         return org_v and org_v.a_time or None
+
+    def _after_org_accept_new(self, org):
+        accept_org_address_v(self.orm, org.org_id)
 
     def _get_name_search_query(self, name=None, name_search=None,
                                visibility=None):

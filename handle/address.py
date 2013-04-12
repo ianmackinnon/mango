@@ -22,7 +22,9 @@ from model import User, Address, Note, Org, Orgtag, Event, \
     org_address, event_address, detach
 
 from model_v import Address_v, \
-    accept_org_address_v, accept_event_address_v
+    accept_address_org_v, accept_address_event_v
+
+from handle.user import get_user_pending_address_event, get_user_pending_address_org
 
 
 
@@ -126,11 +128,10 @@ class BaseAddressHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
     def _after_address_accept_new(self, address):
         accept_list = [
-            accept_org_address_v,
-            accept_event_address_v,
+            accept_address_org_v,
+            accept_address_event_v,
             ]
         for accept in accept_list:
-            print accept
             if accept(self.orm, address.address_id):
                 break
 
@@ -196,6 +197,28 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
             event_list=[]
             note_list=[]
             note_count = 0
+
+        if self.contributor:
+            address_id = address and address.address_id or address_v.address_id
+            for org_v in get_user_pending_address_org(
+                self.orm, self.current_user, address_id):
+                
+                for o, org in enumerate(org_list):
+                    if org.org_id == org_v.org_id:
+                        org_list[a] = org_v
+                        break
+                else:
+                    org_list.append(org_v)
+
+            for event_v in get_user_pending_address_event(
+                self.orm, self.current_user, address_id):
+                
+                for o, event in enumerate(event_list):
+                    if event.event_id == event_v.event_id:
+                        event_list[a] = event_v
+                        break
+                else:
+                    event_list.append(event_v)
 
         org_list = [org.obj(public=public) for org in org_list]
         event_list = [event.obj(public=public) for event in event_list]

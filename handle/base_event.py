@@ -13,7 +13,9 @@ from base import BaseHandler, MangoBaseEntityHandlerMixin
 
 from model import User, Event, Address, Eventtag, detach
 
-from model_v import Event_v
+from model_v import Event_v, \
+    accept_event_address_v
+
 
 
 max_address_per_page = 26
@@ -127,6 +129,9 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
             .first()
 
         return event_v and event_v.a_time or None
+
+    def _after_event_accept_new(self, event):
+        accept_event_address_v(self.orm, event.event_id)
 
     def _get_event_search_query(
         self, name=None, name_search=None,

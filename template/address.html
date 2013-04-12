@@ -110,6 +110,7 @@ elif entity_list in obj and len(obj[entity_list]) == 1:
   </div>
   %else:
   <div class="box right" id="address-form">
+    ${self.mini.visibility_bar(obj)}
     <h3>Address</h3>
     <span 
        latitude="${obj and (obj.get("manual_latitude", "") or obj.get("latitude", "")) or ""}"

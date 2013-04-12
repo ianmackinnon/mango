@@ -112,7 +112,71 @@ def get_user_pending_org_address(orm, user, org_id):
                 Address.a_time == None,
                 Address_v_all.a_time > Address.a_time,
                 )) \
-        .order_by(Address_v_all.a_time.desc()) \
+        .order_by(Address_v_all.a_time.desc())
+
+    return query.all()
+
+
+
+def get_user_pending_address_org(orm, user, address_id):
+    Org_v_all = aliased(Org_v)
+    Org_v_new = aliased(Org_v)
+
+    query = orm.query(Org_v_all) \
+        .outerjoin((
+            Org,
+            Org.org_id == Org_v_all.org_id
+            )) \
+        .join((
+            org_address_v,
+            and_(
+                org_address_v.c.org_id == Org_v_all.org_id,
+                org_address_v.c.address_id == address_id,
+                org_address_v.c.existence == 1,
+                )
+            )) \
+        .filter(Org_v_all.moderation_user_id==user.user_id) \
+        .filter(~exists().where(and_(
+                Org_v_new.org_id == Org_v_all.org_id,
+                Org_v_new.a_time > Org_v_all.a_time,
+                ))) \
+        .filter(or_(
+                Org.a_time == None,
+                Org_v_all.a_time > Org.a_time,
+                )) \
+        .order_by(Org_v_all.a_time.desc()) \
+
+    return query.all()
+
+
+
+def get_user_pending_address_event(orm, user, address_id):
+    Event_v_all = aliased(Event_v)
+    Event_v_new = aliased(Event_v)
+
+    query = orm.query(Event_v_all) \
+        .outerjoin((
+            Event,
+            Event.event_id == Event_v_all.event_id
+            )) \
+        .join((
+            event_address_v,
+            and_(
+                event_address_v.c.event_id == Event_v_all.event_id,
+                event_address_v.c.address_id == address_id,
+                event_address_v.c.existence == 1,
+                )
+            )) \
+        .filter(Event_v_all.moderation_user_id==user.user_id) \
+        .filter(~exists().where(and_(
+                Event_v_new.event_id == Event_v_all.event_id,
+                Event_v_new.a_time > Event_v_all.a_time,
+                ))) \
+        .filter(or_(
+                Event.a_time == None,
+                Event_v_all.a_time > Event.a_time,
+                )) \
+        .order_by(Event_v_all.a_time.desc()) \
 
     return query.all()
 

@@ -3,7 +3,7 @@
 import json
 
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.sql.expression import or_, and_
+from sqlalchemy.sql.expression import exists, or_, and_
 from tornado.web import HTTPError
 
 from base import authenticated, sha1_concat, \
@@ -17,7 +17,8 @@ from address import BaseAddressHandler
 
 from model import Event, Note, Address, Org
 
-from model_v import Event_v, Address_v
+from model_v import Event_v, Address_v, \
+    event_address_v
 
 from handle.user import get_user_pending_event_address
 
@@ -160,6 +161,10 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
     def _get(self):
         return self._get_event
 
+    @property
+    def _after_accept_new(self):
+        return self._after_event_accept_new
+
     def get(self, event_id_string):
         note_search = self.get_argument("note_search", None)
         note_order = self.get_argument_order("note_order", None)
@@ -203,6 +208,16 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
 
         if self.contributor:
             event_id = event and event.event_id or event_v.event_id
+            
+            if event_v:
+                # This current shows contributers deleted, pending and private addresses
+                query = self.orm.query(Address) \
+                    .filter(exists().where(and_(
+                            event_address_v.c.event_id == event_id,
+                            event_address_v.c.address_id == Address.address_id,
+                            )))
+                for address in query.all():
+                    address_list.append(address)
             
             for address_v in get_user_pending_event_address(
                 self.orm, self.current_user, event_id):

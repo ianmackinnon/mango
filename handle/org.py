@@ -3,7 +3,7 @@
 import json
 
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.sql.expression import or_, and_
+from sqlalchemy.sql.expression import exists, or_, and_
 from tornado.web import HTTPError
 
 from base import authenticated, sha1_concat, \
@@ -17,7 +17,8 @@ from address import BaseAddressHandler
 
 from model import Org, Note, Address, Orgalias, Event
 
-from model_v import Org_v, Address_v
+from model_v import Org_v, Address_v, \
+    org_address_v
 
 from handle.user import get_user_pending_org_address
 
@@ -142,6 +143,10 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
     def _get(self):
         return self._get_org
 
+    @property
+    def _after_accept_new(self):
+        return self._after_org_accept_new
+
     def get(self, org_id_string):
         note_search, note_order, note_offset = self.get_note_arguments()
 
@@ -186,7 +191,17 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
 
         if self.contributor:
             org_id = org and org.org_id or org_v.org_id
-            
+
+            if org_v:
+                # This current shows contributers deleted, pending and private addresses
+                query = self.orm.query(Address) \
+                    .filter(exists().where(and_(
+                            org_address_v.c.org_id == org_id,
+                            org_address_v.c.address_id == Address.address_id,
+                            )))
+                for address in query.all():
+                    address_list.append(address)
+
             for address_v in get_user_pending_org_address(
                 self.orm, self.current_user, org_id):
                 

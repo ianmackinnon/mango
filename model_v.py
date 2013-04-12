@@ -15,6 +15,7 @@ from sqlalchemy.orm.exc import NoResultFound
 import geo
 
 from model import Base, User, MangoEntity, \
+    Org, Event, Address, \
     org_address, event_address
 
 from model import sanitise_name, sanitise_address
@@ -51,7 +52,7 @@ event_address_v = Table(
 
 
 
-def accept_org_address_v(orm, address_id):
+def accept_address_org_v(orm, address_id):
     query = orm.query(org_address_v.c.org_id) \
         .filter(and_(
             org_address_v.c.address_id == address_id,
@@ -71,6 +72,13 @@ def accept_org_address_v(orm, address_id):
             ))
     if query.count():
         return False
+
+    query = orm.query(Org) \
+        .filter(Org.org_id == org_id)
+
+    if not query.count():
+        return True
+
     items = [{
             "address_id": address_id,
             "org_id": org_id,
@@ -81,7 +89,7 @@ def accept_org_address_v(orm, address_id):
         
 
 
-def accept_event_address_v(orm, address_id):
+def accept_address_event_v(orm, address_id):
     query = orm.query(event_address_v.c.event_id) \
         .filter(and_(
             event_address_v.c.address_id == address_id,
@@ -93,7 +101,7 @@ def accept_event_address_v(orm, address_id):
         (event_id, ) = query.one()
     except NoResultFound as e:
         return False
-    
+
     query = orm.query(event_address) \
         .filter(and_(
             event_address.c.address_id == address_id,
@@ -101,6 +109,13 @@ def accept_event_address_v(orm, address_id):
             ))
     if query.count():
         return False
+
+    query = orm.query(Event) \
+        .filter(Event.event_id == event_id)
+
+    if not query.count():
+        return True
+
     items = [{
             "address_id": address_id,
             "event_id": event_id,
@@ -109,6 +124,51 @@ def accept_event_address_v(orm, address_id):
     orm.connection().execute(event_address.insert(), *items)
     return True
         
+def accept_org_address_v(orm, org_id):
+    """
+    Take an org ID of a newly accepted (already committed) org.
+    Find matching org_address_v (they can only be in the future from the same non-mod as the org).
+    If the addresses already exist, create new org_address rows to link them.
+    """
+    org = orm.query(Org).filter_by(org_id=org_id).first()
+    if not org:
+        return
+
+    address_id_list = orm.query(org_address_v.c.address_id) \
+        .filter(org_address_v.c.org_id == org_id) \
+        .distinct()
+
+    for (address_id, ) in address_id_list:
+        address = orm.query(Address).filter_by(address_id=address_id).first()
+        if not address:
+            continue
+        if org in address.org_list:
+            continue
+        address.org_list.append(org)
+    orm.commit()
+
+def accept_event_address_v(orm, event_id):
+    """
+    Take an event ID of a newly accepted (already committed) event.
+    Find matching event_address_v (they can only be in the future from the same non-mod as the event).
+    If the addresses already exist, create new event_address rows to link them.
+    """
+    event = orm.query(Event).filter_by(event_id=event_id).first()
+    if not event:
+        return
+
+    address_id_list = orm.query(event_address_v.c.address_id) \
+        .filter(event_address_v.c.event_id == event_id) \
+        .distinct()
+
+    for (address_id, ) in address_id_list:
+        address = orm.query(Address).filter_by(address_id=address_id).first()
+        if not address:
+            continue
+        if event in address.event_list:
+            continue
+        address.event_list.append(event)
+    orm.commit()
 
 class classproperty(property):
     def __get__(self, cls, owner):
