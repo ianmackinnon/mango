@@ -449,6 +449,7 @@ class OrgAddressListHandler(BaseOrgHandler, BaseAddressHandler):
         self.orm_commit()
 
         address_v = self._create_address_v(id_)
+        self._before_address_set(address_v)
         self.orm.add(address_v)
         self.orm_commit()
 
