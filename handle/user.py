@@ -5,12 +5,11 @@ from sqlalchemy.orm import aliased
 from sqlalchemy.sql.expression import exists, and_, or_
 
 from base import BaseHandler, authenticated
-from model import User, get_history
-
+from model import User
 from model import Org, Event, Address
 from model_v import Org_v, Event_v, Address_v
 from model_v import org_address_v, event_address_v
-
+from model_v import get_history
 
 
 

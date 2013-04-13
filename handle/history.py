@@ -3,7 +3,7 @@
 from tornado.web import HTTPError
 
 from base import BaseHandler, authenticated
-from model import get_history
+from model_v import get_history
 
 
 

@@ -40,13 +40,19 @@
 
 <%def name="org_list(org_id, org, open=True)">
 <li>
-  org:
-  ${org_id}
-  %if open:
-  <a href="${url_rewrite(org["url"])}">view</a>
+  org
   :
+  %if org["url"]:
+  <a href="${url_rewrite(org["url"])}">${org_id}</a>
+  %else:
+  ${org_id}
+  %endif
   %if org["revision_url"]:
+  :
+  %if open:
   <a href="${url_rewrite(org["revision_url"])}">moderate</a>
+  %else:
+  review parent first
   %endif
   %endif
   <ul>
@@ -61,13 +67,19 @@
 
 <%def name="event_list(event_id, event, open=True)">
 <li>
-  event:
-  ${event_id}
-  %if open:
-  <a href="${url_rewrite(event["url"])}">view</a>
+  event
   :
+  %if event["url"]:
+  <a href="${url_rewrite(event["url"])}">${event_id}</a>
+  %else:
+  ${event_id}
+  %endif
   %if event["revision_url"]:
+  :
+  %if open:
   <a href="${url_rewrite(event["revision_url"])}">moderate</a>
+  %else:
+  review parent first
   %endif
   %endif
   <ul>
@@ -82,13 +94,19 @@
 
 <%def name="address_list(address_id, address, open=True)">
 <li>
-  address:
-  ${address_id}
-  %if open:
-  <a href="${url_rewrite(address["url"])}">view</a>
+  address
   :
-  %if open and address["revision_url"]:
+  %if address["url"]:
+  <a href="${url_rewrite(address["url"])}">${address_id}</a>
+  %else:
+  ${address_id}
+  %endif
+  %if address["revision_url"]:
+  :
+  %if open:
   <a href="${url_rewrite(address["revision_url"])}">moderate</a>
+  %else:
+  review parent first
   %endif
   %endif
 </li>

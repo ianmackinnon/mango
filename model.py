@@ -179,58 +179,9 @@ def verify_salted_hash(plaintext, salted_hash):
 
 
 
-def get_history(session, user_id=None, limit=20, offset=0):
-    if (user_id):
-        user_sql_1 = ""
-        user_sql_2 = """
-where user.user_id = %d
-""" % user_id
-    else:
-        user_sql_1 = """
-, user_id, user.name as user_name, auth.gravatar_hash
-""" 
-        user_sql_2 = ""
-        
-    sql = """
-select type, entity_id, entity_v_id, existence, existence_v, a_time as date, T.name%s
-from
-  (
-  select "organisation" as type, org_v.org_id as entity_id, org_v_id as entity_v_id, org_v.a_time, org.org_id and 1 as existence, existence as existence_v, org_v.name as name, org_v.moderation_user_id from org_v left outer join org using (org_id)
-  union
-  select "event" as type, event_v.event_id as entity_id, event_v_id as entity_v_id, event_v.a_time, event.event_id and 1 as existence, existence as existence_v, event_v.name as name, event_v.moderation_user_id from event_v left outer join event using (event_id)
-  union
-  select "address" as type, address_v.address_id as entity_id, address_v_id as entity_v_id, address_v.a_time, address.address_id and 1 as existence, existence as existence_v, address_v.postal as name, address_v.moderation_user_id from address_v left outer join address using (address_id)
-  union
-  select "organisation-tag" as type, orgtag_v.orgtag_id as entity_id, orgtag_v_id as entity_v_id, orgtag_v.a_time, orgtag.orgtag_id and 1 as existence, existence as existence_v, orgtag_v.name as name, orgtag_v.moderation_user_id from orgtag_v left outer join orgtag using (orgtag_id)
-  union
-  select "event-tag" as type, eventtag_v.eventtag_id as entity_id, eventtag_v_id as entity_v_id, eventtag_v.a_time, eventtag.eventtag_id and 1 as existence, existence as existence_v, eventtag_v.name as name, eventtag_v.moderation_user_id from eventtag_v left outer join eventtag using (eventtag_id)
-  union
-  select "note" as type, note_v.note_id as entity_id, note_v_id as entity_v_id, note_v.a_time, note.note_id and 1 as existence, existence as existence_v, note_v.text as name, note_v.moderation_user_id from note_v left outer join note using (note_id)
-  ) as T 
-join user on (moderation_user_id = user_id)
-left outer join auth using (auth_id)
-%s
-order by a_time desc
-limit %d
-offset %d
-""" % (
-        user_sql_1,
-        user_sql_2,
-        limit,
-        offset
-        )
-
-    results = session.connection().execute(sql)
-
-    history = []
-    for row in results:
-        row_dict = {}
-        for column in row.keys():
-            row_dict[column] = getattr(row, column)
-        if not user_id and not row_dict.get("gravatar_hash", None):
-            row_dict["gravatar_hash"] = gravatar_hash(str(row.user_id))
-        history.append(row_dict)
-    return history
+class classproperty(property):
+    def __get__(self, cls, owner):
+        return self.fget.__get__(None, owner)()
 
 
 
@@ -608,6 +559,11 @@ class Org(Base, MangoEntity, NotableEntity):
 
     list_url = "/organisation"
     
+    @classproperty
+    @classmethod
+    def entity_id(cls):
+        return cls.org_id
+
     def __init__(self,
                  name, description=None,
                  moderation_user=None, public=None):
@@ -916,6 +872,11 @@ class Event(Base, MangoEntity, NotableEntity):
 
     list_url = "/event"
     
+    @classproperty
+    @classmethod
+    def entity_id(cls):
+        return cls.event_id
+
     def __init__(self,
                  name, start_date, end_date,
                  description=None, start_time=None, end_time=None,
@@ -1088,6 +1049,11 @@ class Address(Base, MangoEntity, NotableEntity):
         ]
 
     list_url = "/address"
+
+    @classproperty
+    @classmethod
+    def entity_id(cls):
+        return cls.address_id
 
     def __init__(self,
                  postal, source,
@@ -1638,6 +1604,11 @@ class Note(Base, MangoEntity):
         ]
 
     list_url = "/note"
+
+    @classproperty
+    @classmethod
+    def entity_id(cls):
+        return cls.note_id
 
     def __init__(self,
                  text, source,
