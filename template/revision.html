@@ -10,7 +10,9 @@
 
 <h1>Revision</h1>
 
+%if parameters.get("view", None) == "edit":
 <p>Choose to keep the current version (left) or replace it with the revision (right).</p>
+%endif
 
 <p>Attributes which are the same for both versions are shown spanning both columns.</p>
 
@@ -31,6 +33,7 @@ suggestion = (not latest_a_time) or (obj_v.get("date") > latest_a_time)
         <th>Revision</th>
       </tr>
     </thead>
+    %if parameters.get("view", None) == "edit":
     <tfoot>
       <tr>
         <th>
@@ -49,6 +52,7 @@ suggestion = (not latest_a_time) or (obj_v.get("date") > latest_a_time)
         </th>
       </tr>
     </tfoot>
+    %endif
     <tbody>
       %for field_name, field in fields:
       ${field_row(field_name, field)}
@@ -57,6 +61,7 @@ suggestion = (not latest_a_time) or (obj_v.get("date") > latest_a_time)
   </table>
 </form>
 
+%if parameters.get("view", None) == "edit":
 %if suggestion:
 <br>
 <form
@@ -76,6 +81,11 @@ suggestion = (not latest_a_time) or (obj_v.get("date") > latest_a_time)
     </tfoot>
   </table>
 </form>
+%endif
+%endif
+
+%if not (parameters.get("view", None) == "edit"):
+<p>Enter edit mode to be able to restore this revision.</p>
 %endif
 
 </%def>
