@@ -369,7 +369,7 @@ class Orgtag_v(Base):
 
 
 
-class Event_v(Base):
+class Event_v(Base, MangoEntity):
     __tablename__ = 'event_v'
     __table_args__ = {'sqlite_autoincrement': True}
 
@@ -503,7 +503,7 @@ class Eventtag_v(Base):
 
 
 
-class Address_v(Base):
+class Address_v(Base, MangoEntity):
     __tablename__ = 'address_v'
     __table_args__ = {'sqlite_autoincrement': True}
 
@@ -633,7 +633,7 @@ class Address_v(Base):
 
 
 
-class Note_v(Base):
+class Note_v(Base, MangoEntity):
     __tablename__ = 'note_v'
     __table_args__ = {'sqlite_autoincrement': True}
 

@@ -170,9 +170,7 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
         return self._after_event_accept_new
 
     def get(self, event_id_string):
-        note_search = self.get_argument("note_search", None)
-        note_order = self.get_argument_order("note_order", None)
-        note_offset = self.get_argument_int("note_offset", None)
+        note_search, note_order, note_offset = self.get_note_arguments()
 
         public = self.moderator
 
@@ -496,6 +494,9 @@ values (%d, %d, 0, 1)""" % (event_id, address_id)
 class EventAddressHandler(BaseEventHandler, BaseAddressHandler):
     @authenticated
     def put(self, event_id_string, address_id_string):
+        if not self.moderator:
+            raise HTTPError(405)
+
         event = self._get_event(event_id_string)
         address = self._get_address(address_id_string)
         if address not in event.address_list:

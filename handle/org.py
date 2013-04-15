@@ -478,6 +478,9 @@ values (%d, %d, 0, 1)""" % (org_id, address_id)
 class OrgAddressHandler(BaseOrgHandler, BaseAddressHandler):
     @authenticated
     def put(self, org_id_string, address_id_string):
+        if not self.moderator:
+            raise HTTPError(405)
+
         org = self._get_org(org_id_string)
         address = self._get_address(address_id_string)
         if address not in org.address_list:
