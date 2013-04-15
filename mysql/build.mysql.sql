@@ -149,88 +149,88 @@ CREATE TABLE org_address_v (
     org_id INTEGER NOT NULL,
     address_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
-    existence BOOLEAN NOT NULL --
+    existence BOOLEAN NOT NULL, --
     KEY org_id (org_id),
-    KEY address_id (address_id),
+    KEY address_id (address_id)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE org_note_v (
     org_id INTEGER NOT NULL,
     note_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
-    existence BOOLEAN NOT NULL --
+    existence BOOLEAN NOT NULL, --
     KEY org_id (org_id),
-    KEY note_id (note_id),
+    KEY note_id (note_id)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE org_orgtag_v (
     org_id INTEGER NOT NULL,
     orgtag_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
-    existence BOOLEAN NOT NULL --
+    existence BOOLEAN NOT NULL, --
     KEY org_id (org_id),
-    KEY orgtag_id (orgtag_id),
+    KEY orgtag_id (orgtag_id)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE orgtag_note_v (
     orgtag_id INTEGER NOT NULL,
     note_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
-    existence BOOLEAN NOT NULL --
+    existence BOOLEAN NOT NULL, --
     KEY orgtag_id (orgtag_id),
-    KEY note_id (note_id),
+    KEY note_id (note_id)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE event_address_v (
     event_id INTEGER NOT NULL,
     address_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
-    existence BOOLEAN NOT NULL --
+    existence BOOLEAN NOT NULL, --
     KEY event_id (event_id),
-    KEY address_id (address_id),
+    KEY address_id (address_id)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE event_note_v (
     event_id INTEGER NOT NULL,
     note_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
-    existence BOOLEAN NOT NULL --
+    existence BOOLEAN NOT NULL, --
     KEY event_id (event_id),
-    KEY note_id (note_id),
+    KEY note_id (note_id)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE event_eventtag_v (
     event_id INTEGER NOT NULL,
     eventtag_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
-    existence BOOLEAN NOT NULL --
+    existence BOOLEAN NOT NULL, --
     KEY event_id (event_id),
-    KEY eventtag_id (eventtag_id),
+    KEY eventtag_id (eventtag_id)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE eventtag_note_v (
     eventtag_id INTEGER NOT NULL,
     note_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
-    existence BOOLEAN NOT NULL --
+    existence BOOLEAN NOT NULL, --
     KEY eventtag_id (eventtag_id),
-    KEY note_id (note_id),
+    KEY note_id (note_id)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE address_note_v (
     address_id INTEGER NOT NULL,
     note_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
-    existence BOOLEAN NOT NULL --
+    existence BOOLEAN NOT NULL, --
     KEY address_id (address_id),
-    KEY note_id (note_id),
+    KEY note_id (note_id)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE org_event_v (
     org_id INTEGER NOT NULL,
     event_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
-    existence BOOLEAN NOT NULL --
+    existence BOOLEAN NOT NULL, --
     KEY org_id (org_id),
-    KEY event_id (event_id),
+    KEY event_id (event_id)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;

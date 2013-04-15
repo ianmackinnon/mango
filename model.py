@@ -1,4 +1,4 @@
- #!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import re
@@ -248,6 +248,7 @@ address_note = Table(
     Column('address_id', Integer, ForeignKey('address.address_id'), primary_key=True),
     Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
     Column('a_time', Float()),
+    mysql_engine='InnoDB',
    )
 
 
@@ -257,6 +258,7 @@ org_note = Table(
     Column('org_id', Integer, ForeignKey('org.org_id'), primary_key=True),
     Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
     Column('a_time', Float()),
+    mysql_engine='InnoDB',
     )
 
 
@@ -266,6 +268,7 @@ event_note = Table(
     Column('event_id', Integer, ForeignKey('event.event_id'), primary_key=True),
     Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
     Column('a_time', Float()),
+    mysql_engine='InnoDB',
     )
 
 
@@ -275,6 +278,7 @@ orgtag_note = Table(
     Column('orgtag_id', Integer, ForeignKey('orgtag.orgtag_id'), primary_key=True),
     Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
     Column('a_time', Float()),
+    mysql_engine='InnoDB',
     )
 
 
@@ -284,6 +288,7 @@ eventtag_note = Table(
     Column('eventtag_id', Integer, ForeignKey('eventtag.eventtag_id'), primary_key=True),
     Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
     Column('a_time', Float()),
+    mysql_engine='InnoDB',
     )
 
 
@@ -293,6 +298,7 @@ org_address = Table(
     Column('org_id', Integer, ForeignKey('org.org_id'), primary_key=True),
     Column('address_id', Integer, ForeignKey('address.address_id'), primary_key=True),
     Column('a_time', Float()),
+    mysql_engine='InnoDB',
     )
 
 
@@ -302,6 +308,7 @@ event_address = Table(
     Column('event_id', Integer, ForeignKey('event.event_id'), primary_key=True),
     Column('address_id', Integer, ForeignKey('address.address_id'), primary_key=True),
     Column('a_time', Float()),
+    mysql_engine='InnoDB',
     )
 
 
@@ -311,6 +318,7 @@ org_orgtag = Table(
     Column('org_id', Integer, ForeignKey('org.org_id'), primary_key=True),
     Column('orgtag_id', Integer, ForeignKey('orgtag.orgtag_id'), primary_key=True),
     Column('a_time', Float()),
+    mysql_engine='InnoDB',
     )
 
 
@@ -320,6 +328,7 @@ event_eventtag = Table(
     Column('event_id', Integer, ForeignKey('event.event_id'), primary_key=True),
     Column('eventtag_id', Integer, ForeignKey('eventtag.eventtag_id'), primary_key=True),
     Column('a_time', Float()),
+    mysql_engine='InnoDB',
     )
 
 
@@ -329,6 +338,7 @@ org_event = Table(
     Column('org_id', Integer, ForeignKey('org.org_id'), primary_key=True),
     Column('event_id', Integer, ForeignKey('event.event_id'), primary_key=True),
     Column('a_time', Float()),
+    mysql_engine='InnoDB',
     )
 
 
@@ -337,6 +347,7 @@ note_fts = Table(
     'note_fts', Base.metadata,
     Column('docid', Integer, primary_key=True),
     Column('content', Unicode()),
+    mysql_engine='MyISAM',
     mysql_charset='utf8'
     )
 
@@ -350,9 +361,12 @@ class Auth(Base):
     __tablename__ = 'auth'
     __table_args__ = (
         UniqueConstraint('url', 'name_hash'),    
-        {'sqlite_autoincrement':True}
+        {
+            'sqlite_autoincrement': True,
+            "mysql_engine": 'InnoDB',
+            }
         )
-     
+    
     auth_id = Column(Integer, primary_key=True)
 
     url = Column(StringKey(), nullable=False)
@@ -372,7 +386,10 @@ class Auth(Base):
 
 class User(Base):
     __tablename__ = 'user'
-    __table_args__ = {'sqlite_autoincrement':True}
+    __table_args__ = {
+        'sqlite_autoincrement': True,
+        "mysql_engine": 'InnoDB',
+        }
      
     user_id = Column(Integer, primary_key=True)
     auth_id = Column(Integer, ForeignKey(Auth.auth_id), nullable=True)
@@ -412,7 +429,10 @@ class User(Base):
       
 class Session(Base):
     __tablename__ = 'session'
-    __table_args__ = {'sqlite_autoincrement':True}
+    __table_args__ = {
+        'sqlite_autoincrement': True,
+        "mysql_engine": 'InnoDB',
+        }
 
     session_id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey(User.user_id), nullable=False)
@@ -453,7 +473,10 @@ class Session(Base):
 
 class Org(Base, MangoEntity, NotableEntity):
     __tablename__ = 'org'
-    __table_args__ = {'sqlite_autoincrement':True}
+    __table_args__ = {
+        'sqlite_autoincrement': True,
+        "mysql_engine": 'InnoDB',
+        }
 
     org_id = Column(Integer, primary_key=True)
 
@@ -688,7 +711,10 @@ class Org(Base, MangoEntity, NotableEntity):
 
 class Orgalias(Base, MangoEntity):
     __tablename__ = 'orgalias'
-    __table_args__ = {'sqlite_autoincrement':True}
+    __table_args__ = {
+        'sqlite_autoincrement': True,
+        "mysql_engine": 'InnoDB',
+        }
 
     orgalias_id = Column(Integer, primary_key=True)
 
@@ -771,7 +797,10 @@ class Event(Base, MangoEntity, NotableEntity):
     __tablename__ = 'event'
     __table_args__ = (
         CheckConstraint("end_time > start_time or end_date > start_date"),
-        {'sqlite_autoincrement':True},
+        {
+            'sqlite_autoincrement': True,
+            "mysql_engine": 'InnoDB',
+            },
         )
 
     event_id = Column(Integer, primary_key=True)
@@ -980,7 +1009,10 @@ class AddressExtension(MapperExtension):
 
 class Address(Base, MangoEntity, NotableEntity):
     __tablename__ = 'address'
-    __table_args__ = {'sqlite_autoincrement':True}
+    __table_args__ = {
+        'sqlite_autoincrement': True,
+        "mysql_engine": 'InnoDB',
+        }
     __mapper_args__ = {'extension': AddressExtension()}
 
     address_id = Column(Integer, primary_key=True)
@@ -1275,7 +1307,10 @@ class Orgtag(Base, MangoEntity, NotableEntity):
     __tablename__ = 'orgtag'
     __table_args__ = (
         UniqueConstraint('base_short'),    
-        {'sqlite_autoincrement':True}
+        {
+            'sqlite_autoincrement': True,
+            "mysql_engine": 'InnoDB',
+            }
         )
     __mapper_args__ = {'extension': TagExtension()}
 
@@ -1410,7 +1445,10 @@ class Eventtag(Base, MangoEntity, NotableEntity):
     __tablename__ = 'eventtag'
     __table_args__ = (
         UniqueConstraint('base_short'),    
-        {'sqlite_autoincrement':True}
+        {
+            'sqlite_autoincrement': True,
+            "mysql_engine": 'InnoDB',
+            }
         )
     __mapper_args__ = {'extension': TagExtension()}
 
@@ -1543,7 +1581,10 @@ class Eventtag(Base, MangoEntity, NotableEntity):
 
 class Note(Base, MangoEntity):
     __tablename__ = 'note'
-    __table_args__ = {'sqlite_autoincrement':True}
+    __table_args__ = {
+        'sqlite_autoincrement': True,
+        "mysql_engine": 'InnoDB',
+        }
 
     note_id = Column(Integer, primary_key=True)
 

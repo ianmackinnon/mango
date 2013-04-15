@@ -72,8 +72,10 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
 
         if not user:
             auth = Auth(self.openid_url, auth_name)
-            user_name = auth_user["name"]
+            user_name = unicode(auth_user["name"])
             user = User(auth, user_name, moderator=False)
+            self.orm.add(user)
+            self.orm.commit()
             self.next = "/user/%d" % user.user_id
 
         session = Session(
