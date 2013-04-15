@@ -205,9 +205,9 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
             for org_v in get_user_pending_address_org(
                 self.orm, self.current_user, address_id):
                 
-                for o, org in enumerate(org_list):
+                for i, org in enumerate(org_list):
                     if org.org_id == org_v.org_id:
-                        org_list[a] = org_v
+                        org_list[i] = org_v
                         break
                 else:
                     org_list.append(org_v)
@@ -215,9 +215,9 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
             for event_v in get_user_pending_address_event(
                 self.orm, self.current_user, address_id):
                 
-                for o, event in enumerate(event_list):
+                for i, event in enumerate(event_list):
                     if event.event_id == event_v.event_id:
-                        event_list[a] = event_v
+                        event_list[i] = event_v
                         break
                 else:
                     event_list.append(event_v)
@@ -226,8 +226,12 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
         event_list = [event.obj(public=public) for event in event_list]
         note_list = [note.obj(public=public) for note in note_list]
 
-        if self.contributor and address_v:
-            address = address_v
+        edit_block = False
+        if address_v:
+            if self.contributor:
+                address = address_v
+            else:
+                edit_block = True
 
         obj = address.obj(
             public=public,
@@ -248,6 +252,7 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
             self.render(
                 'address.html',
                 obj=obj,
+                edit_block=edit_block,
                 note_search=note_search,
                 note_order=note_order,
                 note_offset=note_offset,

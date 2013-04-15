@@ -111,9 +111,15 @@ if None in path_keys:
   </div>
   
   <div class="form-by-map" id="event-form">
+    ${self.mini.visibility_bar(obj)}
     
-    <h3>Event</h3>
     %if current_user and (parameters.get("view", None) == "edit"):
+    %if edit_block:
+    <p class="warning">Editing is disabled because <a href="${url_rewrite(version_url)}">pending suggested revisions</a> exist.</p>
+    ${event_browse(obj)}
+    %else:
+    <h3>Event</h3>
+
     <form
        class="mango"
        action="${url_rewrite(obj and obj["url"] or '/event')}"
@@ -190,21 +196,9 @@ if None in path_keys:
 
     ${self.mini.delete_input(obj)}
 
-    %else :
-    ${self.mini.visibility_bar(obj)}
-    ${obj["name"]}
-
-    <h3>Time</h3>
-    ${obj["start_date"] | n, page_date}
-
-    %if obj and obj["description"]:
-    <h3>Description</h3>
-
-    <div class="description-preview markdown">
-      ${obj["description"] | n, markdown_safe, convert_links}
-    </div>
     %endif
-
+    %else:
+    ${event_browse(obj)}
     %endif
 
 
@@ -271,5 +265,26 @@ ${self.mini.render_note_section(obj["note_list"],
   )}
 %endif
 
+</%def>
+
+
+
+<%def name="event_browse(obj)">
+<h3>Event</h3>
+    
+%if obj:
+${obj["name"]}
+
+<h3>Time</h3>
+${obj["start_date"] | n, page_date}
+
+%if obj["description"]:
+<h3>Description</h3>
+
+<div class="description-preview markdown">
+  ${obj["description"] | n, markdown_safe, convert_links}
+</div>
+%endif
+%endif
 </%def>
 

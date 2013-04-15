@@ -226,9 +226,9 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
             for address_v in get_user_pending_event_address(
                 self.orm, self.current_user, event_id):
                 
-                for a, address in enumerate(address_list):
+                for i, address in enumerate(address_list):
                     if address.address_id == address_v.address_id:
-                        address_list[a] = address_v
+                        address_list[i] = address_v
                         break
                 else:
                     address_list.append(address_v)
@@ -238,8 +238,12 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
         eventtag_list = [eventtag.obj(public=public) for eventtag in eventtag_list]
         note_list = [note.obj(public=public) for note in note_list]
 
-        if self.contributor and event_v:
-            event = event_v
+        edit_block = False
+        if event_v:
+            if self.contributor:
+                event = event_v
+            else:
+                edit_block = True
 
         obj = event.obj(
             public=public,
@@ -251,7 +255,6 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
             )
 
         version_url=None
-
         if self.current_user and self._count_event_history(event_id_string) > 1:
             version_url="%s/revision" % event.url
 
@@ -261,6 +264,7 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
             self.render(
                 'event.html',
                 obj=obj,
+                edit_block=edit_block,
                 note_search=note_search,
                 note_order=note_order,
                 note_offset=note_offset,

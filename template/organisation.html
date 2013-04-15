@@ -120,10 +120,15 @@ if None in path_keys:
   </div>
   
   <div class="form-by-map" id="org-form">
-    
-    <h3>Organisation</h3>
+    ${self.mini.visibility_bar(obj)}
     
     %if current_user and (parameters.get("view", None) == "edit"):
+    %if edit_block:
+    <p class="warning">Editing is disabled because <a href="${url_rewrite(version_url)}">pending suggested revisions</a> exist.</p>
+    ${org_browse(obj)}
+    %else:
+    <h3>Organisation</h3>
+    
     <form
        class="mango"
        action="${url_rewrite(obj and obj["url"] or '/organisation')}"
@@ -154,26 +159,15 @@ if None in path_keys:
            name="description"
            >${obj and obj.get("description", "") or ""}</textarea>
       </label>
-      
       ${self.mini.visibility_input(obj, "public")}
-
-      <input type="submit" value="Submit">
+      <input type="submit" value="Save">
     </form>
 
     ${self.mini.delete_input(obj)}
 
-    %else:
-    ${self.mini.visibility_bar(obj)}
-    ${obj["name"]}
-
-    %if obj and obj["description"]:
-    <h3>Description</h3>
-
-    <div class="description-preview markdown">
-      ${obj["description"] | n, markdown_safe, convert_links}
-    </div>
     %endif
-
+    %else:
+    ${org_browse(obj)}
     %endif
 
 
@@ -243,3 +237,20 @@ ${self.mini.render_note_section(obj["note_list"],
 
 </%def>
 
+
+
+<%def name="org_browse(obj)">
+<h3>Organisation</h3>
+    
+%if obj:
+${obj["name"]}
+
+%if obj["description"]:
+<h3>Description</h3>
+
+<div class="description-preview markdown">
+  ${obj["description"] | n, markdown_safe, convert_links}
+</div>
+%endif
+%endif
+</%def>

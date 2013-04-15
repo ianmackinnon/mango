@@ -38,11 +38,20 @@ Address ${obj["id"]}
     <div id="mango-map-canvas">Map loading...</div>
   </div>
 
-  %if current_user and (parameters.get("view", None) == "edit"):
-  <div class="box right" id="address-form">
+  <div class="form-by-map" id="address-form">
+    ${self.mini.visibility_bar(obj)}
+
+    %if current_user and (parameters.get("view", None) == "edit"):
+    %if edit_block:
+    <p class="warning">Editing is disabled because <a href="${url_rewrite(version_url)}">pending suggested revisions</a> exist.</p>
+    ${address_browse(obj)}
+    %else:
+    <h3>Address</h3>
+
     <div class="form-hint">
       <p>Enter a postal address and a source where it can be verified.</p>
     </div>
+
 <%
 action = entity and "%s/address" % entity["url"] or obj["url"]
 next = None
@@ -52,6 +61,7 @@ elif entity_list in obj and len(obj[entity_list]) == 1:
     next = obj[entity_list][0]["url"]
 
 %>
+
     <form
        class="mango"
        action="${url_rewrite(action)}"
@@ -107,24 +117,11 @@ elif entity_list in obj and len(obj[entity_list]) == 1:
       <input type="submit" value="Save">
     </form>
 
+    %endif
+    %else:
+    ${address_browse(obj)}
+    %endif
   </div>
-  %else:
-  <div class="box right" id="address-form">
-    ${self.mini.visibility_bar(obj)}
-    <h3>Address</h3>
-    <span 
-       latitude="${obj and (obj.get("manual_latitude", "") or obj.get("latitude", "")) or ""}"
-       longitude="${obj and (obj.get("manual_longitude", "") or obj.get("longitude", "")) or ""}"
-       >
-    <p>
-    ${obj["postal"] | n, h, unicode, newline}
-    </p>
-    <h3>Source</h3>
-    <p>
-    ${obj["source"] | n, h, convert_links}
-    </p>
-  </div>
-  %endif
 
 %if obj and "note_list" in obj:
 ${self.mini.render_note_section(obj["note_list"],
@@ -136,4 +133,25 @@ ${self.mini.render_note_section(obj["note_list"],
 
 </div>
 
+</%def>
+
+
+
+<%def name="address_browse(obj)">
+<h3>Address</h3>
+    
+%if obj:
+<span 
+   latitude="${obj and (obj.get("manual_latitude", "") or obj.get("latitude", "")) or ""}"
+   longitude="${obj and (obj.get("manual_longitude", "") or obj.get("longitude", "")) or ""}"
+   >
+</span>
+<p>
+  ${obj["postal"] | n, h, unicode, newline}
+</p>
+<h3>Source</h3>
+<p>
+  ${obj["source"] | n, h, convert_links}
+</p>
+%endif
 </%def>

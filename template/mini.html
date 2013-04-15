@@ -11,12 +11,17 @@ ${{True: "public", False: "private", None: "pending",}[public]}
 
 
 <%def name="visibility_bar(obj)">\
-%if obj and "public" in obj:
+%if obj:
+%if "suggestion" in obj:
+<div class="visibility bar suggestion">Pending Suggestion</div>
+%endif
+%if "public" in obj:
 <div class="visibility bar
             ${visibility_public(obj["public"])}
   ">\
 ${visibility_public(obj["public"])}
 </div>\
+%endif
 %endif
 </%def>
 

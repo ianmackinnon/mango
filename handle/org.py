@@ -209,9 +209,9 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
             for address_v in get_user_pending_org_address(
                 self.orm, self.current_user, org_id):
                 
-                for a, address in enumerate(address_list):
+                for i, address in enumerate(address_list):
                     if address.address_id == address_v.address_id:
-                        address_list[a] = address_v
+                        address_list[i] = address_v
                         break
                 else:
                     address_list.append(address_v)
@@ -222,8 +222,12 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
         event_list = [event.obj(public=public) for event in event_list]
         orgalias_list = [orgalias.obj(public=public) for orgalias in orgalias_list]
 
-        if self.contributor and org_v:
-            org = org_v
+        edit_block = False
+        if org_v:
+            if self.contributor:
+                org = org_v
+            else:
+                edit_block = True
 
         obj = org.obj(
             public=public,
@@ -245,6 +249,7 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
             self.render(
                 'organisation.html',
                 obj=obj,
+                edit_block=edit_block,
                 note_search=note_search,
                 note_order=note_order,
                 note_offset=note_offset,

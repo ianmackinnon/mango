@@ -57,7 +57,7 @@
   %endif
   <ul>
     %for address_id, address in org["address"].items():
-    ${address_list(address_id, address, not org["revision_url"])}
+    ${address_list(address_id, address, bool(org["url"]))}
     %endfor
   </ul>
 </li>
@@ -84,7 +84,7 @@
   %endif
   <ul>
     %for address_id, address in event["address"].items():
-    ${address_list(address_id, address, not event["revision_url"])}
+    ${address_list(address_id, address, bool(event["url"]))}
     %endfor
   </ul>
 </li>

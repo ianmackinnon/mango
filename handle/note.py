@@ -123,6 +123,13 @@ class NoteHandler(BaseNoteHandler, MangoEntityHandlerMixin):
         orgtag_list = [orgtag.obj(public=public) for orgtag in orgtag_list]
         org_list = [org.obj(public=public) for org in org_list]
 
+        edit_block = False
+        if note_v:
+            if self.contributor:
+                note = note_v
+            else:
+                edit_block = True
+
         obj = note.obj(
             public=public,
             address_obj_list=address_list,
@@ -140,6 +147,7 @@ class NoteHandler(BaseNoteHandler, MangoEntityHandlerMixin):
             self.render(
                 'note.html',
                 obj=obj,
+                edit_block=edit_block,
                 version_url=version_url,
                 )
 

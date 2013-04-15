@@ -291,6 +291,8 @@ class Org_v(Base, MangoEntity):
             ):
         obj = {
             "v_id": self.org_v_id,
+            "suggestion": True,
+
             "id": self.org_id,
             "url": self.url,
             "date": self.a_time,
@@ -444,6 +446,8 @@ class Event_v(Base):
             ):
         obj = {
             "v_id": self.event_v_id,
+            "suggestion": True,
+
             "id": self.event_id,
             "url": self.url,
             "date": self.a_time,
@@ -591,6 +595,8 @@ class Address_v(Base):
             ):
         obj = {
             "v_id": self.address_v_id,
+            "suggestion": True,
+
             "id": self.address_id,
             "url": self.url,
             "date": self.a_time,
@@ -689,6 +695,8 @@ class Note_v(Base):
             ):
         obj = {
             "v_id": self.note_v_id,
+            "suggestion": True,
+
             "id": self.note_id,
             "url": self.url,
             "date": self.a_time,
