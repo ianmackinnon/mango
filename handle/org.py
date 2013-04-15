@@ -144,6 +144,10 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
         return self._get_org
 
     @property
+    def _get_v(self):
+        return self._get_org_v
+
+    @property
     def _after_accept_new(self):
         return self._after_org_accept_new
 
@@ -193,7 +197,7 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
             org_id = org and org.org_id or org_v.org_id
 
             if org_v:
-                # This current shows contributers deleted, pending and private addresses
+                # This current shows contributers all the deleted, pending and private addresses that have been added to their pending organisation
                 query = self.orm.query(Address) \
                     .filter(exists().where(and_(
                             org_address_v.c.org_id == org_id,

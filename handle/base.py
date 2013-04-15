@@ -894,22 +894,30 @@ class MangoEntityHandlerMixin(RequestHandler):
     @authenticated
     def put(self, entity_id_string):
         old_entity = self._get(entity_id_string, required=False)
-        ignore_list = None
+        pre_entity = self._get_v(entity_id_string)
         if self.moderator:
             new_entity = self._create(id_=int(entity_id_string))
         else:
             new_entity = self._create_v(id_=int(entity_id_string))
-            ignore_list = ["public"]
         if self._before_set:
             self._before_set(new_entity)
-        if old_entity:
-            if old_entity.content_same(new_entity, ignore_list):
-                return self.redirect_next(old_entity.url)
-            if self.moderator:
-                old_entity.content_copy(
-                    new_entity, self.current_user, ignore_list)
+
+        if self.moderator and old_entity:
+            if old_entity.content_same(new_entity):
+                if not pre_entity:
+                    return self.redirect_next(old_entity.url)
+                old_entity.a_time = 0
                 self.orm_commit()
-                return self.redirect_next(old_entity.url)
+            else:
+                old_entity.content_copy(new_entity, self.current_user)
+                self.orm_commit()
+            return self.redirect_next(old_entity.url)
+        if self.contributor:
+            if pre_entity:
+                if pre_entity.content_same(new_entity, ["public"]):
+                    return self.redirect_next(new_entity.url)
+            elif old_entity and old_entity.content_same(new_entity, ["public"]):
+                return self.redirect_next(new_entity.url)
         self.orm.add(new_entity)
         self.orm_commit()
         if self.moderator and self._after_accept_new:

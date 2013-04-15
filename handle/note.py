@@ -74,6 +74,10 @@ class NoteHandler(BaseNoteHandler, MangoEntityHandlerMixin):
     def _get(self):
         return self._get_note
 
+    @property
+    def _get_v(self):
+        return self._get_note_v
+
     @authenticated
     def put(self, entity_id_string):
         if not self.moderator:

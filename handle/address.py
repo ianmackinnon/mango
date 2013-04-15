@@ -29,16 +29,14 @@ from handle.user import get_user_pending_address_event, get_user_pending_address
 
 
 class BaseAddressHandler(BaseHandler, MangoBaseEntityHandlerMixin):
-    def _get_address(self, id_string,
-                     required=True, future_version=False):
+    def _get_address(self, id_string, required=True):
         return self._get_entity(Address, "address_id",
                                 "address",
                                 id_string,
                                 required,
                                 )
 
-    def _get_address_v(self, id_string,
-                       required=True, future_version=False):
+    def _get_address_v(self, id_string):
         return self._get_entity_v(Address, "address_id",
                                   Address_v, "address_v_id",
                                   "address",
@@ -153,6 +151,10 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
     @property
     def _get(self):
         return self._get_address
+
+    @property
+    def _get_v(self):
+        return self._get_address_v
 
     @property
     def _before_set(self):

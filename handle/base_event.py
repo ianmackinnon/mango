@@ -24,16 +24,14 @@ max_address_pages = 3
 
 
 class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
-    def _get_event(self, id_string,
-                 required=True, future_version=False):
+    def _get_event(self, id_string, required=True):
         return self._get_entity(Event, "event_id",
                                 "event",
                                 id_string,
                                 required,
                                 )
 
-    def _get_event_v(self, id_string,
-                 required=True, future_version=False):
+    def _get_event_v(self, id_string):
         return self._get_entity_v(Event, "event_id",
                                   Event_v, "event_v_id",
                                   "event",

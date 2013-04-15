@@ -12,16 +12,14 @@ from model_v import Note_v
 
 
 class BaseNoteHandler(BaseHandler, MangoBaseEntityHandlerMixin):
-    def _get_note(self, id_string,
-                  required=True, future_version=False):
+    def _get_note(self, id_string, required=True):
         return self._get_entity(Note, "note_id",
                                 "note",
                                 id_string,
                                 required,
                                 )
     
-    def _get_note_v(self, id_string,
-                    required=True, future_version=False):
+    def _get_note_v(self, id_string):
         return self._get_entity_v(Note, "note_id",
                                   Note_v, "note_v_id",
                                   "note",

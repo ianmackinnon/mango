@@ -20,6 +20,7 @@ CREATE TABLE org_v (
     name LONGTEXT NOT NULL, 
     description longtext,
 
+    KEY org_id (org_id),
     KEY moderation_user_id (moderation_user_id),
     CONSTRAINT org_v_c2 FOREIGN KEY (moderation_user_id)
       REFERENCES user (user_id)
@@ -36,6 +37,7 @@ CREATE TABLE orgalias_v (
     org_id INTEGER NOT NULL, 
     name LONGTEXT NOT NULL, 
 
+    KEY orgalist_id (orgalias_id),
     KEY moderation_user_id (moderation_user_id),
     CONSTRAINT orgalias_v_c2 FOREIGN KEY (moderation_user_id)
       REFERENCES user (user_id)
@@ -56,6 +58,7 @@ CREATE TABLE event_v (
     start_time time DEFAULT NULL,
     end_time time DEFAULT NULL,
 
+    KEY event_id (event_id),
     KEY moderation_user_id (moderation_user_id),
     CONSTRAINT event_v_c2 FOREIGN KEY (moderation_user_id)
       REFERENCES user (user_id)
@@ -77,6 +80,7 @@ CREATE TABLE address_v (
     longitude DOUBLE, 
     latitude DOUBLE, 
 
+    KEY address_id (address_id),
     KEY moderation_user_id (moderation_user_id),
     CONSTRAINT address_v_c2 FOREIGN KEY (moderation_user_id)
       REFERENCES user (user_id)
@@ -93,6 +97,7 @@ CREATE TABLE note_v (
     text LONGTEXT NOT NULL, 
     source LONGTEXT NOT NULL, 
 
+    KEY note_id (note_id),
     KEY moderation_user_id (moderation_user_id),
     CONSTRAINT note_v_c2 FOREIGN KEY (moderation_user_id)
       REFERENCES user (user_id)
@@ -113,6 +118,7 @@ CREATE TABLE orgtag_v (
     path LONGTEXT, 
     path_short LONGTEXT, 
 
+    KEY orgtag_id (orgtag_id),
     KEY moderation_user_id (moderation_user_id),
     CONSTRAINT orgtag_v_c2 FOREIGN KEY (moderation_user_id)
       REFERENCES user (user_id)
@@ -133,6 +139,7 @@ CREATE TABLE eventtag_v (
     path LONGTEXT, 
     path_short LONGTEXT, 
 
+    KEY eventtag_id (eventtag_id),
     KEY moderation_user_id (moderation_user_id),
     CONSTRAINT eventtag_v_c2 FOREIGN KEY (moderation_user_id)
       REFERENCES user (user_id)
@@ -143,6 +150,8 @@ CREATE TABLE org_address_v (
     address_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
     existence BOOLEAN NOT NULL --
+    KEY org_id (org_id),
+    KEY address_id (address_id),
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE org_note_v (
@@ -150,6 +159,8 @@ CREATE TABLE org_note_v (
     note_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
     existence BOOLEAN NOT NULL --
+    KEY org_id (org_id),
+    KEY note_id (note_id),
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE org_orgtag_v (
@@ -157,6 +168,8 @@ CREATE TABLE org_orgtag_v (
     orgtag_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
     existence BOOLEAN NOT NULL --
+    KEY org_id (org_id),
+    KEY orgtag_id (orgtag_id),
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE orgtag_note_v (
@@ -164,6 +177,8 @@ CREATE TABLE orgtag_note_v (
     note_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
     existence BOOLEAN NOT NULL --
+    KEY orgtag_id (orgtag_id),
+    KEY note_id (note_id),
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE event_address_v (
@@ -171,6 +186,8 @@ CREATE TABLE event_address_v (
     address_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
     existence BOOLEAN NOT NULL --
+    KEY event_id (event_id),
+    KEY address_id (address_id),
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE event_note_v (
@@ -178,6 +195,8 @@ CREATE TABLE event_note_v (
     note_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
     existence BOOLEAN NOT NULL --
+    KEY event_id (event_id),
+    KEY note_id (note_id),
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE event_eventtag_v (
@@ -185,6 +204,8 @@ CREATE TABLE event_eventtag_v (
     eventtag_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
     existence BOOLEAN NOT NULL --
+    KEY event_id (event_id),
+    KEY eventtag_id (eventtag_id),
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE eventtag_note_v (
@@ -192,6 +213,8 @@ CREATE TABLE eventtag_note_v (
     note_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
     existence BOOLEAN NOT NULL --
+    KEY eventtag_id (eventtag_id),
+    KEY note_id (note_id),
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE address_note_v (
@@ -199,6 +222,8 @@ CREATE TABLE address_note_v (
     note_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
     existence BOOLEAN NOT NULL --
+    KEY address_id (address_id),
+    KEY note_id (note_id),
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE org_event_v (
@@ -206,4 +231,6 @@ CREATE TABLE org_event_v (
     event_id INTEGER NOT NULL, 
     a_time DOUBLE NOT NULL, 
     existence BOOLEAN NOT NULL --
+    KEY org_id (org_id),
+    KEY event_id (event_id),
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;

@@ -256,6 +256,7 @@ class Application(tornado.web.Application):
             (r"/", HomeHandler),
             (r'/static/image/map/marker/(.*)',
              GenerateMarkerHandler, {'path': "static/image/map/marker"}),
+            (r'/(favicon.ico)', tornado.web.StaticFileHandler, {'path': "static"}),
             (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': "static"}),
 
             (r"/user", UserListHandler),

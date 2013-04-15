@@ -162,6 +162,10 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
         return self._get_event
 
     @property
+    def _get_v(self):
+        return self._get_event_v
+
+    @property
     def _after_accept_new(self):
         return self._after_event_accept_new
 
@@ -209,8 +213,8 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
         if self.contributor:
             event_id = event and event.event_id or event_v.event_id
             
-            if event_v:
-                # This current shows contributers deleted, pending and private addresses
+            if not event:
+                # This current shows contributers all the deleted, pending and private addresses that have been added to their pending event
                 query = self.orm.query(Address) \
                     .filter(exists().where(and_(
                             event_address_v.c.event_id == event_id,

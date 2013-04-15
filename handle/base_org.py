@@ -23,16 +23,14 @@ max_address_pages = 3
 
 
 class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
-    def _get_org(self, id_string,
-                 required=True, future_version=False):
+    def _get_org(self, id_string, required=True):
         return self._get_entity(Org, "org_id",
                                 "org",
                                 id_string,
                                 required,
                                 )
 
-    def _get_org_v(self, id_string,
-                 required=True, future_version=False):
+    def _get_org_v(self, id_string):
         return self._get_entity_v(Org, "org_id",
                                   Org_v, "org_v_id",
                                   "org",
