@@ -157,6 +157,7 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
         public = self.moderator
 
         required = True
+        org_v = None
         if self.current_user:
             org_v = self._get_org_v(org_id_string)
             if org_v:

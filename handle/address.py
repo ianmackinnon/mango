@@ -170,6 +170,7 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
         public = self.moderator
 
         required = True
+        address_v = None
         if self.current_user:
             address_v = self._get_address_v(address_id_string)
             if address_v:

@@ -175,6 +175,7 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
         public = self.moderator
 
         required = True
+        event_v = None
         if self.current_user:
             event_v = self._get_event_v(event_id_string)
             if event_v:

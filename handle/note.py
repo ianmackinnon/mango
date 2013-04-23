@@ -100,6 +100,7 @@ class NoteHandler(BaseNoteHandler, MangoEntityHandlerMixin):
         public = self.moderator
 
         required = True
+        note_v = None
         if self.moderator:
             note_v = self._get_note_v(note_id_string)
             if note_v:

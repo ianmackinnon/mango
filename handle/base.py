@@ -272,7 +272,7 @@ class BaseHandler(RequestHandler):
         
         scheme, netloc, path, query, fragment = urlparse.urlsplit(uri)
 
-        if path.startswith("/"):
+        if path.startswith("/") and not path.startswith(self.application.url_root):
             path = self.application.url_root + path[1:]
 
         arguments = parameters.copy()
