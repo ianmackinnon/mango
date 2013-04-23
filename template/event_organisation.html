@@ -1,17 +1,17 @@
 <%inherit file="base.html"/>
 
-<%def name="title()">${obj["name"]} | Edit organisations</%def>
+<%def name="title()">${obj["name"]} | Edit companies</%def>
 
 <%def name="page()">
 
 <h1>
   <a
      href="${url_rewrite(obj["url"])}"
-     >${obj["name"]}</a> | Edit organisations
+     >${obj["name"]}</a> | Edit companies
 </h1>
 
 <div class="section">
-  <h3>Current organisations</h3>
+  <h3>Current companies</h3>
 
   <ul class="tag_list">
     %for org in obj["org_list"]:
@@ -26,7 +26,7 @@
 </div>    
     
 <div class="section">
-  <h3>Available Organisations</h3>
+  <h3>Available Companies</h3>
 
   <div class="action-bar">
     <form id="org-search">

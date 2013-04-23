@@ -70,8 +70,8 @@ class OrgaliasHandler(BaseOrgaliasHandler):
             self.render(
                 'alias.html',
                 obj=obj,
-                type_title="Organisation",
-                type_title_plural="Organisations",
+                type_title="Company",
+                type_title_plural="Companies",
                 type_url="organisation",
                 type_entity_list="org_list",
                 type_li_template="org_li",

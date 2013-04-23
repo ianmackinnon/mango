@@ -1,10 +1,10 @@
 <%inherit file="base.html"/>
 
-<%def name="title()">Organisations</%def>
+<%def name="title()">Companies</%def>
 
 <%def name="page()">
 
-<h1>Organisations with no Address</h1>
+<h1>Companies with no Address</h1>
 
 <div class="action-bar">
   <h3>Filter</h3>
@@ -46,7 +46,7 @@
     <a
        class="action"
        href="${url_rewrite("/organisation/new")}"
-       >Create an organisation</a>
+       >Create a company</a>
   </ul>
   %endif
 </div>

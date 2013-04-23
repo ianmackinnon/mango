@@ -1,6 +1,6 @@
 <%inherit file="base.html"/>
 
-<%def name="title()">${obj and obj["name"] or "New Organisation"}</%def>
+<%def name="title()">${obj and obj["name"] or "New Company"}</%def>
 
 <%def name="page()">
 
@@ -10,7 +10,7 @@
      href="${url_rewrite(obj["url"])}"
      >${obj["name"]}</a>
   %else:
-  New Organisation
+  New Company
   %endif
 </h1>
 
@@ -127,7 +127,7 @@ if None in path_keys:
     <p class="warning">Editing is disabled because <a href="${url_rewrite(version_url)}">pending suggested revisions</a> exist.</p>
     ${org_browse(obj)}
     %else:
-    <h3>Organisation</h3>
+    <h3>Company</h3>
     
     <form
        class="mango"
@@ -240,7 +240,7 @@ ${self.mini.render_note_section(obj["note_list"],
 
 
 <%def name="org_browse(obj)">
-<h3>Organisation</h3>
+<h3>Company</h3>
     
 %if obj:
 ${obj["name"]}

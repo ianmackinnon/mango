@@ -23,9 +23,9 @@
 %if not moderator:
 <div class="user-introduction">
   <h2>Welcome to CAAT's mapping application</h4>
-  <p>You can now submit information about organisations and events, which will be reviewed by our moderators.</p>
+  <p>You can now submit information about companies and events, which will be reviewed by our moderators.</p>
   <p>To enable adding content, click the <strong>Edit</strong> button above.</p>
-  <p>When browsing the site in edit mode, you'll see buttons for adding organisations, events, addresses and notes.</p>
+  <p>When browsing the site in edit mode, you'll see buttons for adding companies, events, addresses and notes.</p>
   <p>When you've finished adding content, click the <strong>Browse</strong> button to return to normal viewing mode.</p>
   <p>This page shows you a list of your submissions. You can click your username above at any time to return here and see their progress or make further changes.</p>
 </div>
@@ -43,7 +43,7 @@ ${self.mini.history_table(history, user=False)}
   <p>Your submissions will be shown here until they have been reviewed by our moderators.</p>
   <p>Click on any of them to view or make further changes.</p>
   <div class="org">
-    <h3>Organisations</h3>
+    <h3>Companies</h3>
     <ul>
       %for org in submissions["org"]:
       <li>

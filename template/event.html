@@ -35,14 +35,14 @@
     %if obj:
     <hr />
     <div class="action-bar no-border">
-      <h3>Organisations</h3>
+      <h3>Companies</h3>
 
       %if moderator and (parameters.get("view", None) == "edit"):
       <div class="actions">
         <a
            href="${url_rewrite("%s/organisation" % obj["url"])}"
            class="action"
-           >Edit organisations</a>
+           >Edit companies</a>
       </div>
       %endif
     </div>
@@ -56,7 +56,7 @@
       %endfor
     </ul>
     %else:
-    no organisations linked yet.
+    no companies linked yet.
     %endif
     %endif
     <!-- organisations end -->
