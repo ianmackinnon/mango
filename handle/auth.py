@@ -70,6 +70,10 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
 
         user = User.get_from_auth(self.orm, self.openid_url, auth_name)
 
+        print "A", user.locked
+        if user.locked:
+            raise HTTPError(400, "Account locked.")
+
         if not user:
             auth = Auth(self.openid_url, auth_name)
             user_name = unicode(auth_user["name"])

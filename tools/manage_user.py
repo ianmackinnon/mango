@@ -17,14 +17,17 @@ from model import Auth, User, Session
 
 
 
-log = logging.getLogger('insert_user')
+log = logging.getLogger('manage_user')
 
 
 
 if __name__ == "__main__":
     log.addHandler(logging.StreamHandler())
 
-    usage = """%prog NAME GMAIL"""
+    usage = """%prog NAME GMAIL
+
+Set moderator status of user, creating user if they don't already exist.
+"""
 
     parser = OptionParser(usage=usage)
     parser.add_option("-v", "--verbose", action="count", dest="verbose",
@@ -36,6 +39,10 @@ if __name__ == "__main__":
     parser.add_option("-c", "--configuration", action="store",
                       dest="configuration", help=".conf file.",
                       default=".mango.conf")
+    parser.add_option("-m", "--moderator", action="store", dest="moderator",
+                      help="0 or 1.", default=None)
+    parser.add_option("-l", "--lock", action="store", dest="lock",
+                      help="0 or 1.", default=None)
 
     (options, args) = parser.parse_args()
 
@@ -44,6 +51,16 @@ if __name__ == "__main__":
         sys.exit(1)
 
     verbosity = max(0, min(3, 1 + options.verbose - options.quiet))
+
+    if options.moderator is not None:
+        if options.moderator not in ["0", "1"]:
+            raise Exception("moderator must be 0 or 1")
+        options.moderator = bool(int(options.moderator))
+
+    if options.lock is not None:
+        if options.lock not in ["0", "1"]:
+            raise Exception("lock must be 0 or 1")
+        options.lock = bool(int(options.lock))
 
     if options.database == "mysql":
         (database,
@@ -55,7 +72,7 @@ if __name__ == "__main__":
     else:
         connection_url = 'sqlite:///mango.db'
 
-    engine = create_engine(connection_url, echo=True)
+    engine = create_engine(connection_url)
     Session = sessionmaker(bind=engine, autocommit=False)
     orm = Session()
 
@@ -63,10 +80,12 @@ if __name__ == "__main__":
 
     openid_url = u"https://www.google.com/accounts/o8/id"
 
-    auth = Auth(openid_url, auth_name)
-    user = User(auth, user_name, moderator=True)
-
-    orm.add(auth)
-    orm.add(user)
+    auth = Auth.get(orm, openid_url, auth_name)
+    user = User.get(orm, auth, user_name)
+    print options.lock
+    if options.moderator is not None:
+        user.moderator = options.moderator
+    if options.lock is not None:
+        user.locked = options.lock
     orm.commit()
 

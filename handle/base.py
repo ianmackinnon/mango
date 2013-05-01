@@ -162,10 +162,16 @@ class BaseHandler(RequestHandler):
         self.next = self.get_argument("next", None)
 
     def _execute(self, transforms, *args, **kwargs):
+        self._transforms = transforms
         method = self.get_argument("_method", None)
         if method and self.request.method.lower() == "post":
             self.request.method = method.upper()
         try:
+            if self.current_user:
+                if self.current_user.locked:
+                    self.delete_current_user()
+                    self.end_session()
+                    raise HTTPError(400, "User account is locked.")
             RequestHandler._execute(self, transforms, *args, **kwargs)
         except IOError as e:
             print 'ioerror'
@@ -173,7 +179,8 @@ class BaseHandler(RequestHandler):
         except AssertionError as e:
             print 'assertionerror'
             raise e
-            
+        except Exception as e:
+            self._handle_request_exception(e)
 
     def write_error(self, status_code, **kwargs):
         if 'exc_info' in kwargs:
@@ -191,6 +198,9 @@ class BaseHandler(RequestHandler):
                     self.finish()
                     return
         RequestHandler.write_error(self, status_code, **kwargs)
+
+    def delete_current_user(self):
+        self._current_user = None
 
     def content_type(self, name):
         if "Content-Type" in self.request.headers:

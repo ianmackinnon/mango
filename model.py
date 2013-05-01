@@ -381,15 +381,35 @@ class Auth(Base):
         self.url = unicode(url)
         self.name_hash = generate_hash(name)
         self.gravatar_hash = gravatar_hash(name)
+
+    @staticmethod
+    def get(orm, url, name):
+        url = unicode(url)
+        name_hash = generate_hash(name)
+
+        auth = None
+        try:
+            auth = orm.query(Auth).filter_by(url=url, name_hash=name_hash).one()
+        except NoResultFound:
+            pass
+
+        if not auth:
+            auth = Auth(url, name)
+            orm.add(auth)
+
+        return auth
         
 
 
 class User(Base):
     __tablename__ = 'user'
-    __table_args__ = {
-        'sqlite_autoincrement': True,
-        "mysql_engine": 'InnoDB',
-        }
+    __table_args__ = (
+        UniqueConstraint('auth_id'),    
+        {
+            'sqlite_autoincrement': True,
+            "mysql_engine": 'InnoDB',
+            }
+        )
      
     user_id = Column(Integer, primary_key=True)
     auth_id = Column(Integer, ForeignKey(Auth.auth_id), nullable=True)
@@ -400,12 +420,15 @@ class User(Base):
 
     moderator = Column(Boolean, nullable=False, default=False)
 
+    locked = Column(Boolean, nullable=False, default=False)
+
     auth = relationship(Auth, backref='user_list')
 
-    def __init__(self, auth, name, moderator=False):
+    def __init__(self, auth, name, moderator=False, locked=False):
         self.auth = auth
         self.name = unicode(name)
         self.moderator = moderator
+        self.locked = locked
 
     def verify_auth_name(self, auth_name):
         return verify_hash(auth_name, self.auth.name_hash)
@@ -423,6 +446,22 @@ class User(Base):
                 one()
         except NoResultFound as e:
             user = None;
+        return user
+
+    @staticmethod
+    def get(orm, auth, name):
+        name = unicode(name)
+
+        user = None
+        try:
+            user = orm.query(User).filter_by(auth=auth, name=name).one()
+        except NoResultFound:
+            pass
+
+        if not user:
+            user = User(auth, name)
+            orm.add(user)
+
         return user
 
         
