@@ -45,7 +45,7 @@
   window.MapView = Backbone.View.extend({
     tagName: "div",
 
-    log: function() {},
+    log: function () {},
 
     initialize: function () {
       this.markers = [];
@@ -65,7 +65,7 @@
       );
 
       this.mapReady = false;
-      
+
       var map = this.map;
 
       this.map.mapTypes.set('grey', greyMapType);
@@ -106,7 +106,7 @@
       if (!this.mapReady) {
         return null;
       }
-      var geobox = new Geobox(this.map.getBounds());
+      var geobox = new window.Geobox(this.map.getBounds());
       return geobox;
     },
 
@@ -151,7 +151,7 @@
         });
         mapView.markers.push(marker);
       };
-      
+
       google.maps.event.addListener(mapView.map, 'click', function (event) {
         var pos = event.latLng;
         putMarker(pos.lat(), pos.lng());
@@ -176,7 +176,7 @@
         var letter = alpha(this.markers.length);
         var pinIconUrl = this.markerIconUrl("pin", color, letter);
         var zIndex = Math.round((500 - latitude) * 100);
-          
+
         var marker = new google.maps.Marker({
           position: position,
           map: this.map,
@@ -220,13 +220,13 @@
       this.dots.push(marker);
     },
 
-    fit: function() {
+    fit: function () {
       if (!this.markers.length) {
         this.setGeobox(m.ukGeobox.scale(0.75));
         return;
       }
       var bounds = new google.maps.LatLngBounds();
-      _.each(this.markers, function(marker) {
+      _.each(this.markers, function (marker) {
         var south = new google.maps.LatLng(
           marker.position.lat(),
           marker.position.lng() - 0.01

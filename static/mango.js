@@ -251,10 +251,10 @@ var m = {
     return input.val() || null;
   },
 
-  initMap: function () {
+  initMap: function (callback) {
     var mapView = new window.MapView();
     $("#mango-map-canvas").replaceWith(mapView.$el);
-    return mapView;
+    callback(mapView);
   },
 
   initHome: function (mapView) {
@@ -860,8 +860,9 @@ var m = {
 
   route: [
     [/^\/$/, function () {
-      var mapView = m.initMap();
-      m.initHome(mapView);
+      m.initMap(function (mapView) {
+        m.initHome(mapView);
+      });
     }],
 
     [/^\/note\/new$/, function () {
@@ -872,32 +873,39 @@ var m = {
     }],
 
     [/^\/organisation$/, function () {
-      var mapView = m.initMap();
-      m.initOrgSearch(mapView);
-      m.visibility();
+      console.log("A");
+      m.initMap(function (mapView) {
+        m.initOrgSearch(mapView);
+        m.visibility();
+      });
     }],
     [/^\/event$/, function () {
-      var mapView = m.initMap();
-      m.initEventSearch(mapView);
-      m.visibility();
+      m.initMap(function (mapView) {
+        m.initEventSearch(mapView);
+        m.visibility();
+      });
     }],
     [/^\/task\/address$/, function () {
-      var mapView = m.initMap();
-      m.initOrgSearch(mapView);
-      m.visibility();
+      m.initMap(function (mapView) {
+        m.initOrgSearch(mapView);
+        m.visibility();
+      });
     }],
 
     [/^\/organisation\/([1-9][0-9]*)$/, function (orgIdString) {
-      var mapView = m.initMap();
-      m.initOrg(mapView);
+      m.initMap(function (mapView) {
+        m.initOrg(mapView);
+      });
     }],
     [/^\/organisation\/new$/, function () {
-      var mapView = m.initMap();
-      m.initOrg(mapView);
+      m.initMap(function (mapView) {
+        m.initOrg(mapView);
+      });
     }],
     [/^\/organisation\/([1-9][0-9]*)\/address$/, function (orgIdString) {
-      var mapView = m.initMap();
-      m.initAddress(mapView);
+      m.initMap(function (mapView) {
+        m.initAddress(mapView);
+      });
     }],
     [/^\/organisation\/([1-9][0-9]*)\/note$/, function (orgIdString) {
       m.noteMarkdown();
@@ -906,24 +914,28 @@ var m = {
       m.visibility();
     }],
     [/^\/event\/([1-9][0-9]*)$/, function (eventIdString) {
-      var mapView = m.initMap();
-      m.initEvent(mapView);
+      m.initMap(function (mapView) {
+        m.initEvent(mapView);
+      });
     }],
     [/^\/event\/new$/, function () {
-      var mapView = m.initMap();
-      m.initEvent(mapView);
+      m.initMap(function (mapView) {
+        m.initEvent(mapView);
+      });
     }],
     [/^\/event\/([1-9][0-9]*)\/address$/, function (eventIdString) {
-      var mapView = m.initMap();
-      m.initAddress(mapView);
+      m.initMap(function (mapView) {
+        m.initAddress(mapView);
+      });
     }],
     [/^\/event\/([1-9][0-9]*)\/note$/, function (eventIdString) {
       m.noteMarkdown();
     }],
 
     [/^\/address\/([1-9][0-9]*)$/, function (addressIdString) {
-      var mapView = m.initMap();
-      m.initAddress(mapView);
+      m.initMap(function (mapView) {
+        m.initAddress(mapView);
+      });
     }],
     [/^\/address\/([1-9][0-9]*)\/note$/, function (addressIdString) {
       m.noteMarkdown();
@@ -980,6 +992,8 @@ var m = {
     }],
   ],
 
+                
+
   handle: function () {
     m.setParameters();
     var path = window.location.pathname;
@@ -999,16 +1013,16 @@ var m = {
     });
   }
 };
-
-
-
+    
+    
+    
 $(window.document).ready(function () {
   window.document.cookie = 'j=1';
   $.ajaxSetup({ "traditional": true });
   m.currentUser = $("#account").find("a").length === 2;
   m.handle();
 });
-
+    
 
 
 
