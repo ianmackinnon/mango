@@ -10,6 +10,10 @@ New ${type_title} Tag
 %endif
 </%def>
 
+<%def name="logout_url()">
+<% return obj and obj.get("public", True) and uri or "/" %>
+</%def>
+
 
 
 <%def name="page()">

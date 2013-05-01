@@ -2,6 +2,12 @@
 
 <%def name="title()">${obj and obj["name"] or "New Company"}</%def>
 
+<%def name="logout_url()">
+<%
+return obj and obj.get("public", True) and uri or "/"
+%>
+</%def>
+
 <%def name="page()">
 
 <h1>

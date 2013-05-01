@@ -81,7 +81,7 @@ ${header2.replace("/render-header-footer.php", uri) | n}
         ${current_user.name}
       </a>
       </div>
-      <a href="${url_rewrite("/auth/logout", next_=uri)}">Log out</a>
+      <a href="${url_rewrite("/auth/logout", next_=self.logout_url())}">Log out</a>
       %else:
       <a href="${url_rewrite("/auth/register")}">Submit content</a>
       <a href="${url_rewrite("/auth/login", next_=uri)}">Log in</a>
@@ -191,6 +191,8 @@ ${footer.replace("/render-header-footer.php", uri) | n}
 </html>
 
 %endif
+
+<%def name="logout_url()"><% return uri %></%def>
 
 <%namespace name="mini" file="mini.html" inheritable="True"/>
 
