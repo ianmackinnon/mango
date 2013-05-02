@@ -161,18 +161,55 @@ class BaseHandler(RequestHandler):
         self.set_parameters()
         self.next = self.get_argument("next", None)
 
-    def _execute(self, transforms, *args, **kwargs):
-        self._transforms = transforms
+    def initialize(self, **kwargs):
+        self.arg_type_handlers = kwargs.get("types", [])
+
+    def _mango_extra_methods(self):
         method = self.get_argument("_method", None)
         if method and self.request.method.lower() == "post":
             self.request.method = method.upper()
+        
+    def _mango_check_user(self):
+        if self.current_user:
+            if self.current_user.locked:
+                self.delete_current_user()
+                self.end_session()
+                raise HTTPError(400, "User account is locked.")
+
+    def _mango_handle_args(self):
+        if self.arg_type_handlers:
+            if len(self.path_args) != len(self.arg_type_handlers):
+                raise HTTPError(500, "Bad args/type handlers combination")
+
+            self.path_args = list(self.path_args)
+            for i, (value, type_handler) in enumerate(zip(self.path_args, self.arg_type_handlers)):
+                if self.arg_type_handlers[i]:
+                    self.path_args[i] = self.arg_type_handlers[i](value)
+            self.path_args = tuple(self.path_args)
+                
+    def _execute(self, transforms, *args, **kwargs):
+        """Executes this request with the given output transforms."""
+        self._transforms = transforms
+        self._mango_extra_methods()
         try:
-            if self.current_user:
-                if self.current_user.locked:
-                    self.delete_current_user()
-                    self.end_session()
-                    raise HTTPError(400, "User account is locked.")
-            RequestHandler._execute(self, transforms, *args, **kwargs)
+            if self.request.method not in self.SUPPORTED_METHODS:
+                raise HTTPError(405)
+            self._mango_check_user()
+            self.path_args = [self.decode_argument(arg) for arg in args]
+            self.path_kwargs = dict((k, self.decode_argument(v, name=k))
+                                    for (k, v) in kwargs.items())
+            self._mango_handle_args()
+            # If XSRF cookies are turned on, reject form submissions without
+            # the proper cookie
+            if self.request.method not in ("GET", "HEAD", "OPTIONS") and \
+                    self.application.settings.get("xsrf_cookies"):
+                self.check_xsrf_cookie()
+            self.prepare()
+            if not self._finished:
+                getattr(self, self.request.method.lower())(
+                    *self.path_args, **self.path_kwargs)
+                if self._auto_finish and not self._finished:
+                    self.finish()
         except IOError as e:
             print 'ioerror'
             raise e
@@ -752,8 +789,7 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
     def _history_query(self,
                        Entity, entity_id,
                        Entity_v,
-                       id_string):
-        id_ = int(id_string)
+                       id_):
 
         entity_query = self.orm.query(Entity) \
             .filter(getattr(Entity, entity_id) == id_)
@@ -789,10 +825,9 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
     def _get_entity(self,
                     Entity, entity_id,
                     entity_type,
-                    id_string,
+                    id_,
                     required=True,
                     ):
-        id_ = int(id_string)
 
         query = self.orm.query(Entity) \
             .filter(getattr(Entity, entity_id) == id_)
@@ -817,13 +852,11 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
                       Entity, entity_id,
                       Entity_v, entity_v_id,
                       entity_type,
-                      id_string,
+                      id_,
                       ):
         if not self.current_user:
             raise HTTPError(404)
         
-        id_ = int(id_string)
-
         entity_v_mod = self.orm.query(Entity_v) \
             .join((User, Entity_v.moderation_user)) \
             .filter(getattr(Entity_v, entity_id) == id_) \
@@ -873,11 +906,11 @@ class MangoEntityHandlerMixin(RequestHandler):
         return note_search, note_order, note_offset
 
     @authenticated
-    def delete(self, entity_id_string):
+    def delete(self, entity_id):
         if not self.moderator:
             raise HTTPError(405)
 
-        entity = self._get(entity_id_string)
+        entity = self._get(entity_id)
         if self._before_delete:
             self._before_delete(entity)
         self.orm.delete(entity)
@@ -885,30 +918,30 @@ class MangoEntityHandlerMixin(RequestHandler):
         return self.redirect_next(entity.list_url)
         
     @authenticated
-    def touch(self, entity_id_string):
+    def touch(self, entity_id):
         if not self.moderator:
             raise HTTPError(405)
 
-        entity = self._get(entity_id_string, required=False)
+        entity = self._get(entity_id, required=False)
         if entity:
             entity.a_time = 0;
             entity.moderation_user = self.current_user
             self.orm_commit()
             return self.redirect_next(entity.url)
 
-        declined_entity_v = self._decline_v(entity_id_string)
+        declined_entity_v = self._decline_v(entity_id)
         self.orm.add(declined_entity_v)
         self.orm.commit()
         return self.redirect_next("%s/revision" % declined_entity_v.url)
         
     @authenticated
-    def put(self, entity_id_string):
-        old_entity = self._get(entity_id_string, required=False)
-        pre_entity = self._get_v(entity_id_string)
+    def put(self, entity_id):
+        old_entity = self._get(entity_id, required=False)
+        pre_entity = self._get_v(entity_id)
         if self.moderator:
-            new_entity = self._create(id_=int(entity_id_string))
+            new_entity = self._create(id_=entity_id)
         else:
-            new_entity = self._create_v(id_=int(entity_id_string))
+            new_entity = self._create_v(entity_id)
         if self._before_set:
             self._before_set(new_entity)
 

@@ -23,18 +23,18 @@ max_address_pages = 3
 
 
 class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
-    def _get_org(self, id_string, required=True):
+    def _get_org(self, org_id, required=True):
         return self._get_entity(Org, "org_id",
                                 "org",
-                                id_string,
+                                org_id,
                                 required,
                                 )
 
-    def _get_org_v(self, id_string):
+    def _get_org_v(self, org_v_id):
         return self._get_entity_v(Org, "org_id",
                                   Org_v, "org_v_id",
                                   "org",
-                                  id_string,
+                                  org_v_id,
                                   )
 
     def _create_org(self, id_=None, version=False):
@@ -64,14 +64,12 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         
         return org
     
-    def _create_org_v(self, id_):
-        return self._create_org(id_, version=True)
+    def _create_org_v(self, org_id):
+        return self._create_org(org_id, version=True)
     
-    def _decline_org_v(self, id_string):
-        id_ = int(id_string)
-
+    def _decline_org_v(self, org_id):
         org = Org_v(
-            id_,
+            org_id,
             "DECLINED",
             moderation_user=self.current_user, public=None)
         org.existence = False
@@ -80,30 +78,29 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         
         return org
 
-    def _org_history_query(self, org_id_string):
+    def _org_history_query(self, org_id):
         return self._history_query(
             Org, "org_id",
             Org_v,
-            org_id_string)
+            org_id)
 
-    def _get_org_history(self, org_id_string):
-        org_v_query, org = self._org_history_query(org_id_string)
+    def _get_org_history(self, org_id):
+        org_v_query, org = self._org_history_query(org_id)
         
         org_v_query = org_v_query \
             .order_by(Org_v.org_v_id.desc())
 
         return org_v_query.all(), org
 
-    def _count_org_history(self, org_id_string):
-        org_v_query, org = self._org_history_query(org_id_string)
+    def _count_org_history(self, org_id):
+        org_v_query, org = self._org_history_query(org_id)
 
         return org_v_query.count()
 
-    def _get_org_latest_a_time(self, org_id_string):
-        id_ = int(org_id_string)
+    def _get_org_latest_a_time(self, org_id):
         org_v = self.orm.query(Org_v.a_time) \
             .join((User, Org_v.moderation_user)) \
-            .filter(Org_v.org_id == id_) \
+            .filter(Org_v.org_id == org_id) \
             .filter(User.moderator == True) \
             .order_by(Org_v.org_v_id.desc()) \
             .first()

@@ -169,7 +169,7 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
     def _after_accept_new(self):
         return self._after_event_accept_new
 
-    def get(self, event_id_string):
+    def get(self, event_id):
         note_search, note_order, note_offset = self.get_note_arguments()
 
         public = self.moderator
@@ -177,10 +177,10 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
         required = True
         event_v = None
         if self.current_user:
-            event_v = self._get_event_v(event_id_string)
+            event_v = self._get_event_v(event_id)
             if event_v:
                 required = False
-        event = self._get_event(event_id_string, required=required)
+        event = self._get_event(event_id, required=required)
 
         if self.moderator and not event:
             self.next = "%s/revision" % event_v.url
@@ -254,7 +254,7 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
             )
 
         version_url=None
-        if self.current_user and self._count_event_history(event_id_string) > 1:
+        if self.current_user and self._count_event_history(event_id) > 1:
             version_url="%s/revision" % event.url
 
         if self.accept_type("json"):
@@ -274,8 +274,8 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
 
 class EventRevisionListHandler(BaseEventHandler):
     @authenticated
-    def get(self, event_id_string):
-        event_v_list, event = self._get_event_history(event_id_string)
+    def get(self, event_id):
+        event_v_list, event = self._get_event_history(event_id)
 
         history = []
         for event_v in event_v_list:
@@ -309,7 +309,7 @@ class EventRevisionListHandler(BaseEventHandler):
             history.append(entity)
 
         if not history:
-            raise HTTPError(404, "%s: No such event" % (event_id_string))
+            raise HTTPError(404, "%s: No such event" % (event_id))
 
         if not self.moderator:
             if len(history) == int(bool(event)):
@@ -329,10 +329,7 @@ class EventRevisionListHandler(BaseEventHandler):
 
 
 class EventRevisionHandler(BaseEventHandler):
-    def _get_event_revision(self, event_id_string, event_v_id_string):
-        event_id = int(event_id_string)
-        event_v_id = int(event_v_id_string)
-
+    def _get_event_revision(self, event_id, event_v_id):
         query = self.orm.query(Event_v) \
             .filter_by(event_id=event_id) \
             .filter_by(event_v_id=event_v_id)
@@ -353,8 +350,8 @@ class EventRevisionHandler(BaseEventHandler):
         return event_v, event
 
     @authenticated
-    def get(self, event_id_string, event_v_id_string):
-        event_v, event = self._get_event_revision(event_id_string, event_v_id_string)
+    def get(self, event_id, event_v_id):
+        event_v, event = self._get_event_revision(event_id, event_v_id)
 
         if not event_v.existence:
             raise HTTPError(404)
@@ -373,7 +370,7 @@ class EventRevisionHandler(BaseEventHandler):
                 .first()
             if not newest_event_v:
                 raise HTTPError(404)
-            latest_a_time = self._get_event_latest_a_time(event_id_string)
+            latest_a_time = self._get_event_latest_a_time(event_id)
             if latest_a_time and event_v.a_time < latest_a_time:
                 raise HTTPError(404)
             if event and newest_event_v.a_time < event.a_time:
@@ -407,7 +404,7 @@ class EventRevisionHandler(BaseEventHandler):
                 "public"
                 )
 
-        latest_a_time = self._get_event_latest_a_time(event_id_string)
+        latest_a_time = self._get_event_latest_a_time(event_id)
 
         self.render(
             'revision.html',
@@ -425,13 +422,13 @@ class EventRevisionHandler(BaseEventHandler):
 
 class EventAddressListHandler(BaseEventHandler, BaseAddressHandler):
     @authenticated
-    def get(self, event_id_string):
+    def get(self, event_id):
         required = True
         if self.contributor:
-            event_v = self._get_event_v(event_id_string)
+            event_v = self._get_event_v(event_id)
             if event_v:
                 required = False
-        event = self._get_event(event_id_string, required=required)
+        event = self._get_event(event_id, required=required)
 
         if not self.moderator and event_v:
             event = event_v
@@ -448,13 +445,13 @@ class EventAddressListHandler(BaseEventHandler, BaseAddressHandler):
             )
         
     @authenticated
-    def post(self, event_id_string):
+    def post(self, event_id):
         required = True
         if self.contributor:
-            event_v = self._get_event_v(event_id_string)
+            event_v = self._get_event_v(event_id)
             if event_v:
                 required = False
-        event = self._get_event(event_id_string, required=required)
+        event = self._get_event(event_id, required=required)
 
         address = self._create_address()
         self._before_address_set(address)
@@ -494,24 +491,24 @@ values (%d, %d, 0, 1)""" % (event_id, address_id)
 
 class EventAddressHandler(BaseEventHandler, BaseAddressHandler):
     @authenticated
-    def put(self, event_id_string, address_id_string):
+    def put(self, event_id, address_id):
         if not self.moderator:
             raise HTTPError(405)
 
-        event = self._get_event(event_id_string)
-        address = self._get_address(address_id_string)
+        event = self._get_event(event_id)
+        address = self._get_address(address_id)
         if address not in event.address_list:
             event.address_list.append(address)
             self.orm_commit()
         return self.redirect_next(event.url)
 
     @authenticated
-    def delete(self, event_id_string, address_id_string):
+    def delete(self, event_id, address_id):
         if not self.moderator:
             raise HTTPError(405)
 
-        event = self._get_event(event_id_string)
-        address = self._get_address(address_id_string)
+        event = self._get_event(event_id)
+        address = self._get_address(address_id)
         if address in event.address_list:
             event.address_list.remove(address)
             self.orm_commit()
@@ -521,11 +518,11 @@ class EventAddressHandler(BaseEventHandler, BaseAddressHandler):
 
 class EventNoteListHandler(BaseEventHandler, BaseNoteHandler):
     @authenticated
-    def post(self, event_id_string):
+    def post(self, event_id):
         if not self.moderator:
             raise HTTPError(404)
 
-        event = self._get_event(event_id_string)
+        event = self._get_event(event_id)
 
         text, source, public = BaseNoteHandler._get_arguments(self)
         
@@ -538,11 +535,11 @@ class EventNoteListHandler(BaseEventHandler, BaseNoteHandler):
         return self.redirect_next(event.url)
 
     @authenticated
-    def get(self, event_id_string):
+    def get(self, event_id):
         if not self.moderator:
             raise HTTPError(404)
 
-        event = self._get_event(event_id_string)
+        event = self._get_event(event_id)
         obj = event.obj(
             public=self.moderator,
             )
@@ -556,24 +553,24 @@ class EventNoteListHandler(BaseEventHandler, BaseNoteHandler):
 
 class EventNoteHandler(BaseEventHandler, BaseNoteHandler):
     @authenticated
-    def put(self, event_id_string, note_id_string):
+    def put(self, event_id, note_id):
         if not self.moderator:
             raise HTTPError(404)
 
-        event = self._get_event(event_id_string)
-        note = self._get_note(note_id_string)
+        event = self._get_event(event_id)
+        note = self._get_note(note_id)
         if note not in event.note_list:
             event.note_list.append(note)
             self.orm_commit()
         return self.redirect_next(event.url)
 
     @authenticated
-    def delete(self, event_id_string, note_id_string):
+    def delete(self, event_id, note_id):
         if not self.moderator:
             raise HTTPError(405)
 
-        event = self._get_event(event_id_string)
-        note = self._get_note(note_id_string)
+        event = self._get_event(event_id)
+        note = self._get_note(note_id)
         if note in event.note_list:
             event.note_list.remove(note)
             self.orm_commit()
@@ -583,13 +580,13 @@ class EventNoteHandler(BaseEventHandler, BaseNoteHandler):
 
 class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
     @authenticated
-    def get(self, event_id_string):
+    def get(self, event_id):
         if not self.moderator:
             raise HTTPError(404)
 
         # event...
 
-        event = self._get_event(event_id_string)
+        event = self._get_event(event_id)
 
         if self.deep_visible():
             eventtag_list=event.eventtag_list
@@ -629,24 +626,24 @@ class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
 
 class EventEventtagHandler(BaseEventHandler, BaseEventtagHandler):
     @authenticated
-    def put(self, event_id_string, eventtag_id_string):
+    def put(self, event_id, eventtag_id):
         if not self.moderator:
             raise HTTPError(405)
 
-        event = self._get_event(event_id_string)
-        eventtag = self._get_eventtag(eventtag_id_string)
+        event = self._get_event(event_id)
+        eventtag = self._get_eventtag(eventtag_id)
         if eventtag not in event.eventtag_list:
             event.eventtag_list.append(eventtag)
             self.orm_commit()
         return self.redirect_next(event.url)
 
     @authenticated
-    def delete(self, event_id_string, eventtag_id_string):
+    def delete(self, event_id, eventtag_id):
         if not self.moderator:
             raise HTTPError(405)
 
-        event = self._get_event(event_id_string)
-        eventtag = self._get_eventtag(eventtag_id_string)
+        event = self._get_event(event_id)
+        eventtag = self._get_eventtag(eventtag_id)
         if eventtag in event.eventtag_list:
             event.eventtag_list.remove(eventtag)
             self.orm_commit()
@@ -656,7 +653,7 @@ class EventEventtagHandler(BaseEventHandler, BaseEventtagHandler):
 
 class EventOrgListHandler(BaseEventHandler, BaseOrgHandler):
     @authenticated
-    def get(self, event_id_string):
+    def get(self, event_id):
         if not self.moderator:
             raise HTTPError(404)
             
@@ -664,7 +661,7 @@ class EventOrgListHandler(BaseEventHandler, BaseOrgHandler):
 
         # event...
 
-        event = self._get_event(event_id_string)
+        event = self._get_event(event_id)
 
         if self.deep_visible():
             org_list=event.org_list
@@ -715,24 +712,24 @@ class EventOrgListHandler(BaseEventHandler, BaseOrgHandler):
 
 class EventOrgHandler(BaseEventHandler, BaseOrgHandler):
     @authenticated
-    def put(self, event_id_string, org_id_string):
+    def put(self, event_id, org_id):
         if not self.moderator:
             raise HTTPError(404)
             
-        event = self._get_event(event_id_string)
-        org = self._get_org(org_id_string)
+        event = self._get_event(event_id)
+        org = self._get_org(org_id)
         if org not in event.org_list:
             event.org_list.append(org)
             self.orm_commit()
         return self.redirect_next(event.url)
 
     @authenticated
-    def delete(self, event_id_string, org_id_string):
+    def delete(self, event_id, org_id):
         if not self.moderator:
             raise HTTPError(404)
             
-        event = self._get_event(event_id_string)
-        org = self._get_org(org_id_string)
+        event = self._get_event(event_id)
+        org = self._get_org(org_id)
         if org in event.org_list:
             event.org_list.remove(org)
             self.orm_commit()
@@ -742,11 +739,11 @@ class EventOrgHandler(BaseEventHandler, BaseOrgHandler):
 
 class EventDuplicateHandler(BaseEventHandler):
     @authenticated
-    def post(self, event_id_string):
+    def post(self, event_id):
         if not self.moderator:
             raise HTTPError(404)
             
-        event = self._get_event(event_id_string)
+        event = self._get_event(event_id)
 
         is_json = self.content_type("application/json")
         start_date = self.get_argument_date("start_date", json=is_json)

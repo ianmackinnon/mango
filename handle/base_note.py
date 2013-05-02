@@ -12,18 +12,18 @@ from model_v import Note_v
 
 
 class BaseNoteHandler(BaseHandler, MangoBaseEntityHandlerMixin):
-    def _get_note(self, id_string, required=True):
+    def _get_note(self, note_id, required=True):
         return self._get_entity(Note, "note_id",
                                 "note",
-                                id_string,
+                                note_id,
                                 required,
                                 )
     
-    def _get_note_v(self, id_string):
+    def _get_note_v(self, note_v_id):
         return self._get_entity_v(Note, "note_id",
                                   Note_v, "note_v_id",
                                   "note",
-                                  id_string,
+                                  note_v_id,
                                   )
 
     def _create_note(self, id_=None, version=False):
@@ -51,30 +51,29 @@ class BaseNoteHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         
         return note
     
-    def _note_history_query(self, note_id_string):
+    def _note_history_query(self, note_id):
         return self._history_query(
             Note, "note_id",
             Note_v,
-            note_id_string)
+            note_id)
     
-    def _get_note_history(self, note_id_string):
-        note_v_query, note = self._note_history_query(note_id_string)
+    def _get_note_history(self, note_id):
+        note_v_query, note = self._note_history_query(note_id)
         
         note_v_query = note_v_query \
             .order_by(Note_v.note_v_id.desc())
         
         return note_v_query.all(), note
     
-    def _count_note_history(self, note_id_string):
-        note_v_query, note = self._note_history_query(note_id_string)
+    def _count_note_history(self, note_id):
+        note_v_query, note = self._note_history_query(note_id)
         
         return note_v_query.count()
     
-    def _get_note_latest_a_time(self, note_id_string):
-        id_ = int(note_id_string)
+    def _get_note_latest_a_time(self, note_id):
         note_v = self.orm.query(Note_v.a_time) \
             .join((User, Note_v.moderation_user)) \
-            .filter(Note_v.note_id == id_) \
+            .filter(Note_v.note_id == note_id) \
             .filter(User.moderator == True) \
             .order_by(Note_v.note_v_id.desc()) \
             .first()

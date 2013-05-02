@@ -227,13 +227,11 @@ class UserListHandler(BaseHandler):
 
 class UserHandler(BaseHandler):
     @authenticated
-    def get(self, user_id_string):
-        if user_id_string == "self":
+    def get(self, user_id):
+        if user_id == "self":
             user_url = "/user/%d" % self.current_user.user_id
             return self.redirect_next(user_url)
 
-        user_id = int(user_id_string)
-            
         try:
             user = self.orm.query(User).filter_by(user_id=user_id).one()
         except sqlalchemy.orm.exc.NoResultFound:

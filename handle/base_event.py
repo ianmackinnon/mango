@@ -24,18 +24,18 @@ max_address_pages = 3
 
 
 class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
-    def _get_event(self, id_string, required=True):
+    def _get_event(self, event_id, required=True):
         return self._get_entity(Event, "event_id",
                                 "event",
-                                id_string,
+                                event_id,
                                 required,
                                 )
 
-    def _get_event_v(self, id_string):
+    def _get_event_v(self, event_v_id):
         return self._get_entity_v(Event, "event_id",
                                   Event_v, "event_v_id",
                                   "event",
-                                  id_string,
+                                  event_v_id,
                                   )
 
     def _create_event(self, id_=None, version=False):
@@ -80,16 +80,14 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
         return event
     
-    def _create_event_v(self, id_):
-        return self._create_event(id_, version=True)
+    def _create_event_v(self, event_id):
+        return self._create_event(event_id, version=True)
 
-    def _decline_event_v(self, id_string):
-        id_ = int(id_string)
-
+    def _decline_event_v(self, event_id):
         date = datetime.datetime.utcnow().date()
 
         event = Event_v(
-            id_,
+            event_id,
             "DECLINED", date, date,
             moderation_user=self.current_user, public=None)
         event.existence = False
@@ -98,30 +96,29 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         
         return event
 
-    def _event_history_query(self, event_id_string):
+    def _event_history_query(self, event_id):
         return self._history_query(
             Event, "event_id",
             Event_v,
-            event_id_string)
+            event_id)
 
-    def _get_event_history(self, event_id_string):
-        event_v_query, event = self._event_history_query(event_id_string)
+    def _get_event_history(self, event_id):
+        event_v_query, event = self._event_history_query(event_id)
         
         event_v_query = event_v_query \
             .order_by(Event_v.event_v_id.desc())
 
         return event_v_query.all(), event
 
-    def _count_event_history(self, event_id_string):
-        event_v_query, event = self._event_history_query(event_id_string)
+    def _count_event_history(self, event_id):
+        event_v_query, event = self._event_history_query(event_id)
 
         return event_v_query.count()
 
-    def _get_event_latest_a_time(self, event_id_string):
-        id_ = int(event_id_string)
+    def _get_event_latest_a_time(self, event_id):
         event_v = self.orm.query(Event_v.a_time) \
             .join((User, Event_v.moderation_user)) \
-            .filter(Event_v.event_id == id_) \
+            .filter(Event_v.event_id == event_id) \
             .filter(User.moderator == True) \
             .order_by(Event_v.event_v_id.desc()) \
             .first()

@@ -20,9 +20,7 @@ class BaseOrgtagHandler(BaseTagHandler):
     entity_id = "org_id"
     cross_table = org_orgtag
 
-    def _get_orgtag(self, orgtag_id_string, options=None):
-        orgtag_id = int(orgtag_id_string)
-
+    def _get_orgtag(self, orgtag_id, options=None):
         query = self.orm.query(Orgtag)\
             .filter_by(orgtag_id=orgtag_id)
 
@@ -143,20 +141,20 @@ class OrgtagHandler(BaseOrgtagHandler,
             raise HTTPError(405, "Cannot delete tag because it has attached organisations.")
 
     @authenticated
-    def put(self, entity_id_string):
+    def put(self, entity_id):
         if not self.moderator:
             raise HTTPError(405)
         
-        return MangoEntityHandlerMixin.put(self, entity_id_string)
+        return MangoEntityHandlerMixin.put(self, entity_id)
         
-    def get(self, orgtag_id_string):
+    def get(self, orgtag_id):
         note_search = self.get_argument("note_search", None)
         note_order = self.get_argument_order("note_order", None)
         note_offset = self.get_argument_int("note_offset", None)
 
         public = self.moderator
 
-        orgtag = self._get_orgtag(orgtag_id_string)
+        orgtag = self._get_orgtag(orgtag_id)
 
         org_list_query = self.orm.query(Org) \
             .join(org_orgtag) \
@@ -208,11 +206,11 @@ class OrgtagHandler(BaseOrgtagHandler,
 
 class OrgtagNoteListHandler(BaseOrgtagHandler, BaseNoteHandler):
     @authenticated
-    def post(self, orgtag_id_string):
+    def post(self, orgtag_id):
         if not self.moderator:
             raise HTTPError(405)
 
-        orgtag = self._get_orgtag(orgtag_id_string)
+        orgtag = self._get_orgtag(orgtag_id)
 
         text, source, public = BaseNoteHandler._get_arguments(self)
 
@@ -225,8 +223,8 @@ class OrgtagNoteListHandler(BaseOrgtagHandler, BaseNoteHandler):
         return self.redirect_next(orgtag.url)
 
     @authenticated
-    def get(self, orgtag_id_string): 
-        orgtag = self._get_orgtag(orgtag_id_string)
+    def get(self, orgtag_id): 
+        orgtag = self._get_orgtag(orgtag_id)
 
         obj = orgtag.obj(
             public=self.moderator,
@@ -241,24 +239,24 @@ class OrgtagNoteListHandler(BaseOrgtagHandler, BaseNoteHandler):
 
 class OrgtagNoteHandler(BaseOrgtagHandler, BaseNoteHandler):
     @authenticated
-    def put(self, orgtag_id_string, note_id_string):
+    def put(self, orgtag_id, note_id):
         if not self.moderator:
             raise HTTPError(405)
 
-        orgtag = self._get_orgtag(orgtag_id_string)
-        note = self._get_note(note_id_string)
+        orgtag = self._get_orgtag(orgtag_id)
+        note = self._get_note(note_id)
         if note not in orgtag.note_list:
             orgtag.note_list.append(note)
             self.orm_commit()
         return self.redirect_next(orgtag.url)
 
     @authenticated
-    def delete(self, orgtag_id_string, note_id_string):
+    def delete(self, orgtag_id, note_id):
         if not self.moderator:
             raise HTTPError(405)
 
-        orgtag = self._get_orgtag(orgtag_id_string)
-        note = self._get_note(note_id_string)
+        orgtag = self._get_orgtag(orgtag_id)
+        note = self._get_note(note_id)
         if note in orgtag.note_list:
             orgtag.note_list.remove(note)
             self.orm_commit()

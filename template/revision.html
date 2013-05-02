@@ -7,7 +7,7 @@
 <%def name="title()">Revision</%def>
 
 <%def name="logout_url()">
-<% return obj and obj.get("public", True) and obj["uri"] or "/" %>
+<% return obj and obj.get("public", True) and obj.get("uri", None) or "/" %>
 </%def>
 
 <%def name="page()">

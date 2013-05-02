@@ -29,18 +29,18 @@ from handle.user import get_user_pending_address_event, get_user_pending_address
 
 
 class BaseAddressHandler(BaseHandler, MangoBaseEntityHandlerMixin):
-    def _get_address(self, id_string, required=True):
+    def _get_address(self, address_id, required=True):
         return self._get_entity(Address, "address_id",
                                 "address",
-                                id_string,
+                                address_id,
                                 required,
                                 )
 
-    def _get_address_v(self, id_string):
+    def _get_address_v(self, address_v_id):
         return self._get_entity_v(Address, "address_id",
                                   Address_v, "address_v_id",
                                   "address",
-                                  id_string,
+                                  address_v_id,
                                   )
 
     def _create_address(self, id_=None, version=False):
@@ -75,14 +75,12 @@ class BaseAddressHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         
         return address
     
-    def _create_address_v(self, id_):
-        return self._create_address(id_, version=True)
+    def _create_address_v(self, address_id):
+        return self._create_address(address_id, version=True)
     
-    def _decline_address_v(self, id_string):
-        id_ = int(id_string)
-
+    def _decline_address_v(self, address_id):
         address = Address_v(
-            id_,
+            address_id,
             "DECLINED", "DECLINED",
             moderation_user=self.current_user, public=None)
         address.existence = False
@@ -91,27 +89,26 @@ class BaseAddressHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         
         return address
 
-    def _address_history_query(self, address_id_string):
+    def _address_history_query(self, address_id):
         return self._history_query(
             Address, "address_id",
             Address_v,
-            address_id_string)
+            address_id)
 
-    def _get_address_history(self, address_id_string):
-        address_v_query, address = self._address_history_query(address_id_string)
+    def _get_address_history(self, address_id):
+        address_v_query, address = self._address_history_query(address_id)
         
         address_v_query = address_v_query \
             .order_by(Address_v.address_v_id.desc())
 
         return address_v_query.all(), address
 
-    def _count_address_history(self, address_id_string):
-        address_v_query, address = self._address_history_query(address_id_string)
+    def _count_address_history(self, address_id):
+        address_v_query, address = self._address_history_query(address_id)
 
         return address_v_query.count()
 
-    def _get_address_latest_a_time(self, address_id_string):
-        id_ = int(address_id_string)
+    def _get_address_latest_a_time(self, id_):
         address_v = self.orm.query(Address_v.a_time) \
             .join((User, Address_v.moderation_user)) \
             .filter(Address_v.address_id == id_) \
@@ -164,7 +161,7 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
     def _after_accept_new(self):
         return self._after_address_accept_new
 
-    def get(self, address_id_string):
+    def get(self, address_id):
         note_search, note_order, note_offset = self.get_note_arguments()
 
         public = self.moderator
@@ -172,10 +169,10 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
         required = True
         address_v = None
         if self.current_user:
-            address_v = self._get_address_v(address_id_string)
+            address_v = self._get_address_v(address_id)
             if address_v:
                 required = False
-        address = self._get_address(address_id_string, required=required)
+        address = self._get_address(address_id, required=required)
 
         if self.moderator and not address:
             self.next = "%s/revision" % address_v.url
@@ -244,7 +241,7 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
 
         version_url=None
 
-        if self.current_user and self._count_address_history(address_id_string) > 1:
+        if self.current_user and self._count_address_history(address_id) > 1:
             version_url="%s/revision" % address.url
 
         if self.accept_type("json"):
@@ -264,8 +261,8 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
 
 class AddressRevisionListHandler(BaseAddressHandler):
     @authenticated
-    def get(self, address_id_string):
-        address_v_list, address = self._get_address_history(address_id_string)
+    def get(self, address_id):
+        address_v_list, address = self._get_address_history(address_id)
 
         history = []
         for address_v in address_v_list:
@@ -299,7 +296,7 @@ class AddressRevisionListHandler(BaseAddressHandler):
             history.append(entity)
 
         if not history:
-            raise HTTPError(404, "%s: No such address" % (address_id_string))
+            raise HTTPError(404, "%s: No such address" % (address_id))
 
         if not self.moderator:
             if len(history) == int(bool(address)):
@@ -319,10 +316,7 @@ class AddressRevisionListHandler(BaseAddressHandler):
 
 
 class AddressRevisionHandler(BaseAddressHandler):
-    def _get_address_revision(self, address_id_string, address_v_id_string):
-        address_id = int(address_id_string)
-        address_v_id = int(address_v_id_string)
-
+    def _get_address_revision(self, address_id, address_v_id):
         query = self.orm.query(Address_v) \
             .filter_by(address_id=address_id) \
             .filter_by(address_v_id=address_v_id)
@@ -343,8 +337,8 @@ class AddressRevisionHandler(BaseAddressHandler):
         return address_v, address
 
     @authenticated
-    def get(self, address_id_string, address_v_id_string):
-        address_v, address = self._get_address_revision(address_id_string, address_v_id_string)
+    def get(self, address_id, address_v_id):
+        address_v, address = self._get_address_revision(address_id, address_v_id)
         
         if not address_v.existence:
             raise HTTPError(404)
@@ -363,7 +357,7 @@ class AddressRevisionHandler(BaseAddressHandler):
                 .first()
             if not newest_address_v:
                 raise HTTPError(404)
-            latest_a_time = self._get_address_latest_a_time(address_id_string)
+            latest_a_time = self._get_address_latest_a_time(address_id)
             if latest_a_time and address_v.a_time < latest_a_time:
                 raise HTTPError(404)
             if address and newest_address_v.a_time < address.a_time:
@@ -393,7 +387,7 @@ class AddressRevisionHandler(BaseAddressHandler):
                 "public"
                 )
 
-        latest_a_time = self._get_address_latest_a_time(address_id_string)
+        latest_a_time = self._get_address_latest_a_time(address_id)
 
         self.render(
             'revision.html',
@@ -478,11 +472,11 @@ class AddressLookupHandler(BaseAddressHandler):
 
 class AddressNoteListHandler(BaseAddressHandler, BaseNoteHandler):
     @authenticated
-    def post(self, address_id_string):
+    def post(self, address_id):
         if not self.moderator:
             raise HTTPError(404)
 
-        address = self._get_address(address_id_string)
+        address = self._get_address(address_id)
 
         text, source, public = BaseNoteHandler._get_arguments(self)
 
@@ -495,11 +489,11 @@ class AddressNoteListHandler(BaseAddressHandler, BaseNoteHandler):
         return self.redirect_next(address.url)
 
     @authenticated
-    def get(self, address_id_string):
+    def get(self, address_id):
         if not self.moderator:
             raise HTTPError(404)
 
-        address = self._get_address(address_id_string)
+        address = self._get_address(address_id)
 
         obj = address.obj(
             public=self.moderator,
@@ -514,24 +508,24 @@ class AddressNoteListHandler(BaseAddressHandler, BaseNoteHandler):
 
 class AddressNoteHandler(BaseAddressHandler, BaseNoteHandler):
     @authenticated
-    def put(self, address_id_string, note_id_string):
+    def put(self, address_id, note_id):
         if not self.moderator:
             raise HTTPError(404)
 
-        address = self._get_address(address_id_string)
-        note = self._get_note(note_id_string)
+        address = self._get_address(address_id)
+        note = self._get_note(note_id)
         if note not in address.note_list:
             address.note_list.append(note)
             self.orm_commit()
         return self.redirect_next(address.url)
 
     @authenticated
-    def delete(self, address_id_string, note_id_string):
+    def delete(self, address_id, note_id):
         if not self.moderator:
             raise HTTPError(404)
 
-        address = self._get_address(address_id_string)
-        note = self._get_note(note_id_string)
+        address = self._get_address(address_id)
+        note = self._get_note(note_id)
         if note in address.note_list:
             address.note_list.remove(note)
             self.orm_commit()

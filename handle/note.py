@@ -79,33 +79,33 @@ class NoteHandler(BaseNoteHandler, MangoEntityHandlerMixin):
         return self._get_note_v
 
     @authenticated
-    def put(self, entity_id_string):
+    def put(self, entity_id):
         if not self.moderator:
             raise HTTPError(405)
-        return MangoEntityHandlerMixin.put(self, entity_id_string);
+        return MangoEntityHandlerMixin.put(self, entity_id);
 
     @authenticated
-    def touch(self, entity_id_string):
+    def touch(self, entity_id):
         if not self.moderator:
             raise HTTPError(405)
-        return MangoEntityHandlerMixin.touch(self, entity_id_string);
+        return MangoEntityHandlerMixin.touch(self, entity_id);
 
     @authenticated
-    def delete(self, entity_id_string):
+    def delete(self, entity_id):
         if not self.moderator:
             raise HTTPError(405)
-        return MangoEntityHandlerMixin.delete(self, entity_id_string);
+        return MangoEntityHandlerMixin.delete(self, entity_id);
 
-    def get(self, note_id_string):
+    def get(self, note_id):
         public = self.moderator
 
         required = True
         note_v = None
         if self.moderator:
-            note_v = self._get_note_v(note_id_string)
+            note_v = self._get_note_v(note_id)
             if note_v:
                 required = False
-        note = self._get_note(note_id_string, required=required)
+        note = self._get_note(note_id, required=required)
 
         if not note:
             self.next = "%s/revision" % note_v.url
@@ -139,7 +139,7 @@ class NoteHandler(BaseNoteHandler, MangoEntityHandlerMixin):
             )
 
         version_url=None
-        if self.moderator and self._count_note_history(note_id_string) > 1:
+        if self.moderator and self._count_note_history(note_id) > 1:
             version_url="%s/revision" % note.url
 
         if self.accept_type("json"):
@@ -156,11 +156,11 @@ class NoteHandler(BaseNoteHandler, MangoEntityHandlerMixin):
 
 class NoteRevisionListHandler(BaseNoteHandler):
     @authenticated
-    def get(self, note_id_string):
+    def get(self, note_id):
         if not self.moderator:
             raise HTTPError(404)
 
-        note_v_list, note = self._get_note_history(note_id_string)
+        note_v_list, note = self._get_note_history(note_id)
 
         history = []
         for note_v in note_v_list:
@@ -194,7 +194,7 @@ class NoteRevisionListHandler(BaseNoteHandler):
             history.append(entity)
 
         if not history:
-            raise HTTPError(404, "%s: No such note" % (note_id_string))
+            raise HTTPError(404, "%s: No such note" % (note_id))
 
         if not self.moderator:
             if len(history) == int(bool(note)):
@@ -214,10 +214,7 @@ class NoteRevisionListHandler(BaseNoteHandler):
 
 
 class NoteRevisionHandler(BaseNoteHandler):
-    def _get_note_revision(self, note_id_string, note_v_id_string):
-        note_id = int(note_id_string)
-        note_v_id = int(note_v_id_string)
-
+    def _get_note_revision(self, note_id, note_v_id):
         query = self.orm.query(Note_v) \
             .filter_by(note_id=note_id) \
             .filter_by(note_v_id=note_v_id)
@@ -238,11 +235,11 @@ class NoteRevisionHandler(BaseNoteHandler):
         return note_v, note
 
     @authenticated
-    def get(self, note_id_string, note_v_id_string):
+    def get(self, note_id, note_v_id):
         if not self.moderator:
             raise HTTPError(404)
 
-        note_v, note = self._get_note_revision(note_id_string, note_v_id_string)
+        note_v, note = self._get_note_revision(note_id, note_v_id)
 
         if not note_v.existence:
             raise HTTPError(404)
@@ -261,7 +258,7 @@ class NoteRevisionHandler(BaseNoteHandler):
                 .first()
             if not newest_note_v:
                 raise HTTPError(404)
-            latest_a_time = self._get_note_latest_a_time(note_id_string)
+            latest_a_time = self._get_note_latest_a_time(note_id)
             if latest_a_time and note_v.a_time < latest_a_time:
                 raise HTTPError(404)
             if note and newest_note_v.a_time < note.a_time:
@@ -291,7 +288,7 @@ class NoteRevisionHandler(BaseNoteHandler):
                 "public"
                 )
 
-        latest_a_time = self._get_note_latest_a_time(note_id_string)
+        latest_a_time = self._get_note_latest_a_time(note_id)
 
         self.render(
             'revision.html',

@@ -11,9 +11,7 @@ from model import Org, Orgalias
 
 
 class BaseOrgaliasHandler(BaseHandler): 
-    def _get_orgalias(self, orgalias_id_string, options=None):
-        orgalias_id = int(orgalias_id_string)
-
+    def _get_orgalias(self, orgalias_id, options=None):
         query = self.orm.query(Orgalias)\
             .filter_by(orgalias_id=orgalias_id)
 
@@ -43,7 +41,7 @@ class BaseOrgaliasHandler(BaseHandler):
 
 class OrgaliasHandler(BaseOrgaliasHandler):
     @authenticated
-    def get(self, orgalias_id_string):
+    def get(self, orgalias_id):
         if not self.moderator:
             raise HTTPError(404)
 
@@ -53,7 +51,7 @@ class OrgaliasHandler(BaseOrgaliasHandler):
                 joinedload("org"),
                 )
 
-        orgalias = self._get_orgalias(orgalias_id_string, options)
+        orgalias = self._get_orgalias(orgalias_id, options)
 
         if self.parameters.get("view", None) != "edit":
             self.next = orgalias.org.url
@@ -78,21 +76,21 @@ class OrgaliasHandler(BaseOrgaliasHandler):
                 )
 
     @authenticated
-    def delete(self, orgalias_id_string):
+    def delete(self, orgalias_id):
         if not self.moderator:
             raise HTTPError(404)
 
-        orgalias = self._get_orgalias(orgalias_id_string)
+        orgalias = self._get_orgalias(orgalias_id)
         self.orm.delete(orgalias)
         self.orm_commit()
         return self.redirect_next("/organisation")
 
     @authenticated
-    def put(self, orgalias_id_string):
+    def put(self, orgalias_id):
         if not self.moderator:
             raise HTTPError(404)
 
-        orgalias = self._get_orgalias(orgalias_id_string)
+        orgalias = self._get_orgalias(orgalias_id)
         name, public = BaseOrgaliasHandler._get_arguments(self)
 
         if orgalias.name == name and \

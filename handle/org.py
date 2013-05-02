@@ -151,7 +151,7 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
     def _after_accept_new(self):
         return self._after_org_accept_new
 
-    def get(self, org_id_string):
+    def get(self, org_id):
         note_search, note_order, note_offset = self.get_note_arguments()
 
         public = self.moderator
@@ -159,10 +159,10 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
         required = True
         org_v = None
         if self.current_user:
-            org_v = self._get_org_v(org_id_string)
+            org_v = self._get_org_v(org_id)
             if org_v:
                 required = False
-        org = self._get_org(org_id_string, required=required)
+        org = self._get_org(org_id, required=required)
 
         if self.moderator and not org:
             self.next = "%s/revision" % org_v.url
@@ -241,7 +241,7 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
             )
 
         version_url=None
-        if self.current_user and self._count_org_history(org_id_string) > 1:
+        if self.current_user and self._count_org_history(org_id) > 1:
             version_url="%s/revision" % org.url
 
         if self.accept_type("json"):
@@ -261,8 +261,8 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
 
 class OrgRevisionListHandler(BaseOrgHandler):
     @authenticated
-    def get(self, org_id_string):
-        org_v_list, org = self._get_org_history(org_id_string)
+    def get(self, org_id):
+        org_v_list, org = self._get_org_history(org_id)
 
         history = []
         for org_v in org_v_list:
@@ -296,7 +296,7 @@ class OrgRevisionListHandler(BaseOrgHandler):
             history.append(entity)
 
         if not history:
-            raise HTTPError(404, "%s: No such org" % (org_id_string))
+            raise HTTPError(404, "%s: No such org" % (org_id))
 
         if not self.moderator:
             if len(history) == int(bool(org)):
@@ -316,10 +316,7 @@ class OrgRevisionListHandler(BaseOrgHandler):
 
 
 class OrgRevisionHandler(BaseOrgHandler):
-    def _get_org_revision(self, org_id_string, org_v_id_string):
-        org_id = int(org_id_string)
-        org_v_id = int(org_v_id_string)
-
+    def _get_org_revision(self, org_id, org_v_id):
         query = self.orm.query(Org_v) \
             .filter_by(org_id=org_id) \
             .filter_by(org_v_id=org_v_id)
@@ -340,8 +337,8 @@ class OrgRevisionHandler(BaseOrgHandler):
         return org_v, org
 
     @authenticated
-    def get(self, org_id_string, org_v_id_string):
-        org_v, org = self._get_org_revision(org_id_string, org_v_id_string)
+    def get(self, org_id, org_v_id):
+        org_v, org = self._get_org_revision(org_id, org_v_id)
 
         if not org_v.existence:
             raise HTTPError(404)
@@ -360,7 +357,7 @@ class OrgRevisionHandler(BaseOrgHandler):
                 .first()
             if not newest_org_v:
                 raise HTTPError(404)
-            latest_a_time = self._get_org_latest_a_time(org_id_string)
+            latest_a_time = self._get_org_latest_a_time(org_id)
             if latest_a_time and org_v.a_time < latest_a_time:
                 raise HTTPError(404)
             if org and newest_org_v.a_time < org.a_time:
@@ -390,7 +387,7 @@ class OrgRevisionHandler(BaseOrgHandler):
                 "public"
                 )
 
-        latest_a_time = self._get_org_latest_a_time(org_id_string)
+        latest_a_time = self._get_org_latest_a_time(org_id)
 
         self.render(
             'revision.html',
@@ -408,13 +405,13 @@ class OrgRevisionHandler(BaseOrgHandler):
 
 class OrgAddressListHandler(BaseOrgHandler, BaseAddressHandler):
     @authenticated
-    def get(self, org_id_string):
+    def get(self, org_id):
         required = True
         if self.contributor:
-            org_v = self._get_org_v(org_id_string)
+            org_v = self._get_org_v(org_id)
             if org_v:
                 required = False
-        org = self._get_org(org_id_string, required=required)
+        org = self._get_org(org_id, required=required)
 
         if not self.moderator and org_v:
             org = org_v
@@ -431,13 +428,13 @@ class OrgAddressListHandler(BaseOrgHandler, BaseAddressHandler):
             )
         
     @authenticated
-    def post(self, org_id_string):
+    def post(self, org_id):
         required = True
         if self.contributor:
-            org_v = self._get_org_v(org_id_string)
+            org_v = self._get_org_v(org_id)
             if org_v:
                 required = False
-        org = self._get_org(org_id_string, required=required)
+        org = self._get_org(org_id, required=required)
 
         address = self._create_address()
         self._before_address_set(address)
@@ -478,24 +475,24 @@ values (%d, %d, 0, 1)""" % (org_id, address_id)
 
 class OrgAddressHandler(BaseOrgHandler, BaseAddressHandler):
     @authenticated
-    def put(self, org_id_string, address_id_string):
+    def put(self, org_id, address_id):
         if not self.moderator:
             raise HTTPError(405)
 
-        org = self._get_org(org_id_string)
-        address = self._get_address(address_id_string)
+        org = self._get_org(org_id)
+        address = self._get_address(address_id)
         if address not in org.address_list:
             org.address_list.append(address)
             self.orm_commit()
         return self.redirect_next(org.url)
 
     @authenticated
-    def delete(self, org_id_string, address_id_string):
+    def delete(self, org_id, address_id):
         if not self.moderator:
             raise HTTPError(405)
 
-        org = self._get_org(org_id_string)
-        address = self._get_address(address_id_string)
+        org = self._get_org(org_id)
+        address = self._get_address(address_id)
         if address in org.address_list:
             org.address_list.remove(address)
             self.orm_commit()
@@ -505,11 +502,11 @@ class OrgAddressHandler(BaseOrgHandler, BaseAddressHandler):
 
 class OrgNoteListHandler(BaseOrgHandler, BaseNoteHandler):
     @authenticated
-    def post(self, org_id_string):
+    def post(self, org_id):
         if not self.moderator:
             raise HTTPError(404)
 
-        org = self._get_org(org_id_string)
+        org = self._get_org(org_id)
 
         text, source, public = BaseNoteHandler._get_arguments(self)
         
@@ -522,11 +519,11 @@ class OrgNoteListHandler(BaseOrgHandler, BaseNoteHandler):
         return self.redirect_next(org.url)
 
     @authenticated
-    def get(self, org_id_string):
+    def get(self, org_id):
         if not self.moderator:
             raise HTTPError(404)
 
-        org = self._get_org(org_id_string)
+        org = self._get_org(org_id)
         obj = org.obj(
             public=self.moderator,
             )
@@ -540,24 +537,24 @@ class OrgNoteListHandler(BaseOrgHandler, BaseNoteHandler):
 
 class OrgNoteHandler(BaseOrgHandler, BaseNoteHandler):
     @authenticated
-    def put(self, org_id_string, note_id_string):
+    def put(self, org_id, note_id):
         if not self.moderator:
             raise HTTPError(404)
 
-        org = self._get_org(org_id_string)
-        note = self._get_note(note_id_string)
+        org = self._get_org(org_id)
+        note = self._get_note(note_id)
         if note not in org.note_list:
             org.note_list.append(note)
             self.orm_commit()
         return self.redirect_next(org.url)
 
     @authenticated
-    def delete(self, org_id_string, note_id_string):
+    def delete(self, org_id, note_id):
         if not self.moderator:
             raise HTTPError(405)
 
-        org = self._get_org(org_id_string)
-        note = self._get_note(note_id_string)
+        org = self._get_org(org_id)
+        note = self._get_note(note_id)
         if note in org.note_list:
             org.note_list.remove(note)
             self.orm_commit()
@@ -567,13 +564,13 @@ class OrgNoteHandler(BaseOrgHandler, BaseNoteHandler):
 
 class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
     @authenticated
-    def get(self, org_id_string):
+    def get(self, org_id):
         if not self.moderator:
             raise HTTPError(404)
 
         # org...
 
-        org = self._get_org(org_id_string)
+        org = self._get_org(org_id)
 
         if self.deep_visible():
             orgtag_list=org.orgtag_list
@@ -615,24 +612,24 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
 
 class OrgOrgtagHandler(BaseOrgHandler, BaseOrgtagHandler):
     @authenticated
-    def put(self, org_id_string, orgtag_id_string):
+    def put(self, org_id, orgtag_id):
         if not self.moderator:
             raise HTTPError(405)
 
-        org = self._get_org(org_id_string)
-        orgtag = self._get_orgtag(orgtag_id_string)
+        org = self._get_org(org_id)
+        orgtag = self._get_orgtag(orgtag_id)
         if orgtag not in org.orgtag_list:
             org.orgtag_list.append(orgtag)
             self.orm_commit()
         return self.redirect_next(org.url)
 
     @authenticated
-    def delete(self, org_id_string, orgtag_id_string):
+    def delete(self, org_id, orgtag_id):
         if not self.moderator:
             raise HTTPError(405)
 
-        org = self._get_org(org_id_string)
-        orgtag = self._get_orgtag(orgtag_id_string)
+        org = self._get_org(org_id)
+        orgtag = self._get_orgtag(orgtag_id)
         if orgtag in org.orgtag_list:
             org.orgtag_list.remove(orgtag)
             self.orm_commit()
@@ -642,13 +639,13 @@ class OrgOrgtagHandler(BaseOrgHandler, BaseOrgtagHandler):
 
 class OrgOrgaliasListHandler(BaseOrgHandler, BaseOrgtagHandler):
     @authenticated
-    def get(self, org_id_string):
+    def get(self, org_id):
         if not self.moderator:
             raise HTTPError(404)
 
         # org...
 
-        org = self._get_org(org_id_string)
+        org = self._get_org(org_id)
 
         if self.parameters.get("view", None) != "edit":
             self.next = org.url
@@ -682,14 +679,14 @@ class OrgOrgaliasListHandler(BaseOrgHandler, BaseOrgtagHandler):
                 )
 
     @authenticated
-    def post(self, org_id_string):
+    def post(self, org_id):
         if not self.moderator:
             raise HTTPError(404)
             
         is_json = self.content_type("application/json")
         name = self.get_argument("name", json=is_json)
 
-        org = self._get_org(org_id_string)
+        org = self._get_org(org_id)
 
         orgalias = Orgalias.get(self.orm, name, org, self.current_user, True)
         self.orm_commit()
@@ -700,7 +697,7 @@ class OrgOrgaliasListHandler(BaseOrgHandler, BaseOrgtagHandler):
 
 class OrgEventListHandler(BaseOrgHandler, BaseEventHandler):
     @authenticated
-    def get(self, org_id_string):
+    def get(self, org_id):
         if not self.moderator:
             raise HTTPError(404)
             
@@ -708,7 +705,7 @@ class OrgEventListHandler(BaseOrgHandler, BaseEventHandler):
 
         # org...
 
-        org = self._get_org(org_id_string)
+        org = self._get_org(org_id)
         
         if self.deep_visible():
             event_list=org.event_list
@@ -756,24 +753,24 @@ class OrgEventListHandler(BaseOrgHandler, BaseEventHandler):
 
 class OrgEventHandler(BaseOrgHandler, BaseEventHandler):
     @authenticated
-    def put(self, org_id_string, event_id_string):
+    def put(self, org_id, event_id):
         if not self.moderator:
             raise HTTPError(404)
             
-        org = self._get_org(org_id_string)
-        event = self._get_event(event_id_string)
+        org = self._get_org(org_id)
+        event = self._get_event(event_id)
         if event not in org.event_list:
             org.event_list.append(event)
             self.orm_commit()
         return self.redirect_next(org.url)
 
     @authenticated
-    def delete(self, org_id_string, event_id_string):
+    def delete(self, org_id, event_id):
         if not self.moderator:
             raise HTTPError(404)
             
-        org = self._get_org(org_id_string)
-        event = self._get_event(event_id_string)
+        org = self._get_org(org_id)
+        event = self._get_event(event_id)
         if event in org.event_list:
             org.event_list.remove(event)
             self.orm_commit()

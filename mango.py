@@ -18,7 +18,7 @@ import tornado.httpserver
 import tornado.ioloop
 import tornado.options
 import tornado.web
-
+from tornado import escape
 from tornado.options import define, options
 
 from sqlalchemy import create_engine, __version__ as sqlalchemy_version
@@ -179,7 +179,14 @@ def SafeQueryClass(retry=3):
             return iter(results)
 
     return SafeQuery
-        
+
+
+
+def url_type_id(text):
+    value = int(text)
+    assert value > 0
+    return value
+
 
 
 class Application(tornado.web.Application):
@@ -241,6 +248,30 @@ class Application(tornado.web.Application):
             offset,
             )
 
+    url_parsers = {
+        "id": ("[1-9][0-9]*", url_type_id),
+        "self": ("self", None),
+        }
+
+    @staticmethod
+    def process_handlers(handlers):
+        regex_handlers = []
+        for handler in handlers:
+            regex, handler, kwargs = (handler + (None, ))[:3]
+            regex = re.split("(<\w+>)", regex)
+            for i in range(1, len(regex), 2):
+                type_ = regex[i][1:-1]
+                url_regex, url_type = Application.url_parsers[type_]
+                regex[i] = r"(%s)" % url_regex
+                if not kwargs:
+                    kwargs = {}
+                if not "types" in kwargs:
+                    kwargs["types"] = []
+                kwargs["types"].append(url_type)
+            regex = "".join(regex)
+            regex_handlers.append((regex, handler, kwargs))
+        return regex_handlers
+
     def increment_cache(self):
         offset = datetime.datetime.utcnow().isoformat()
         namespace = self.cache_namespace(offset)
@@ -250,61 +281,69 @@ class Application(tornado.web.Application):
 
         self.load_cookie_secret()
 
-        re_id = "([1-9][0-9]*)"
+        def handle_id(text):
+            return int(text)
 
-        self.handler_list = [
+        self.handlers = [
             (r"/", HomeHandler),
             (r'/static/image/map/marker/(.*)',
              GenerateMarkerHandler, {'path': "static/image/map/marker"}),
-            (r'/(favicon.ico)', tornado.web.StaticFileHandler, {'path': "static"}),
-            (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': "static"}),
+            (r'/(favicon.ico)',
+             tornado.web.StaticFileHandler, {'path': "static"}),
+            (r'/static/(.*)',
+             tornado.web.StaticFileHandler, {'path': "static"}),
 
             (r"/user", UserListHandler),
-            (r"/user/%s" % re_id, UserHandler),
-            (r"/user/(self)", UserHandler),
+            (r"/user/<id>", UserHandler),
+            (r"/user/<self>", UserHandler),
 
             (r"/note", NoteListHandler),
             (r"/note/new", NoteNewHandler),
-            (r"/note/%s" % re_id, NoteHandler),
-            (r"/note/%s/revision" % re_id, NoteRevisionListHandler),
-            (r"/note/%s/revision/%s" % (re_id, re_id),
+            (r"/note/<id>", NoteHandler),
+            (r"/note/<id>/revision", NoteRevisionListHandler),
+            (r"/note/<id>/revision/<id>",
              NoteRevisionHandler),
 
             (r"/organisation", OrgListHandler),
             (r"/organisation/new", OrgNewHandler),
-            (r"/organisation/%s" % re_id, OrgHandler),
-            (r"/organisation/%s/revision" % re_id, OrgRevisionListHandler),
-            (r"/organisation/%s/revision/%s" % (re_id, re_id),
+            (r"/organisation/<id>", OrgHandler),
+            (r"/organisation/<id>/revision", OrgRevisionListHandler),
+            (r"/organisation/<id>/revision/<id>",
              OrgRevisionHandler),
-            (r"/organisation/%s/tag" % re_id, OrgOrgtagListHandler),
-            (r"/organisation/%s/tag/%s" % (re_id, re_id), OrgOrgtagHandler),
-            (r"/organisation/%s/alias" % re_id, OrgOrgaliasListHandler),
-            (r"/organisation/%s/note" % re_id, OrgNoteListHandler),
-            (r"/organisation/%s/note/%s" % (re_id, re_id), OrgNoteHandler),
-            (r"/organisation/%s/address" % re_id, OrgAddressListHandler),
-            (r"/organisation/%s/address/%s" % (re_id, re_id),
+            (r"/organisation/<id>/tag", OrgOrgtagListHandler),
+            (r"/organisation/<id>/tag/<id>", OrgOrgtagHandler),
+            (r"/organisation/<id>/alias", OrgOrgaliasListHandler),
+            (r"/organisation/<id>/note", OrgNoteListHandler),
+            (r"/organisation/<id>/note/<id>", OrgNoteHandler),
+            (r"/organisation/<id>/address", OrgAddressListHandler),
+            (r"/organisation/<id>/address/<id>",
              OrgAddressHandler),
-            (r"/organisation/%s/event" % re_id, OrgEventListHandler),
-            (r"/organisation/%s/event/%s" % (re_id, re_id), OrgEventHandler),
+            (r"/organisation/<id>/event", OrgEventListHandler),
+            (r"/organisation/<id>/event/<id>",
+             OrgEventHandler),
 
-            (r"/organisation-alias/%s" % re_id, OrgaliasHandler),
+            (r"/organisation-alias/<id>", OrgaliasHandler),
 
             (r"/event", EventListHandler),
             (r"/event/new", EventNewHandler),
-            (r"/event/%s" % re_id, EventHandler),
-            (r"/event/%s/revision" % re_id, EventRevisionListHandler),
-            (r"/event/%s/revision/%s" % (re_id, re_id),
+
+            (r"/event/<id>", EventHandler),
+
+            (r"/event/<id>/revision", EventRevisionListHandler),
+            (r"/event/<id>/revision/<id>",
              EventRevisionHandler),
-            (r"/event/%s/tag" % re_id, EventEventtagListHandler),
-            (r"/event/%s/tag/%s" % (re_id, re_id), EventEventtagHandler),
-            (r"/event/%s/note" % re_id, EventNoteListHandler),
-            (r"/event/%s/note/%s" % (re_id, re_id), EventNoteHandler),
-            (r"/event/%s/address" % re_id, EventAddressListHandler),
-            (r"/event/%s/address/%s" % (re_id, re_id),
+            (r"/event/<id>/tag", EventEventtagListHandler),
+            (r"/event/<id>/tag/<id>",
+             EventEventtagHandler),
+            (r"/event/<id>/note", EventNoteListHandler),
+            (r"/event/<id>/note/<id>", EventNoteHandler),
+            (r"/event/<id>/address", EventAddressListHandler),
+            (r"/event/<id>/address/<id>",
              EventAddressHandler),
-            (r"/event/%s/organisation" % re_id, EventOrgListHandler),
-            (r"/event/%s/organisation/%s" % (re_id, re_id), EventOrgHandler),
-            (r"/event/%s/duplicate" % re_id, EventDuplicateHandler),
+            (r"/event/<id>/organisation", EventOrgListHandler),
+            (r"/event/<id>/organisation/<id>",
+             EventOrgHandler),
+            (r"/event/<id>/duplicate", EventDuplicateHandler),
             (r"/diary", DiaryHandler),
 
             (r"/task/address", OrgListTaskAddressHandler),
@@ -312,24 +351,27 @@ class Application(tornado.web.Application):
 
             (r"/address", AddressEntityListHandler),
             (r"/address/lookup", AddressLookupHandler),
-            (r"/address/%s/revision" % re_id, AddressRevisionListHandler),
-            (r"/address/%s/revision/%s" % (re_id, re_id),
+            (r"/address/<id>/revision",
+             AddressRevisionListHandler),
+            (r"/address/<id>/revision/<id>",
              AddressRevisionHandler),
-            (r"/address/%s" % re_id, AddressHandler),
-            (r"/address/%s/note" % re_id, AddressNoteListHandler),
-            (r"/address/%s/note/%s" % (re_id, re_id), AddressNoteHandler),
+            (r"/address/<id>", AddressHandler),
+            (r"/address/<id>/note", AddressNoteListHandler),
+            (r"/address/<id>/note/<id>",
+             AddressNoteHandler),
 
             (r"/organisation-tag", OrgtagListHandler),
             (r"/organisation-tag/new", OrgtagNewHandler),
-            (r"/organisation-tag/%s" % re_id, OrgtagHandler),
-            (r"/organisation-tag/%s/note" % re_id, OrgtagNoteListHandler),
-            (r"/organisation-tag/%s/note/%s" % (re_id, re_id), OrgtagNoteHandler),
+            (r"/organisation-tag/<id>", OrgtagHandler),
+            (r"/organisation-tag/<id>/note", OrgtagNoteListHandler),
+            (r"/organisation-tag/<id>/note/<id>", OrgtagNoteHandler),
 
             (r"/event-tag", EventtagListHandler),
             (r"/event-tag/new", EventtagNewHandler),
-            (r"/event-tag/%s" % re_id, EventtagHandler),
-            (r"/event-tag/%s/note" % re_id, EventtagNoteListHandler),
-            (r"/event-tag/%s/note/%s" % (re_id, re_id), EventtagNoteHandler),
+            (r"/event-tag/<id>", EventtagHandler),
+            (r"/event-tag/<id>/note", EventtagNoteListHandler),
+            (r"/event-tag/<id>/note/<id>",
+             EventtagNoteHandler),
 
             (r"/auth/register", AuthRegisterHandler),
             (r"/auth/login", AuthLoginGoogleHandler),
@@ -341,6 +383,9 @@ class Application(tornado.web.Application):
             (r"/moderation/queue", ModerationQueueHandler),
             ]
         
+
+        self.handlers = self.process_handlers(self.handlers)
+
         self.skin = options.skin
 
         self.url_root = options.root
@@ -424,7 +469,7 @@ class Application(tornado.web.Application):
 
         settings["xsrf_cookies"] = False
         
-        tornado.web.Application.__init__(self, self.handler_list, **settings)
+        tornado.web.Application.__init__(self, self.handlers, **settings)
 
         self.logger.info("""Mapping Application for NGOs (mango) running on port %d.""" % (options.port))
         

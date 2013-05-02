@@ -20,9 +20,7 @@ class BaseEventtagHandler(BaseTagHandler):
     entity_id = "event_id"
     cross_table = event_eventtag
 
-    def _get_eventtag(self, eventtag_id_string, options=None):
-        eventtag_id = int(eventtag_id_string)
-
+    def _get_eventtag(self, eventtag_id, options=None):
         query = self.orm.query(Eventtag)\
             .filter_by(eventtag_id=eventtag_id)
 
@@ -146,20 +144,20 @@ class EventtagHandler(BaseEventtagHandler,
             raise HTTPError(405, "Cannot delete tag because it has attached events.")
 
     @authenticated
-    def put(self, entity_id_string):
+    def put(self, entity_id):
         if not self.moderator:
             raise HTTPError(405)
         
-        return MangoEntityHandlerMixin.put(self, entity_id_string)
+        return MangoEntityHandlerMixin.put(self, entity_id)
         
-    def get(self, eventtag_id_string):
+    def get(self, eventtag_id):
         note_search = self.get_argument("note_search", None)
         note_order = self.get_argument_order("note_order", None)
         note_offset = self.get_argument_int("note_offset", None)
 
         public = self.moderator
 
-        eventtag = self._get_eventtag(eventtag_id_string)
+        eventtag = self._get_eventtag(eventtag_id)
 
         event_list_query = self.orm.query(Event) \
             .join(event_eventtag) \
@@ -211,11 +209,11 @@ class EventtagHandler(BaseEventtagHandler,
 
 class EventtagNoteListHandler(BaseEventtagHandler, BaseNoteHandler):
     @authenticated
-    def post(self, eventtag_id_string):
+    def post(self, eventtag_id):
         if not self.moderator:
             raise HTTPError(405)
 
-        eventtag = self._get_eventtag(eventtag_id_string)
+        eventtag = self._get_eventtag(eventtag_id)
 
         text, source, public = BaseNoteHandler._get_arguments(self)
 
@@ -228,8 +226,8 @@ class EventtagNoteListHandler(BaseEventtagHandler, BaseNoteHandler):
         return self.redirect_next(eventtag.url)
 
     @authenticated
-    def get(self, eventtag_id_string): 
-        eventtag = self._get_eventtag(eventtag_id_string)
+    def get(self, eventtag_id): 
+        eventtag = self._get_eventtag(eventtag_id)
 
         obj = eventtag.obj(
             public=self.moderator,
@@ -244,24 +242,24 @@ class EventtagNoteListHandler(BaseEventtagHandler, BaseNoteHandler):
 
 class EventtagNoteHandler(BaseEventtagHandler, BaseNoteHandler):
     @authenticated
-    def put(self, eventtag_id_string, note_id_string):
+    def put(self, eventtag_id, note_id):
         if not self.moderator:
             raise HTTPError(405)
 
-        eventtag = self._get_eventtag(eventtag_id_string)
-        note = self._get_note(note_id_string)
+        eventtag = self._get_eventtag(eventtag_id)
+        note = self._get_note(note_id)
         if note not in eventtag.note_list:
             eventtag.note_list.append(note)
             self.orm_commit()
         return self.redirect_next(eventtag.url)
 
     @authenticated
-    def delete(self, eventtag_id_string, note_id_string):
+    def delete(self, eventtag_id, note_id):
         if not self.moderator:
             raise HTTPError(405)
 
-        eventtag = self._get_eventtag(eventtag_id_string)
-        note = self._get_note(note_id_string)
+        eventtag = self._get_eventtag(eventtag_id)
+        note = self._get_note(note_id)
         if note in eventtag.note_list:
             eventtag.note_list.remove(note)
             self.orm_commit()
