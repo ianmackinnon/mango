@@ -197,8 +197,8 @@ url_directory = {
     "eventtag": "event-tag",
     "address": "address",
     "address_v": "address",
-    "node": "note",
-    "node_v": "note",
+    "note": "note",
+    "note_v": "note",
     }
 
 

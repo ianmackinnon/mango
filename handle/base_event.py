@@ -233,10 +233,10 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                 if not event.event_id in events:
                     events[event.event_id] = {
                         "event": event,
-                        "address_obj_list": [],
+                        "address_list": [],
                         }
                 if address:
-                    events[event.event_id]["address_obj_list"].append(address.obj(
+                    events[event.event_id]["address_list"].append(address.obj(
                             public=self.moderator,
                             general=True,
                             ))
@@ -244,16 +244,16 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
             event_packet["event_list"] = []
             for event_id, data in events.items():
                 event = data["event"]
-                address_obj_list = data["address_obj_list"]
-                address_obj_list.sort(
+                address_list = data["address_list"]
+                address_list.sort(
                     key=lambda address_obj: address_obj.get("latitude", None),
                     reverse=True
                     )
-                eventtag_obj_list = [eventtag.obj(public=True) for eventtag in event.eventtag_list_public]
+                eventtag_list = [eventtag.obj(public=True) for eventtag in event.eventtag_list_public]
                 event_packet["event_list"].append(event.obj(
                         public=self.moderator,
-                        address_obj_list=address_obj_list,
-                        eventtag_obj_list=eventtag_obj_list,
+                        address_list=address_list,
+                        eventtag_list=eventtag_list,
                         ))
 
         return event_packet

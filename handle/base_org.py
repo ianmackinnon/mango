@@ -264,26 +264,26 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                     orgs[org.org_id] = {
                         "org": org,
                         "alias": alias and alias.name,
-                        "address_obj_list": [],
+                        "address_list": [],
                         }
                 if address:
-                    orgs[org.org_id]["address_obj_list"].append(address.obj(
+                    orgs[org.org_id]["address_list"].append(address.obj(
                             public=self.moderator
                             ))
 
             org_packet["org_list"] = []
             for org_id, data in orgs.items():
                 org = data["org"]
-                address_obj_list = data["address_obj_list"]
-                address_obj_list.sort(
+                address_list = data["address_list"]
+                address_list.sort(
                     key=lambda address_obj: address_obj.get("latitude", None),
                     reverse=True
                     )
-                orgtag_obj_list = [orgtag.obj(public=True) for orgtag in org.orgtag_list_public]
+                orgtag_list = [orgtag.obj(public=True) for orgtag in org.orgtag_list_public]
                 org_packet["org_list"].append(org.obj(
                         public=self.moderator,
-                        address_obj_list=address_obj_list,
-                        orgtag_obj_list=orgtag_obj_list,
+                        address_list=address_list,
+                        orgtag_list=orgtag_list,
                         ))
 
         return org_packet
