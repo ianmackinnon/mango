@@ -1,6 +1,6 @@
-<%= m.template("visibility-bar.html", {obj: org}) %>
 
 <div class="org_name">
+  <%= m.template("visibility-bar.html", {obj: org, inline:true}) %>
   <a
      href="<%= m.urlRewrite(org["url"], parameters) %>"
      ><%=m.filter.h(org["name"])%></a>

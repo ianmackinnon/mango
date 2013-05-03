@@ -238,7 +238,7 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                 if address:
                     events[event.event_id]["address_list"].append(address.obj(
                             public=self.moderator,
-                            general=True,
+                            general=address.general(address.postal),
                             ))
 
             event_packet["event_list"] = []

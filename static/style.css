@@ -608,6 +608,11 @@ form.mango input[type="checkbox"]
     padding: 2px;
     text-align: center;
 }
+#mango .visibility.bar.inline
+{
+    display: inline;
+    margin-right: 6px;
+}
 #mango .visibility.public { background: #cfc; }
 #mango .visibility.private { background: #fcc; }
 #mango .visibility.pending { background: #ddd; }

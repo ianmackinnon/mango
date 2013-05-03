@@ -1,5 +1,11 @@
+<%
+if (typeof(inline) == "undefined") {
+   var inline = undefined;
+}
+%>
 <% if (obj.hasOwnProperty("public")) { %>
-  <div class="visibility
+  <div class="visibility bar
+              <%= inline && "inline" || "" %>
               <%= obj.public == null ? "pending" : {"true":"public", "false":"private"}[obj.public.toString()] %>
               ">
     <%= obj.public == null ? "Pending" : {"true":"Public", "false":"Private"}[obj.public.toString()] %>

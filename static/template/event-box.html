@@ -1,6 +1,5 @@
-<%= m.template("visibility-bar.html", {obj: event}) %>
-
 <div class="event_name">
+  <%= m.template("visibility-bar.html", {obj: event, inline: true}) %>
   <span class="start_date"><%= m.filter.pageDate(event["start_date"]) %></span>
   <% if (event["start_time"]) { %>
   <span class="time"><%= event["start_time"] %></span>

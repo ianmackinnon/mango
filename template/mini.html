@@ -10,13 +10,14 @@ ${{True: "public", False: "private", None: "pending",}[public]}
 
 
 
-<%def name="visibility_bar(obj)">\
+<%def name="visibility_bar(obj, inline=False)">\
 %if obj:
 %if "suggestion" in obj:
 <div class="visibility bar suggestion">Pending Suggestion</div>
 %endif
 %if "public" in obj:
 <div class="visibility bar
+            ${inline and "inline" or ""}
             ${visibility_public(obj["public"])}
   ">\
 ${visibility_public(obj["public"])}
@@ -183,7 +184,6 @@ if not parameters:
     parameters = {}
 %>\
         <div class="address-box">
-	  ${visibility_bar(address)}
           <div class="address-row">
 	    <div class="pin"
 		 %if address.get("latitude", None):
@@ -194,6 +194,7 @@ if not parameters:
 	      &nbsp;
 	    </div>
 	    <div class="address">
+	      ${visibility_bar(address, inline=True)}
 	      ${address["postal"] | n, h, unicode, newline_comma}
 	    </div>
 	    <div class="actions">
