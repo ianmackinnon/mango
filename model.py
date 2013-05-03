@@ -39,6 +39,7 @@ StringKey = lambda : StringOrig
 UnicodeKey = lambda : UnicodeOrig
 
 
+
 def use_mysql():
     global Float, String, Unicode, StringKey, UnicodeKey
     print "use mysql"
@@ -48,6 +49,7 @@ def use_mysql():
     # MySQL needs a character limit to use a variable-length column as a key.
     StringKey = lambda : VARCHAR(length=128, charset="latin1", collation="latin1_swedish_ci")
     UnicodeKey = lambda : VARCHAR(length=128, charset="utf8", collation="utf8_bin")
+
 
 
 if __name__ == '__main__':
@@ -184,26 +186,92 @@ class classproperty(property):
         return self.fget.__get__(None, owner)()
 
 
+    
+url_directory = {
+    "org": "organisation",
+    "org_v": "organisation",
+    "orgtag": "organisation-tag",
+    "orgalias": "organisation-alias",
+    "event": "event",
+    "event_v": "event",
+    "eventtag": "event-tag",
+    "address": "address",
+    "address_v": "address",
+    "node": "note",
+    "node_v": "note",
+    }
+
 
 class MangoEntity(object):
-    def content_same(self, other, ignore_list=None):
-        if not ignore_list:
-            ignore_list = []
-        for name in self.content:
-            if name in ignore_list:
-                continue
+    content_hints = []
+
+    def content_same(self, other, public=True):
+        extra = public and ["public"] or []
+        for name in self.content + extra:
             if getattr(self, name) != getattr(other, name):
                 return False
         return True
 
-    def content_copy(self, other, user, ignore_list=None):
-        if not ignore_list:
-            ignore_list = []
-        for name in self.content:
-            if name in ignore_list:
-                continue
+    def content_copy(self, other, user, publis=True):
+        extra = public and ["public"] or []
+        for name in self.content + extra:
             setattr(self, name, getattr(other, name))
         self.moderation_user = user
+
+    @property
+    def url(self):
+        name = url_directory[self.__tablename__]
+        if not name:
+            raise HTTPError(500, "No URL space for type '%s'." % type(entity))
+        if not self.entity_id_value:
+            return None
+        url = "/%s/%d" % (name, self.entity_id_value)
+        return url
+
+    @property
+    def url_v(self):
+        assert self.entity_v_id_value
+        if not self.entity_v_id_value:
+            return None
+        return "%s/revision/%d" % (self.url, self.entity_v_id_value)
+
+    def obj(self, **kwargs):
+        obj = {
+            "id": self.entity_id_value,
+            "url": self.url,
+            "date": self.a_time,
+            }
+
+        if hasattr(self, "entity_v_id"):
+            obj.update({
+                    "v_id": self.entity_v_id_value,
+                    "suggestion": True,
+                    })
+            
+        if bool(kwargs.pop("public", None)):
+            obj["public"] = self.public
+
+        for name in self.content + self.content_hints:
+            value = getattr(self, name)
+            if name.endswith("_date") and value:
+                value = value.strftime("%Y-%m-%d")
+            if name.endswith("_time") and value:
+                value = value.strftime("%H:%M")
+                
+            obj[name] = value
+
+        obj.update(kwargs)
+            
+        return obj
+
+    @property
+    def entity_id_value(self):
+        return getattr(self, self.entity_id.key, None)
+
+    @property
+    def entity_id_v_value(self):
+        return getattr(self, self.entity_v_id.key, None)
+
 
 
 
@@ -616,11 +684,8 @@ class Org(Base, MangoEntity, NotableEntity):
     content = [
         "name",
         "description",
-        "public",
         ]
 
-    list_url = "/organisation"
-    
     @classproperty
     @classmethod
     def entity_id(cls):
@@ -643,40 +708,6 @@ class Org(Base, MangoEntity, NotableEntity):
             {True:"public", False:"private", None: "pending"}[self.public],
             self.name,
             )
-
-    def __str__(self):
-        return unicode(self).encode("utf8")
-
-    def obj(self, public=False,
-            note_obj_list=None, note_count=None,
-            address_obj_list=None,
-            orgtag_obj_list=None, event_obj_list=None,
-            orgalias_obj_list=None, alias=None,
-            ):
-        obj = {
-            "id": self.org_id,
-            "url": self.url,
-            "date": self.a_time,
-            "name": self.name,
-            "description": self.description,
-            }
-        if public:
-            obj["public"] = self.public
-        if note_obj_list is not None:
-            obj["note_list"] = note_obj_list
-        if note_count is not None:
-            obj["note_count"] = note_count
-        if address_obj_list is not None:
-            obj["address_list"] = address_obj_list
-        if orgtag_obj_list is not None:
-            obj["orgtag_list"] = orgtag_obj_list
-        if event_obj_list is not None:
-            obj["event_list"] = event_obj_list
-        if orgalias_obj_list is not None:
-            obj["orgalias_list"] = orgalias_obj_list
-        if alias is not None:
-            obj["alias"] = alias;
-        return obj
 
     def pprint(self, indent=""):
         o = u"";
@@ -714,10 +745,6 @@ class Org(Base, MangoEntity, NotableEntity):
         other.event_list = []
         session.delete(other)
         #session.flush()
-
-    @property
-    def url(self):
-        return "%s/%d" % (self.list_url, self.org_id)
 
     @staticmethod
     def get(orm, name, accept_alias=None, moderation_user=None, public=None):
@@ -769,10 +796,12 @@ class Orgalias(Base, MangoEntity):
 
     content = [
         "name",
-        "public",
         ]
 
-    list_url = "/organisation-alias"
+    @classproperty
+    @classmethod
+    def entity_id(cls):
+        return cls.orgalias_id
 
     def __init__(self, name, org, moderation_user=None, public=None):
         self.name = sanitise_name(name)
@@ -789,32 +818,10 @@ class Orgalias(Base, MangoEntity):
             self.name, self.org_id,
             )
 
-    def __str__(self):
-        return unicode(self).encode("utf8")
-
-    def obj(self, public=False,
-            org_obj=None,
-            ):
-        obj = {
-            "id": self.orgalias_id,
-            "url": self.url,
-            "date": self.a_time,
-            "name": self.name,
-            }
-        if public:
-            obj["public"] = self.public
-        if org_obj is not None:
-            obj["org"] = org_obj
-        return obj
-
     def pprint(self, indent=""):
         o = u"";
         o += u"%sOrgalias: %s %s\n" % (indent, self.orgalias_id, self.name)
         return o
-
-    @property
-    def url(self):
-        return "%s/%d" % (self.list_url, self.orgalias_id)
 
     @staticmethod
     def get(orm, name, org, moderation_user=None, public=None):
@@ -841,7 +848,6 @@ class Event(Base, MangoEntity, NotableEntity):
             "mysql_engine": 'InnoDB',
             },
         )
-
     event_id = Column(Integer, primary_key=True)
 
     name = Column(Unicode(), nullable=False)
@@ -935,11 +941,8 @@ class Event(Base, MangoEntity, NotableEntity):
         "description",
         "start_time",
         "end_time",
-        "public",
         ]
 
-    list_url = "/event"
-    
     @classproperty
     @classmethod
     def entity_id(cls):
@@ -968,39 +971,6 @@ class Event(Base, MangoEntity, NotableEntity):
             self.name,
             )
 
-    def __str__(self):
-        return unicode(self).encode("utf8")
-
-    def obj(self, public=False,
-            note_obj_list=None, note_count=None,
-            address_obj_list=None,
-            eventtag_obj_list=None, org_obj_list=None,
-            ):
-        obj = {
-            "id": self.event_id,
-            "url": self.url,
-            "date": self.a_time,
-            "name": self.name,
-            "start_date": self.start_date.strftime("%Y-%m-%d"),
-            "end_date": self.end_date.strftime("%Y-%m-%d"),
-            "description": self.description,
-            "start_time": self.start_time and self.start_time.strftime("%H:%M"),
-            "end_time": self.end_time and self.end_time.strftime("%H:%M"),
-            }
-        if public:
-            obj["public"] = self.public
-        if note_obj_list is not None:
-            obj["note_list"] = note_obj_list
-        if note_count is not None:
-            obj["note_count"] = note_count
-        if address_obj_list is not None:
-            obj["address_list"] = address_obj_list
-        if eventtag_obj_list is not None:
-            obj["eventtag_list"] = eventtag_obj_list
-        if org_obj_list is not None:
-            obj["org_list"] = org_obj_list
-        return obj
-
     def pprint(self, indent=""):
         o = u"";
         o += u"%sEvent: %s %s\n" % (indent, self.event_id, self.name)
@@ -1013,10 +983,6 @@ class Event(Base, MangoEntity, NotableEntity):
         for org in self.org_list:
             o += u"%sOrg: %s %s...\n" % (indent + "  ", org.org_id, org.name)
         return o
-
-    @property
-    def url(self):
-        return "%s/%d" % (self.list_url, self.event_id)
 
     @staticmethod
     def get(orm, name, moderation_user=None, public=None):
@@ -1116,10 +1082,7 @@ class Address(Base, MangoEntity, NotableEntity):
         "manual_latitude",
         "longitude",
         "latitude",
-        "public",
         ]
-
-    list_url = "/address"
 
     @classproperty
     @classmethod
@@ -1155,9 +1118,6 @@ class Address(Base, MangoEntity, NotableEntity):
             self.repr_coordinates(self.longitude, self.latitude),
             )
 
-    def __str__(self):
-        return unicode(self).encode("utf8")
-
     def geocode(self):
         if self.manual_longitude is not None and self.manual_latitude is not None:
             self.longitude = self.manual_longitude
@@ -1173,40 +1133,6 @@ class Address(Base, MangoEntity, NotableEntity):
             if coords:
                 (self.latitude, self.longitude) = coords
 
-    def obj(self, public=False,
-            note_obj_list=None, note_count=None,
-            org_obj_list=None, event_obj_list=None,
-            general=None):
-
-        obj = {
-            "id": self.address_id,
-            "url": self.url,
-            "date": self.a_time,
-            "name": self.postal,
-            "source": self.source,
-            "postal": self.postal,
-            "lookup": self.lookup,
-            "manual_longitude": self.manual_longitude,
-            "manual_latitude": self.manual_latitude,
-            "longitude": self.longitude,
-            "latitude": self.latitude,
-            }
-        if public:
-            obj["public"] = self.public
-        if note_obj_list is not None:
-            obj["note_list"] = note_obj_list
-        if note_count is not None:
-            obj["note_count"] = note_count
-        if org_obj_list is not None:
-            obj["org_list"] = org_obj_list
-            obj["entity_list"] = obj.get("entity_list", []) + org_obj_list
-        if event_obj_list is not None:
-            obj["event_list"] = event_obj_list
-            obj["entity_list"] = obj.get("entity_list", []) + event_obj_list
-        if general:
-            obj["general"] = self.general(self.postal)
-        return obj
-
     def pprint(self, indent=""):
         o = u"";
         o += u"%sAddress: %s %s\n" % (indent, self.address_id, self.postal.split("\n")[0])
@@ -1221,12 +1147,6 @@ class Address(Base, MangoEntity, NotableEntity):
     @property
     def name(self):
         return (self.split + [None])[0]
-
-    @property
-    def url(self):
-        if self.address_id is None:
-            return None
-        return "%s/%d" % (self.list_url, self.address_id)
 
     @staticmethod
     def general(address):
@@ -1398,10 +1318,20 @@ class Orgtag(Base, MangoEntity, NotableEntity):
 
     content = [
         "name",
-        "public",
         ]
 
-    list_url = "/organisation-tag"
+    content_hints = [
+        "name_short",
+        "base",
+        "base_short",
+        "path",
+        "path_short",
+        ]
+
+    @classproperty
+    @classmethod
+    def entity_id(cls):
+        return cls.orgtag_id
 
     def __init__(self, name, moderation_user=None, public=None):
         self.name = name
@@ -1417,54 +1347,12 @@ class Orgtag(Base, MangoEntity, NotableEntity):
             self.name,
             )
 
-    def __str__(self):
-        return unicode(self).encode("utf8")
-
-    def obj(self, public=False,
-            note_obj_list=None, note_count=None,
-            org_obj_list=None,
-            org_len=None):
-        obj = {
-            "id": self.orgtag_id,
-            "url": self.url,
-            "date": self.a_time,
-            "org_list_url": self.org_list_url(None),
-            "name": self.name,
-            "name_short": self.name_short,
-            "base": self.base,
-            "base_short": self.base_short,
-            "path": self.path,
-            "path_short": self.path_short,
-            }
-        if public:
-            obj["public"] = self.public
-        if note_obj_list is not None:
-            obj["note_list"] = note_obj_list
-        if note_count is not None:
-            obj["note_count"] = note_count
-        if org_obj_list is not None:
-            obj["org_list"] = org_obj_list
-        if org_len is not None:
-            obj["org_len"] = org_len
-        return obj
-
     def pprint(self, indent=""):
         o = u"";
         o += u"%sOrgtag: %s %s\n" % (indent, self.orgtag_id, self.name)
         for note in self.note_list:
             o += note.pprint(indent + "  ")
         return o
-
-    def org_list_url(self, parameters=None):
-        if parameters == None:
-            parameters = {}
-        parameters["tag"] = self.base_short
-
-        return "/organisation?%s" % urlencode(parameters)
-
-    @property
-    def url(self):
-        return "%s/%d" % (self.list_url, self.orgtag_id)
 
     @staticmethod
     def get(orm, name, moderation_user=None, public=None):
@@ -1536,10 +1424,20 @@ class Eventtag(Base, MangoEntity, NotableEntity):
 
     content = [
         "name",
-        "public",
         ]
 
-    list_url = "/event-tag"
+    content_hints = [
+        "name_short",
+        "base",
+        "base_short",
+        "path",
+        "path_short",
+        ]
+
+    @classproperty
+    @classmethod
+    def entity_id(cls):
+        return cls.eventtag_id
 
     def __init__(self, name, moderation_user=None, public=None):
         self.name = name
@@ -1555,54 +1453,12 @@ class Eventtag(Base, MangoEntity, NotableEntity):
             self.name,
             )
 
-    def __str__(self):
-        return unicode(self).encode("utf8")
-
-    def obj(self, public=False,
-            note_obj_list=None, note_count=None,
-            event_obj_list=None,
-            event_len=None):
-        obj = {
-            "id": self.eventtag_id,
-            "url": self.url,
-            "date": self.a_time,
-            "event_list_url": self.event_list_url(None),
-            "name": self.name,
-            "name_short": self.name_short,
-            "base": self.base,
-            "base_short": self.base_short,
-            "path": self.path,
-            "path_short": self.path_short,
-            }
-        if public:
-            obj["public"] = self.public
-        if note_obj_list is not None:
-            obj["note_list"] = note_obj_list
-        if note_count is not None:
-            obj["note_count"] = note_count
-        if event_obj_list is not None:
-            obj["event_list"] = event_obj_list
-        if event_len is not None:
-            obj["event_len"] = event_len
-        return obj
-
     def pprint(self, indent=""):
         o = u"";
         o += u"%sEventtag: %s %s\n" % (indent, self.eventtag_id, self.name)
         for note in self.note_list:
             o += note.pprint(indent + "  ")
         return o
-
-    def event_list_url(self, parameters=None):
-        if parameters == None:
-            parameters = {}
-        parameters["tag"] = self.base_short
-
-        return "/event?%s" % urlencode(parameters)
-
-    @property
-    def url(self):
-        return "%s/%d" % (self.list_url, self.eventtag_id)
 
     @staticmethod
     def get(orm, name, moderation_user=None, public=None):
@@ -1680,10 +1536,7 @@ class Note(Base, MangoEntity):
     content = [
         "text",
         "source",
-        "public",
         ]
-
-    list_url = "/note"
 
     @classproperty
     @classmethod
@@ -1709,51 +1562,10 @@ class Note(Base, MangoEntity):
             self.source[:10],
             )
 
-    def __str__(self):
-        return unicode(self).encode("utf8")
-
-    def obj(self, public=False,
-            org_obj_list=None, event_obj_list=None,
-            address_obj_list=None,
-            orgtag_obj_list=None, eventtag_obj_list=None
-            ):
-        obj = {
-            "id": self.note_id,
-            "url": self.url,
-            "date": self.a_time,
-            "text": self.text,
-            "source": self.source,
-            }
-        linked = False
-        if public:
-            obj["public"] = self.public
-        if org_obj_list is not None:
-            obj["org_list"] = org_obj_list
-            linked = (linked or []) + org_obj_list
-        if event_obj_list is not None:
-            obj["event_list"] = event_obj_list
-            linked = (linked or []) + event_obj_list
-        if address_obj_list is not None:
-            obj["address_list"] = address_obj_list
-            linked = (linked or []) + address_obj_list
-        if orgtag_obj_list is not None:
-            obj["orgtag_list"] = orgtag_obj_list
-            linked = (linked or []) + orgtag_obj_list
-        if eventtag_obj_list is not None:
-            obj["eventtag_list"] = eventtag_obj_list
-            linked = (linked or []) + eventtag_obj_list
-        if linked is not False:
-            obj["linked"] = linked
-        return obj
-
     def pprint(self, indent=""):
         o = u"";
         o += u"%sNote: %s %s\n" % (indent, self.note_id, self.text.split("\n")[0][:32])
         return o
-
-    @property
-    def url(self):
-        return "%s/%d" % (self.list_url, self.note_id)
 
 
 

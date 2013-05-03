@@ -233,9 +233,9 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
 
         obj = address.obj(
             public=public,
-            org_obj_list=org_list,
-            event_obj_list=event_list,
-            note_obj_list=note_list,
+            org_list=org_list,
+            event_list=event_list,
+            note_list=note_list,
             note_count=note_count,
             )
 
@@ -255,7 +255,6 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
                 note_order=note_order,
                 note_offset=note_offset,
                 version_url=version_url,
-                entity_list="entity_list",  # What's this?
                 )
 
 

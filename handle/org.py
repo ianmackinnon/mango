@@ -232,12 +232,12 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
 
         obj = org.obj(
             public=public,
-            address_obj_list=address_list,
-            orgtag_obj_list=orgtag_list,
-            note_obj_list=note_list,
+            address_list=address_list,
+            orgtag_list=orgtag_list,
+            note_list=note_list,
             note_count=note_count,
-            event_obj_list=event_list,
-            orgalias_obj_list=orgalias_list,
+            event_list=event_list,
+            orgalias_list=orgalias_list,
             )
 
         version_url=None
@@ -424,7 +424,6 @@ class OrgAddressListHandler(BaseOrgHandler, BaseAddressHandler):
             'address.html',
             address=None,
             entity=obj,
-            entity_list="org_list",
             )
         
     @authenticated
@@ -583,7 +582,7 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
 
         obj = org.obj(
             public=public,
-            orgtag_obj_list=orgtag_list,
+            orgtag_list=orgtag_list,
             )
 
         del orgtag_list
@@ -662,7 +661,7 @@ class OrgOrgaliasListHandler(BaseOrgHandler, BaseOrgtagHandler):
 
         obj = org.obj(
             public=public,
-            orgalias_obj_list=orgalias_list,
+            orgalias_list=orgalias_list,
             )
 
         if self.accept_type("json"):
@@ -718,7 +717,7 @@ class OrgEventListHandler(BaseOrgHandler, BaseEventHandler):
 
         obj = org.obj(
             public=public,
-            event_obj_list=event_list,
+            event_list=event_list,
             )
 
         del event_list
@@ -776,64 +775,6 @@ class OrgEventHandler(BaseOrgHandler, BaseEventHandler):
             self.orm_commit()
         return self.redirect_next(org.url)
 
-
-
-class OrgListTaskAddressHandler(BaseOrgHandler, BaseOrgtagHandler):
-    def get(self):
-        is_json = self.content_type("application/json")
-        name = self.get_argument("name", None, json=is_json)
-        name_search = self.get_argument("nameSearch", None, json=is_json)
-        tag_name_list = self.get_arguments("tag", json=is_json)
-        offset = self.get_argument_int("offset", None, json=is_json)
-
-        if self.deep_visible():
-            address_list_name = "address_list"
-        else:
-            address_list_name = "address_list_public"
-
-        org_and_alias_list, org_count, geobox, latlon = self._get_org_list_search(
-            name=name,
-            name_search=name_search,
-            tag_name_list=tag_name_list,
-            visibility=self.parameters["visibility"],
-            geo=False,
-            address=False,
-            limit=100,
-            offset=offset,
-            )
-
-        if self.has_geo_arguments():
-            offset = None
-
-        org_packet = {
-            "org_list": [],
-            "org_count": org_count,
-            }
-
-        if offset is not None:
-            org_packet["offset"] = offset
-
-        for org, alias in org_and_alias_list:
-            obj = org.obj(
-                public=self.moderator,
-                alias=(alias or None)
-                )
-            org_packet["org_list"].append(obj);
-
-        if self.accept_type("json"):
-            self.write_json(org_packet)
-        else:
-            full_orgtag_list = BaseOrgtagHandler._get_full_orgtag_list(self)
-            self.render(
-                'organisation_list_task_address.html',
-                org_packet=org_packet,
-                name_search=name_search,
-                tag_name_list=tag_name_list,
-                orgtag_list_json=json.dumps(full_orgtag_list),
-                )
-
-class OrgListTaskVisibilityHandler(BaseOrgHandler, BaseOrgtagHandler):
-    pass
 
 
 

@@ -182,8 +182,8 @@ class EventtagHandler(BaseEventtagHandler,
 
         obj = eventtag.obj(
             public=public,
-            event_obj_list=event_list,
-            note_obj_list=note_list,
+            event_list=event_list,
+            note_list=note_list,
             note_count=note_count,
             )
 

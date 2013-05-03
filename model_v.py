@@ -250,10 +250,7 @@ class Org_v(Base, MangoEntity):
     content = [
         "name",
         "description",
-        "public",
         ]
-
-    list_url = "/organisation"
 
     @classproperty
     @classmethod
@@ -283,53 +280,6 @@ class Org_v(Base, MangoEntity):
         self.a_time = 0
         self.public = public
         
-    def obj(self, public=False,
-            note_obj_list=None, note_count=None,
-            address_obj_list=None,
-            orgtag_obj_list=None, event_obj_list=None,
-            orgalias_obj_list=None, alias=None,
-            ):
-        obj = {
-            "v_id": self.org_v_id,
-            "suggestion": True,
-
-            "id": self.org_id,
-            "url": self.url,
-            "date": self.a_time,
-            "name": self.name,
-            "description": self.description,
-            }
-        if public:
-            obj["public"] = self.public
-        if note_obj_list is not None:
-            obj["note_list"] = note_obj_list
-        if note_count is not None:
-            obj["note_count"] = note_count
-        if address_obj_list is not None:
-            obj["address_list"] = address_obj_list
-        if orgtag_obj_list is not None:
-            obj["orgtag_list"] = orgtag_obj_list
-        if event_obj_list is not None:
-            obj["event_list"] = event_obj_list
-        if orgalias_obj_list is not None:
-            obj["orgalias_list"] = orgalias_obj_list
-        if alias is not None:
-            obj["alias"] = alias;
-        return obj
-
-    @property
-    def url(self):
-        return "%s/%d" % (self.list_url, self.org_id)
-
-    @property
-    def url_v(self):
-        return "%s/%d/revision/%d" % (self.list_url, self.org_id, self.org_v_id)
-
-
-
-
-
-
 class Orgalias_v(Base):
     __tablename__ = 'orgalias_v'
 
@@ -401,11 +351,8 @@ class Event_v(Base, MangoEntity):
         "description",
         "start_time",
         "end_time",
-        "public",
         ]
 
-    list_url = "/event"
-    
     @classproperty
     @classmethod
     def entity_id(cls):
@@ -439,47 +386,6 @@ class Event_v(Base, MangoEntity):
         self.a_time = 0
         self.public = public
         
-    def obj(self, public=False,
-            note_obj_list=None, note_count=None,
-            address_obj_list=None,
-            eventtag_obj_list=None, org_obj_list=None,
-            ):
-        obj = {
-            "v_id": self.event_v_id,
-            "suggestion": True,
-
-            "id": self.event_id,
-            "url": self.url,
-            "date": self.a_time,
-            "name": self.name,
-            "start_date": self.start_date.strftime("%Y-%m-%d"),
-            "end_date": self.end_date.strftime("%Y-%m-%d"),
-            "description": self.description,
-            "start_time": self.start_time and self.start_time.strftime("%H:%M"),
-            "end_time": self.end_time and self.end_time.strftime("%H:%M"),
-            }
-        if public:
-            obj["public"] = self.public
-        if note_obj_list is not None:
-            obj["note_list"] = note_obj_list
-        if note_count is not None:
-            obj["note_count"] = note_count
-        if address_obj_list is not None:
-            obj["address_list"] = address_obj_list
-        if eventtag_obj_list is not None:
-            obj["eventtag_list"] = eventtag_obj_list
-        if org_obj_list is not None:
-            obj["org_list"] = org_obj_list
-        return obj
-
-    @property
-    def url(self):
-        return "%s/%d" % (self.list_url, self.event_id)
-
-    @property
-    def url_v(self):
-        return "%s/%d/revision/%d" % (self.list_url, self.event_id, self.event_v_id)
-
 
 
 class Eventtag_v(Base):
@@ -534,11 +440,8 @@ class Address_v(Base, MangoEntity):
         "manual_latitude",
         "longitude",
         "latitude",
-        "public",
         ]
 
-    list_url = "/address"
-    
     @classproperty
     @classmethod
     def entity_id(cls):
@@ -589,48 +492,6 @@ class Address_v(Base, MangoEntity):
             if coords:
                 (self.latitude, self.longitude) = coords
 
-    def obj(self, public=False,
-            note_obj_list=None, note_count=None,
-            org_obj_list=None, event_obj_list=None,
-            ):
-        obj = {
-            "v_id": self.address_v_id,
-            "suggestion": True,
-
-            "id": self.address_id,
-            "url": self.url,
-            "date": self.a_time,
-            "name": self.postal,
-            "source": self.source,
-            "postal": self.postal,
-            "lookup": self.lookup,
-            "manual_longitude": self.manual_longitude,
-            "manual_latitude": self.manual_latitude,
-            "longitude": self.longitude,
-            "latitude": self.latitude,
-            }
-        if public:
-            obj["public"] = self.public
-        if note_obj_list is not None:
-            obj["note_list"] = note_obj_list
-        if note_count is not None:
-            obj["note_count"] = note_count
-        if org_obj_list is not None:
-            obj["org_list"] = org_obj_list
-            obj["entity_list"] = obj.get("entity_list", []) + org_obj_list
-        if event_obj_list is not None:
-            obj["event_list"] = event_obj_list
-            obj["entity_list"] = obj.get("entity_list", []) + event_obj_list
-        return obj
-
-    @property
-    def url(self):
-        return "%s/%d" % (self.list_url, self.address_id)
-
-    @property
-    def url_v(self):
-        return "%s/%d/revision/%d" % (self.list_url, self.address_id, self.address_v_id)
-
 
 
 class Note_v(Base, MangoEntity):
@@ -656,11 +517,8 @@ class Note_v(Base, MangoEntity):
     content = [
         "text",
         "source",
-        "public",
         ]
 
-    list_url = "/note"
-    
     @classproperty
     @classmethod
     def entity_id(cls):
@@ -688,47 +546,3 @@ class Note_v(Base, MangoEntity):
         self.a_time = 0
         self.public = public
         
-    def obj(self, public=False,
-            org_obj_list=None, event_obj_list=None,
-            address_obj_list=None,
-            orgtag_obj_list=None, eventtag_obj_list=None
-            ):
-        obj = {
-            "v_id": self.note_v_id,
-            "suggestion": True,
-
-            "id": self.note_id,
-            "url": self.url,
-            "date": self.a_time,
-            "text": self.text,
-            "source": self.source,
-            }
-        linked = False
-        if public:
-            obj["public"] = self.public
-        if org_obj_list is not None:
-            obj["org_list"] = org_obj_list
-            linked = (linked or []) + org_obj_list
-        if event_obj_list is not None:
-            obj["event_list"] = event_obj_list
-            linked = (linked or []) + event_obj_list
-        if address_obj_list is not None:
-            obj["address_list"] = address_obj_list
-            linked = (linked or []) + address_obj_list
-        if orgtag_obj_list is not None:
-            obj["orgtag_list"] = orgtag_obj_list
-            linked = (linked or []) + orgtag_obj_list
-        if eventtag_obj_list is not None:
-            obj["eventtag_list"] = eventtag_obj_list
-            linked = (linked or []) + eventtag_obj_list
-        if linked is not False:
-            obj["linked"] = linked
-        return obj
-
-    @property
-    def url(self):
-        return "%s/%d" % (self.list_url, self.note_id)
-
-    @property
-    def url_v(self):
-        return "%s/%d/revision/%d" % (self.list_url, self.note_id, self.note_v_id)

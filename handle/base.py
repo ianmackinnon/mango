@@ -915,7 +915,7 @@ class MangoEntityHandlerMixin(RequestHandler):
             self._before_delete(entity)
         self.orm.delete(entity)
         self.orm_commit()
-        return self.redirect_next(entity.list_url)
+        return self.redirect_next()
         
     @authenticated
     def touch(self, entity_id):
@@ -957,9 +957,9 @@ class MangoEntityHandlerMixin(RequestHandler):
             return self.redirect_next(old_entity.url)
         if self.contributor:
             if pre_entity:
-                if pre_entity.content_same(new_entity, ["public"]):
+                if pre_entity.content_same(new_entity, public=False):
                     return self.redirect_next(new_entity.url)
-            elif old_entity and old_entity.content_same(new_entity, ["public"]):
+            elif old_entity and old_entity.content_same(new_entity, public=False):
                 return self.redirect_next(new_entity.url)
         self.orm.add(new_entity)
         self.orm_commit()

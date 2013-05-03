@@ -51,15 +51,15 @@ from handle.org import OrgHandler, OrgNewHandler, \
     OrgOrgtagListHandler, OrgOrgtagHandler, \
     OrgNoteListHandler, OrgNoteHandler, \
     OrgAddressListHandler, OrgAddressHandler, \
-    OrgEventHandler, OrgEventListHandler, \
-    OrgListTaskAddressHandler, OrgListTaskVisibilityHandler
+    OrgEventHandler, OrgEventListHandler
 from handle.orgalias import OrgaliasHandler
 from handle.event import EventHandler, EventNewHandler, \
     EventRevisionListHandler, EventRevisionHandler, \
     EventListHandler, \
-    EventEventtagListHandler, EventEventtagHandler, EventNoteListHandler, \
-    EventNoteHandler, EventAddressListHandler, EventAddressHandler, \
     EventDuplicateHandler, \
+    EventEventtagListHandler, EventEventtagHandler, \
+    EventNoteListHandler, EventNoteHandler, \
+    EventAddressListHandler, EventAddressHandler, \
     EventOrgHandler, EventOrgListHandler, \
     DiaryHandler
 from handle.orgtag import OrgtagHandler, OrgtagListHandler, \
@@ -68,6 +68,10 @@ from handle.eventtag import EventtagHandler, EventtagListHandler, \
     EventtagNewHandler, EventtagNoteListHandler, EventtagNoteHandler
 from handle.history import HistoryHandler
 from handle.moderation import ModerationQueueHandler
+
+from model import Org, Orgtag, Orgalias, Event, Eventtag, Address, Note
+from model_v import Org_v, Event_v, Address_v, Note_v
+
 
 
 define("port", default=8802, help="Run on the given port", type=int)
@@ -278,7 +282,6 @@ class Application(tornado.web.Application):
         self.cache.set_namespace(namespace)
 
     def __init__(self):
-
         self.load_cookie_secret()
 
         def handle_id(text):
@@ -293,16 +296,18 @@ class Application(tornado.web.Application):
             (r'/static/(.*)',
              tornado.web.StaticFileHandler, {'path': "static"}),
 
+            (r"/auth/register", AuthRegisterHandler),
+            (r"/auth/login", AuthLoginGoogleHandler),
+            (r"/auth/login/google", AuthLoginGoogleHandler),
+            (r"/auth/login/local", AuthLoginLocalHandler),
+            (r"/auth/visit", AuthVisitHandler),
+            (r"/auth/logout", AuthLogoutHandler),
+            (r"/history", HistoryHandler),
+            (r"/moderation/queue", ModerationQueueHandler),
+
             (r"/user", UserListHandler),
             (r"/user/<id>", UserHandler),
             (r"/user/<self>", UserHandler),
-
-            (r"/note", NoteListHandler),
-            (r"/note/new", NoteNewHandler),
-            (r"/note/<id>", NoteHandler),
-            (r"/note/<id>/revision", NoteRevisionListHandler),
-            (r"/note/<id>/revision/<id>",
-             NoteRevisionHandler),
 
             (r"/organisation", OrgListHandler),
             (r"/organisation/new", OrgNewHandler),
@@ -346,9 +351,6 @@ class Application(tornado.web.Application):
             (r"/event/<id>/duplicate", EventDuplicateHandler),
             (r"/diary", DiaryHandler),
 
-            (r"/task/address", OrgListTaskAddressHandler),
-            (r"/task/visibility", OrgListTaskVisibilityHandler),
-
             (r"/address", AddressEntityListHandler),
             (r"/address/lookup", AddressLookupHandler),
             (r"/address/<id>/revision",
@@ -373,14 +375,12 @@ class Application(tornado.web.Application):
             (r"/event-tag/<id>/note/<id>",
              EventtagNoteHandler),
 
-            (r"/auth/register", AuthRegisterHandler),
-            (r"/auth/login", AuthLoginGoogleHandler),
-            (r"/auth/login/google", AuthLoginGoogleHandler),
-            (r"/auth/login/local", AuthLoginLocalHandler),
-            (r"/auth/visit", AuthVisitHandler),
-            (r"/auth/logout", AuthLogoutHandler),
-            (r"/history", HistoryHandler),
-            (r"/moderation/queue", ModerationQueueHandler),
+            (r"/note", NoteListHandler),
+            (r"/note/new", NoteNewHandler),
+            (r"/note/<id>", NoteHandler),
+            (r"/note/<id>/revision", NoteRevisionListHandler),
+            (r"/note/<id>/revision/<id>",
+             NoteRevisionHandler),
             ]
         
 

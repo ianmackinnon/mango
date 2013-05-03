@@ -133,10 +133,12 @@ class NoteHandler(BaseNoteHandler, MangoEntityHandlerMixin):
 
         obj = note.obj(
             public=public,
-            address_obj_list=address_list,
-            orgtag_obj_list=orgtag_list,
-            org_obj_list=org_list,
+            address_list=address_list,
+            orgtag_list=orgtag_list,
+            org_list=org_list,
+            linked=(address_list + orgtag_list + org_list or None),
             )
+
 
         version_url=None
         if self.moderator and self._count_note_history(note_id) > 1:

@@ -179,8 +179,8 @@ class OrgtagHandler(BaseOrgtagHandler,
 
         obj = orgtag.obj(
             public=public,
-            org_obj_list=org_list,
-            note_obj_list=note_list,
+            org_list=org_list,
+            note_list=note_list,
             note_count=note_count,
             )
 

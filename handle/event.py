@@ -246,10 +246,10 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
 
         obj = event.obj(
             public=public,
-            org_obj_list=org_list,
-            address_obj_list=address_list,
-            eventtag_obj_list=eventtag_list,
-            note_obj_list=note_list,
+            org_list=org_list,
+            address_list=address_list,
+            eventtag_list=eventtag_list,
+            note_list=note_list,
             note_count=note_count,
             )
 
@@ -441,7 +441,6 @@ class EventAddressListHandler(BaseEventHandler, BaseAddressHandler):
             'address.html',
             address=None,
             entity=obj,
-            entity_list="event_list",
             )
         
     @authenticated
@@ -599,7 +598,7 @@ class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
 
         obj = event.obj(
             public=public,
-            eventtag_obj_list=eventtag_list,
+            eventtag_list=eventtag_list,
             )
 
         # eventtag...
@@ -674,7 +673,7 @@ class EventOrgListHandler(BaseEventHandler, BaseOrgHandler):
 
         obj = event.obj(
             public=public,
-            org_obj_list=org_list,
+            org_list=org_list,
             )
 
         del org_list

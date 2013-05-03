@@ -59,7 +59,7 @@ class OrgaliasHandler(BaseOrgaliasHandler):
 
         obj = orgalias.obj(
             public=public,
-            org_obj=orgalias.org.obj(public=public),
+            org=orgalias.org.obj(public=public),
             )
 
         if self.accept_type("json"):
