@@ -13,6 +13,10 @@ from subprocess import Popen, PIPE
 from tornado.web import StaticFileHandler, HTTPError
 
 class GenerateHandler(StaticFileHandler):
+    def initialize(self, path, default_filename=None):
+        self.root = os.path.abspath(path) + os.path.sep
+        self.default_filename = default_filename
+
     def get(self, path, include_body=True):
         path = self.parse_url_path(path)
         abspath = os.path.abspath(os.path.join(self.root, path))

@@ -26,8 +26,6 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm.query import Query
 from sqlalchemy.exc import SQLAlchemyError
 
-from skin import skin
-
 import mysql.mysql_init
 
 from handle.base import BaseHandler, authenticated, sha1_concat
@@ -76,10 +74,14 @@ from model_v import Org_v, Event_v, Address_v, Note_v
 
 define("port", default=8802, help="Run on the given port", type=int)
 define("root", default='', help="URL root", type=unicode)
-define("skin", default=True, help="Enable skin. 0 or 1. Default is 1.", type=bool)
+define("skin", default=u"default", help="skin with the given style", type=unicode)
 define("database", default="sqlite", help="Either 'sqlite' or 'mysql'. Default is 'sqlite'.", type=str)
 define("conf", default=".mango.conf", help="eg. .mango.conf", type=str)
 define("log", default=None, help="Log directory. Write permission required. Logging is disabled if this option is not set.", type=unicode)
+
+forwarding_server_list = [
+    "127.0.0.1",
+    ]
 
 
 
@@ -195,6 +197,10 @@ def url_type_id(text):
 
 class Application(tornado.web.Application):
 
+    name = u"mango"
+    sqlite_path = u"mango.db"
+    max_age = 86400 * 365 * 10  # 10 years
+
     session_cookie_name = "s"
 
     def load_cookie_secret(self):
@@ -217,33 +223,6 @@ class Application(tornado.web.Application):
                     return True
         return False
 
-    def skin_variable(self, name):
-        if not self.skin:
-            return None
-
-        def skin_key(key):
-            return "skin:%s" % key
-
-        value = self.cache.get(skin_key(name))
-        if value:
-            return value
-        cache_period = 60 * 15;  # 15 minutes
-        values = skin.variable(name) # May return multiple values.
-        for key, value in values.items():
-            self.cache.set(skin_key(key), value, cache_period)
-        value = values.get(name, None)
-        if not value:
-            return
-        return value
-                
-    def skin_variables(self, *args):
-        variables = []
-        for arg in args:
-            variables.append(self.skin_variable(arg))
-        return variables
-
-            
-        
     def cache_namespace(self, offset=""):
         return sha1_concat(
             sys.version,
@@ -282,8 +261,6 @@ class Application(tornado.web.Application):
         self.cache.set_namespace(namespace)
 
     def __init__(self):
-        self.load_cookie_secret()
-
         def handle_id(text):
             return int(text)
 
@@ -383,22 +360,21 @@ class Application(tornado.web.Application):
              NoteRevisionHandler),
             ]
         
-
         self.handlers = self.process_handlers(self.handlers)
 
-        self.skin = options.skin
+        settings = {
+            "static_path": os.path.join(os.path.dirname(__file__), "static"),
+            }
 
-        self.url_root = options.root
-        if not self.url_root.startswith('/'):
-            self.url_root = '/' + self.url_root
-        if not self.url_root.endswith('/'):
-            self.url_root = self.url_root + '/'
+        # Authentication & Cookies
 
-        settings = dict(
+        self.load_cookie_secret()
+        settings.update(dict(
             xsrf_cookies=True,
             cookie_secret=self.cookie_secret,
-            login_url=self.url_root + "auth/login",
-            )
+            ))
+
+        # Database & Cache
 
         if options.database == "mysql":
             (database,
@@ -407,23 +383,24 @@ class Application(tornado.web.Application):
             self.database_namespace = 'mysql://%s' % database
             connection_url = 'mysql://%s:%s@localhost/%s?charset=utf8' % (
                 admin_username, admin_password, database)
-        else:
-            database = "mango.db"
+        elif options.database == "sqlite":
+            database = self.sqlite_path
             self.database_namespace = 'sqlite:///%s' % database
             connection_url = 'sqlite:///%s' % database
+        else:
+            print "database options are sqlite and mysql."
+            sys.exit(1)
 
         engine = create_engine(
             connection_url,
-            #echo=True,
             )
 
         if options.database == "mysql":
             self.database_mtime = datetime.datetime.utcnow()
         else:
-            self.database_mtime = \
-                datetime.datetime.utcfromtimestamp(
+            self.database_mtime = datetime.datetime.utcfromtimestamp(
                 os.path.getmtime(database))
-
+            
         self.cache = RedisCache(
             self.cache_namespace(self.database_mtime.isoformat()))
 
@@ -433,15 +410,12 @@ class Application(tornado.web.Application):
                 query_cls=SafeQueryClass(),
                 ))
 
+        # Logging
 
-        self.lookup = TemplateLookup(directories=['template'],
-                                     input_encoding='utf-8',
-                                     output_encoding='utf-8',
-                                     default_filters=["unicode", "h"],
-                                     )
-
-        self.log_path = None
-        self.log_handler = None
+        self.log_path_uri = None
+        self.log_uri = logging.getLogger(u'%s.uri' % self.name)
+        self.log_uri.propagate = False
+        self.log_uri.setLevel(logging.INFO)
         if options.log:
             options.log = options.log.decode("utf-8")
             try:
@@ -450,29 +424,46 @@ class Application(tornado.web.Application):
                 if e.errno != errno.EEXIST:
                     raise e
 
-            self.log_path = os.path.join(
+            self.log_uri_path = os.path.join(
                 options.log,
-                'mango.log'
+                u'%s.uri.log' % self.name
                 )
 
-            self.log_handler = logging.handlers.TimedRotatingFileHandler(
-                self.log_path,
-                when="midnight",
-                encoding="utf-8",
-                backupCount=7,
-                utc=True
+            self.log_uri.addHandler(
+                logging.handlers.TimedRotatingFileHandler(
+                    self.log_uri_path,
+                    when="midnight",
+                    encoding="utf-8",
+                    backupCount=7,
+                    utc=True
+                    )
                 )
+        else:
+            self.log_uri.addHandler(logging.NullHandler())
 
-        self.logger = logging.getLogger()
-        if self.log_handler:
-            self.logger.addHandler(self.log_handler)
+        # Skin & Templates
 
-        settings["xsrf_cookies"] = False
-        
+        try:
+            self.skin = __import__("skin.%s" % (options.skin),
+                                   globals(), locals(), ["load"])
+        except ImportError as e:
+            sys.stdout.write("Fatal: Skin '%s' not found.\n" % options.skin)
+            sys.exit(1)
+
+        self.lookup = TemplateLookup(
+            directories=['template'],
+            input_encoding='utf-8',
+            output_encoding='utf-8',
+            default_filters=["unicode", "h"],
+            )
+
+        # HTTP Server
+
         tornado.web.Application.__init__(self, self.handlers, **settings)
 
-        self.logger.info("""Mapping Application for NGOs (mango) running on port %d.""" % (options.port))
+        print u"Mapping Application for NGOs (mango) running on port %d." % options.port
         
+
 
 def main():
     tornado.options.parse_command_line()

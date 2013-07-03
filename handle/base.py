@@ -17,6 +17,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql.expression import exists, and_, or_
 from mako import exceptions
+
 from tornado.web import authenticated as tornado_authenticated, RequestHandler, HTTPError
 
 import geo
@@ -157,6 +158,7 @@ class BaseHandler(RequestHandler):
         self.messages = []
         self.scripts = []
         RequestHandler.__init__(self, *args, **kwargs)
+        self.url_root = self.request.headers.get(u"X-Forwarded-Root", "/")
         self.has_javascript = bool(self.get_cookie("j"))
         self.set_parameters()
         self.next = self.get_argument("next", None)
@@ -236,6 +238,9 @@ class BaseHandler(RequestHandler):
                     return
         RequestHandler.write_error(self, status_code, **kwargs)
 
+    def get_login_url(self):
+        return self.url_root + "auth/login"
+
     def delete_current_user(self):
         self._current_user = None
 
@@ -291,7 +296,7 @@ class BaseHandler(RequestHandler):
         arguments.update(options)
         uri = self.request.path
         if uri.startswith("/"):
-            uri = self.application.url_root + uri[1:]
+            uri = self.url_root + uri[1:]
         uri += "?" + urlencode(arguments, True)
         return uri
 
@@ -319,8 +324,8 @@ class BaseHandler(RequestHandler):
         
         scheme, netloc, path, query, fragment = urlparse.urlsplit(uri)
 
-        if path.startswith("/") and not path.startswith(self.application.url_root):
-            path = self.application.url_root + path[1:]
+        if path.startswith("/") and not path.startswith(self.url_root):
+            path = self.url_root + path[1:]
 
         arguments = parameters.copy()
 
@@ -362,14 +367,43 @@ class BaseHandler(RequestHandler):
                 self.next or default_url or '/'
                 ))
 
+    def static_url(self, path, include_host=None):
+        url = RequestHandler.static_url(self, path, include_host)
+        return self.url_root[:-1] + url
+
     def render(self, template_name, **kwargs):
+        def purge(a, b):
+            if b:
+                a[:] = filter(lambda x: x not in b, a)
+            
+        scripts1 = ["jquery.min.js", "jquery-ui/jquery-ui.min.js", "tag-it.js", "underscore-min.js", "backbone-min.js", "markdown.js", "jquery.history.js", "jquery.ui.timepicker.js"]
+        scripts2 = ["geobox.js", "mango.js"]
+        scripts3 = ["map.js", "address.js", "tag.js", "event.js", "org.js"]
+        stylesheets = ["jquery-ui/jquery-ui.css", "tag-it.css", "jquery.ui.timepicker.css", "style.css"]
+        purge(scripts1, self.application.skin.scripts())
+        purge(stylesheets, self.application.skin.stylesheets())
+
+        components = self.application.skin.load(
+            static_url=self.static_url,
+            url_root=self.url_root,
+            title=u"CAAT Mapping Application",
+            stylesheets=stylesheets,
+            )
+
         mako_template = self.application.lookup.get_template(template_name)
 
         kwargs.update({
+                "url_root": self.url_root,
+                "static_url": self.static_url,
+                "scripts1": scripts1,
+                "scripts2": scripts2,
+                "scripts3": scripts3,
+                "header": components["header"],
+                "footer": components["footer"],
+
                 "geo_in": self.geo_in,
                 "next": self.next,
                 "messages": self.messages,
-                "scripts": self.scripts,
                 "newline": newline,
                 "newline_comma": newline_comma,
                 "nbsp": nbsp,
@@ -391,8 +425,6 @@ class BaseHandler(RequestHandler):
                 "url_rewrite": self.url_rewrite,
                 "parameters": self.parameters,
                 "parameters_json": json.dumps(self.parameters),
-                "url_root": self.application.url_root,
-                "skin_variables": self.application.skin_variables,
                 })
 
         try:
@@ -744,10 +776,6 @@ class BaseHandler(RequestHandler):
     @property
     def cache(self):
         return self.application.cache
-
-    @property
-    def url_root(self):
-        return self.application.url_root
 
 
 
