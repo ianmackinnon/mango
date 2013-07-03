@@ -40,7 +40,7 @@ if obj:
 %>
 
   %if moderator and (parameters.get("view", None) == "edit"):
-  <div class="box left" id="tag-form">
+  <div class="mango-box left" id="tag-form">
     <form
        class="mango"
        action="${url_rewrite(action)}"
@@ -84,7 +84,7 @@ if obj:
 
   </div>
 
-  <div class="box right">
+  <div class="mango-box right">
     <h3>Suggested existing tags</h3>
     <ul id="tag_list" class="tag_list" class="block-right">
     </ul>
@@ -95,7 +95,7 @@ if obj:
 </div>
 
 %if obj:
-<div class="box full" id="tag-links">
+<div class="mango-box full" id="tag-links">
   %if obj and type_entity_list in obj:
   <div>
     <h3>${type_title_plural} (${len(obj[type_entity_list])})</h3>

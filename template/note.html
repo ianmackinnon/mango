@@ -49,7 +49,7 @@ New Note
 ${note_form(obj=obj, entity=entity, next=next)}
 %endif
 
-<div class="box full">
+<div class="mango-box full">
   %if moderator and (parameters.get("view", None) == "edit"):
   <div class="action-bar no-border">
     <h3>Preview</h3>
@@ -83,7 +83,7 @@ elif obj:
     action = obj["url"]
 %>
 
-<div class="box full" id="note-form">
+<div class="mango-box full" id="note-form">
   <div class="form-hint">
     <p>Enter note text and source using <a href='http://daringfireball.net/projects/markdown/syntax'>Markdown syntax</a>.</p>
   </div>

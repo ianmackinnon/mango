@@ -25,6 +25,9 @@
     </a>
     %if user.moderator:
     | Moderator
+    %if user.locked:
+    (Locked)
+    %endif
     %endif
   </li>
   % endfor

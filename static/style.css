@@ -133,12 +133,12 @@ form.mango input[disabled="disabled"]
 
 /* page */
 
-#page
+#mango-page
 {
     clear: both;
 }
 
-#mango div.box
+#mango div.mango-box
 {
     width: 390px;
 
@@ -148,18 +148,18 @@ form.mango input[disabled="disabled"]
     padding: 2px;
 }
 
-#mango div.box.full
+#mango div.mango-box.full
 {
     float: left;
     width: 765px;
 }
 
-#mango div.box.left
+#mango div.mango-box.left
 {
     float: left;
 }
 
-#mango div.box.right
+#mango div.mango-box.right
 {
     width: 365px;
     float: right;
