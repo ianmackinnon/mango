@@ -60,7 +60,7 @@ def multi_merge(orm, org_id_list):
         sys.exit(1)
 
     for o, org in enumerate(org_list):
-        print o, org.name
+        print o, org.name.encode("utf-8")
     print
     print "Choose merge target number or non-numeric to exit: ",
 
