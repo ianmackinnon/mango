@@ -2,7 +2,9 @@
 
 Mapping Application for NGOs
 
+
 ## Installation
+
 
 ### Package dependencies (Ubuntu)
 
@@ -15,13 +17,14 @@ If you're using a virtual Python environment, repace 'pip' below with the path t
     sudo pip install \
       Mako tornado sqlalchemy markdown redis pysqlite BeautifulSoup4 \
       python-levenshtein mysql-python python-memcached BeautifulSoup \
-      httplib2
+      httplib2 MySQLdb pyelasticsearch
 
 Install 'geopy' from the GitHub repository, because we need Google Maps API v3 support which is not yet in the release version.
 
-    sudo pip install install https://github.com/geopy/geopy/tarball/master
+    sudo pip install https://github.com/geopy/geopy/tarball/master
       
     sudo npm install -g jslint
+
 
 ### 3rd party static content
 
@@ -35,8 +38,16 @@ Expand to vendor directory
     
     unzip jquery-ui-*.custom.zip -d vendor
 
+
+### Build
+
 Now make:
 
     make
+
+And follow any instructions
+
+
+## Launch
 
     ./mango.py

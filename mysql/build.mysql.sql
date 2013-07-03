@@ -2,7 +2,6 @@
 
 -- Full text search
 
-alter table note_fts engine = myisam;
 alter table note_fts add fulltext(content);
 
 

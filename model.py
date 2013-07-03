@@ -6,8 +6,6 @@ import sys
 import math
 import time
 import logging
-import mysql.mysql_init
-
 from hashlib import sha1, md5
 from optparse import OptionParser
 from urllib import urlencode
@@ -28,6 +26,10 @@ from sqlalchemy.dialects.mysql import LONGTEXT, DOUBLE, VARCHAR
 
 import geo
 
+from mysql import mysql
+
+
+
 log = logging.getLogger('model')
 
 Base = declarative_base()
@@ -38,11 +40,12 @@ Unicode = lambda : UnicodeOrig
 StringKey = lambda : StringOrig
 UnicodeKey = lambda : UnicodeOrig
 
+mysql_conf_path = ".mango.conf"
+
 
 
 def use_mysql():
     global Float, String, Unicode, StringKey, UnicodeKey
-    print "use mysql"
     Float = lambda : DOUBLE()
     String = lambda : LONGTEXT(charset="latin1", collation="latin1_swedish_ci")
     Unicode = lambda : LONGTEXT(charset="utf8", collation="utf8_bin")
@@ -56,27 +59,22 @@ if __name__ == '__main__':
     log.addHandler(logging.StreamHandler())
     log.setLevel(logging.WARNING)
 
-    usage = """%prog [SQLITE]
+    usage = """%%prog [SQLITE]
 
 SQLITE :  Destination SQLite database. If not supplied, you must
-          specify MySQL credentials in your .mango.conf"""
+          specify MySQL credentials in '%s'.""" % mysql_conf_path
 
     parser = OptionParser(usage=usage)
-    parser.add_option("-v", "--verbose", action="store_true", dest="verbosity",
-                      help="Print verbose information for debugging.",
-                      default=None)
-    parser.add_option("-q", "--quiet", action="store_false", dest="verbosity",
-                      help="Suppress warnings.", default=None)
-    parser.add_option("-c", "--configuration", action="store",
-                      dest="configuration", help=".conf file.",
-                      default=".mango.conf")
+    parser.add_option("-v", "--verbose", action="count", dest="verbose",
+                      help="Print verbose information for debugging.", default=0)
+    parser.add_option("-q", "--quiet", action="count", dest="quiet",
+                      help="Suppress warnings.", default=0)
 
     (options, args) = parser.parse_args()
+    args = [arg.decode(sys.getfilesystemencoding()) for arg in args]
 
-    if options.verbosity:
-        log.setLevel(logging.INFO)
-    elif options.verbosity is False:
-        log.setLevel(logging.ERROR)
+    log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[max(0, min(3, 1 + options.verbose - options.quiet))]
+    log.setLevel(log_level)
 
     if len(args) == 1:
         # SQLite
@@ -84,12 +82,9 @@ SQLITE :  Destination SQLite database. If not supplied, you must
         connection_url = 'sqlite:///' + sql_db
     else:
         # MySQL
-        (database,
-         app_username, app_password,
-         admin_username, admin_password) = mysql.mysql_init.get_conf(
-            options.configuration)
+        options = mysql.get_conf(mysql_conf_path)
         connection_url = 'mysql://%s:%s@localhost/%s?charset=utf8' % (
-            admin_username, admin_password, database)
+            options.admin_username, options.admin_password, options.database)
         use_mysql()
 
 
@@ -269,7 +264,7 @@ class MangoEntity(object):
         return getattr(self, self.entity_id.key, None)
 
     @property
-    def entity_id_v_value(self):
+    def entity_v_id_value(self):
         return getattr(self, self.entity_v_id.key, None)
 
 
