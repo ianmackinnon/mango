@@ -506,13 +506,8 @@ class OrgNoteListHandler(BaseOrgHandler, BaseNoteHandler):
             raise HTTPError(404)
 
         org = self._get_org(org_id)
+        note = self._create_note()
 
-        text, source, public = BaseNoteHandler._get_arguments(self)
-        
-        note = Note(text, source,
-                    moderation_user=self.current_user,
-                    public=public,
-                    )
         org.note_list.append(note)
         self.orm_commit()
         return self.redirect_next(org.url)
