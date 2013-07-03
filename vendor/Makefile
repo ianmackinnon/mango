@@ -46,7 +46,7 @@ jquery-$(JQUERY_VERSION).min.js:
 	wget http://code.jquery.com/$@ -O $@ || rm -f $@
 
 jquery.history.js:
-	wget https://raw.github.com/balupton/history.js/master/scripts/bundled/html4+html5/jquery.history.js -O $@ || rm -f $@
+	wget https://raw.github.com/browserstate/history.js/master/scripts/bundled/html4+html5/jquery.history.js -O $@ || rm -f $@
 
 jquery.ui.timepicker.js:
 	wget https://raw.github.com/fgelinas/timepicker/master/$@ -O $@ || rm -f $@
