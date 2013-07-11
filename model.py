@@ -207,7 +207,7 @@ class MangoEntity(object):
                 return False
         return True
 
-    def content_copy(self, other, user, publis=True):
+    def content_copy(self, other, user, public=True):
         extra = public and ["public"] or []
         for name in self.content + extra:
             setattr(self, name, getattr(other, name))

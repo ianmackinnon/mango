@@ -4,7 +4,7 @@ from sqlalchemy.sql import func
 
 from base import BaseHandler, MangoBaseEntityHandlerMixin
 
-from model import short_name
+from model import short_name, detach
 
 
 
@@ -14,6 +14,44 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
     tag_id = None
     entity_id = None
     cross_table = None
+    tag_type = None
+
+    def _get_tag(self, tag_id, options=None):
+        query = self.orm.query(self.Tag)\
+            .filter(getattr(self.Tag, self.tag_id)==tag_id)
+
+        if not self.moderator:
+            query = query \
+                .filter_by(public=True)
+
+        if options:
+            query = query \
+                .options(*options)
+
+        try:
+            tag = query.one()
+        except NoResultFound:
+            raise HTTPError(404, "%d: No such orgtag" % orgtag_id)
+
+        return tag
+
+    def _create_tag(self, id_=None):
+        name, public = self._get_arguments()
+
+        moderation_user = self.current_user
+
+        tag = self.Tag(
+            name,
+            moderation_user=moderation_user, public=public,)
+
+        if id_:
+            setattr(tag, self.tag_id, id_)
+
+        detach(tag)
+
+        return tag
+
+        
 
     def _get_arguments(self):
         is_json = self.content_type("application/json")

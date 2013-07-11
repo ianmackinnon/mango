@@ -12,7 +12,7 @@ import Levenshtein
 
 from optparse import OptionParser
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
@@ -27,19 +27,30 @@ log = logging.getLogger('insert_organisation')
 
 
 
-names = None
+def text_to_ngrams(text, size=5):
+    ngrams = []
+    for word in text.lower().split():
+        length = len(word)
+        space = u" " * (size - 1)
+        word = space + word + space
+        for i in xrange(length + size - 1):
+            ngrams.append(word[i: i + size])
+    return ngrams
 
 
 
 def get_names(orm):
-    global names
-    names = set()
-    records = orm.query(Org.name).all()
-    for record in records:
-        names.add((record.name, None))
-    orgalias_list = orm.query(Orgalias).all()
-    for orgalias in orgalias_list:
-        names.add((orgalias.name, orgalias.org.name))
+    names = {}
+    for org in orm.query(Org).all():
+        if not org.org_id in names:
+            names[org.org_id] = []
+        names[org.org_id].append(org.name)
+    for orgalias in orm.query(Orgalias).all():
+        org_id = orgalias.org.org_id
+        if not org_id in names:
+            names[org_id] = []
+        names[org_id].append(orgalias.name)
+    return names
 
 
 
@@ -94,26 +105,100 @@ def closest_names(name, names, orm):
         
 
 def get_org(orm, name):
+    name = name.lower()
+
+    query = orm.query(Org).filter(func.lower(Org.name)==name)
     try:
-        return orm.query(Org).filter_by(name=name).one()
+        return query.one()
     except NoResultFound:
         org = None
     except MultipleResultsFound:
         log.warning("Multiple results found for name '%s'." % name)
-        return orm.query(Org).filter_by(name=name).first()
+        return query.first()
         
+    query = orm.query(Orgalias).filter(func.lower(Orgalias.name)==name)
     try:
-        orgalias = orm.query(Orgalias).filter_by(name=name).one()
+        return query.one().org
     except NoResultFound:
         orgalias = None
     except MultipleResultsFound:
         log.warning("Multiple results found for alias '%s'." % name)
-        orgalias = orm.query(Orgalias).filter_by(name=name).first()
-
-    if orgalias:
-        return orgalias.org
+        return query.first().org
 
     return None
+
+
+
+def search(names, search_text):
+    org_id = None
+    text = search_text
+
+    while True:
+        ngrams = {}
+
+        sys.stderr.write((u"\nFind: '\033[92m%s\033[0m'\n\n" % (search_text)).encode("utf-8"))
+
+        for org_id, name_list in names.items():
+            length = len(name_list)
+            for name in name_list:
+                name_ngrams = text_to_ngrams(name)
+                for key in name_ngrams:
+                    if not key in ngrams:
+                        ngrams[key] = {}
+                    if not org_id in ngrams[key]:
+                        ngrams[key][org_id] = 0
+                    ngrams[key][org_id] += 1.0 / length
+
+        for key in ngrams:
+            total = sum([freq for org_id, freq in ngrams[key].items()])
+            weight = 1.0 / total
+            for org_id in ngrams[key]:
+                ngrams[key][org_id] *= weight
+
+        candidates = {}
+        text_ngrams = text_to_ngrams(text)
+        for key in text_ngrams:
+            if not key in ngrams:
+                continue
+            for org_id, freq in ngrams[key].items():
+                if not org_id in candidates:
+                    candidates[org_id] = 0
+                candidates[org_id] += freq
+
+        candidates = sorted(candidates.items(), key=lambda x: x[1], reverse=True)
+
+        candidates_2 = [candidate for candidate in candidates if candidate[1] > 1]
+        if candidates_2:
+            candidates = candidates_2
+
+        if not candidates_2:
+            log.warning("        Low\n")
+        for i, (org_id, freq) in enumerate(candidates[:10], 1):
+            sys.stderr.write("  %4d: \033[37m%s %s\033[0m\n" % (i, org_id, freq))
+            for name in names[org_id]:
+                sys.stderr.write((u"        \033[94m%s\033[0m\n" % name).encode("utf-8"))
+        sys.stderr.write("\n")
+        sys.stderr.write(" Empty: None of the above\n")
+        sys.stderr.write("  Text: Alternative search\n\n: ")
+        choice = raw_input()
+        if not len(choice):
+            org_id = None
+            break
+        sys.stderr.write("\n")
+        try:
+            choice = int(choice)
+        except ValueError:
+            text = choice
+            continue
+        if choice == 0:
+            org_id = "  "
+            break
+        if choice > len(candidates):
+            continue
+        org_id = candidates[choice - 1][0]
+        break
+
+    return org_id
 
 
 
@@ -122,19 +207,14 @@ def select_org(orm, name, user):
     if org:
         return org
 
-    if names == None:
-        get_names(orm)
-    
-    existing_name = closest_names(name, names, orm)
+    names = get_names(orm)
 
-    if not existing_name:
+    org_id = search(names, name)
+
+    if not org_id:
         return None
 
-    log.info((u"Chose name '%s'" % existing_name).encode("utf-8"))
-    org = get_org(orm, existing_name)
-
-    if not org:
-        return None
+    org = orm.query(Org).filter_by(org_id=org_id).one()
 
     orgalias = Orgalias(name, org, user, False)
 
@@ -202,7 +282,7 @@ def insert_fast(data, orm, public=None, tag_names=None, dry_run=None):
                 org.note_list.append(note)
         
         if not (orm.new or orm.dirty or orm.deleted):
-            log.warning("Nothing to commit.")
+            log.info("Nothing to commit.")
             continue
 
         if dry_run == True:

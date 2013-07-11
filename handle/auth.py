@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import re
+
 import tornado.auth
 
 from tornado.web import HTTPError
@@ -70,10 +72,6 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
 
         user = User.get_from_auth(self.orm, self.openid_url, auth_name)
 
-        print "A", user.locked
-        if user.locked:
-            raise HTTPError(400, "Account locked.")
-
         if not user:
             auth = Auth(self.openid_url, auth_name)
             user_name = unicode(auth_user["name"])
@@ -81,6 +79,9 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
             self.orm.add(user)
             self.orm.commit()
             self.next = "/user/%d" % user.user_id
+
+        if user and user.locked:
+            raise HTTPError(400, "Account locked.")
 
         session = Session(
                 user,
@@ -125,14 +126,25 @@ class AuthVisitHandler(BaseHandler):
 
 
 class AuthLogoutHandler(BaseHandler):
+    def path_is_authenticated(self, path):
+        if path.startswith(self.url_root):
+            path = "/" + path[len(self.url_root):]
+        for row in self.application.handlers:
+            key, value = row[:2]
+            if re.match(key, path) and hasattr(value, "get"):
+                if hasattr(value.get, "authenticated") and \
+                        value.get.authenticated == True:
+                    return True
+        return False
+
     def get(self):
         session = self.get_session()
         if session:
             session.close_commit()
         self.end_session()
         self.clear_cookie("_xsrf")
-        if self.next and self.application.path_is_authenticated(self.next):
-            self.next = self.application.url_root
+        if self.next and self.path_is_authenticated(self.next):
+            self.next = self.url_root
         return self.redirect_next()
 
 

@@ -9,7 +9,7 @@ from base import authenticated, \
 from base_tag import BaseTagHandler
 from note import BaseNoteHandler
 
-from model import Org, Orgtag, Note, org_orgtag, detach
+from model import Org, Orgtag, Note, org_orgtag
 
 
 
@@ -19,38 +19,7 @@ class BaseOrgtagHandler(BaseTagHandler):
     tag_id = "orgtag_id"
     entity_id = "org_id"
     cross_table = org_orgtag
-
-    def _get_orgtag(self, orgtag_id, options=None):
-        query = self.orm.query(Orgtag)\
-            .filter_by(orgtag_id=orgtag_id)
-
-        if not self.moderator:
-            query = query \
-                .filter_by(public=True)
-
-        if options:
-            query = query \
-                .options(*options)
-
-        try:
-            orgtag = query.one()
-        except NoResultFound:
-            raise HTTPError(404, "%d: No such orgtag" % orgtag_id)
-
-        return orgtag
-
-    def _create_orgtag(self):
-        name, public = BaseOrgtagHandler._get_arguments(self)
-
-        moderation_user = self.current_user
-
-        orgtag = Orgtag(
-            name,
-            moderation_user=moderation_user, public=public,)
-
-        detach(orgtag)
-
-        return orgtag
+    tag_type = "orgtag"
 
     def _get_full_orgtag_list(self):
         orgtag_and_org_count_list = \
@@ -71,11 +40,11 @@ class OrgtagListHandler(BaseOrgtagHandler,
                         MangoEntityListHandlerMixin):
     @property
     def _create(self):
-        return self._create_orgtag
+        return self._create_tag
 
     @property
     def _get(self):
-        return self._get_orgtag
+        return self._get_tag
 
     @authenticated
     def post(self):
@@ -130,11 +99,11 @@ class OrgtagHandler(BaseOrgtagHandler,
                     MangoEntityHandlerMixin):
     @property
     def _create(self):
-        return self._create_orgtag
+        return self._create_tag
 
     @property
     def _get(self):
-        return self._get_orgtag
+        return self._get_tag
 
     def _before_delete(self, orgtag):
         if orgtag.org_list:
@@ -144,8 +113,15 @@ class OrgtagHandler(BaseOrgtagHandler,
     def put(self, entity_id):
         if not self.moderator:
             raise HTTPError(405)
+
+        old_entity = self._get(entity_id)
+        new_entity = self._create(entity_id)
+
+        if not old_entity.content_same(new_entity):
+            old_entity.content_copy(new_entity, self.current_user)
+            self.orm_commit()
         
-        return MangoEntityHandlerMixin.put(self, entity_id)
+        return self.redirect_next(old_entity.url)
         
     def get(self, orgtag_id):
         note_search = self.get_argument("note_search", None)
@@ -154,7 +130,7 @@ class OrgtagHandler(BaseOrgtagHandler,
 
         public = self.moderator
 
-        orgtag = self._get_orgtag(orgtag_id)
+        orgtag = self._get_tag(orgtag_id)
 
         org_list_query = self.orm.query(Org) \
             .join(org_orgtag) \
@@ -210,7 +186,7 @@ class OrgtagNoteListHandler(BaseOrgtagHandler, BaseNoteHandler):
         if not self.moderator:
             raise HTTPError(405)
 
-        orgtag = self._get_orgtag(orgtag_id)
+        orgtag = self._get_tag(orgtag_id)
 
         text, source, public = BaseNoteHandler._get_arguments(self)
 
@@ -224,7 +200,7 @@ class OrgtagNoteListHandler(BaseOrgtagHandler, BaseNoteHandler):
 
     @authenticated
     def get(self, orgtag_id): 
-        orgtag = self._get_orgtag(orgtag_id)
+        orgtag = self._get_tag(orgtag_id)
 
         obj = orgtag.obj(
             public=self.moderator,
@@ -243,7 +219,7 @@ class OrgtagNoteHandler(BaseOrgtagHandler, BaseNoteHandler):
         if not self.moderator:
             raise HTTPError(405)
 
-        orgtag = self._get_orgtag(orgtag_id)
+        orgtag = self._get_tag(orgtag_id)
         note = self._get_note(note_id)
         if note not in orgtag.note_list:
             orgtag.note_list.append(note)
@@ -255,7 +231,7 @@ class OrgtagNoteHandler(BaseOrgtagHandler, BaseNoteHandler):
         if not self.moderator:
             raise HTTPError(405)
 
-        orgtag = self._get_orgtag(orgtag_id)
+        orgtag = self._get_tag(orgtag_id)
         note = self._get_note(note_id)
         if note in orgtag.note_list:
             orgtag.note_list.remove(note)

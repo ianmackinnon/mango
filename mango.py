@@ -212,17 +212,6 @@ class Application(tornado.web.Application):
                 )
             sys.exit(1)
 
-    def path_is_authenticated(self, path):
-        if path.startswith(self.url_root):
-            path = "/" + path[len(self.url_root):]
-        for row in self.handler_list:
-            key, value = row[:2]
-            if re.match(key, path) and hasattr(value, "get"):
-                if hasattr(value.get, "authenticated") and \
-                        value.get.authenticated == True:
-                    return True
-        return False
-
     def cache_namespace(self, offset=""):
         return sha1_concat(
             sys.version,

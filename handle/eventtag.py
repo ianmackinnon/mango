@@ -9,7 +9,7 @@ from base import authenticated, \
 from base_tag import BaseTagHandler
 from note import BaseNoteHandler
 
-from model import Event, Eventtag, Note, event_eventtag, short_name, detach
+from model import Event, Eventtag, Note, event_eventtag, short_name
 
 
 
@@ -19,41 +19,7 @@ class BaseEventtagHandler(BaseTagHandler):
     tag_id = "eventtag_id"
     entity_id = "event_id"
     cross_table = event_eventtag
-
-    def _get_eventtag(self, eventtag_id, options=None):
-        query = self.orm.query(Eventtag)\
-            .filter_by(eventtag_id=eventtag_id)
-
-        if not self.moderator:
-            query = query \
-                .filter_by(public=True)
-
-        if options:
-            query = query \
-                .options(*options)
-
-        try:
-            eventtag = query.one()
-        except NoResultFound:
-            raise HTTPError(404, "%d: No such eventtag" % eventtag_id)
-
-        return eventtag
-
-    def _create_eventtag(self, id_=None):
-        name, public = BaseEventtagHandler._get_arguments(self)
-
-        moderation_user = self.current_user
-
-        eventtag = Eventtag(
-            name,
-            moderation_user=moderation_user, public=public,)
-
-        detach(eventtag)
-
-        if id_:
-            eventtag.eventtag_id = id_
-
-        return eventtag
+    tag_type = "eventtag"
 
     def _get_full_eventtag_list(self):
         eventtag_and_event_count_list = \
@@ -74,11 +40,11 @@ class EventtagListHandler(BaseEventtagHandler,
                           MangoEntityListHandlerMixin):
     @property
     def _create(self):
-        return self._create_eventtag
+        return self._create_tag
 
     @property
     def _get(self):
-        return self._get_eventtag
+        return self._get_tag
 
     @authenticated
     def post(self):
@@ -133,11 +99,11 @@ class EventtagHandler(BaseEventtagHandler,
                       MangoEntityHandlerMixin):
     @property
     def _create(self):
-        return self._create_eventtag
+        return self._create_tag
 
     @property
     def _get(self):
-        return self._get_eventtag
+        return self._get_tag
 
     def _before_delete(self, eventtag):
         if eventtag.event_list:
@@ -147,8 +113,15 @@ class EventtagHandler(BaseEventtagHandler,
     def put(self, entity_id):
         if not self.moderator:
             raise HTTPError(405)
+
+        old_entity = self._get(entity_id)
+        new_entity = self._create(entity_id)
+
+        if not old_entity.content_same(new_entity):
+            old_entity.content_copy(new_entity, self.current_user)
+            self.orm_commit()
         
-        return MangoEntityHandlerMixin.put(self, entity_id)
+        return self.redirect_next(old_entity.url)
         
     def get(self, eventtag_id):
         note_search = self.get_argument("note_search", None)
@@ -157,7 +130,7 @@ class EventtagHandler(BaseEventtagHandler,
 
         public = self.moderator
 
-        eventtag = self._get_eventtag(eventtag_id)
+        eventtag = self._get_tag(eventtag_id)
 
         event_list_query = self.orm.query(Event) \
             .join(event_eventtag) \
@@ -213,7 +186,7 @@ class EventtagNoteListHandler(BaseEventtagHandler, BaseNoteHandler):
         if not self.moderator:
             raise HTTPError(405)
 
-        eventtag = self._get_eventtag(eventtag_id)
+        eventtag = self._get_tag(eventtag_id)
 
         text, source, public = BaseNoteHandler._get_arguments(self)
 
@@ -227,7 +200,7 @@ class EventtagNoteListHandler(BaseEventtagHandler, BaseNoteHandler):
 
     @authenticated
     def get(self, eventtag_id): 
-        eventtag = self._get_eventtag(eventtag_id)
+        eventtag = self._get_tag(eventtag_id)
 
         obj = eventtag.obj(
             public=self.moderator,
@@ -246,7 +219,7 @@ class EventtagNoteHandler(BaseEventtagHandler, BaseNoteHandler):
         if not self.moderator:
             raise HTTPError(405)
 
-        eventtag = self._get_eventtag(eventtag_id)
+        eventtag = self._get_tag(eventtag_id)
         note = self._get_note(note_id)
         if note not in eventtag.note_list:
             eventtag.note_list.append(note)
@@ -258,7 +231,7 @@ class EventtagNoteHandler(BaseEventtagHandler, BaseNoteHandler):
         if not self.moderator:
             raise HTTPError(405)
 
-        eventtag = self._get_eventtag(eventtag_id)
+        eventtag = self._get_tag(eventtag_id)
         note = self._get_note(note_id)
         if note in eventtag.note_list:
             eventtag.note_list.remove(note)
