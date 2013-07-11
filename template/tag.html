@@ -79,7 +79,7 @@ if obj:
     </form>
 
     %if obj and type_entity_list in obj and not obj[type_entity_list]:
-    ${self.mini.delete_input(obj, next="/%s-tag" % type_url)}
+    ${self.mini.delete_input(obj, next_="/%s-tag" % type_url)}
     %endif
 
   </div>
