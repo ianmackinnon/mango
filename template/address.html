@@ -1,5 +1,6 @@
 <%inherit file="base.html"/>
 
+
 <%def name="title()">
 %if entity:
 ${entity["name"]} | address
@@ -16,12 +17,10 @@ Address ${obj["id"]}
 
 <h1>
 %if entity:
-<h1>
   <a
      href="${url_rewrite(entity["url"])}"
      >${entity["name"]}</a>
   | address
-</h1>
 %else:
 <a
    href="${url_rewrite(obj["url"])}"

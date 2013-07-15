@@ -129,7 +129,7 @@ def get_org(orm, name):
 
 
 
-def search(names, search_text):
+def search(names, search_text, just_search=False):
     org_id = None
     text = search_text
 
@@ -180,6 +180,8 @@ def search(names, search_text):
         sys.stderr.write("\n")
         sys.stderr.write(" Empty: None of the above\n")
         sys.stderr.write("  Text: Alternative search\n\n: ")
+        if just_search:
+            return
         choice = raw_input()
         if not len(choice):
             org_id = None
@@ -316,6 +318,10 @@ if __name__ == "__main__":
                       dest="public", type=int,
                       help="Public state of new items (True, False, None).",
                       default=None)
+    parser.add_option("-s", "--search", action="store_true",
+                      dest="search",
+                      help="Search string using import merge tool.",
+                      default=None)
     parser.add_option("-n", "--dry-run", action="store_true", dest="dry_run",
                       help="Dry run.", default=None)
 
@@ -347,6 +353,12 @@ if __name__ == "__main__":
 
     if options.public != None:
         options.public = bool(options.public)
+
+    if options.search:
+        names = get_names(orm)
+        for arg in args:
+            search(names, arg, just_search=True)
+        sys.exit(0)
 
     for arg in args:
         try:

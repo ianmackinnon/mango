@@ -247,9 +247,14 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
         if self.accept_type("json"):
             self.write_json(obj)
         else:
+            entity = None
+            if obj:
+                parent_list = obj["org_list"] + obj["event_list"]
+                entity = len(parent_list) == 1 and parent_list[0] or None
             self.render(
                 'address.html',
                 obj=obj,
+                entity=entity,
                 edit_block=edit_block,
                 note_search=note_search,
                 note_order=note_order,

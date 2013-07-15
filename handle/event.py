@@ -630,7 +630,7 @@ class EventEventtagHandler(BaseEventHandler, BaseEventtagHandler):
             raise HTTPError(405)
 
         event = self._get_event(event_id)
-        eventtag = self._get_eventtag(eventtag_id)
+        eventtag = self._get_tag(eventtag_id)
         if eventtag not in event.eventtag_list:
             event.eventtag_list.append(eventtag)
             self.orm_commit()
@@ -642,7 +642,7 @@ class EventEventtagHandler(BaseEventHandler, BaseEventtagHandler):
             raise HTTPError(405)
 
         event = self._get_event(event_id)
-        eventtag = self._get_eventtag(eventtag_id)
+        eventtag = self._get_tag(eventtag_id)
         if eventtag in event.eventtag_list:
             event.eventtag_list.remove(eventtag)
             self.orm_commit()

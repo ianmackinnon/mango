@@ -422,7 +422,7 @@ class OrgAddressListHandler(BaseOrgHandler, BaseAddressHandler):
 
         self.render(
             'address.html',
-            address=None,
+            obj=None,
             entity=obj,
             )
         
@@ -611,7 +611,7 @@ class OrgOrgtagHandler(BaseOrgHandler, BaseOrgtagHandler):
             raise HTTPError(405)
 
         org = self._get_org(org_id)
-        orgtag = self._get_orgtag(orgtag_id)
+        orgtag = self._get_tag(orgtag_id)
         if orgtag not in org.orgtag_list:
             org.orgtag_list.append(orgtag)
             self.orm_commit()
@@ -623,7 +623,7 @@ class OrgOrgtagHandler(BaseOrgHandler, BaseOrgtagHandler):
             raise HTTPError(405)
 
         org = self._get_org(org_id)
-        orgtag = self._get_orgtag(orgtag_id)
+        orgtag = self._get_tag(orgtag_id)
         if orgtag in org.orgtag_list:
             org.orgtag_list.remove(orgtag)
             self.orm_commit()
