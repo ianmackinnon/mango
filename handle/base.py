@@ -465,6 +465,8 @@ class BaseHandler(RequestHandler):
     def get_argument_restricted(self, name, fn, message,
                                 default=_ARG_DEFAULT_MANGO, json=False):
         value = self.get_argument(name, default, json)
+        if value == "":
+            value = default
 
         if value == default:
             if default is self._ARG_DEFAULT_MANGO:
