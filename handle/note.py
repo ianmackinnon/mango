@@ -136,7 +136,7 @@ class NoteHandler(BaseNoteHandler, MangoEntityHandlerMixin):
             address_list=address_list,
             orgtag_list=orgtag_list,
             org_list=org_list,
-            linked=(address_list + orgtag_list + org_list or None),
+            linked=(address_list + orgtag_list + org_list or []),
             )
 
 

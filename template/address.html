@@ -47,7 +47,7 @@ Address ${obj["id"]}
     </div>
 
 <%
-action = entity and "%s/address" % entity["url"] or obj["url"]
+action = (entity and not obj) and "%s/address" % entity["url"] or obj["url"]
 next = None
 if entity:
     next = entity["url"]

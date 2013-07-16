@@ -187,13 +187,7 @@ class OrgtagNoteListHandler(BaseOrgtagHandler, BaseNoteHandler):
             raise HTTPError(405)
 
         orgtag = self._get_tag(orgtag_id)
-
-        text, source, public = BaseNoteHandler._get_arguments(self)
-
-        note = Note(text, source,
-                    moderation_user=self.current_user,
-                    public=public,
-                    )
+        note = self._create_note()
         orgtag.note_list.append(note)
         self.orm_commit()
         return self.redirect_next(orgtag.url)

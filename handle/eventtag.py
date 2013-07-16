@@ -187,13 +187,7 @@ class EventtagNoteListHandler(BaseEventtagHandler, BaseNoteHandler):
             raise HTTPError(405)
 
         eventtag = self._get_tag(eventtag_id)
-
-        text, source, public = BaseNoteHandler._get_arguments(self)
-
-        note = Note(text, source,
-                    moderation_user=self.current_user,
-                    public=public,
-                    )
+        note = self._create_note()
         eventtag.note_list.append(note)
         self.orm_commit()
         return self.redirect_next(eventtag.url)
