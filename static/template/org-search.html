@@ -26,6 +26,10 @@
        value="<%= orgSearch.tag || "" %>"
        placeholder="Eg. missiles, tanks">
   </label>
+  <label name="tagAll">
+    <span>Match all tags</span>
+    <input type="checkbox" name="tagAll" value="1"<%=orgSearch.tagAll ? ' checked="checked"' : ''%>>
+  </label>
 </div>
 <div class="actions">
   <input type="submit" value="Submit">

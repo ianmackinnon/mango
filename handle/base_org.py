@@ -2,7 +2,7 @@
 
 from collections import OrderedDict
 
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, not_, exists
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func, literal
 from sqlalchemy.sql.expression import case
@@ -11,11 +11,10 @@ from tornado.web import HTTPError
 
 from base import BaseHandler, MangoBaseEntityHandlerMixin
 
-from model import User, Org, Address, Orgalias, Orgtag, detach
+from model import User, Org, Address, Orgalias, Orgtag, detach, org_orgtag
 
 from model_v import Org_v, \
     accept_org_address_v
-
 
 max_address_per_page = 26
 max_address_pages = 3
@@ -179,7 +178,9 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
     def _get_org_alias_search_query(
         self, name=None, name_search=None,
-        tag_name_list=None, visibility=None):
+        tag_name_list=None,
+        tag_all=False,
+        visibility=None):
 
         name_query = self._get_name_search_query(name, name_search, visibility)
         name_subquery = name_query.subquery()
@@ -189,11 +190,22 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
             .outerjoin(Orgalias, Orgalias.orgalias_id==name_subquery.c.orgalias_id)
         
         if tag_name_list:
-            org_alias_query = org_alias_query \
-                .join((Orgtag, Org.orgtag_list)) \
-                .filter(Orgtag.base_short.in_(tag_name_list))
-            org_alias_query = self.filter_visibility(
-                org_alias_query, Orgtag, visibility, secondary=True)
+            if tag_all:
+                for tag_name in tag_name_list:
+                    e1 = self.orm.query(org_orgtag) \
+                        .filter(org_orgtag.c.org_id==Org.org_id) \
+                        .join(Orgtag) \
+                        .filter(Orgtag.base_short==tag_name)
+                    e1 = self.filter_visibility(
+                        e1, Orgtag, visibility, secondary=True)
+                    org_alias_query = org_alias_query \
+                        .filter(exists(e1.statement))
+            else:
+                org_alias_query = org_alias_query \
+                    .join((Orgtag, Org.orgtag_list)) \
+                    .filter(Orgtag.base_short.in_(tag_name_list))
+                org_alias_query = self.filter_visibility(
+                    org_alias_query, Orgtag, visibility, secondary=True)
 
         return org_alias_query
 
@@ -201,6 +213,7 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
     def _get_org_packet_search(self, name=None, name_search=None,
                                tag_name_list=None,
+                               tag_all=False,
                                location=None,
                                visibility=None,
                                offset=None,
@@ -210,6 +223,7 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
             name=name,
             name_search=name_search,
             tag_name_list=tag_name_list,
+            tag_all=tag_all,
             visibility=visibility,
             )
 

@@ -723,7 +723,7 @@ div.ui-timepicker td a.ui-state-active
 #org-search label[name="tag"]
 {
     display: inline-block;
-    width: 585px; /* -4 * 2 */
+    width: 485px; /* -4 * 2 */
 }
 #org-search .inputs > label[name="tag"] > span,
 #org-search .inputs > label[name="nameSearch"] > span,
@@ -740,7 +740,7 @@ div.ui-timepicker td a.ui-state-active
     margin: 2px 0;
     border: 1px solid #ccc;
     padding: 0;
-    width: 532px;
+    width: 432px;
     min-height: 20px;
     vertical-align: bottom;
     border-radius: 2px;
@@ -762,7 +762,7 @@ div.ui-timepicker td a.ui-state-active
 #org-search label[name="tag"] input,
 #event-search label[name="tag"] input
 {
-    width: 524px;
+    width: 424px;
 }
 #org-search label[name="tag"] li.tagit-new input,
 #event-search label[name="tag"] li.tagit-new input

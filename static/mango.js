@@ -824,6 +824,24 @@ var m = {
     m.parameters.visibility = value;
   },
 
+  updateVisibilityButtons: function (url) {
+    if (url.toLowerCase().indexOf("visibility=") >= 0) {
+      url = url.replace(/visibility=[\w\-]*/gi, "");
+    }
+    $(".visibility-button").each(function () {
+      var $el = $(this);
+      var href;
+      var value = $el.attr("id").substring(11);
+      var visibility = "visibility=" + value;
+      if (url.indexOf("?") >= 0) {
+        href = url + "&" + visibility;
+      } else {
+        href = url + "?" + visibility;
+      }
+      $el.attr("href", href);
+    });
+  },
+
   visibility: function () {
     if (!m.currentUser) {
       return;
@@ -873,7 +891,6 @@ var m = {
     }],
 
     [/^\/organisation$/, function () {
-      console.log("A");
       m.initMap(function (mapView) {
         m.initOrgSearch(mapView);
         m.visibility();

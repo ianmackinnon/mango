@@ -344,6 +344,7 @@
       "location": [geoboxFactory, false, m.compareGeobox, m.ukGeobox, geoboxToString],
       "offset": [parseInt, false, null, 0, null],
       "tag": [m.argumentMulti, m.argumentMulti, m.compareUnsortedList, [], m.multiToString],
+      "tagAll": [m.argumentCheckbox, false, null, 0, m.checkboxToString],
       "visibility": [m.argumentVisibility, false, null, "public", null]
     },
 
@@ -471,6 +472,7 @@
         if (window.History.enabled) {
           window.History.pushState(null, null, url);
         }
+        m.updateVisibilityButtons(url);
       }
     },
 
@@ -628,7 +630,8 @@
       'change input[name="visibility"]': 'formChange',
       'change input[name="nameSearch"]': 'formChange',
       'change input[name="location"]': 'formChange',
-      'change label > input[name="tag"]': 'formChange'
+      'change label > input[name="tag"]': 'formChange',
+      'change input[name="tagAll"]': 'formChange'
     },
     limit: 26,  // Number of letters in the alphabet for map markers.
 
@@ -681,6 +684,16 @@
 
     },
 
+    changeTagAll: function () {
+      var tagAll = this.model.get("tagAll");
+      var tagAllVal = !!tagAll;
+      var $input = this.$el.find("input[name='tagAll']");
+
+      if ($input.prop('checked') !== tagAllVal) {
+        $input.prop('checked', tagAllVal);
+      }
+    },
+
     changeVisibility: function () {
       var visibility = this.model.get("visibility") || "public";
       m.setVisibility(visibility);
@@ -715,6 +728,7 @@
         "changeNameSearch",
         "changeLocation",
         "changeTag",
+        "changeTagAll",
         "changeOffset",
         "changeVisibility",
         "onModelRequest",
@@ -723,6 +737,7 @@
       this.model.bind("change:nameSearch", this.changeNameSearch);
       this.model.bind("change:location", this.changeLocation);
       this.model.bind("change:tag", this.changeTag);
+      this.model.bind("change:tagAll", this.changeTagAll);
       this.model.bind("change:offset", this.changeOffset);
       this.model.bind("change:visibility", this.changeVisibility);
       this.model.bind("request", this.onModelRequest);
@@ -874,13 +889,17 @@
         $el = this.$el;
       }
       var arr = $el.serializeArray();
-      return _(arr).reduce(function (acc, field) {
+      var data = _(arr).reduce(function (acc, field) {
         acc[field.name] = field.value;
         if (!field.value) {
           acc[field.name] = null;
         }
         return acc;
       }, {});
+      if (!data.hasOwnProperty("tagAll")) {
+        data["tagAll"] = false;
+      }
+      return data;
     },
 
     send: function (cache) {

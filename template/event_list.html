@@ -48,6 +48,10 @@ if location:
            value="${tag_name_list and ", ".join([short for short in tag_name_list]) or ""}"
            placeholder="Eg. protest, vigil, meeting">
       </label>
+      <label name="tagAll">
+        <span>Match all tags</span>
+        <input type="checkbox" name="tagAll" value="1"${tag_all and ' checked="checked"' or ''}>
+      </label>
     </div>
     <div class="actions">
       <input type="submit" value="Submit">

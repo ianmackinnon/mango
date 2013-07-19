@@ -4,14 +4,14 @@ import datetime
 
 from collections import OrderedDict
 
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, not_, exists
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
 from tornado.web import HTTPError
 
 from base import BaseHandler, MangoBaseEntityHandlerMixin
 
-from model import User, Event, Address, Eventtag, detach
+from model import User, Event, Address, Eventtag, detach, event_eventtag
 
 from model_v import Event_v, \
     accept_event_address_v
@@ -130,7 +130,9 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
     def _get_event_search_query(
         self, name=None, name_search=None,
-        tag_name_list=None, visibility=None):
+        tag_name_list=None,
+        tag_all=False,
+        visibility=None):
         
         event_query = self.orm.query(Event)
         event_query = self.filter_visibility(event_query, Event, visibility)
@@ -144,8 +146,23 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                 .filter(name_column.contains(name_value))
 
         if tag_name_list:
-            event_query = event_query.join((Eventtag, Event.eventtag_list)) \
-                .filter(Eventtag.base_short.in_(tag_name_list))
+            if tag_all:
+                for tag_name in tag_name_list:
+                    e1 = self.orm.query(event_eventtag) \
+                        .filter(event_eventtag.c.event_id==Event.event_id) \
+                        .join(Eventtag) \
+                        .filter(Eventtag.base_short==tag_name)
+                    e1 = self.filter_visibility(
+                        e1, Eventtag, visibility, secondary=True)
+                    event_query = event_query \
+                        .filter(exists(e1.statement))
+            else:
+                event_query = event_query \
+                    .join((Eventtag, Event.eventtag_list)) \
+                    .filter(Eventtag.base_short.in_(tag_name_list))
+                event_query = self.filter_visibility(
+                    event_query, Eventtag, visibility, secondary=True)
+
             # order by?
 
         return event_query
@@ -155,6 +172,7 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
     def _get_event_packet_search(self, name=None, name_search=None,
                                  past=False,
                                  tag_name_list=None,
+                                 tag_all=False,
                                  location=None,
                                  visibility=None,
                                  offset=None,
@@ -162,7 +180,9 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
         event_query = self._get_event_search_query(
             name=name, name_search=name_search,
-            tag_name_list=tag_name_list, visibility=visibility)
+            tag_name_list=tag_name_list,
+            tag_all=tag_all,
+            visibility=visibility)
 
         date_start = None
         date_end = None

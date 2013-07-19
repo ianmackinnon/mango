@@ -30,6 +30,10 @@
        value="<%= eventSearch.tag || "" %>"
        placeholder="Eg. protest, vigil, meeting">
   </label>
+  <label name="tagAll">
+    <span>Match all tags</span>
+    <input type="checkbox" name="tagAll" value="1"<%=eventSearch.tagAll ? ' checked="checked"' : ''%>>
+  </label>
 </div>
 <div class="actions">
   <input type="submit" value="Submit">

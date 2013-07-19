@@ -44,13 +44,14 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
         return self._get_event
 
     @staticmethod
-    def _cache_key(name_search, past, tag_name_list, map_view, visibility):
+    def _cache_key(name_search, past, tag_name_list, tag_all,map_view, visibility):
         if not visibility:
             visibility = "public"
         return sha1_concat(json.dumps({
                 "nameSearch": name_search,
                 "past": past,
                 "tag": tuple(set(tag_name_list)),
+                "tagAll": tag_all,
                 "visibility": visibility,
                 "mapView": map_view,
                 }))
@@ -61,6 +62,7 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
         name_search = self.get_argument("nameSearch", None, json=is_json)
         past = self.get_argument_bool("past", None, json=is_json)
         tag_name_list = self.get_arguments("tag", json=is_json)
+        tag_all = self.get_argument_bool("tagAll", None, json=is_json)
         location = self.get_argument_geobox("location", None, json=is_json)
         offset = self.get_argument_int("offset", None, json=is_json)
         map_view = self.get_argument_allowed("mapView", ["entity", "marker"],
@@ -82,7 +84,9 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
         if 0 and self.accept_type("json") and not location and not offset:
             cache_key = self._cache_key(
                 name_search, past,
-                tag_name_list, map_view,
+                tag_name_list, 
+                tag_all,
+                map_view,
                 self.parameters.get("visibility", None),
                 )
             value = self.cache.get(cache_key)
@@ -97,6 +101,7 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
             name_search=name_search,
             past=past,
             tag_name_list=tag_name_list,
+            tag_all=tag_all,
             location=location,
             visibility=self.parameters.get("visibility", None),
             offset=offset,
@@ -116,6 +121,7 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
                 name_search=name_search,
                 past=past,
                 tag_name_list=tag_name_list,
+                tag_all=tag_all,
                 location=location and location.to_obj(),
                 offset=offset,
                 )
