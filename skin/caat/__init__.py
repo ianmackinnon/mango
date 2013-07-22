@@ -43,22 +43,16 @@ def load(**kwargs):
         }
 
     uri = u"http://www.caat.org.uk/resources/app-skin.php"
-
-    # uri += url_root
-
     uri += "?" + urllib.urlencode(data)
 
     page = urllib.urlopen(uri).read()
 
     text = caat_fix_links(page)
-
     text = text.replace(u"</head>", u"%s</head>" % head)
     text = text.replace(u'<div id="app"', u'%s<div id="app"' % nav)
 
     splitter = '<!--split-->'
-
     assert splitter in text
-
     header, footer = text.split(splitter)
 
     return {
