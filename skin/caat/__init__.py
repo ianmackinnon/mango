@@ -3,13 +3,13 @@
 import re
 import urllib
 
-from BeautifulSoup import BeautifulSoup
+from bs4 import BeautifulSoup
 from tornado.template import Loader
 
 
 
 def caat_fix_links(page):
-    soup = BeautifulSoup(page)
+    soup = BeautifulSoup(page, "html.parser")
     
     regex = re.compile("^[/]")
     for link in soup.findAll(href=regex):
