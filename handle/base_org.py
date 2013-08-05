@@ -16,6 +16,7 @@ from model import User, Org, Address, Orgalias, Orgtag, detach, org_orgtag
 from model_v import Org_v, \
     accept_org_address_v
 
+max_org_per_page = 10
 max_address_per_page = 26
 max_address_pages = 3
 
@@ -252,17 +253,12 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                     Address.longitude <= location.east,
                     )) \
 
-        if offset:
-            org_alias_address_query = org_alias_address_query \
-                .offset(offset)
-
         org_packet = {
             "location": location and location.to_obj(),
             }
 
-        if (map_view == "marker" or
-            org_alias_address_query.count() > max_address_per_page * max_address_pages
-            ):
+        if map_view == "marker":
+            # Just want markers for all matches.
             org_packet["marker_list"] = []
             for org, alias, address in org_alias_address_query:
                 org_packet["marker_list"].append({
@@ -271,7 +267,31 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                         "latitude": address and address.latitude,
                         "longitude": address and address.longitude,
                         })
+        elif org_alias_address_query.count() > max_address_per_page * max_address_pages:
+            # More than 3 pages of addresses. Want markers for all matches, and names of the first 10 matching companies (with offset).
+            orgs = OrderedDict()
+            org_packet["marker_list"] = []
+            for org, alias, address in org_alias_address_query:
+                org_packet["marker_list"].append({
+                        "name": org.name,
+                        "url": org.url,
+                        "latitude": address and address.latitude,
+                        "longitude": address and address.longitude,
+                        })
+                if not org.org_id in orgs:
+                    orgs[org.org_id] = {
+                        "org": org,
+                        "alias": alias and alias.name,
+                        }
+            org_packet["org_length"] = len(orgs)
+            org_packet["org_list"] = []
+            for org_id, data in orgs.items()[(offset or 0):(offset or 0) + max_org_per_page]:
+                org = data["org"]
+                org_packet["org_list"].append(org.obj(
+                        public=self.moderator,
+                        ))
         else:
+            # Get all addresses, don't send markers.
             orgs = OrderedDict()
             for org, alias, address in org_alias_address_query:
                 if not org.org_id in orgs:
@@ -285,6 +305,7 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                             public=self.moderator
                             ))
 
+            org_packet["org_length"] = len(orgs)
             org_packet["org_list"] = []
             for org_id, data in orgs.items():
                 org = data["org"]
@@ -293,11 +314,9 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                     key=lambda address_obj: address_obj.get("latitude", None),
                     reverse=True
                     )
-                orgtag_list = [orgtag.obj(public=True) for orgtag in org.orgtag_list_public]
                 org_packet["org_list"].append(org.obj(
                         public=self.moderator,
                         address_list=address_list,
-                        orgtag_list=orgtag_list,
                         ))
 
         return org_packet

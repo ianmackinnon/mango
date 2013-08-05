@@ -247,6 +247,7 @@
       
       this.location = resp.location;
       this.markerList = resp.marker_list;
+      this.eventLength = resp.event_length;
       return resp.event_list;
     }
   });
@@ -273,6 +274,17 @@
             mapView: view.mapView
           }));
         });
+        var limit = {
+          offset: 0,  // Server is handling offsets
+          limit: view.limitEvent
+        };
+        this.collection.each(function (model) {
+          view._modelViews.push(new window.EventViewBox({
+            model: model,
+            mapView: view.mapView,
+            limit: limit
+          }));
+        });
       } else if (this.collection.addressLength() > view.limit * 3) {
         // Just dots if there are more than 3 pages
         view.many = true;
@@ -287,7 +299,7 @@
       } else {
         view.many = false;
         var limit = {
-          offset: view.offset,
+          offset: view.offset,  // Browser is handling offsets
           limit: view.limit
         };
         this.collection.each(function (model) {
@@ -493,11 +505,14 @@
 
       var sendData = _.extend(_.clone(model.attributes) || {}, {
         json: true,  // Prevent browser caching result in HTML page history.
-        offset: null,
       });
 
       if (this.isBig(sendData.location)) {
         sendData.location = null;  // Avoid large area searches.
+      }
+
+      if (model.lastResult && model.lastResult.markerList === undefined) {
+        sendData.offset = null;  // Browser handles paging for < 3 pages
       }
 
       _.each(sendData, function(value, key) {
@@ -637,6 +652,7 @@
       'change input[name="tagAll"]': 'formChange'
     },
     limit: 26,  // Number of letters in the alphabet for map markers.
+    limitEvent: 10,
 
     changeOffset: function () {
       var $input = this.$el.find("input[name='offset']");
@@ -955,7 +971,7 @@
         if (eventCollectionView.many) {
           var text = "Zoom in or refine search to see results in detail.";
           var $span = $("<p>").addClass("results-hint").text(text)
-          eventSearchView.$results.append($span);
+          eventSearchView.$results.prepend($span);
         }
       }, cache);
     },
@@ -966,48 +982,102 @@
 
       eventSearchView.$paging.empty();
       
-      var $count = $("<span class='resultCount'>").text(length + " results");
-      eventSearchView.$paging.append($count);
-
-      if (many) {
-        return;
+      var countText = "addresses: " + length;
+      if (eventCollection.eventLength) {
+        countText = "events: " + eventCollection.eventLength + ", " + countText;
       }
-      
-      if (length <= eventSearchView.limit) {
-        return;
-      }
+      var $count = $("<span class='resultCount'>")
+.text(countText);
+      eventSearchView.$paging.prepend($count);
 
       var $pages = $("<ul class='pageList'>");
 
-      var pageClickHelper = function(page) {
-        return function (e) {
-          if (e.which !== 1 || e.metaKey || e.shiftKey) {
-            return;
-          }
-          e.preventDefault();
-          var data = {
-            offset: page * eventSearchView.limit
-          }
-          m.log.debug("set pageclick", data);
-          eventSearchView.model.set(data);
-          eventSearchView.send();
-        };
-      }
+      if (many) {
+        var in_ = 0;
+        var out = eventCollection.eventLength;
+        var showIn = eventSearchView.model.get("offset") || 0;
+        var showOut = showIn + eventCollection.length;
+        var limit = eventSearchView.limitEvent;
+        var prev = null;
+        var curr = null;
+        var next = null;
 
-      for (var page = 0; page < length / eventSearchView.limit; page += 1) {
-        var text = "page " + (page + 1);
-        var currentPage = eventSearchView.model.get("offset") || 0;
-        if (page * eventSearchView.limit == currentPage) {
-          var $pageSpan = $("<span>").text(text);
-          $pages.append($("<li>").append($pageSpan));
-        } else {
+        var pageClickHelper = function(offset) {
+          return function (e) {
+            if (e.which !== 1 || e.metaKey || e.shiftKey) {
+              return;
+            }
+            e.preventDefault();
+            var data = {
+              offset: offset
+            }
+            m.log.debug("set pageclick", data);
+            eventSearchView.model.set(data);
+            eventSearchView.send();
+          };
+        }
+
+        if (showIn > in_) {
+          prev = Math.max(in_, showIn - limit);
           var query = eventSearchView.model.toQueryString({
-            offset: page * eventSearchView.limit
+            offset: prev
           });
           var href = m.urlRoot + "event?" + query
-          var $pageLink = $("<a>").attr("href", href).text(text);
-          $pageLink.bind("click", pageClickHelper(page));
+          var $pageLink = $("<a>").attr("href", href).text("Previous");
+          $pageLink.bind("click", pageClickHelper(prev));
           $pages.append($("<li>").append($pageLink));
+        }
+        var curr = (showIn + 1) + "-" + (showOut);
+        var $pageSpan = $("<span>").text(curr);
+        $pages.append($("<li>").append($pageSpan));
+        if (showOut < out) {
+          next = showIn + limit;
+          var query = eventSearchView.model.toQueryString({
+            offset: next
+          });
+          var href = m.urlRoot + "event?" + query
+          var $pageLink = $("<a>").attr("href", href).text("Next");
+          $pageLink.bind("click", pageClickHelper(next));
+          $pages.append($("<li>").append($pageLink));
+        }
+        if (prev == null && next == null) {
+          return;
+        }
+      } else {
+        if (length <= eventSearchView.limit) {
+          return;
+        }
+
+        var pageClickHelper = function(page) {
+          return function (e) {
+            if (e.which !== 1 || e.metaKey || e.shiftKey) {
+              return;
+            }
+            e.preventDefault();
+            var data = {
+              offset: page * eventSearchView.limit
+            }
+            m.log.debug("set pageclick", data);
+            eventSearchView.model.set(data);
+            eventSearchView.send();
+          };
+        }
+
+        for (var page = 0; page < length / eventSearchView.limit; page += 1) {
+          var text = "page " + (page + 1);
+          var currentPage = eventSearchView.model.get("offset") || 0;
+          if (page * eventSearchView.limit == currentPage) {
+            var $pageSpan = $("<span>").text(text);
+            $pages.append($("<li>").append($pageSpan));
+          } else {
+            var query = eventSearchView.model.toQueryString({
+              offset: page * eventSearchView.limit
+            });
+            var href = m.urlRoot + "event?" + query
+            var $pageLink = $("<a>").attr("href", href).text(text);
+            $pageLink.bind("click", pageClickHelper(page));
+            $pages.append($("<li>").append($pageLink));
+          }
         }
       }
       eventSearchView.$paging.append($pages);

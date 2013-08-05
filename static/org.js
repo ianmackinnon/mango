@@ -246,6 +246,7 @@
 
       this.location = resp.location;
       this.markerList = resp.marker_list;
+      this.orgLength = resp.org_length;
       return resp.org_list;
     }
   });
@@ -272,6 +273,17 @@
             mapView: view.mapView
           }));
         });
+        var limit = {
+          offset: 0,  // Server is handling offsets
+          limit: view.limitOrg
+        };
+        this.collection.each(function (model) {
+          view._modelViews.push(new window.OrgViewBox({
+            model: model,
+            mapView: view.mapView,
+            limit: limit
+          }));
+        });
       } else if (this.collection.addressLength() > view.limit * 3) {
         // Just dots if there are more than 3 pages
         view.many = true;
@@ -286,7 +298,7 @@
       } else {
         view.many = false;
         var limit = {
-          offset: view.offset,
+          offset: view.offset,  // Browser is handling offsets
           limit: view.limit
         };
         this.collection.each(function (model) {
@@ -490,12 +502,15 @@
       var modelData = _.clone(model.attributes);
 
       var sendData = _.extend(_.clone(model.attributes) || {}, {
-        json: true,  // Prevent browser caching result in HTML page history.
-        offset: null,
+        json: true  // Prevent browser caching result in HTML page history.
       });
 
       if (this.isBig(sendData.location)) {
         sendData.location = null;  // Avoid large area searches.
+      }
+
+      if (model.lastResult && model.lastResult.markerList === undefined) {
+        sendData.offset = null;  // Browser handles paging for < 3 pages
       }
 
       _.each(sendData, function(value, key) {
@@ -634,6 +649,7 @@
       'change input[name="tagAll"]': 'formChange'
     },
     limit: 26,  // Number of letters in the alphabet for map markers.
+    limitOrg: 10,
 
     changeOffset: function () {
       var $input = this.$el.find("input[name='offset']");
@@ -938,7 +954,7 @@
         if (orgCollectionView.many) {
           var text = "Zoom in or refine search to see results in detail.";
           var $span = $("<p>").addClass("results-hint").text(text)
-          orgSearchView.$results.append($span);
+          orgSearchView.$results.prepend($span);
         }
       }, cache);
     },
@@ -949,50 +965,105 @@
 
       orgSearchView.$paging.empty();
       
-      var $count = $("<span class='resultCount'>").text(length + " results");
-      orgSearchView.$paging.append($count);
-
-      if (many) {
-        return;
+      var countText = "addresses: " + length;
+      if (orgCollection.orgLength) {
+        countText = "companies: " + orgCollection.orgLength + ", " + countText;
       }
-      
-      if (length <= orgSearchView.limit) {
-        return;
-      }
+      var $count = $("<span class='resultCount'>")
+.text(countText);
+      orgSearchView.$paging.prepend($count);
 
       var $pages = $("<ul class='pageList'>");
 
-      var pageClickHelper = function(page) {
-        return function (e) {
-          if (e.which !== 1 || e.metaKey || e.shiftKey) {
-            return;
-          }
-          e.preventDefault();
-          var data = {
-            offset: page * orgSearchView.limit
-          }
-          m.log.debug("set pageclick", data);
-          orgSearchView.model.set(data);
-          orgSearchView.send();
-        };
-      }
+      if (many) {
+        var in_ = 0;
+        var out = orgCollection.orgLength;
+        var showIn = orgSearchView.model.get("offset") || 0;
+        var showOut = showIn + orgCollection.length;
+        var limit = orgSearchView.limitOrg;
+        var prev = null;
+        var curr = null;
+        var next = null;
 
-      for (var page = 0; page < length / orgSearchView.limit; page += 1) {
-        var text = "page " + (page + 1);
-        var currentPage = orgSearchView.model.get("offset") || 0;
-        if (page * orgSearchView.limit == currentPage) {
-          var $pageSpan = $("<span>").text(text);
-          $pages.append($("<li>").append($pageSpan));
-        } else {
+        var pageClickHelper = function(offset) {
+          return function (e) {
+            if (e.which !== 1 || e.metaKey || e.shiftKey) {
+              return;
+            }
+            e.preventDefault();
+            var data = {
+              offset: offset
+            }
+            m.log.debug("set pageclick", data);
+            orgSearchView.model.set(data);
+            orgSearchView.send();
+          };
+        }
+
+        if (showIn > in_) {
+          prev = Math.max(in_, showIn - limit);
           var query = orgSearchView.model.toQueryString({
-            offset: page * orgSearchView.limit
+            offset: prev
           });
           var href = m.urlRoot + "organisation?" + query
-          var $pageLink = $("<a>").attr("href", href).text(text);
-          $pageLink.bind("click", pageClickHelper(page));
+          var $pageLink = $("<a>").attr("href", href).text("Previous");
+          $pageLink.bind("click", pageClickHelper(prev));
           $pages.append($("<li>").append($pageLink));
         }
+        var curr = (showIn + 1) + "-" + (showOut);
+        var $pageSpan = $("<span>").text(curr);
+        $pages.append($("<li>").append($pageSpan));
+        if (showOut < out) {
+          next = showIn + limit;
+          var query = orgSearchView.model.toQueryString({
+            offset: next
+          });
+          var href = m.urlRoot + "organisation?" + query
+          var $pageLink = $("<a>").attr("href", href).text("Next");
+          $pageLink.bind("click", pageClickHelper(next));
+          $pages.append($("<li>").append($pageLink));
+        }
+        if (prev == null && next == null) {
+          return;
+        }
+      } else {
+        if (length <= orgSearchView.limit) {
+          return;
+        }
+
+        var pageClickHelper = function(page) {
+          return function (e) {
+            if (e.which !== 1 || e.metaKey || e.shiftKey) {
+              return;
+            }
+            e.preventDefault();
+            var data = {
+              offset: page * orgSearchView.limit
+            }
+            m.log.debug("set pageclick", data);
+            orgSearchView.model.set(data);
+            orgSearchView.send();
+          };
+        }
+
+        for (var page = 0; page < length / orgSearchView.limit; page += 1) {
+          var text = "page " + (page + 1);
+          var currentPage = orgSearchView.model.get("offset") || 0;
+          if (page * orgSearchView.limit == currentPage) {
+            var $pageSpan = $("<span>").text(text);
+            $pages.append($("<li>").append($pageSpan));
+          } else {
+            var query = orgSearchView.model.toQueryString({
+              offset: page * orgSearchView.limit
+            });
+            var href = m.urlRoot + "organisation?" + query
+            var $pageLink = $("<a>").attr("href", href).text(text);
+            $pageLink.bind("click", pageClickHelper(page));
+            $pages.append($("<li>").append($pageLink));
+          }
+        }
       }
+      
       orgSearchView.$paging.append($pages);
     },
 

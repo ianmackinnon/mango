@@ -18,6 +18,7 @@ from model_v import Event_v, \
 
 
 
+max_event_per_page = 10
 max_address_per_page = 26
 max_address_pages = 3
 
@@ -228,17 +229,12 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
             event_address_query = event_address_query \
                 .order_by(Event.end_date.asc())
 
-        if offset:
-            event_address_query = event_address_query \
-                .offset(offset)
-
         event_packet = {
             "location": location and location.to_obj(),
             }
 
-        if (map_view == "marker" or
-            event_address_query.count() > max_address_per_page * max_address_pages
-            ):
+        if map_view == "marker":
+            # Just want markers for all matches.
             event_packet["marker_list"] = []
             for event, address in event_address_query:
                 event_packet["marker_list"].append({
@@ -247,7 +243,31 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                         "latitude": address and address.latitude,
                         "longitude": address and address.longitude,
                         })
+        elif event_address_query.count() > max_address_per_page * max_address_pages:
+            # More than 3 pages of addresses. Want markers for all matches, and names of the first 10 matching companies (with offset).
+            events = OrderedDict()
+            event_packet["marker_list"] = []
+            for event, address in event_address_query:
+                event_packet["marker_list"].append({
+                        "name": event.name,
+                        "url": event.url,
+                        "latitude": address and address.latitude,
+                        "longitude": address and address.longitude,
+                        })
+                if not event.event_id in events:
+                    events[event.event_id] = {
+                        "event": event,
+                        }
+            event_packet["event_length"] = len(events)
+            event_packet["event_list"] = []
+            for event_id, data in events.items()[(offset or 0):(offset or 0) + max_event_per_page]:
+                event = data["event"]
+                event_packet["event_list"].append(event.obj(
+                        public=self.moderator,
+                        ))
+
         else:
+            # Get all addresses, don't send markers.
             events = OrderedDict()
             for event, address in event_address_query:
                 if not event.event_id in events:
@@ -261,6 +281,7 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                             general=address.general(address.postal),
                             ))
 
+            event_packet["event_length"] = len(events)
             event_packet["event_list"] = []
             for event_id, data in events.items():
                 event = data["event"]
@@ -269,11 +290,9 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                     key=lambda address_obj: address_obj.get("latitude", None),
                     reverse=True
                     )
-                eventtag_list = [eventtag.obj(public=True) for eventtag in event.eventtag_list_public]
                 event_packet["event_list"].append(event.obj(
                         public=self.moderator,
                         address_list=address_list,
-                        eventtag_list=eventtag_list,
                         ))
 
         return event_packet
