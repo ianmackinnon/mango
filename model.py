@@ -82,9 +82,7 @@ SQLITE :  Destination SQLite database. If not supplied, you must
         connection_url = 'sqlite:///' + sql_db
     else:
         # MySQL
-        options = mysql.get_conf(mysql_conf_path)
-        connection_url = 'mysql://%s:%s@localhost/%s?charset=utf8' % (
-            options.admin_username, options.admin_password, options.database)
+        connection_url = mysql.connection_url_admin()
         use_mysql()
 
 

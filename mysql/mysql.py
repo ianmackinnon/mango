@@ -16,7 +16,7 @@ import MySQLdb
 
 log = logging.getLogger('mysql')
 
-
+conf_path = u".mango.conf"
 
 Options = namedtuple(
     "Options",
@@ -45,7 +45,7 @@ section, name))
 
 
 
-def get_conf(path=".mango.conf"):
+def get_conf(path=conf_path):
     if not os.path.isfile(path):
         log.error("%s: File not found" % path)
         sys.exit(1)
@@ -81,6 +81,12 @@ def connection_url_app():
     return u'mysql://%s:%s@localhost/%s?charset=utf8' % (
         options.app_username, options.app_password, options.database)
     
+
+
+def connection_url_admin():
+    options = get_conf()
+    return u'mysql://%s:%s@localhost/%s?charset=utf8' % (
+        options.admin_username, options.admin_password, options.database)
 
 
 
@@ -312,7 +318,7 @@ if __name__ == "__main__":
 
     usage = """%prog
 
-Create Mango MySQL database and users.
+Create MySQL database and users.
 """
 
     parser = OptionParser(usage=usage)
@@ -320,6 +326,8 @@ Create Mango MySQL database and users.
                       help="Print verbose information for debugging.", default=0)
     parser.add_option("-q", "--quiet", action="count", dest="quiet",
                       help="Suppress warnings.", default=0)
+    parser.add_option("-c", "--configuration", action="store", dest="configuration",
+                      help="Path to configuration in INI format", default=conf_path)
     parser.add_option("-k", "--key", action="store", dest="key",
                       help="Print a configuration key")
     parser.add_option("-t", "--test", action="store_true", dest="test",
@@ -331,7 +339,7 @@ Create Mango MySQL database and users.
     parser.add_option("-r", "--drop-triggers", action="store_true", dest="drop_triggers",
                       help="Drop all triggers.", default=False)
     parser.add_option("-g", "--generate", action="store_true", dest="generate",
-                      help="Generate Mango MySQL conf to stdout.", default=False)
+                      help="Generate MySQL conf to stdout.", default=False)
     parser.add_option("-s", "--source", action="store", dest="source",
                       help="Source SQL.")
 
@@ -348,7 +356,7 @@ Create Mango MySQL database and users.
         )
 
     main(
-        ".mango.conf",
+        options.configuration,
         key=options.key,
         purge=options.purge,
         empty=options.empty,
