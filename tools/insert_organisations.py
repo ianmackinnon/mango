@@ -253,7 +253,7 @@ def insert_fast(data, orm, public=None, tag_names=None, dry_run=None):
         if "tag" in chunk:
             for tag_name in chunk["tag"]:
                 tag = Orgtag.get(orm, tag_name, 
-                                 moderation_user=user, public=True,
+                                 moderation_user=user, public=public,
                                  )
                 if tag not in org.orgtag_list:
                     org.orgtag_list.append(tag)
