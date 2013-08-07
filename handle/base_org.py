@@ -197,16 +197,18 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                         .filter(org_orgtag.c.org_id==Org.org_id) \
                         .join(Orgtag) \
                         .filter(Orgtag.base_short==tag_name)
-                    e1 = self.filter_visibility(
-                        e1, Orgtag, visibility, secondary=True)
+# Temporarily allow non-public tag searches
+#                    e1 = self.filter_visibility(
+#                        e1, Orgtag, visibility, secondary=True)
                     org_alias_query = org_alias_query \
                         .filter(exists(e1.statement))
             else:
                 org_alias_query = org_alias_query \
                     .join((Orgtag, Org.orgtag_list)) \
                     .filter(Orgtag.base_short.in_(tag_name_list))
-                org_alias_query = self.filter_visibility(
-                    org_alias_query, Orgtag, visibility, secondary=True)
+# Temporarily allow non-public tag searches
+#                org_alias_query = self.filter_visibility(
+#                    org_alias_query, Orgtag, visibility, secondary=True)
 
         return org_alias_query
 
