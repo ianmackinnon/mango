@@ -44,7 +44,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
         return self._get_org
 
     @staticmethod
-    def _cache_key(name_search, tag_name_list, tag_all, map_view, visibility):
+    def _cache_key(name_search, tag_name_list, tag_all, page_view, visibility):
         if not visibility:
             visibility = "public"
         return sha1_concat(json.dumps({
@@ -52,7 +52,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
                 "tag": tuple(set(tag_name_list)),
                 "tagAll": tag_all,
                 "visibility": visibility,
-                "mapView": map_view,
+                "pageView": page_view,
                 }))
     
     def get(self):
@@ -63,8 +63,9 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
         tag_all = self.get_argument_bool("tagAll", None, json=is_json)
         location = self.get_argument_geobox("location", None, json=is_json)
         offset = self.get_argument_int("offset", None, json=is_json)
-        map_view = self.get_argument_allowed("mapView", ["entity", "marker"],
-                                             default="entity", json=is_json)
+        page_view = self.get_argument_allowed(
+            "pageView", ["entity", "map", "marker"],
+            default="entity", json=is_json)
 
         if self.has_javascript and not self.accept_type("json"):
             self.render(
@@ -84,7 +85,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
                 name_search,
                 tag_name_list,
                 tag_all,
-                map_view,
+                page_view,
                 self.parameters.get("visibility", None),
                 )
             value = self.cache.get(cache_key)
@@ -94,6 +95,9 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
                 self.finish()
                 return
 
+        if not self.accept_type("json"):
+            page_view = "map"
+
         org_packet = self._get_org_packet_search(
             name=name,
             name_search=name_search,
@@ -102,7 +106,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
             location=location,
             visibility=self.parameters.get("visibility", None),
             offset=offset,
-            map_view=map_view,
+            page_view=page_view,
             )
 
         if cache_key:

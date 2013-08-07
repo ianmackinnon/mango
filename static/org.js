@@ -502,6 +502,7 @@
       var modelData = _.clone(model.attributes);
 
       var sendData = _.extend(_.clone(model.attributes) || {}, {
+        pageView: "map",
         json: true  // Prevent browser caching result in HTML page history.
       });
 

@@ -245,6 +245,8 @@ class MangoEntity(object):
             obj["public"] = self.public
 
         for name in self.content + self.content_hints:
+            if kwargs.pop(name, None) == False:
+                continue
             value = getattr(self, name)
             if name.endswith("_date") and value:
                 value = value.strftime("%Y-%m-%d")

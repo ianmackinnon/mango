@@ -218,7 +218,7 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                                location=None,
                                visibility=None,
                                offset=None,
-                               map_view="entity"):
+                               page_view="entity"):
 
         org_alias_query = self._get_org_alias_search_query(
             name=name,
@@ -256,8 +256,10 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         org_packet = {
             "location": location and location.to_obj(),
             }
+        
+        print page_view
 
-        if map_view == "marker":
+        if page_view == "marker":
             # Just want markers for all matches.
             org_packet["marker_list"] = []
             for org, alias, address in org_alias_address_query:
@@ -267,56 +269,76 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                         "latitude": address and address.latitude,
                         "longitude": address and address.longitude,
                         })
-        elif org_alias_address_query.count() > max_address_per_page * max_address_pages:
-            # More than 3 pages of addresses. Want markers for all matches, and names of the first 10 matching companies (with offset).
-            orgs = OrderedDict()
-            org_packet["marker_list"] = []
-            for org, alias, address in org_alias_address_query:
-                org_packet["marker_list"].append({
-                        "name": org.name,
-                        "url": org.url,
-                        "latitude": address and address.latitude,
-                        "longitude": address and address.longitude,
-                        })
-                if not org.org_id in orgs:
-                    orgs[org.org_id] = {
-                        "org": org,
-                        "alias": alias and alias.name,
-                        }
-            org_packet["org_length"] = len(orgs)
-            org_packet["org_list"] = []
-            for org_id, data in orgs.items()[(offset or 0):(offset or 0) + max_org_per_page]:
-                org = data["org"]
-                org_packet["org_list"].append(org.obj(
-                        public=self.moderator,
-                        ))
-        else:
-            # Get all addresses, don't send markers.
-            orgs = OrderedDict()
-            for org, alias, address in org_alias_address_query:
-                if not org.org_id in orgs:
-                    orgs[org.org_id] = {
-                        "org": org,
-                        "alias": alias and alias.name,
-                        "address_list": [],
-                        }
-                if address:
-                    orgs[org.org_id]["address_list"].append(address.obj(
-                            public=self.moderator
+        elif page_view == "map":
+            if org_alias_address_query.count() > max_address_per_page * max_address_pages:
+                # More than 3 pages of addresses for the map. Want markers for all matches, and names of the first 10 matching companies (with offset).
+                orgs = OrderedDict()
+                org_packet["marker_list"] = []
+                for org, alias, address in org_alias_address_query:
+                    org_packet["marker_list"].append({
+                            "name": org.name,
+                            "url": org.url,
+                            "latitude": address and address.latitude,
+                            "longitude": address and address.longitude,
+                            })
+                    if not org.org_id in orgs:
+                        orgs[org.org_id] = {
+                            "org": org,
+                            "alias": alias and alias.name,
+                            }
+                org_packet["org_length"] = len(orgs)
+                org_packet["org_list"] = []
+                for org_id, data in orgs.items()[(offset or 0):(offset or 0) + max_org_per_page]:
+                    org = data["org"]
+                    org_packet["org_list"].append(org.obj(
+                            public=self.moderator,
+                            description=False,
                             ))
+            else:
+                # Get all addresses, don't send markers.
+                orgs = OrderedDict()
+                for org, alias, address in org_alias_address_query:
+                    if not org.org_id in orgs:
+                        orgs[org.org_id] = {
+                            "org": org,
+                            "alias": alias and alias.name,
+                            "address_list": [],
+                            }
+                    if address:
+                        orgs[org.org_id]["address_list"].append(address.obj(
+                                public=self.moderator
+                                ))
 
-            org_packet["org_length"] = len(orgs)
+                org_packet["org_length"] = len(orgs)
+                org_packet["org_list"] = []
+                for org_id, data in orgs.items():
+                    org = data["org"]
+                    address_list = data["address_list"]
+                    address_list.sort(
+                        key=lambda address_obj: address_obj.get("latitude", None),
+                        reverse=True
+                        )
+                    org_packet["org_list"].append(org.obj(
+                            public=self.moderator,
+                            description=False,
+                            address_list=address_list,
+                            ))
+        else:
+            # Get all orgs, no addresses
+            orgs = OrderedDict()
+            for org, alias, address in org_alias_address_query:
+                if not org.org_id in orgs:
+                    orgs[org.org_id] = {
+                        "org": org,
+                        "alias": alias and alias.name,
+                        }
+
             org_packet["org_list"] = []
             for org_id, data in orgs.items():
                 org = data["org"]
-                address_list = data["address_list"]
-                address_list.sort(
-                    key=lambda address_obj: address_obj.get("latitude", None),
-                    reverse=True
-                    )
                 org_packet["org_list"].append(org.obj(
                         public=self.moderator,
-                        address_list=address_list,
+                        description=False,
                         ))
 
         return org_packet
