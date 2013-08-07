@@ -257,8 +257,6 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
             "location": location and location.to_obj(),
             }
         
-        print page_view
-
         if page_view == "marker":
             # Just want markers for all matches.
             org_packet["marker_list"] = []

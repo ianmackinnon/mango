@@ -69,17 +69,20 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
             "pageView", ["entity", "map", "marker"],
             default="entity", json=is_json)
 
-        if self.has_javascript and not self.accept_type("json"):
-            self.render(
-                'event_list.html',
-                name=name,
-                name_search=name_search,
-                past=past,
-                tag_name_list=tag_name_list,
-                location=location and location.to_obj(),
-                offset=offset,
-                )
-            return;
+        if not self.accept_type("json"):
+            if self.has_javascript:
+                self.render(
+                    'event_list.html',
+                    name=name,
+                    name_search=name_search,
+                    past=past,
+                    tag_name_list=tag_name_list,
+                    location=location and location.to_obj(),
+                    offset=offset,
+                    )
+                return;
+            if page_view == "entity":
+                page_view = "map"
 
         cache_key = None
         if 0 and self.accept_type("json") and not location and not offset:

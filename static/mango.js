@@ -267,7 +267,7 @@ var m = {
     });
     eventCollection.fetch({
       data: {
-        mapView: "marker"
+        pageView: "marker"
       },
       success: function(collection, response) {
         eventCollectionView.initialize();
@@ -287,7 +287,7 @@ var m = {
     });
     orgCollection.fetch({
       data: {
-        mapView: "marker"
+        pageView: "marker"
       },
       success: function(collection, response) {
         orgCollectionView.initialize();

@@ -67,17 +67,20 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
             "pageView", ["entity", "map", "marker"],
             default="entity", json=is_json)
 
-        if self.has_javascript and not self.accept_type("json"):
-            self.render(
-                'organisation_list.html',
-                name=name,
-                name_search=name_search,
-                tag_name_list=tag_name_list,
-                tag_all=tag_all,
-                location=location and location.to_obj(),
-                offset=offset,
-                )
-            return;
+        if not self.accept_type("json"):
+            if self.has_javascript:
+                self.render(
+                    'organisation_list.html',
+                    name=name,
+                    name_search=name_search,
+                    tag_name_list=tag_name_list,
+                    tag_all=tag_all,
+                    location=location and location.to_obj(),
+                    offset=offset,
+                    )
+                return;
+            if page_view == "entity":
+                page_view = "map"
 
         cache_key = None
         if self.accept_type("json") and not location and not offset:
@@ -94,9 +97,6 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
                 self.write(value)
                 self.finish()
                 return
-
-        if not self.accept_type("json"):
-            page_view = "map"
 
         org_packet = self._get_org_packet_search(
             name=name,
