@@ -18,7 +18,7 @@ from model_v import Event_v, \
 
 
 
-max_event_per_page = 10
+max_event_per_page = 20
 max_address_per_page = 26
 max_address_pages = 3
 

@@ -653,7 +653,7 @@
       'change input[name="tagAll"]': 'formChange'
     },
     limit: 26,  // Number of letters in the alphabet for map markers.
-    limitEvent: 10,
+    limitEvent: 20,
 
     changeOffset: function () {
       var $input = this.$el.find("input[name='offset']");

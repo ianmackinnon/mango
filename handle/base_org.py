@@ -16,7 +16,7 @@ from model import User, Org, Address, Orgalias, Orgtag, detach, org_orgtag
 from model_v import Org_v, \
     accept_org_address_v
 
-max_org_per_page = 10
+max_org_per_page = 20
 max_address_per_page = 26
 max_address_pages = 3
 
