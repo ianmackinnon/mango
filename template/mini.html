@@ -204,10 +204,54 @@ if not parameters:
                  class="action"
                  >Edit</a>
 
-              ${delete_input(address, next_=uri)}
+              ${delete_input(address, next_=uri, inline=True)}
 
               %else:
               <a href="${url_rewrite(address["url"])}">
+                View
+              </a>
+              %endif
+	    </div>
+          </div>
+        </div>
+</%def>
+
+
+
+<%def name="contact_box(contact, link_url=False, unlink=False, parameters=None)">\
+<%
+if not parameters:
+    parameters = {}
+text = contact["text"]
+if contact["medium"] == "Telephone":
+    contact_url = "tel:%s" % contact["text"]
+elif contact["medium"] == "Email":
+    contact_url = "mailto:%s" % contact["text"]
+elif contact["medium"] == "Website":
+    contact_url = "%s" % contact["text"]
+    if not contact_url.startswith("http://"):
+        contact_url = "http://%s" % contact["text"]
+elif contact["medium"] == "Twitter":
+    contact_url = "https://twitter.com/%s" % contact["text"]
+    text = "@%s" % contact["text"]
+%>\
+        <div class="contact-box">
+          <div class="contact-row">
+	    <div class="contact">
+	      ${visibility_bar(contact, inline=True)}
+	      <a href="${contact_url}" target="_blank">${text}</a>
+	    </div>
+	    <div class="actions">
+	    %if current_user and (parameters.get("view", None) == "edit"):
+	      <a
+                 href="${url_rewrite(contact["url"])}"
+                 class="action"
+                 >Edit</a>
+
+              ${delete_input(contact, next_=uri, inline=True)}
+
+              %else:
+              <a href="${url_rewrite(contact["url"])}">
                 View
               </a>
               %endif
@@ -612,7 +656,7 @@ if not parameters:
 
 
 
-<%def name="delete_input(entity=None, next_=None)">
+<%def name="delete_input(entity=None, next_=None, inline=False)">
 <%
     if not moderator:
         return ""

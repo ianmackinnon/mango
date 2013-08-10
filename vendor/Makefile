@@ -54,3 +54,6 @@ jquery.ui.timepicker.js:
 jquery.ui.timepicker.css:
 	wget https://raw.github.com/fgelinas/timepicker/master/$@ -O $@ || rm -f $@
 
+geolocation.py:
+	wget https://raw.github.com/jfein/PyGeoTools/master/geolocation.py -O $@ || rm -f $@
+

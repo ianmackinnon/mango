@@ -89,13 +89,15 @@ create trigger orgalias_insert_after after insert on orgalias
 for each row begin
     insert into orgalias_v (
         orgalias_id,
+	org_id,
         moderation_user_id, a_time, public, existence,
-	org_id, name
+        name
         )
         values (
 	new.orgalias_id,
+	new.org_id,
 	new.moderation_user_id, 0, new.public, 1,
-	new.org_id, new.name
+        new.name
 	);
 end $$
 
@@ -104,13 +106,15 @@ for each row begin
     set new.a_time = UNIX_TIMESTAMP();
     insert into orgalias_v (
         orgalias_id,
+	org_id,
         moderation_user_id, a_time, public, existence,
-	org_id, name
+        name
         )
         values (
 	new.orgalias_id,
+	new.org_id,
 	new.moderation_user_id, 0, new.public, 1,
-	new.org_id, new.name
+        new.name
 	);
 end $$
 
@@ -118,13 +122,15 @@ create trigger orgalias_delete_before before delete on orgalias
 for each row begin
     insert into orgalias_v (
         orgalias_id,
+        org_id,
         moderation_user_id, a_time, public, existence,
-	org_id, name
+	name
         )
         values (
 	old.orgalias_id,
+	old.org_id,
 	old.moderation_user_id, 0, old.public, 0,
-	old.org_id, old.name
+        old.name
 	);
 end $$
 
@@ -430,6 +436,69 @@ for each row begin
 	old.name, old.name_short, old.base, old.base_short, old.path, old.path_short
 	);
 end $$
+
+-- contact
+
+create trigger contact_insert_before before insert on contact
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+end $$
+
+create trigger contact_v_insert_before before insert on contact_v
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+end $$
+
+create trigger contact_insert_after after insert on contact
+for each row begin
+    insert into contact_v (
+        contact_id,
+        medium_id,
+        moderation_user_id, a_time, public, existence,
+	text, description, source
+        )
+        values (
+	new.contact_id,
+	new.medium_id,
+	new.moderation_user_id, 0, new.public, 1,
+	new.text, new.description, new.source
+	);
+end $$
+
+create trigger contact_update_before before update on contact
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+    insert into contact_v (
+        contact_id,
+        medium_id,
+        moderation_user_id, a_time, public, existence,
+	text, description, source
+        )
+        values (
+	new.contact_id,
+	new.medium_id,
+	new.moderation_user_id, 0, new.public, 1,
+	new.text, new.description, new.source
+	);
+end $$
+
+create trigger contact_delete_before before delete on contact
+for each row begin
+    insert into contact_v (
+        contact_id,
+        medium_id,
+        moderation_user_id, a_time, public, existence,
+	text, description, source
+        )
+        values (
+	old.contact_id,
+        old.medium_id,
+	old.moderation_user_id, 0, old.public, 0,
+	old.text, old.description, old.source
+	);
+end $$
+
+
 
 -- org_address
 
@@ -781,6 +850,77 @@ for each row begin
 	old.org_id, old.event_id, 0, 0);
 end $$
 
-delimiter ;
+-- org_contact
 
+create trigger org_contact_insert_before before insert on org_contact
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+end $$
+
+create trigger org_contact_v_insert_before before insert on org_contact_v
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+end $$
+
+create trigger org_contact_insert_after after insert on org_contact
+for each row begin
+    insert into org_contact_v (org_id, contact_id, a_time, existence)
+      values (
+	new.org_id, new.contact_id, 0, 1);
+end $$
+
+create trigger org_contact_update_before before update on org_contact
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+
+    insert into org_contact_v (org_id, contact_id, a_time, existence)
+      values (
+	new.org_id, new.contact_id, 0, 1);
+end $$
+
+create trigger org_contact_delete_before before delete on org_contact
+for each row begin
+    insert into org_contact_v (org_id, contact_id, a_time, existence)
+      values (
+	old.org_id, old.contact_id, 0, 0);
+end $$
+
+
+-- event_contact
+
+create trigger event_contact_insert_before before insert on event_contact
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+end $$
+
+create trigger event_contact_v_insert_before before insert on event_contact_v
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+end $$
+
+create trigger event_contact_insert_after after insert on event_contact
+for each row begin
+    insert into event_contact_v (event_id, contact_id, a_time, existence)
+      values (
+	new.event_id, new.contact_id, 0, 1);
+end $$
+
+create trigger event_contact_update_before before update on event_contact
+for each row begin
+    set new.a_time = UNIX_TIMESTAMP();
+
+    insert into event_contact_v (event_id, contact_id, a_time, existence)
+      values (
+	new.event_id, new.contact_id, 0, 1);
+end $$
+
+create trigger event_contact_delete_before before delete on event_contact
+for each row begin
+    insert into event_contact_v (event_id, contact_id, a_time, existence)
+      values (
+	old.event_id, old.contact_id, 0, 0);
+end $$
+
+
+delimiter ;
 

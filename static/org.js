@@ -474,18 +474,30 @@
     },
 
     testStateChange: function(modelData) {
+      var searchString = m.searchString();
       var queryString = this.toQueryString(modelData);
-      queryString = queryString ? "?" + queryString : "";
-      
-      if (m.searchString() != queryString) {
-        var url = m.urlRoot + "organisation";
-        url += queryString;
-        m.log.debug("pushState", queryString);
-        if (window.History.enabled) {
-          window.History.pushState(null, null, url);
-        }
-        m.updateVisibilityButtons(url);
+
+      if (searchString == queryString) {
+        return;
       }
+
+      var searchData = this.attributesFromQueryString(searchString);
+      var queryData = this.attributesFromQueryString(queryString);
+      searchString = this.toQueryString(
+        _.extend(this.defaultParameters(), searchData));
+      queryString = this.toQueryString(
+        _.extend(this.defaultParameters(), queryData));
+
+      if (searchString == queryString) {
+        return;
+      }
+
+      var url = m.urlRoot + "organisation?" + queryString;
+      m.log.debug("pushState", queryString);
+      if (window.History.enabled) {
+        window.History.pushState(null, null, url);
+      }
+      m.updateVisibilityButtons(url);
     },
 
     isBig: function (geobox) {
@@ -602,11 +614,6 @@
 
       var model = this;
 
-      if (query.indexOf("?") !== 0) {
-        return {};
-      }
-      query = query.substr(1);
-
       var params = query.split("&");
 
       var data = {};
@@ -632,7 +639,7 @@
           data[key] = value;
         }
       });
-      
+
       return data;
     }
   });
@@ -730,9 +737,7 @@
         return;
       }
 
-      var scaled = new Geobox(location);
-      scaled.scale(.75);
-      this.mapView.setGeobox(scaled);
+      this.mapView.encompass(location, .75);
 
       // In case the map has already moved, but not updated.
       google.maps.event.trigger(this.mapView, "idle");
@@ -761,10 +766,12 @@
 
       this.$results = this.options.$results;
       this.$paging = this.options.$paging;
+      this.$social = this.options.$social;
       this.mapView = this.options.mapView;
 
       var data = this.serializeForm(this.options.$form);
       m.log.debug("set serializeForm", data);
+
       this.model.set(data);
 
       this.activeSearches = 0;
@@ -772,7 +779,6 @@
       var view = this;
 
       this.mapView.addMapListener("idle", function () {
-
         if (!view.mapView.mapReady) {
           // Set map from object.
           view.mapView.mapReady = true;
@@ -783,32 +789,21 @@
 
         var mapGeobox = view.mapView.getGeobox();
         var modelGeobox = new Geobox(view.model.get("location"));
-        var target = view.mapView.target;
-        view.mapView.target = null;
+        var targetGeobox = view.mapView.targetGeobox;
+        var resultGeobox = view.mapView.resultGeobox;
+        view.mapView.targetGeobox = null;
+        view.mapView.resultGeobox = null;
 
-        if (mapGeobox && target && mapGeobox.matchesTarget(target)) {
-          // Matches target. Do nothing.
+        if (mapGeobox && targetGeobox && mapGeobox.coordsDifference(resultGeobox) < 0.05) {
+          // Map bounds match target map bounds. Do nothing.
           return;
         }
-
-        // Set object from map.
-
-        if (false && modelGeobox.hasCoords()) {
-          view.mapView.addDot(modelGeobox.south, modelGeobox.west,
-                              "ddddff", "south west", null);
-          view.mapView.addDot(modelGeobox.north, modelGeobox.east,
-                              "ddddff", "north east", null);
-          var scaled = new Geobox(modelGeobox);
-          scaled.scale(.75);
-          view.mapView.addDot(scaled.south, scaled.west,
-                              "ddddff", "south west", null);
-          view.mapView.addDot(scaled.north, scaled.east,
-                              "ddddff", "north east", null);
-        }
-
+        
         if (!m.compareGeobox(mapGeobox, modelGeobox)) {
+          // Coords are very close, name may have gone = small map drag.
           return;
         }
+
         var data = {
           location: mapGeobox
         };
@@ -950,6 +945,7 @@
         orgSearchView.$results.replaceWith(rendered.el);
 
         orgSearchView.renderPages(orgCollection, orgCollectionView.many);
+        orgSearchView.renderSocial(orgCollection);
         orgSearchView.$results = rendered.$el;
         
         if (orgCollectionView.many) {
@@ -958,6 +954,74 @@
           orgSearchView.$results.prepend($span);
         }
       }, cache);
+    },
+
+    renderSocial: function (orgCollection) {
+      var orgSearchView = this;
+      var $paragraph = orgSearchView.$social.find("p");
+      var $anchor = orgSearchView.$social.find("a");
+      orgSearchView.$social.hide();
+      $paragraph.empty();
+      var number = Math.max(orgCollection.length, orgCollection.orgLength);
+      if (!number) {
+        return;
+      }
+      var tags = orgSearchView.model.get("tag");
+      if (!tags) {
+        return;
+      }
+      if (tags.indexOf("dsei-2013") == -1) {
+        return;
+      }
+      var country = false;
+      if (orgSearchView.model.get("tagAll")) {
+        _.each(tags, function(tag) {
+          var match = tag.match(/^military-export-applicant-to-(.*)-in-2010$/);
+          if (match) {
+            country = match[1];
+          }
+        });
+      }
+      var location = false;
+      var locationType = orgCollection.location && orgCollection.location.type;
+      if (locationType) {
+        if (locationType == "postal_code") {
+          location = "in my area";
+        }
+        if (locationType == "political") {
+          location = "near " + orgCollection.location.longName;
+        }
+      }
+      if (!!location + !!country != 1) {
+        // Either location or country, but not both.
+        return;
+      }
+      var text = "";
+      if (country) {
+        if (number == 1) {
+          text = number + " DSEI arms fair exhibitor applied to export military items to " + country + ".";
+        } else {
+          text = number + " DSEI arms fair exhibitors applied to export military items to " + country + ".";
+        }
+      } else {
+        if (number == 1) {
+          text = number + " DSEI arms fair exhibitor has an address " + location + ".";
+        } else {
+          text = number + " DSEI arms fair exhibitors have addresses " + location + ".";
+        }
+      }
+      var tweetData = {
+        url: window.location.href,
+        hashtags: ["stopdsei"],
+        text: text
+      };
+      var twitterUrl = "https://twitter.com/intent/tweet?" + $.param(tweetData);
+      $anchor.attr({
+        href: twitterUrl,
+        target: "_blank",
+      });
+      $paragraph.append($("<a>").append('"' + text + '"'));
+      orgSearchView.$social.show();
     },
 
     renderPages: function (orgCollection, many) {

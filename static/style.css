@@ -2,7 +2,8 @@
 
 #mango
 {
-    width: 775px;
+    width: 900px;
+    text-align: left;
 }
 
 #caat-page-links
@@ -31,9 +32,11 @@
 #mango input[type="submit"],
 #mango input[type="button"]
 {
+    display: inline-block;
     border: 1px solid #ccc;
     border-radius: 2px;
-    padding: 2px 4px;
+    padding: 0 4px;
+    margin: 0;
     line-height: 22px;
 
     color: #333;
@@ -84,7 +87,7 @@ mango input[type="submit"]:hover,
 
 #mango h3
 {
-    margin: 6px 2px 8px 2px;
+    margin: 8px 2px;
     line-height: 22px;
 }
 
@@ -162,7 +165,7 @@ form.mango input[disabled="disabled"]
 #mango div.mango-box.right
 {
     width: 365px;
-    float: right;
+    float: left;
 }
 
 #mango div.center-box
@@ -305,6 +308,7 @@ form.mango textarea
     height: 100px;
     width: 187px;
 }
+
 form.mango label.textarea
 {
     width: 187px;
@@ -360,13 +364,13 @@ form.mango input[type="checkbox"]
     overflow: visible;
     margin: 2px;
     margin-bottom: 12px;
-    padding: 0px;
+    padding: 2px;
     line-height: 26px;
     min-height: 26px;
 }
 #mango .action-bar.no-border
 {
-    margin: 0px;
+    margin: 4px 2px;
     border: none;
 }
 #mango .action-bar.right
@@ -789,6 +793,17 @@ div.ui-timepicker td a.ui-state-active
 {
 }
 
+#contact-form label,
+#contact-form label textarea
+{
+    clear: both;
+}
+#contact-form label[name="source"],
+#contact-form label[name="source"] textarea
+{
+    width: 359px;
+}
+
 #address-form label[name="lookup"]
 {
     float: right;
@@ -812,6 +827,39 @@ div.ui-timepicker td a.ui-state-active
     border-radius: 2px;
 }
 
+#mango div.contact-box
+{
+    margin-top: 2px;
+    border: 1px solid #aaa;
+    padding: 2px;
+    border-radius: 2px;
+}
+#mango div.contact-box .actions
+{
+    float: right;
+    clear: both;
+}
+#mango div.contact-row
+{
+    margin: 4px;
+    overflow: auto;
+}
+#mango div.contact-row .contact
+{
+    float: left;
+}
+#mango div.contact-row .control
+{
+    clear: both;
+    padding-top: 4px;
+}
+#mango div.contact-row form,
+#mango div.contact-row input
+{
+    display: inline;
+    width: auto;
+}
+
 #mango div.address-box
 {
     margin-top: 2px;
@@ -826,7 +874,7 @@ div.ui-timepicker td a.ui-state-active
 }
 #mango div.address-row
 {
-    margin: 6px 0;
+    margin: 4px;
     overflow: auto;
 }
 #mango div.address-row .pin
@@ -1131,6 +1179,42 @@ div.ui-timepicker td a.ui-state-active
 
 
 
-/* Fix CAAT jQuery UI rules */
+/* Social */
+
+.mango-social-bar
+{
+    margin: 2px;
+    margin-top: 4px;
+    margin-bottom: 10px;
+    display: none;
+}
+.mango-social-bar > a
+{
+    display: block;
+    border-radius: 4px;
+    background: #33BCF1;
+}
+.mango-social-bar > a:before,
+.mango-social-bar > a:after
+{
+    content: "";
+    display: table;
+}
+.mango-social-bar > a:after
+{
+    clear: both;
+}
+
+#mango .mango-social-bar p
+{
+    float: left;
+    width: 310px;
+    min-height: 27px;
+    margin: 2px 6px;
+    padding: 4px;
+    border-radius: 4px;
+    color: #333;
+    background: #fff;
+}
 
 

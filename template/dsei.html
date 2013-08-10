@@ -1,0 +1,225 @@
+<%inherit file="base.html"/>
+
+<%def name="title()">The Arms Trade on your Doorstep</%def>
+
+<%def name="page()">
+
+<style>
+
+@import url(http://fonts.googleapis.com/css?family=Raleway:500);
+
+#mango h1
+{
+margin: 25px 2px;
+text-align: center;
+font-family: 'Raleway', sans-serif;
+}
+
+.mango-dsei
+{
+width: 940px;
+margin: auto;
+text-align: center;
+font-family: 'Raleway', sans-serif;
+}
+
+.mango-dsei img
+{
+display: inline-block;
+margin-top: 10px;
+}
+
+.mango-dsei img:first-child
+{
+margin-top: 0;
+}
+
+.mango-dsei-caption
+{
+margin: auto;
+font-size: 80%;
+}
+
+.mango-dsei-column-1,
+.mango-dsei-column-2,
+.mango-dsei-column-3
+{
+float: left;
+margin: 5px;
+}
+
+.mango-dsei-column-1 { width: 360px; }
+.mango-dsei-column-2 { width: 300px; }
+.mango-dsei-column-3 { width: 240px; }
+
+#mango .mango-dsei-action-box
+{
+width: 300px;
+margin: 0 4px;
+margin-bottom: 30px;
+text-align: center;
+}
+
+#mango .mango-dsei-action-box h3
+{
+height: 40px;
+font-size: 18px;
+line-height:40px;
+margin:0;
+padding:0;
+text-align: center;
+}
+
+#mango .mango-dsei-action-box form
+{
+display: block;
+margin: 0 auto;
+}
+
+#mango .mango-dsei-action-box input
+{
+display: inline-block;
+height: 30px;
+width: 170px;
+margin: 0;
+border: 1px solid #ddd;
+border-right: 0;
+padding: 0 4px;
+border-radius: 6px;
+border-bottom-right-radius: 0;
+border-top-right-radius: 0;
+font-size: 13px;
+background: #fff;
+}
+#mango .mango-dsei-action-box input[type="submit"]
+{
+box-sizing: content-box;
+-moz-box-sizing: content-box;
+display: inline-block;
+height: 30px;
+width: 60px;
+margin: 0;
+border: 1px solid #ddd;
+padding: 0 4px;
+border-radius: 6px;
+border-bottom-left-radius: 0;
+border-top-left-radius: 0;
+font-size: 13px;
+color: #C6181B;
+background: #eee;
+}
+#mango .mango-dsei-action-box input[type="submit"][disabled]
+{
+color: #666;
+}
+
+#mango .mango-dsei-action-box a
+{
+display: block;
+height: 30px;
+width: 238px;
+line-height: 30px;
+margin: 0 auto;
+margin-bottom: 10px;
+border: 1px solid #ddd;
+padding: 0 4px;
+border-radius: 6px;
+font-size: 13px;
+color: #C6181B;
+background: #eee;
+}
+
+.ui-autocomplete
+{
+height: 200px;
+overflow-y: scroll;
+overflow-x: hidden;
+}
+
+</style>
+
+<h1>Mapping DSEI - the world's biggest arms fair</h1>
+
+<div class="mango-dsei">
+
+  <div class="mango-dsei-column-1">
+    <div id="mango-map-box">
+      <div id="mango-map-canvas">Map loading...</div>
+    </div>
+  </div>
+
+  <div class="mango-dsei-column-2">
+    <div class="mango-dsei-action-box">
+      <h3>Exhibitors from your area</h3>
+      <form
+         id="mango-dsei-form-location"
+         action="${url_root}organisation"
+         >
+        <input
+           type="hidden"
+           name="tagAll"
+           value="1"
+           >
+        <input
+           type="hidden"
+           name="tag"
+           value="dsei-2013"
+           >
+        <input
+           type="text"
+           name="location"
+           value=""
+           placeholder="Town or postcode"
+           ><input type="submit" value="Go">
+      </form>
+    </div>
+
+    <div class="mango-dsei-action-box">
+      <h3>Exhibitors by target market</h3>
+      <form
+         id="mango-dsei-form-country"
+         action="${url_root}organisation"
+         >
+        <input
+           type="hidden"
+           name="tagAll"
+           value="1"
+           >
+        <input
+           type="hidden"
+           name="tag"
+           value="dsei-2013"
+           >
+        <input
+           id="mango-dsei-input-country-value"
+           type="hidden"
+           name="tag"
+           value=""
+           >
+        <input
+           id="mango-dsei-input-country-display"
+           type="text"
+           placeholder="Country name"
+           ><input type="submit" value="Choose" disabled>
+      </form>
+    </div>
+
+    <div class="mango-dsei-action-box">
+      <h3>Take action</h3>
+      <a href="http://www.caat.org.uk/resources/mapping/event?tag=dsei-2013">See planned events</a>
+      <a target="_blank" href="http://www.stopthearmsfair.org.uk/take-action/planning/">Organise an event</a>
+      <a target="_blank" href="http://www.stopthearmsfair.org.uk/take-action/">Other ways to take action</a>
+    </div>
+  </div>
+
+<div class="mango-dsei-column-3">
+  <img src="${url_root}static/image/staf-logotype.png">
+  <img src="http://www.caat.org.uk/images/pictures/mapping-dsei-2003-crowd-control.jpg" width="240">
+  <p class="mango-dsei-caption">'Crowd control' equipment at DSEi in 2003</p>
+</div>
+
+</div>
+
+
+
+</%def>

@@ -476,18 +476,30 @@
     },
 
     testStateChange: function(modelData) {
+      var searchString = m.searchString();
       var queryString = this.toQueryString(modelData);
-      queryString = queryString ? "?" + queryString : "";
-      
-      if (m.searchString() != queryString) {
-        var url = m.urlRoot + "event";
-        url += queryString;
-        m.log.debug("pushState", queryString);
-        if (window.History.enabled) {
-          window.History.pushState(null, null, url);
-        }
-        m.updateVisibilityButtons(url);
+
+      if (searchString == queryString) {
+        return;
       }
+
+      var searchData = this.attributesFromQueryString(searchString);
+      var queryData = this.attributesFromQueryString(queryString);
+      searchString = this.toQueryString(
+        _.extend(this.defaultParameters(), searchData));
+      queryString = this.toQueryString(
+        _.extend(this.defaultParameters(), queryData));
+
+      if (searchString == queryString) {
+        return;
+      }
+
+      var url = m.urlRoot + "event?" + queryString;
+      m.log.debug("pushState", queryString);
+      if (window.History.enabled) {
+        window.History.pushState(null, null, url);
+      }
+      m.updateVisibilityButtons(url);
     },
 
     isBig: function (geobox) {
@@ -603,11 +615,6 @@
       query = query || m.searchString();
 
       var model = this;
-
-      if (query.indexOf("?") !== 0) {
-        return {};
-      }
-      query = query.substr(1);
 
       var params = query.split("&");
 
@@ -743,9 +750,7 @@
         return;
       }
 
-      var scaled = new Geobox(location);
-      scaled.scale(.75);
-      this.mapView.setGeobox(scaled);
+      this.mapView.encompass(location, .75);
 
       // In case the map has already moved, but not updated.
       google.maps.event.trigger(this.mapView, "idle");
@@ -798,32 +803,21 @@
 
         var mapGeobox = view.mapView.getGeobox();
         var modelGeobox = new Geobox(view.model.get("location"));
-        var target = view.mapView.target;
-        view.mapView.target = null;
+        var targetGeobox = view.mapView.targetGeobox;
+        var resultGeobox = view.mapView.resultGeobox;
+        view.mapView.targetGeobox = null;
+        view.mapView.resultGeobox = null;
 
-        if (mapGeobox && target && mapGeobox.matchesTarget(target)) {
-          // Matches target. Do nothing.
+        if (mapGeobox && targetGeobox && mapGeobox.coordsDifference(resultGeobox) < 0.05) {
+          // Map bounds match target map bounds. Do nothing.
           return;
         }
-
-        // Set object from map.
-
-        if (false && modelGeobox.hasCoords()) {
-          view.mapView.addDot(modelGeobox.south, modelGeobox.west,
-                              "ddddff", "south west", null);
-          view.mapView.addDot(modelGeobox.north, modelGeobox.east,
-                              "ddddff", "north east", null);
-          var scaled = new Geobox(modelGeobox);
-          scaled.scale(.75);
-          view.mapView.addDot(scaled.south, scaled.west,
-                              "ddddff", "south west", null);
-          view.mapView.addDot(scaled.north, scaled.east,
-                              "ddddff", "north east", null);
-        }
-
+        
         if (!m.compareGeobox(mapGeobox, modelGeobox)) {
+          // Coords are very close, name may have gone = small map drag.
           return;
         }
+
         var data = {
           location: mapGeobox
         };

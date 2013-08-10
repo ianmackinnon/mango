@@ -139,6 +139,26 @@ CREATE TABLE eventtag_v (
     CHECK (public IN (0, 1))
 );
 
+CREATE TABLE contact_v (
+    contact_v_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, --
+    contact_id INTEGER NOT NULL, 
+    medium_id INTEGER NOT NULL, 
+    moderation_user_id INTEGER, 
+    a_time FLOAT NOT NULL, 
+    public BOOLEAN, 
+    existence BOOLEAN NOT NULL, --
+
+    text VARCHAR NOT NULL, 
+    description VARCHAR, 
+    source VARCHAR, 
+
+    FOREIGN KEY(contact_id) REFERENCES contact (contact_id), --
+    FOREIGN KEY(moderation_user_id) REFERENCES user (user_id), 
+    CHECK (public IN (0, 1))
+);
+
+
+
 CREATE TABLE org_address_v (
     org_id INTEGER NOT NULL, 
     address_id INTEGER NOT NULL, 
@@ -221,6 +241,23 @@ CREATE TABLE org_event_v (
     FOREIGN KEY(org_id) REFERENCES org (org_id), 
     FOREIGN KEY(event_id) REFERENCES event (event_id)
 );
+CREATE TABLE org_contact_v (
+    org_id INTEGER NOT NULL, 
+    contact_id INTEGER NOT NULL, 
+    a_time FLOAT, 
+    existence BOOLEAN NOT NULL, --
+    FOREIGN KEY(org_id) REFERENCES org (org_id), 
+    FOREIGN KEY(contact_id) REFERENCES contact (contact_id)
+);
+CREATE TABLE event_contact_v (
+    event_id INTEGER NOT NULL, 
+    contact_id INTEGER NOT NULL, 
+    a_time FLOAT, 
+    existence BOOLEAN NOT NULL, --
+    FOREIGN KEY(event_id) REFERENCES event (event_id), 
+    FOREIGN KEY(contact_id) REFERENCES contact (contact_id)
+);
+
 
 
 
@@ -627,6 +664,71 @@ end;
 
 
 
+-- contact
+
+create trigger contact_insert_after after insert on contact
+begin
+    update contact
+        set a_time = strftime('%s','now') where contact_id = new.contact_id;
+    insert into contact_v (
+        contact_id,
+        medium_id,
+	moderation_user_id, a_time, public,
+	text, description, source,
+        existence
+        )
+        values (
+        new.contact_id,
+        new.medium_id,
+	new.moderation_user_id, strftime('%s','now'), new.public,
+	text, description, source,
+	1
+	);
+end;
+
+create trigger contact_update_after after update on contact
+when cast(strftime('%s','now') as float) != new.a_time
+begin
+    update contact
+        set a_time = strftime('%s','now') where contact_id = new.contact_id;
+    insert into contact_v (
+        contact_id,
+        medium_id,
+	moderation_user_id, a_time, public,
+	text, description, source,
+	existence
+        )
+        values (
+        new.contact_id,
+        new.medium_id,
+	new.moderation_user_id, strftime('%s','now'), new.public,
+	new.text, new.description, new.source,
+	1
+	);
+end;
+
+create trigger contact_delete_after after delete on contact
+begin
+    insert into contact_v (
+        contact_id,
+        medium_id,
+	moderation_user_id, a_time, public,
+	text, description, source,
+	existence
+        )
+        values (
+        old.contact_id,
+        old.medium_id,
+	old.moderation_user_id, strftime('%s','now'), old.public,
+	old.text, old.description, old.source,
+	0
+	);
+end;
+
+
+
+
+
 -- org_address
 
 
@@ -903,6 +1005,62 @@ create trigger org_event_delete_after after delete on org_event
 begin
     insert into org_event_v (org_id, event_id, a_time, existence)
         values (old.org_id, old.event_id, strftime('%s','now'), 0);
+end;
+
+
+
+-- org_contact
+
+
+create trigger org_contact_insert_after after insert on org_contact
+begin
+    update org_contact
+        set a_time = strftime('%s','now') where org_id = new.org_id;
+    insert into org_contact_v (org_id, contact_id, a_time, existence)
+        values (new.org_id, new.contact_id, strftime('%s','now'), 1);
+end;
+
+create trigger org_contact_update_after after update on org_contact
+when cast(strftime('%s','now') as float) != new.a_time
+begin
+    update org_contact
+        set a_time = strftime('%s','now') where org_id = new.org_id;
+    insert into org_contact_v (org_id, contact_id, a_time, existence)
+        values (new.org_id, new.contact_id, strftime('%s','now'), 1);
+end;
+
+create trigger org_contact_delete_after after delete on org_contact
+begin
+    insert into org_contact_v (org_id, contact_id, a_time, existence)
+        values (old.org_id, old.contact_id, strftime('%s','now'), 0);
+end;
+
+
+
+-- event_contact
+
+
+create trigger event_contact_insert_after after insert on event_contact
+begin
+    update event_contact
+        set a_time = strftime('%s','now') where event_id = new.event_id;
+    insert into event_contact_v (event_id, contact_id, a_time, existence)
+        values (new.event_id, new.contact_id, strftime('%s','now'), 1);
+end;
+
+create trigger event_contact_update_after after update on event_contact
+when cast(strftime('%s','now') as float) != new.a_time
+begin
+    update event_contact
+        set a_time = strftime('%s','now') where event_id = new.event_id;
+    insert into event_contact_v (event_id, contact_id, a_time, existence)
+        values (new.event_id, new.contact_id, strftime('%s','now'), 1);
+end;
+
+create trigger event_contact_delete_after after delete on event_contact
+begin
+    insert into event_contact_v (event_id, contact_id, a_time, existence)
+        values (old.event_id, old.contact_id, strftime('%s','now'), 0);
 end;
 
 

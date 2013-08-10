@@ -14,6 +14,7 @@ from base_org import BaseOrgHandler
 from base_event import BaseEventHandler
 from orgtag import BaseOrgtagHandler
 from address import BaseAddressHandler
+from contact import BaseContactHandler
 
 from model import Org, Note, Address, Orgalias, Event
 
@@ -56,12 +57,15 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
                 }))
     
     def get(self):
+        min_radius = 10
+
         is_json = self.content_type("application/json")
         name = self.get_argument("name", None, json=is_json)
         name_search = self.get_argument("nameSearch", None, json=is_json)
         tag_name_list = self.get_arguments_multi("tag", json=is_json)
         tag_all = self.get_argument_bool("tagAll", None, json=is_json)
-        location = self.get_argument_geobox("location", None, json=is_json)
+        location = self.get_argument_geobox(
+            "location", min_radius=min_radius, default=None, json=is_json)
         offset = self.get_argument_int("offset", None, json=is_json)
         page_view = self.get_argument_allowed(
             "pageView", ["entity", "map", "marker"],
@@ -185,11 +189,13 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
                 orgtag_list=org.orgtag_list
                 event_list=org.event_list
                 orgalias_list=org.orgalias_list
+                contact_list=org.contact_list
             else:
                 address_list=org.address_list_public
                 orgtag_list=org.orgtag_list_public
                 event_list=org.event_list_public
                 orgalias_list=org.orgalias_list_public
+                contact_list=org.contact_list_public
 
             note_list, note_count = org.note_list_filtered(
                 note_search=note_search,
@@ -202,6 +208,7 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
             orgtag_list=[]
             event_list=[]
             orgalias_list=[]
+            contact_list=[]
             note_list=[]
             note_count = 0
 
@@ -233,6 +240,7 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
         note_list = [note.obj(public=public) for note in note_list]
         event_list = [event.obj(public=public) for event in event_list]
         orgalias_list = [orgalias.obj(public=public) for orgalias in orgalias_list]
+        contact_list = [contact.obj(public=public, medium=contact.medium.name) for contact in contact_list]
 
         edit_block = False
         if org_v:
@@ -249,6 +257,7 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
             note_count=note_count,
             event_list=event_list,
             orgalias_list=orgalias_list,
+            contact_list=contact_list,
             )
 
         version_url=None
@@ -505,6 +514,103 @@ class OrgAddressHandler(BaseOrgHandler, BaseAddressHandler):
         address = self._get_address(address_id)
         if address in org.address_list:
             org.address_list.remove(address)
+            self.orm_commit()
+        return self.redirect_next(org.url)
+
+
+
+class OrgContactListHandler(BaseOrgHandler, BaseContactHandler):
+    @authenticated
+    def get(self, org_id):
+        required = True
+        if self.contributor:
+            org_v = self._get_org_v(org_id)
+            if org_v:
+                required = False
+        org = self._get_org(org_id, required=required)
+
+        if not self.moderator and org_v:
+            org = org_v
+
+        obj = org.obj(
+            public=self.moderator,
+            )
+
+        self.render(
+            'contact.html',
+            obj=None,
+            entity=obj,
+            medium_list=self.medium_list,
+            )
+        
+    @authenticated
+    def post(self, org_id):
+        required = True
+        if self.contributor:
+            org_v = self._get_org_v(org_id)
+            if org_v:
+                required = False
+        org = self._get_org(org_id, required=required)
+
+        contact = self._create_contact()
+        self._before_contact_set(contact)
+        self.orm.add(contact)
+        self.orm_commit()
+        if self.moderator:
+            org.contact_list.append(contact)
+            self.orm_commit()
+            return self.redirect_next(org.url)
+
+        id_ = contact.contact_id
+
+        self.orm.delete(contact)
+        self.orm_commit()
+
+        self.orm.query(Contact_v) \
+            .filter(Contact_v.contact_id==id_) \
+            .delete()
+        self.orm_commit()
+
+        contact_v = self._create_contact_v(id_)
+        self._before_contact_set(contact_v)
+        self.orm.add(contact_v)
+        self.orm_commit()
+
+        org_id = org and org.org_id or org_v.org_id
+        contact_id = id_
+
+        engine = self.orm.connection().engine
+        sql = """
+insert into org_contact_v (org_id, contact_id, a_time, existence)
+values (%d, %d, 0, 1)""" % (org_id, contact_id)
+        engine.execute(sql)
+
+        return self.redirect_next(contact_v.url)
+
+
+
+class OrgContactHandler(BaseOrgHandler, BaseContactHandler):
+    @authenticated
+    def put(self, org_id, contact_id):
+        if not self.moderator:
+            raise HTTPError(405)
+
+        org = self._get_org(org_id)
+        contact = self._get_contact(contact_id)
+        if contact not in org.contact_list:
+            org.contact_list.append(contact)
+            self.orm_commit()
+        return self.redirect_next(org.url)
+
+    @authenticated
+    def delete(self, org_id, contact_id):
+        if not self.moderator:
+            raise HTTPError(405)
+
+        org = self._get_org(org_id)
+        contact = self._get_contact(contact_id)
+        if contact in org.contact_list:
+            org.contact_list.remove(contact)
             self.orm_commit()
         return self.redirect_next(org.url)
 

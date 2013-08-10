@@ -176,6 +176,32 @@ if None in path_keys:
 
 
     %if obj:
+    %if "contact_list" in obj:
+    <div class="action-bar no-border">
+      <h3>Contact</h3>
+
+      %if current_user and (parameters.get("view", None) == "edit"):
+      <div class="actions">
+        <a
+           href="${url_rewrite("%s/contact" % obj["url"])}"
+           class="action"
+           >Add contact</a>
+      </div>
+      %endif
+    </div>
+
+    %for contact in obj["contact_list"]:
+    ${self.mini.contact_box(
+      contact,
+      "%s%s" % (obj["url"], contact["url"]), unlink=True,
+      parameters=parameters,
+      )}
+    %endfor
+    %endif
+    %endif
+
+
+    %if obj:
     %if "address_list" in obj:
     <div class="action-bar no-border">
       <h3>Addresses</h3>
@@ -198,7 +224,6 @@ if None in path_keys:
       )}
     %endfor
     %endif
-
     %endif
 
     %if obj:

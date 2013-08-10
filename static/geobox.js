@@ -32,6 +32,8 @@
 
   var Geobox = function () {
     this.name = null;
+    this.longName = null;
+    this.type = null;
     this.south = null;
     this.north = null;
     this.west = null;
@@ -133,6 +135,12 @@
 
     if (obj.hasOwnProperty("name")) {
       this.name = obj.name;  // toString
+    }
+    if (obj.hasOwnProperty("longName")) {
+      this.longName = obj.longName;  // toString
+    }
+    if (obj.hasOwnProperty("type")) {
+      this.type = obj.type;  // toString
     }
     return this.setFromCoords(
       obj.south,

@@ -30,10 +30,10 @@ var m = {
     var State = History.getState();
     var search = "";
     var index = State.url.indexOf("?");
-    if (index >= 0) {
-      search = State.url.substr(index);
+    if (index == -1) {
+      return "";
     }
-    return search;
+    return State.url.substr(index + 1);
   },
 
   _templateCache: {},
@@ -253,8 +253,84 @@ var m = {
 
   initMap: function (callback) {
     var mapView = new window.MapView();
+    window.mapView = mapView;
     $("#mango-map-canvas").replaceWith(mapView.$el);
     callback(mapView);
+  },
+
+
+
+  initDsei: function () {
+    var $form = $("#mango-dsei-form-country");
+    $form.submit(false);
+    var $inputDisplay = $("#mango-dsei-input-country-display");
+    var $inputValue = $("#mango-dsei-input-country-value");
+    var url = m.urlRoot + "dsei-tag";
+    $.getJSON(url, function(data) {
+      var autocomplete = $inputDisplay.autocomplete({
+        source: data,
+        minLength: 0,
+        focus: function (event, ui) {
+          return false;
+        },
+        select: function (event, ui) {
+          //$inputDisplay.val(ui.item.label);
+          $inputValue.val(ui.item.value);
+          $form.unbind("submit", false);
+          $form.submit();
+          return false;
+        }
+      }).data("ui-autocomplete")._renderItem = function(ul, item) {
+        return $( "<li>" )
+          .append( "<a>" + item.label + "</a>" )
+          .appendTo(ul);
+      };
+      $inputDisplay.focus(function () {
+        $(this).autocomplete("search", $(this).val());
+      });
+    });
+
+    var eventCollection = new window.EventCollection();
+    var eventCollectionView = new window.EventCollectionView({
+      collection: eventCollection,
+      mapView: mapView
+    });
+    eventCollection.fetch({
+      data: {
+        tag: "dsei-2013",
+        pageView: "marker"
+      },
+      success: function(collection, response) {
+        eventCollectionView.initialize();
+        eventCollectionView.render(true);
+      },
+      error: function (collection, response) {
+        if (response.statusText !== "abort") {
+          console.log("error", collection, response);
+        }
+      }
+    });
+
+    var orgCollection = new window.OrgCollection();
+    var orgCollectionView = new window.OrgCollectionView({
+      collection: orgCollection,
+      mapView: mapView
+    });
+    orgCollection.fetch({
+      data: {
+        tag: "dsei-2013",
+        pageView: "marker"
+      },
+      success: function(collection, response) {
+        orgCollectionView.initialize();
+        orgCollectionView.render(true);
+      },
+      error: function (collection, response) {
+        if (response.statusText !== "abort") {
+          console.log("error", collection, response);
+        }
+      }
+    });
   },
 
   initHome: function (mapView) {
@@ -322,6 +398,7 @@ var m = {
       $form: $("#org-search"),
       $results: $("#org_list").find(".column"),
       $paging: $("#org_list").find(".counts"),
+      $social: $("#org_list").find(".mango-social-bar"),
       mapView: mapView
     });
     $("#org-search").replaceWith(orgSearchView.$el);
@@ -762,6 +839,7 @@ var m = {
 
   compareGeobox: function(a, b) {
     // a = old, b = new
+    // return true if they differ, false otherwise.
     if (!a && !b) {
       return false;
     }
@@ -880,6 +958,12 @@ var m = {
     [/^\/$/, function () {
       m.initMap(function (mapView) {
         m.initHome(mapView);
+      });
+    }],
+
+    [/^\/dsei$/, function () {
+      m.initMap(function (mapView) {
+        m.initDsei(mapView);
       });
     }],
 

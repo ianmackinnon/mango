@@ -213,6 +213,70 @@ def get_user_pending_event_address(orm, user, event_id):
 
 
 
+def get_user_pending_contact_org(orm, user, contact_id):
+    Org_v_all = aliased(Org_v)
+    Org_v_new = aliased(Org_v)
+
+    query = orm.query(Org_v_all) \
+        .outerjoin((
+            Org,
+            Org.org_id == Org_v_all.org_id
+            )) \
+        .join((
+            org_contact_v,
+            and_(
+                org_contact_v.c.org_id == Org_v_all.org_id,
+                org_contact_v.c.contact_id == contact_id,
+                org_contact_v.c.existence == 1,
+                )
+            )) \
+        .filter(Org_v_all.moderation_user_id==user.user_id) \
+        .filter(~exists().where(and_(
+                Org_v_new.org_id == Org_v_all.org_id,
+                Org_v_new.a_time > Org_v_all.a_time,
+                ))) \
+        .filter(or_(
+                Org.a_time == None,
+                Org_v_all.a_time > Org.a_time,
+                )) \
+        .order_by(Org_v_all.a_time.desc()) \
+
+    return query.all()
+
+
+
+def get_user_pending_contact_event(orm, user, contact_id):
+    Event_v_all = aliased(Event_v)
+    Event_v_new = aliased(Event_v)
+
+    query = orm.query(Event_v_all) \
+        .outerjoin((
+            Event,
+            Event.event_id == Event_v_all.event_id
+            )) \
+        .join((
+            event_contact_v,
+            and_(
+                event_contact_v.c.event_id == Event_v_all.event_id,
+                event_contact_v.c.contact_id == contact_id,
+                event_contact_v.c.existence == 1,
+                )
+            )) \
+        .filter(Event_v_all.moderation_user_id==user.user_id) \
+        .filter(~exists().where(and_(
+                Event_v_new.event_id == Event_v_all.event_id,
+                Event_v_new.a_time > Event_v_all.a_time,
+                ))) \
+        .filter(or_(
+                Event.a_time == None,
+                Event_v_all.a_time > Event.a_time,
+                )) \
+        .order_by(Event_v_all.a_time.desc()) \
+
+    return query.all()
+
+
+
 class UserListHandler(BaseHandler):
     @authenticated
     def get(self):

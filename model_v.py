@@ -14,11 +14,12 @@ from sqlalchemy.orm.exc import NoResultFound
 
 import geo
 
-from model import Base, User, MangoEntity, \
+from model import Base, User, Medium, MangoEntity, \
     gravatar_hash, \
     classproperty, \
-    Org, Event, Address, \
-    org_address, event_address
+    Org, Event, Address, Contact, \
+    org_address, event_address, \
+    org_contact, event_contact
 
 from model import sanitise_name, sanitise_address
 
@@ -54,6 +55,25 @@ event_address_v = Table(
 
 
 
+org_contact_v = Table(
+    'org_contact_v', Base.metadata,
+    Column('org_id', Integer, nullable=False),
+    Column('contact_id', Integer, nullable=False),
+    Column('a_time', Float(), nullable=False),
+    Column('existence', Boolean, nullable=False),
+    )
+
+
+
+event_contact_v = Table(
+    'event_contact_v', Base.metadata,
+    Column('event_id', Integer, nullable=False),
+    Column('contact_id', Integer, nullable=False),
+    Column('a_time', Float(), nullable=False),
+    Column('existence', Boolean, nullable=False),
+    )
+
+
 def get_history(session, user_id=None, limit=20, offset=0):
     if (user_id):
         user_sql_1 = ""
@@ -75,6 +95,8 @@ from
   select "event" as type, event_v.event_id as entity_id, event_v_id as entity_v_id, event_v.a_time, event.event_id and 1 as existence, existence as existence_v, event_v.name as name, event_v.moderation_user_id from event_v left outer join event using (event_id)
   union
   select "address" as type, address_v.address_id as entity_id, address_v_id as entity_v_id, address_v.a_time, address.address_id and 1 as existence, existence as existence_v, address_v.postal as name, address_v.moderation_user_id from address_v left outer join address using (address_id)
+  union
+  select "contact" as type, contact_v.contact_id as entity_id, contact_v_id as entity_v_id, contact_v.a_time, contact.contact_id and 1 as existence, existence as existence_v, contact_v.text as name, contact_v.moderation_user_id from contact_v left outer join contact using (contact_id)
   union
   select "organisation-tag" as type, orgtag_v.orgtag_id as entity_id, orgtag_v_id as entity_v_id, orgtag_v.a_time, orgtag.orgtag_id and 1 as existence, existence as existence_v, orgtag_v.name as name, orgtag_v.moderation_user_id from orgtag_v left outer join orgtag using (orgtag_id)
   union
@@ -225,6 +247,126 @@ def accept_event_address_v(orm, event_id):
         if event in address.event_list:
             continue
         address.event_list.append(event)
+    orm.commit()
+
+
+
+def accept_contact_org_v(orm, contact_id):
+    query = orm.query(org_contact_v.c.org_id) \
+        .filter(and_(
+            org_contact_v.c.contact_id == contact_id,
+            org_contact_v.c.existence == True,
+            )) \
+        .order_by(org_contact_v.c.a_time.desc()) \
+        .limit(1)
+    try:
+        (org_id, ) = query.one()
+    except NoResultFound as e:
+        return False
+    
+    query = orm.query(org_contact) \
+        .filter(and_(
+            org_contact.c.contact_id == contact_id,
+            org_contact.c.org_id == org_id,
+            ))
+    if query.count():
+        return False
+
+    query = orm.query(Org) \
+        .filter(Org.org_id == org_id)
+
+    if not query.count():
+        return True
+
+    items = [{
+            "contact_id": contact_id,
+            "org_id": org_id,
+            "a_time": 0,
+            }]
+    orm.connection().execute(org_contact.insert(), *items)
+    return True
+        
+
+
+def accept_contact_event_v(orm, contact_id):
+    query = orm.query(event_contact_v.c.event_id) \
+        .filter(and_(
+            event_contact_v.c.contact_id == contact_id,
+            event_contact_v.c.existence == True,
+            )) \
+        .order_by(event_contact_v.c.a_time.desc()) \
+        .limit(1)
+    try:
+        (event_id, ) = query.one()
+    except NoResultFound as e:
+        return False
+
+    query = orm.query(event_contact) \
+        .filter(and_(
+            event_contact.c.contact_id == contact_id,
+            event_contact.c.event_id == event_id,
+            ))
+    if query.count():
+        return False
+
+    query = orm.query(Event) \
+        .filter(Event.event_id == event_id)
+
+    if not query.count():
+        return True
+
+    items = [{
+            "contact_id": contact_id,
+            "event_id": event_id,
+            "a_time": 0,
+            }]
+    orm.connection().execute(event_contact.insert(), *items)
+    return True
+        
+def accept_org_contact_v(orm, org_id):
+    """
+    Take an org ID of a newly accepted (already committed) org.
+    Find matching org_contact_v (they can only be in the future from the same non-mod as the org).
+    If the contactes already exist, create new org_contact rows to link them.
+    """
+    org = orm.query(Org).filter_by(org_id=org_id).first()
+    if not org:
+        return
+
+    contact_id_list = orm.query(org_contact_v.c.contact_id) \
+        .filter(org_contact_v.c.org_id == org_id) \
+        .distinct()
+
+    for (contact_id, ) in contact_id_list:
+        contact = orm.query(Contact).filter_by(contact_id=contact_id).first()
+        if not contact:
+            continue
+        if org in contact.org_list:
+            continue
+        contact.org_list.append(org)
+    orm.commit()
+
+def accept_event_contact_v(orm, event_id):
+    """
+    Take an event ID of a newly accepted (already committed) event.
+    Find matching event_contact_v (they can only be in the future from the same non-mod as the event).
+    If the contactes already exist, create new event_contact rows to link them.
+    """
+    event = orm.query(Event).filter_by(event_id=event_id).first()
+    if not event:
+        return
+
+    contact_id_list = orm.query(event_contact_v.c.contact_id) \
+        .filter(event_contact_v.c.event_id == event_id) \
+        .distinct()
+
+    for (contact_id, ) in contact_id_list:
+        contact = orm.query(Contact).filter_by(contact_id=contact_id).first()
+        if not contact:
+            continue
+        if event in contact.event_list:
+            continue
+        contact.event_list.append(event)
     orm.commit()
 
 
@@ -546,3 +688,65 @@ class Note_v(Base, MangoEntity):
         self.a_time = 0
         self.public = public
         
+
+class Contact_v(Base, MangoEntity):
+    __tablename__ = 'contact_v'
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    contact_v_id = Column(Integer, primary_key=True)
+    existence = Column(Boolean)
+
+    contact_id = Column(Integer, nullable=False)
+    medium_id = Column(Integer, ForeignKey(Medium.medium_id), nullable=False)
+
+    text = Column(Unicode(), nullable=False)
+    description = Column(Unicode())
+    source = Column(Unicode())
+
+    moderation_user_id = Column(Integer, ForeignKey(User.user_id))
+    a_time = Column(Float(), nullable=False)
+    public = Column(Boolean)
+
+    moderation_user = relationship(User, backref='moderation_contact_v_list')
+    medium = relationship(Medium)
+
+    content = [
+        "text",
+        "description",
+        "source",
+        ]
+
+    @classproperty
+    @classmethod
+    def entity_id(cls):
+        return cls.contact_id
+
+    @classproperty
+    @classmethod
+    def entity_v_id(cls):
+        return cls.contact_v_id
+    
+    def __init__(self,
+                 contact_id,
+                 medium,
+                 text, description=None, source=None,
+                 moderation_user=None, public=None):
+
+        #
+        self.contact_id = contact_id
+        self.existence = True
+        #
+
+        self.medium = medium
+
+        self.text = sanitise_name(unicode(text))
+        self.description = description and unicode(description)
+        self.source = source and unicode(source)
+
+        self.moderation_user = moderation_user
+        self.a_time = 0
+        self.public = public
+        
+
+
+

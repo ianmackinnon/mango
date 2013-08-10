@@ -144,6 +144,27 @@ CREATE TABLE eventtag_v (
       REFERENCES user (user_id)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
+CREATE TABLE contact_v (
+    contact_v_id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, --
+    contact_id INTEGER NOT NULL,
+    medium_id INTEGER NOT NULL,
+    moderation_user_id INTEGER,
+    a_time DOUBLE NOT NULL, 
+    public BOOLEAN,
+    existence BOOLEAN NOT NULL, --
+
+    text LONGTEXT NOT NULL,
+    description LONGTEXT,
+    source LONGTEXT,
+
+    KEY contact_id (contact_id),
+    KEY moderation_user_id (moderation_user_id),
+    CONSTRAINT contact_v_c2 FOREIGN KEY (moderation_user_id)
+      REFERENCES user (user_id)
+) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+
+
+
 CREATE TABLE org_address_v (
     org_id INTEGER NOT NULL,
     address_id INTEGER NOT NULL, 
@@ -233,3 +254,22 @@ CREATE TABLE org_event_v (
     KEY org_id (org_id),
     KEY event_id (event_id)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+
+CREATE TABLE org_contact_v (
+    org_id INTEGER NOT NULL,
+    contact_id INTEGER NOT NULL, 
+    a_time DOUBLE NOT NULL, 
+    existence BOOLEAN NOT NULL, --
+    KEY org_id (org_id),
+    KEY contact_id (contact_id)
+) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+
+CREATE TABLE event_contact_v (
+    event_id INTEGER NOT NULL,
+    contact_id INTEGER NOT NULL, 
+    a_time DOUBLE NOT NULL, 
+    existence BOOLEAN NOT NULL, --
+    KEY event_id (event_id),
+    KEY contact_id (contact_id)
+) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+

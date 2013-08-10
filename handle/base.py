@@ -368,6 +368,11 @@ class BaseHandler(RequestHandler):
                 ))
 
     def static_url(self, path, include_host=None):
+
+
+        return self.url_root[:-1] + "/static/" + path
+
+
         url = RequestHandler.static_url(self, path, include_host)
         return self.url_root[:-1] + url
 
@@ -570,7 +575,7 @@ class BaseHandler(RequestHandler):
         return self.get_argument_allowed(
             "view", ("browse", "edit"), None, json)
 
-    def get_argument_geobox(self, name, default=_ARG_DEFAULT_MANGO, json=False):
+    def get_argument_geobox(self, name, min_radius=None, default=_ARG_DEFAULT_MANGO, json=False):
         value = self.get_argument(name, default, json)
 
         if value == default:
@@ -584,7 +589,7 @@ class BaseHandler(RequestHandler):
             pass
 
         try:
-            return geo.bounds(value)
+            return geo.bounds(value, min_radius=min_radius)
         except ValueError:
             pass
 
@@ -968,6 +973,7 @@ class MangoEntityHandlerMixin(RequestHandler):
     def put(self, entity_id):
         old_entity = self._get(entity_id, required=False)
         pre_entity = self._get_v(entity_id)
+        
         if self.moderator:
             new_entity = self._create(id_=entity_id)
         else:

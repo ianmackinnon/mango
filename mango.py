@@ -36,6 +36,7 @@ from handle.auth import AuthRegisterHandler, \
     AuthLogoutHandler
 from handle.user import UserHandler, UserListHandler
 from handle.home import HomeHandler
+from handle.dsei import DseiHandler, DseiTagListHandler
 from handle.note import NoteHandler, NoteNewHandler, NoteListHandler, \
     NoteRevisionListHandler, NoteRevisionHandler
 from handle.address import AddressHandler, \
@@ -49,6 +50,7 @@ from handle.org import OrgHandler, OrgNewHandler, \
     OrgOrgtagListHandler, OrgOrgtagHandler, \
     OrgNoteListHandler, OrgNoteHandler, \
     OrgAddressListHandler, OrgAddressHandler, \
+    OrgContactListHandler, OrgContactHandler, \
     OrgEventHandler, OrgEventListHandler
 from handle.orgalias import OrgaliasHandler
 from handle.event import EventHandler, EventNewHandler, \
@@ -58,12 +60,15 @@ from handle.event import EventHandler, EventNewHandler, \
     EventEventtagListHandler, EventEventtagHandler, \
     EventNoteListHandler, EventNoteHandler, \
     EventAddressListHandler, EventAddressHandler, \
+    EventContactListHandler, EventContactHandler, \
     EventOrgHandler, EventOrgListHandler, \
     DiaryHandler
 from handle.orgtag import OrgtagHandler, OrgtagListHandler, \
     OrgtagNewHandler, OrgtagNoteListHandler, OrgtagNoteHandler
 from handle.eventtag import EventtagHandler, EventtagListHandler, \
     EventtagNewHandler, EventtagNoteListHandler, EventtagNoteHandler
+from handle.contact import ContactHandler, \
+    ContactRevisionListHandler, ContactRevisionHandler
 from handle.history import HistoryHandler
 from handle.moderation import ModerationQueueHandler
 
@@ -255,6 +260,10 @@ class Application(tornado.web.Application):
 
         self.handlers = [
             (r"/", HomeHandler),
+
+            (r"/dsei", DseiHandler),
+            (r"/dsei-tag", DseiTagListHandler),
+
             (r'/static/image/map/marker/(.*)',
              GenerateMarkerHandler, {'path': "static/image/map/marker"}),
             (r'/(favicon.ico)',
@@ -292,6 +301,9 @@ class Application(tornado.web.Application):
             (r"/organisation/<id>/event", OrgEventListHandler),
             (r"/organisation/<id>/event/<id>",
              OrgEventHandler),
+            (r"/organisation/<id>/contact", OrgContactListHandler),
+            (r"/organisation/<id>/contact/<id>",
+             OrgContactHandler),
 
             (r"/organisation-alias/<id>", OrgaliasHandler),
 
@@ -314,6 +326,9 @@ class Application(tornado.web.Application):
             (r"/event/<id>/organisation", EventOrgListHandler),
             (r"/event/<id>/organisation/<id>",
              EventOrgHandler),
+            (r"/event/<id>/contact", EventContactListHandler),
+            (r"/event/<id>/contact/<id>",
+             EventContactHandler),
             (r"/event/<id>/duplicate", EventDuplicateHandler),
             (r"/diary", DiaryHandler),
 
@@ -341,6 +356,12 @@ class Application(tornado.web.Application):
             (r"/event-tag/<id>/note/<id>",
              EventtagNoteHandler),
 
+            (r"/contact/<id>/revision",
+             ContactRevisionListHandler),
+            (r"/contact/<id>/revision/<id>",
+             ContactRevisionHandler),
+            (r"/contact/<id>", ContactHandler),
+
             (r"/note", NoteListHandler),
             (r"/note/new", NoteNewHandler),
             (r"/note/<id>", NoteHandler),
@@ -352,7 +373,7 @@ class Application(tornado.web.Application):
         self.handlers = self.process_handlers(self.handlers)
 
         settings = {
-            "static_path": os.path.join(os.path.dirname(__file__), "static"),
+#            "static_path": os.path.join(os.path.dirname(__file__), "static"),
             }
 
         # Authentication & Cookies

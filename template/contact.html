@@ -1,0 +1,137 @@
+<%inherit file="base.html"/>
+
+
+<%def name="title()">
+%if entity:
+${entity["name"]} | contact
+%else:
+Contact ${obj["id"]}
+%endif
+</%def>
+
+<%def name="logout_url()">
+<% return obj and obj.get("public", True) and uri or "/" %>
+</%def>
+
+<%def name="page()">
+
+<h1>
+%if entity:
+  <a
+     href="${url_rewrite(entity["url"])}"
+     >${entity["name"]}</a>
+  | contact
+%else:
+<a
+   href="${url_rewrite(obj["url"])}"
+   >Contact ${obj["id"]}</a>
+%endif
+</h1>
+
+  <div class="form-by-map" id="contact-form">
+    ${self.mini.visibility_bar(obj)}
+
+    %if current_user and (parameters.get("view", None) == "edit"):
+    %if edit_block:
+    <p class="warning">Editing is disabled because <a href="${url_rewrite(version_url)}">pending suggested revisions</a> exist.</p>
+    ${contact_browse(obj)}
+    %else:
+    <h3>Contact</h3>
+
+<%
+action = (entity and not obj) and "%s/contact" % entity["url"] or obj["url"]
+next = None
+if entity:
+    next = entity["url"]
+%>
+
+    <form
+       class="mango"
+       action="${url_rewrite(action)}"
+       method="post"
+       >
+      <input name="_xsrf" type="hidden" value="${xsrf}">
+      %if obj:
+      <input name="_method" type="hidden" value="put">
+      %endif
+      %if next:
+      <input name="next" type="hidden" value="${url_rewrite(next, parameters={})}">
+      %endif
+      <label name="text"
+	     >
+	<span>Medium</span>\
+        <br>
+        <select name="medium">
+	  %for name in medium_list:
+          <%
+             selected=name == obj and obj.get("medium", None) == name and " selected" or ""
+             %>
+	  <option value="${name}"${selected}>${name}</option>
+	  %endfor
+        </select>
+      </label>
+      <label name="text"
+             status="${obj and obj.get("text", "") and 'good' or 'bad'}"
+	     >
+	<span>Text</span>\
+	<span class="requirement">(required)</span>
+	<input
+           name="text"
+           value="${obj and obj.get("text", "") or ""}">
+      </label>
+      <label name="description"
+             status="${obj and obj.get("description", "") and 'good' or ''}"
+	     >
+	<span>Description</span>
+	<span class="requirement">(optional)</span>
+	<input
+           name="description"
+           placeholder="Eg. Head Office"
+           value="${obj and obj.get("description", "") or ""}">
+      </label>
+      <label name="source"
+	     status="${obj and obj.get("source", "") and 'good' or ''}"
+	     class="textarea">
+	<span>Source</span>
+	<span class="requirement">(optional)</span>
+	<textarea name="source"
+		  placeholder="One or more external links or publications where
+			       the contact can be verified,
+			       eg. www.example.com/contact,
+			       Janes Defence issue 123."
+                  >${obj and obj.get("source", "") or ""}</textarea>
+      </label>
+      ${self.mini.visibility_input(obj, "public")}
+      <input type="submit" value="Save">
+    </form>
+
+    %endif
+    %else:
+    ${contact_browse(obj)}
+    %endif
+  </div>
+
+</%def>
+
+
+
+<%def name="contact_browse(obj)">
+%if obj:
+<h3>Medium</h3>
+<p>
+  ${obj["medium"]}
+</p>
+<h3>Contact</h3>
+<p>
+  ${obj["text"]}
+</p>
+<h3>Description</h3>
+<p>
+  ${obj["description"] | n, h, convert_links}
+</p>
+<h3>Source</h3>
+<p>
+  ${obj["source"] | n, h, convert_links}
+</p>
+%endif
+</%def>

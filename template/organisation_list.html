@@ -6,11 +6,13 @@
 
 <h1>Companies</h1>
 
+
 <div class="action-bar">
   <form id="org-search">
     <h3>Filter</h3>
     ${self.mini.visibility_search_input(parameters.get("visibility", None), current_user)}
     <input type="hidden" name="offset" value="${offset or ""}">
+    <input type="hidden" name="zoomMax" value="${zoom_max or ""}">
     <div class="inputs">
       <label name="nameSearch">
         <span>Name</span>
@@ -60,6 +62,15 @@ if location:
 </div>
 
 <div class="mango-box right" id="org_list">
+
+<div class="mango-social-bar">
+    <a>
+      <p>
+      </p>
+      <img src="http://www.caat.org.uk/images/graphics/header-social-twitter.png" width"27">
+    </a>
+</div>
+
 <div class="action-bar">
   <span class="counts">
     %if org_packet and 0:

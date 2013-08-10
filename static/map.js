@@ -51,6 +51,7 @@
       this.markers = [];
       this.dots = [];
       this.render();
+      this.frames = {}; 
     },
 
     render: function () {
@@ -87,19 +88,45 @@
       return google.maps.event.addListener(this.map, name, callback);
     },
 
-    setGeobox: function (geobox) {
-      if (!geobox.hasCoords()) {
+    createBounds: function (south, north, west, east) {
+      var sw = new google.maps.LatLng(south, west);
+      var ne = new google.maps.LatLng(north, east);
+      var bounds = new google.maps.LatLngBounds(sw, ne);
+      return bounds;
+    },
+
+    geoboxToBounds: function(geobox) {
+      return this.createBounds.apply(this, _.values(geobox.toCoords()));
+    },
+
+    geoboxUpdateBounds: function (geobox, bounds) {
+      // Updates a geobox using bounds, leaves names intact.
+      geobox.south = bounds.getSouthWest().lat();
+      geobox.north = bounds.getNorthEast().lat();
+      geobox.west = bounds.getSouthWest().lng();
+      geobox.east = bounds.getNorthEast().lng();
+    },
+
+    encompass: function (targetGeobox, portion) {
+      // Set map bounds to encompass 'portion' (eg. 0.75) of targetGeobox,
+      // optionally zooming out to a maxiumum zoom value.
+
+      if (!targetGeobox.hasCoords()) {
         return;
       }
-      if (geobox.south > geobox.north) {
+      if (targetGeobox.south > targetGeobox.north) {
         throw "Inverted bounds";
       }
-      var sw = new google.maps.LatLng(geobox.south, geobox.west);
-      var ne = new google.maps.LatLng(geobox.north, geobox.east);
-      var bounds = new google.maps.LatLngBounds(sw, ne);
-      this.log("setGeobox", geobox, bounds);
-      this.map.fitBounds(bounds);
-      this.target = geobox;
+
+      var portionGeobox = new Geobox(targetGeobox).scale(portion);
+      var targetBounds = this.geoboxToBounds(targetGeobox);
+      var portionBounds = this.geoboxToBounds(portionGeobox);
+      this.map.fitBounds(portionBounds);
+      var resultBounds = this.map.getBounds();
+      var resultGeobox = new Geobox(targetGeobox);
+      this.geoboxUpdateBounds(resultGeobox, resultBounds);
+      this.targetGeobox = targetGeobox;
+      this.resultGeobox = resultGeobox;
     },
 
     getGeobox: function () {

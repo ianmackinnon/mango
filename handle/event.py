@@ -14,6 +14,7 @@ from base_org import BaseOrgHandler
 from base_note import BaseNoteHandler
 from eventtag import BaseEventtagHandler
 from address import BaseAddressHandler
+from contact import BaseContactHandler
 
 from model import Event, Note, Address, Org
 
@@ -57,13 +58,16 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
                 }))
     
     def get(self):
+        min_radius = 10
+
         is_json = self.content_type("application/json")
         name = self.get_argument("name", None, json=is_json)
         name_search = self.get_argument("nameSearch", None, json=is_json)
         past = self.get_argument_bool("past", None, json=is_json)
         tag_name_list = self.get_arguments("tag", json=is_json)
         tag_all = self.get_argument_bool("tagAll", None, json=is_json)
-        location = self.get_argument_geobox("location", None, json=is_json)
+        location = self.get_argument_geobox(
+            "location", min_radius=min_radius, default=None, json=is_json)
         offset = self.get_argument_int("offset", None, json=is_json)
         page_view = self.get_argument_allowed(
             "pageView", ["entity", "map", "marker"],
@@ -201,10 +205,12 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
                 org_list=event.org_list
                 address_list=event.address_list
                 eventtag_list=event.eventtag_list
+                contact_list=event.contact_list
             else:
                 org_list=event.org_list_public
                 address_list=event.address_list_public
                 eventtag_list=event.eventtag_list_public
+                contact_list=event.contact_list_public
 
             note_list, note_count = event.note_list_filtered(
                 note_search=note_search,
@@ -216,6 +222,7 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
             org_list=[]
             address_list=[]
             eventtag_list=[]
+            contact_list=[]
             note_list=[]
             note_count = 0
 
@@ -246,6 +253,7 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
         address_list = [address.obj(public=public) for address in address_list]
         eventtag_list = [eventtag.obj(public=public) for eventtag in eventtag_list]
         note_list = [note.obj(public=public) for note in note_list]
+        contact_list = [contact.obj(public=public, medium=contact.medium.name) for contact in contact_list]
 
         edit_block = False
         if event_v:
@@ -261,6 +269,7 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
             eventtag_list=eventtag_list,
             note_list=note_list,
             note_count=note_count,
+            contact_list=contact_list,
             )
 
         version_url=None
@@ -520,6 +529,102 @@ class EventAddressHandler(BaseEventHandler, BaseAddressHandler):
         address = self._get_address(address_id)
         if address in event.address_list:
             event.address_list.remove(address)
+            self.orm_commit()
+        return self.redirect_next(event.url)
+
+
+
+class EventContactListHandler(BaseEventHandler, BaseContactHandler):
+    @authenticated
+    def get(self, event_id):
+        required = True
+        if self.contributor:
+            event_v = self._get_event_v(event_id)
+            if event_v:
+                required = False
+        event = self._get_event(event_id, required=required)
+
+        if not self.moderator and event_v:
+            event = event_v
+
+        obj = event.obj(
+            public=self.moderator,
+            )
+
+        self.render(
+            'contact.html',
+            contact=None,
+            entity=obj,
+            medium_list=self.medium_list,
+            )
+        
+    @authenticated
+    def post(self, event_id):
+        required = True
+        if self.contributor:
+            event_v = self._get_event_v(event_id)
+            if event_v:
+                required = False
+        event = self._get_event(event_id, required=required)
+
+        contact = self._create_contact()
+        self._before_contact_set(contact)
+        self.orm.add(contact)
+        self.orm_commit()
+        if self.moderator:
+            event.contact_list.append(contact)
+            self.orm_commit()
+            return self.redirect_next(event.url)
+
+        id_ = contact.contact_id
+
+        self.orm.delete(contact)
+        self.orm_commit()
+
+        self.orm.query(Contact_v) \
+            .filter(Contact_v.contact_id==id_) \
+            .delete()
+        self.orm_commit()
+
+        contact_v = self._create_contact_v(id_)
+        self.orm.add(contact_v)
+        self.orm_commit()
+
+        event_id = event and event.event_id or event_v.event_id
+        contact_id = id_
+
+        engine = self.orm.connection().engine
+        sql = """
+insert into event_contact_v (event_id, contact_id, a_time, existence)
+values (%d, %d, 0, 1)""" % (event_id, contact_id)
+        engine.execute(sql)
+
+        return self.redirect_next(contact_v.url)
+
+
+
+class EventContactHandler(BaseEventHandler, BaseContactHandler):
+    @authenticated
+    def put(self, event_id, contact_id):
+        if not self.moderator:
+            raise HTTPError(405)
+
+        event = self._get_event(event_id)
+        contact = self._get_contact(contact_id)
+        if contact not in event.contact_list:
+            event.contact_list.append(contact)
+            self.orm_commit()
+        return self.redirect_next(event.url)
+
+    @authenticated
+    def delete(self, event_id, contact_id):
+        if not self.moderator:
+            raise HTTPError(405)
+
+        event = self._get_event(event_id)
+        contact = self._get_contact(contact_id)
+        if contact in event.contact_list:
+            event.contact_list.remove(contact)
             self.orm_commit()
         return self.redirect_next(event.url)
 

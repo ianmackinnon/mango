@@ -110,7 +110,7 @@ def short_name(name, allow_end_pipe=False):
 
 
 def sanitise_name(name):
-    return re.sub("[\s]+", " ", name).strip()
+    return re.sub(u"[\s]+", u" ", name).strip()
 
 
 
@@ -192,6 +192,8 @@ url_directory = {
     "address_v": "address",
     "note": "note",
     "note_v": "note",
+    "contact": "contact",
+    "contact_v": "contact",
     }
 
 
@@ -406,6 +408,26 @@ org_event = Table(
 
 
 
+org_contact = Table(
+    'org_contact', Base.metadata,
+    Column('org_id', Integer, ForeignKey('org.org_id'), primary_key=True),
+    Column('contact_id', Integer, ForeignKey('contact.contact_id'), primary_key=True),
+    Column('a_time', Float()),
+    mysql_engine='InnoDB',
+    )
+
+
+
+event_contact = Table(
+    'event_contact', Base.metadata,
+    Column('event_id', Integer, ForeignKey('event.event_id'), primary_key=True),
+    Column('contact_id', Integer, ForeignKey('contact.contact_id'), primary_key=True),
+    Column('a_time', Float()),
+    mysql_engine='InnoDB',
+    )
+
+
+
 note_fts = Table(
     'note_fts', Base.metadata,
     Column('docid', Integer, primary_key=True),
@@ -573,6 +595,27 @@ class Session(Base):
 
 
 
+class Medium(Base):
+    __tablename__ = 'medium'
+    __table_args__ = {
+        'sqlite_autoincrement': True,
+        "mysql_engine": 'InnoDB',
+        }
+
+    medium_id = Column(Integer, primary_key=True)
+    name = Column(Unicode(), nullable=False)
+
+    contact_list = relationship(
+        "Contact",
+        backref='medium',
+        cascade="all, delete, delete-orphan",
+        )
+
+    def __init__(self, name):
+        self.name = unicode(name)
+
+
+
 class Org(Base, MangoEntity, NotableEntity):
     __tablename__ = 'org'
     __table_args__ = {
@@ -623,6 +666,13 @@ class Org(Base, MangoEntity, NotableEntity):
         secondary=org_event,
         backref='org_list',
         cascade="save-update",
+        )
+    contact_list = relationship(
+        "Contact",
+        secondary=org_contact,
+        backref='org_list',
+        single_parent=True,
+        cascade="all, delete, delete-orphan",
         )
 
     orgalias_list_public = relationship(
@@ -675,6 +725,16 @@ class Org(Base, MangoEntity, NotableEntity):
             ),
         passive_deletes=True,
         )
+    contact_list_public = relationship(
+        "Contact",
+        secondary=org_contact,
+        primaryjoin="Org.org_id == org_contact.c.org_id",
+        secondaryjoin=(
+            "and_(Contact.contact_id == org_contact.c.contact_id, "
+            "Contact.public==True)"
+            ),
+        passive_deletes=True,
+        )
     
     content = [
         "name",
@@ -709,6 +769,8 @@ class Org(Base, MangoEntity, NotableEntity):
         o += u"%sOrg: %s %s\n" % (indent, self.org_id, self.name)
         for orgalias in self.orgalias_list:
             o += orgalias.pprint(indent + "  ")
+        for contact in self.contact_list:
+            o += contact.pprint(indent + "  ")
         for orgtag in self.orgtag_list:
             o += orgtag.pprint(indent + "  ")
         for address in self.address_list:
@@ -729,15 +791,16 @@ class Org(Base, MangoEntity, NotableEntity):
 
         for alias in other.orgalias_list[::-1]:
             alias.org = self
-        
         self.note_list = list(set(self.note_list + other.note_list))
         self.address_list = list(set(self.address_list + other.address_list))
         self.orgtag_list = list(set(self.orgtag_list + other.orgtag_list))
         self.event_list = list(set(self.event_list + other.event_list))
+        self.contact_list = list(set(self.contact_list + other.contact_list))
         other.note_list = []
         other.address_list = []
         other.orgtag_list = []
         other.event_list = []
+        other.contact_list = []
         session.delete(other)
         #session.flush()
 
@@ -885,6 +948,13 @@ class Event(Base, MangoEntity, NotableEntity):
         cascade="save-update",
         order_by="Eventtag.name",
         )
+    contact_list = relationship(
+        "Contact",
+        secondary=event_contact,
+        backref='event_list',
+        single_parent=True,
+        cascade="all, delete, delete-orphan",
+        )
 
     note_list_public = relationship(
         "Note",
@@ -925,6 +995,16 @@ class Event(Base, MangoEntity, NotableEntity):
         secondaryjoin=(
             "and_(Org.org_id == org_event.c.org_id, "
             "Org.public==True)"
+            ),
+        passive_deletes=True,
+        )
+    contact_list_public = relationship(
+        "Contact",
+        secondary=event_contact,
+        primaryjoin="Event.event_id == event_contact.c.event_id",
+        secondaryjoin=(
+            "and_(Contact.contact_id == event_contact.c.contact_id, "
+            "Contact.public==True)"
             ),
         passive_deletes=True,
         )
@@ -969,6 +1049,8 @@ class Event(Base, MangoEntity, NotableEntity):
     def pprint(self, indent=""):
         o = u"";
         o += u"%sEvent: %s %s\n" % (indent, self.event_id, self.name)
+        for contact in self.contact_list:
+            o += contact.pprint(indent + "  ")
         for eventtag in self.eventtag_list:
             o += eventtag.pprint(indent + "  ")
         for address in self.address_list:
@@ -1561,6 +1643,95 @@ class Note(Base, MangoEntity):
         o = u"";
         o += u"%sNote: %s %s\n" % (indent, self.note_id, self.text.split("\n")[0][:32])
         return o
+
+
+
+class Contact(Base, MangoEntity):
+    __tablename__ = 'contact'
+    __table_args__ = {
+        'sqlite_autoincrement': True,
+        "mysql_engine": 'InnoDB',
+        }
+
+    contact_id = Column(Integer, primary_key=True)
+
+    medium_id = Column(Integer, ForeignKey(Medium.medium_id), nullable=False)
+
+    moderation_user_id = Column(Integer, ForeignKey(User.user_id))
+    a_time = Column(Float(), nullable=False)
+    public = Column(Boolean)
+
+    text = Column(Unicode(), nullable=False)
+    description = Column(Unicode())
+    source = Column(Unicode())
+
+    moderation_user = relationship(User, backref='moderation_contact_list')
+    
+    org_list_public = relationship(
+        "Org",
+        secondary=org_contact,
+        primaryjoin="Contact.contact_id == org_contact.c.contact_id",
+        secondaryjoin=(
+            "and_(Org.org_id == org_contact.c.org_id, "
+            "Org.public==True)"
+            ),
+        passive_deletes=True,
+        )
+    event_list_public = relationship(
+        "Event",
+        secondary=event_contact,
+        primaryjoin="Contact.contact_id == event_contact.c.contact_id",
+        secondaryjoin=(
+            "and_(Event.event_id == event_contact.c.event_id, "
+            "Event.public==True)"
+            ),
+        passive_deletes=True,
+        )
+
+    content = [
+        "medium_id",
+        "text",
+        "description",
+        "source",
+        ]
+
+    @classproperty
+    @classmethod
+    def entity_id(cls):
+        return cls.contact_id
+
+    def __init__(self,
+                 medium,
+                 text, description=None, source=None,
+                 moderation_user=None, public=None):
+
+        self.medium = medium
+
+        self.text = sanitise_name(unicode(text))
+        self.description = description and unicode(description)
+        self.source = source and unicode(source)
+
+        self.moderation_user = moderation_user
+        self.a_time = 0
+        self.public = public
+
+    def __unicode__(self):
+        return u"<Contact-%s (%s) %s: '%s'>" % (
+            self.contact_id or "?",
+            {True:"public", False:"private", None: "pending"}[self.public],
+            self.medium.name,
+            self.text[:10].replace("\n", " "),
+            )
+
+    def pprint(self, indent=""):
+        o = u"";
+        o += u"%sContact: %s %s:%s\n" % (indent, self.contact_id, self.medium.name, self.text[:32])
+        return o
+
+    @property
+    def name(self):
+        return self.text
+
 
 
 
