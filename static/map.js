@@ -51,7 +51,7 @@
       this.markers = [];
       this.dots = [];
       this.render();
-      this.frames = {}; 
+      this.frames = {};
     },
 
     render: function () {
@@ -95,7 +95,7 @@
       return bounds;
     },
 
-    geoboxToBounds: function(geobox) {
+    geoboxToBounds: function (geobox) {
       return this.createBounds.apply(this, _.values(geobox.toCoords()));
     },
 
@@ -118,12 +118,15 @@
         throw "Inverted bounds";
       }
 
-      var portionGeobox = new Geobox(targetGeobox).scale(portion);
+      var portionGeobox = new window.Geobox(targetGeobox).scale(portion);
       var targetBounds = this.geoboxToBounds(targetGeobox);
       var portionBounds = this.geoboxToBounds(portionGeobox);
       this.map.fitBounds(portionBounds);
       var resultBounds = this.map.getBounds();
-      var resultGeobox = new Geobox(targetGeobox);
+      if (!resultBounds) {
+        return;
+      }
+      var resultGeobox = new window.Geobox(targetGeobox);
       this.geoboxUpdateBounds(resultGeobox, resultBounds);
       this.targetGeobox = targetGeobox;
       this.resultGeobox = resultGeobox;
@@ -207,7 +210,7 @@
         var marker = new google.maps.Marker({
           position: position,
           map: this.map,
-          icon: pinIconUrl,
+          icon: pinIconUrl
         });
 
         this.markers.push(marker);
@@ -249,7 +252,7 @@
 
     fit: function () {
       if (!this.markers.length) {
-        this.setGeobox(m.ukGeobox.scale(0.75));
+        this.encompass(m.ukGeobox, 0.75);
         return;
       }
       var bounds = new google.maps.LatLngBounds();

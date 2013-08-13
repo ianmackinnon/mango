@@ -270,9 +270,11 @@ ${self.mini.render_note_section(obj["note_list"],
 
 <%def name="org_browse(obj)">
 <h3>Company</h3>
-    
+
 %if obj:
+<div class="org-name-box">    
 ${obj["name"]}
+</div>
 
 %if obj["description"]:
 <h3>Description</h3>

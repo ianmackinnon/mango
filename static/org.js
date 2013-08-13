@@ -1,6 +1,6 @@
 "use strict";
 
-/*global window, jQuery, _, Backbone, m */
+/*global window, jQuery, _, Backbone, google, m */
 
 (function ($) {
 
@@ -18,7 +18,7 @@
 
       var onClick = function (event) {
         var href = m.urlRewrite(view.model.get("url"), m.parameters);
-        window.document.location.href=href;
+        window.document.location.href = href;
       };
 
       view.mapView.addDot(
@@ -50,7 +50,7 @@
       $(this.el).html(m.template(this.templateName, {
         address: this.model.toJSON(),
         m: m,
-        parameters: m.parameters,
+        parameters: m.parameters
       }));
 
       var $circle = view.mapView.addMarker(
@@ -73,8 +73,8 @@
       var view = this;
 
       var onClick = function (event) {
-        var href=view.model.collection.org.get("url");
-        window.document.location.href=href;
+        var href = view.model.collection.org.get("url");
+        window.document.location.href = href;
       };
 
       view.mapView.addDot(
@@ -114,7 +114,7 @@
         if (view.limit.offset <= 0 && view.limit.offset > -view.limit.limit) {
           view._modelViews.push(new AddressViewRow({
             model: model,
-            mapView: view.mapView,
+            mapView: view.mapView
           }));
           view.limit.offset -= 1;
           return;
@@ -126,7 +126,7 @@
         view.limit.offset -= 1;
       });
     },
-    
+
     render: function () {
       var view = this;
       view.$el.empty();
@@ -173,12 +173,12 @@
         org: this.model.toJSON(),
         m: m,
         parameters: m.parameters,
-        note: false,
+        note: false
       });
 
       var insert = true;
 
-      if (this.limit.offset < -this.limit.limit ) {
+      if (this.limit.offset < -this.limit.limit) {
         insert = false;
       }
 
@@ -257,6 +257,7 @@
 
     initialize: function () {
       var view = this;
+      var limit = null;
 
       view.mapView = this.options.mapView;
       view.offset = this.options.offset;
@@ -273,7 +274,7 @@
             mapView: view.mapView
           }));
         });
-        var limit = {
+        limit = {
           offset: 0,  // Server is handling offsets
           limit: view.limitOrg
         };
@@ -297,7 +298,7 @@
         });
       } else {
         view.many = false;
-        var limit = {
+        limit = {
           offset: view.offset,  // Browser is handling offsets
           limit: view.limit
         };
@@ -362,7 +363,7 @@
 
     defaultParameters: function () {
       var defaults = {};
-      _.each(this.expectedParameters, function(value, key) {
+      _.each(this.expectedParameters, function (value, key) {
         defaults[key] = value[3];
       });
       return defaults;
@@ -378,7 +379,7 @@
 
       attributes = attributes ? _.clone(attributes) : {};
 
-      _.each(attributes, function(value, key) {
+      _.each(attributes, function (value, key) {
         if (!_.has(model.expectedParameters, key)) {
           delete attributes[key];
           return;
@@ -417,7 +418,7 @@
 
       m.log.debug("s2", _.clone(attributes));
 
-      _.each(attributes, function(value, key) {
+      _.each(attributes, function (value, key) {
         var c;
         if (model.get(key) === undefined) {
           return;
@@ -458,14 +459,14 @@
       m.log.debug("s1", _.clone(attributes));
 
       attributes = this.differentAttributes(attributes);
-      
+
       m.log.debug("s3", _.clone(attributes));
 
       if (!_.isEmpty(attributes) &&
           !attributes.hasOwnProperty("offset") &&
           !!this.get("offset")
          ) {
-        attributes["offset"] = null;
+        attributes.offset = null;
       }
 
       m.log.debug("s4", _.clone(this.attributes), "to", _.clone(attributes));
@@ -473,22 +474,24 @@
       return Backbone.Model.prototype.set.call(this, attributes, options);
     },
 
-    testStateChange: function(modelData) {
+    testStateChange: function (modelData) {
       var searchString = m.searchString();
       var queryString = this.toQueryString(modelData);
 
-      if (searchString == queryString) {
+      if (searchString === queryString) {
         return;
       }
 
       var searchData = this.attributesFromQueryString(searchString);
       var queryData = this.attributesFromQueryString(queryString);
       searchString = this.toQueryString(
-        _.extend(this.defaultParameters(), searchData));
+        _.extend(this.defaultParameters(), searchData)
+      );
       queryString = this.toQueryString(
-        _.extend(this.defaultParameters(), queryData));
+        _.extend(this.defaultParameters(), queryData)
+      );
 
-      if (searchString == queryString) {
+      if (searchString === queryString) {
         return;
       }
 
@@ -504,7 +507,7 @@
       geobox = geobox || this.get("location");
       return !!geobox && geobox.area() > 500000;  // Km
     },
-    
+
     save: function (callback, cache) {
       if (cache === undefined) {
         cache = true;
@@ -526,14 +529,14 @@
         sendData.offset = null;  // Browser handles paging for < 3 pages
       }
 
-      _.each(sendData, function(value, key) {
+      _.each(sendData, function (value, key) {
         if (_.isNull(value)) {
           delete sendData[key];
         }
       });
 
       if (cache) {
-        if (JSON.stringify(sendData) == JSON.stringify(model.lastRequest)) {
+        if (JSON.stringify(sendData) === JSON.stringify(model.lastRequest)) {
           model.testStateChange(modelData);
           callback(model.lastResult);
           return;
@@ -543,7 +546,7 @@
       model.lastRequest = _.clone(sendData);
 
       var orgCollection = new window.OrgCollection();
-      
+
       if (model.request) {
         model.request.abort();
       }
@@ -585,10 +588,10 @@
       var model = this;
 
       var params = [];
-      _.each(data, function(value, key) {
+      _.each(data, function (value, key) {
         var defaultValue;
         var toString;
-        
+
         if (!_.has(model.expectedParameters, key)) {
           return;
         }
@@ -617,7 +620,7 @@
       var params = query.split("&");
 
       var data = {};
-      _.each(params, function(param) {
+      _.each(params, function (param) {
         var index = param.indexOf("=");
         if (index <= 0) {
           return;
@@ -630,7 +633,7 @@
         var value = decodeURIComponent(param.slice(index + 1));
         var constructor = model.expectedParameters[key][0];
         var multiConstructor = model.expectedParameters[key][1];
-        
+
         if (!!multiConstructor) {
           data[key] = multiConstructor(value, data[key]);
         } else if (!!constructor) {
@@ -661,7 +664,7 @@
 
     changeOffset: function () {
       var $input = this.$el.find("input[name='offset']");
-      if ($input.val() != this.model.get("offset")) {
+      if ($input.val() !== this.model.get("offset")) {
         $input.val(this.model.get("offset"));
       }
     },
@@ -701,7 +704,7 @@
         $input.val(text);
         var data = $.data($input[0]);
         data.tagit.removeAllQuiet();
-        _.each(value, function(tagName) {
+        _.each(value, function (tagName) {
           data.tagit.createTag(tagName);
         });
       }
@@ -737,7 +740,7 @@
         return;
       }
 
-      this.mapView.encompass(location, .75);
+      this.mapView.encompass(location, 0.75);
 
       // In case the map has already moved, but not updated.
       google.maps.event.trigger(this.mapView, "idle");
@@ -788,7 +791,7 @@
         }
 
         var mapGeobox = view.mapView.getGeobox();
-        var modelGeobox = new Geobox(view.model.get("location"));
+        var modelGeobox = new window.Geobox(view.model.get("location"));
         var targetGeobox = view.mapView.targetGeobox;
         var resultGeobox = view.mapView.resultGeobox;
         view.mapView.targetGeobox = null;
@@ -798,7 +801,7 @@
           // Map bounds match target map bounds. Do nothing.
           return;
         }
-        
+
         if (!m.compareGeobox(mapGeobox, modelGeobox)) {
           // Coords are very close, name may have gone = small map drag.
           return;
@@ -820,7 +823,7 @@
         orgtagListRequest.complete(this.render);
       }
     },
-    
+
     render: function () {
       $(this.el).html(m.template(this.templateName, {
         currentUser: m.currentUser,
@@ -865,7 +868,7 @@
         tagSource: function (search, showChoices) {
           var start = [];
           var middle = [];
-          view.orgtagCollection.each(function(orgtag) {
+          view.orgtagCollection.each(function (orgtag) {
             var index = orgtag.get("base_short").toLowerCase().indexOf(search.term);
             if (index === 0) {
               start.push(orgtag.toAutocomplete());
@@ -886,7 +889,7 @@
             return;
           }
           $input.trigger("change");
-        },
+        }
       });
       this.tagReady = true;
     },
@@ -909,7 +912,7 @@
         return acc;
       }, {});
       if (!data.hasOwnProperty("tagAll")) {
-        data["tagAll"] = false;
+        data.tagAll = false;
       }
       return data;
     },
@@ -928,8 +931,8 @@
 
         if (orgCollection.location) {
           var data = {
-            location: new Geobox(orgCollection.location)
-          }
+            location: new window.Geobox(orgCollection.location)
+          };
           m.log.debug("set receive", data);
           orgSearchView.model.set(data);
         }
@@ -947,10 +950,10 @@
         orgSearchView.renderPages(orgCollection, orgCollectionView.many);
         orgSearchView.renderSocial(orgCollection);
         orgSearchView.$results = rendered.$el;
-        
+
         if (orgCollectionView.many) {
           var text = "Zoom in or refine search to see results in detail.";
-          var $span = $("<p>").addClass("results-hint").text(text)
+          var $span = $("<p>").addClass("results-hint").text(text);
           orgSearchView.$results.prepend($span);
         }
       }, cache);
@@ -970,13 +973,13 @@
       if (!tags) {
         return;
       }
-      if (tags.indexOf("dsei-2013") == -1) {
+      if (tags.indexOf("dsei-2013") === -1) {
         return;
       }
       var country = false;
       if (orgSearchView.model.get("tagAll")) {
-        _.each(tags, function(tag) {
-          var match = tag.match(/^military-export-applicant-to-(.*)-in-2010$/);
+        _.each(tags, function (tag) {
+          var match = tag.match(/^military-export-applicant-to-([\w\-]*)-in-2010$/);
           if (match) {
             country = match[1];
           }
@@ -985,26 +988,26 @@
       var location = false;
       var locationType = orgCollection.location && orgCollection.location.type;
       if (locationType) {
-        if (locationType == "postal_code") {
+        if (locationType === "postal_code") {
           location = "in my area";
         }
-        if (locationType == "political") {
+        if (locationType === "political") {
           location = "near " + orgCollection.location.longName;
         }
       }
-      if (!!location + !!country != 1) {
+      if (!!location + !!country !== 1) {
         // Either location or country, but not both.
         return;
       }
       var text = "";
       if (country) {
-        if (number == 1) {
+        if (number === 1) {
           text = number + " DSEI arms fair exhibitor applied to export military items to " + country + ".";
         } else {
           text = number + " DSEI arms fair exhibitors applied to export military items to " + country + ".";
         }
       } else {
-        if (number == 1) {
+        if (number === 1) {
           text = number + " DSEI arms fair exhibitor has an address " + location + ".";
         } else {
           text = number + " DSEI arms fair exhibitors have addresses " + location + ".";
@@ -1018,7 +1021,7 @@
       var twitterUrl = "https://twitter.com/intent/tweet?" + $.param(tweetData);
       $anchor.attr({
         href: twitterUrl,
-        target: "_blank",
+        target: "_blank"
       });
       $paragraph.append($("<a>").append('"' + text + '"'));
       orgSearchView.$social.show();
@@ -1027,15 +1030,20 @@
     renderPages: function (orgCollection, many) {
       var orgSearchView = this;
       var length = orgCollection.addressLength();
+      var href = null;
+      var query = null;
+      var $pageLink = null;
+      var $pageSpan = null;
+      var pageClickHelper = null;
+      var page;
 
       orgSearchView.$paging.empty();
-      
+
       var countText = "addresses: " + length;
       if (orgCollection.orgLength) {
         countText = "companies: " + orgCollection.orgLength + ", " + countText;
       }
-      var $count = $("<span class='resultCount'>")
-.text(countText);
+      var $count = $("<span class='resultCount'>").text(countText);
       orgSearchView.$paging.prepend($count);
 
       var $pages = $("<ul class='pageList'>");
@@ -1050,7 +1058,7 @@
         var curr = null;
         var next = null;
 
-        var pageClickHelper = function(offset) {
+        pageClickHelper = function (offset) {
           return function (e) {
             if (e.which !== 1 || e.metaKey || e.shiftKey) {
               return;
@@ -1058,37 +1066,37 @@
             e.preventDefault();
             var data = {
               offset: offset
-            }
+            };
             m.log.debug("set pageclick", data);
             orgSearchView.model.set(data);
             orgSearchView.send();
           };
-        }
+        };
 
         if (showIn > in_) {
           prev = Math.max(in_, showIn - limit);
-          var query = orgSearchView.model.toQueryString({
+          query = orgSearchView.model.toQueryString({
             offset: prev
           });
-          var href = m.urlRoot + "organisation?" + query
-          var $pageLink = $("<a>").attr("href", href).text("Previous");
+          href = m.urlRoot + "organisation?" + query;
+          $pageLink = $("<a>").attr("href", href).text("Previous");
           $pageLink.bind("click", pageClickHelper(prev));
           $pages.append($("<li>").append($pageLink));
         }
-        var curr = (showIn + 1) + "-" + (showOut);
-        var $pageSpan = $("<span>").text(curr);
+        curr = (showIn + 1) + "-" + (showOut);
+        $pageSpan = $("<span>").text(curr);
         $pages.append($("<li>").append($pageSpan));
         if (showOut < out) {
           next = showIn + limit;
-          var query = orgSearchView.model.toQueryString({
+          query = orgSearchView.model.toQueryString({
             offset: next
           });
-          var href = m.urlRoot + "organisation?" + query
-          var $pageLink = $("<a>").attr("href", href).text("Next");
+          href = m.urlRoot + "organisation?" + query;
+          $pageLink = $("<a>").attr("href", href).text("Next");
           $pageLink.bind("click", pageClickHelper(next));
           $pages.append($("<li>").append($pageLink));
         }
-        if (prev == null && next == null) {
+        if (prev === null && next === null) {
           return;
         }
       } else {
@@ -1096,7 +1104,7 @@
           return;
         }
 
-        var pageClickHelper = function(page) {
+        pageClickHelper = function (page) {
           return function (e) {
             if (e.which !== 1 || e.metaKey || e.shiftKey) {
               return;
@@ -1104,31 +1112,31 @@
             e.preventDefault();
             var data = {
               offset: page * orgSearchView.limit
-            }
+            };
             m.log.debug("set pageclick", data);
             orgSearchView.model.set(data);
             orgSearchView.send();
           };
-        }
+        };
 
-        for (var page = 0; page < length / orgSearchView.limit; page += 1) {
+        for (page = 0; page < length / orgSearchView.limit; page += 1) {
           var text = "page " + (page + 1);
           var currentPage = orgSearchView.model.get("offset") || 0;
-          if (page * orgSearchView.limit == currentPage) {
-            var $pageSpan = $("<span>").text(text);
+          if (page * orgSearchView.limit === currentPage) {
+            $pageSpan = $("<span>").text(text);
             $pages.append($("<li>").append($pageSpan));
           } else {
-            var query = orgSearchView.model.toQueryString({
+            query = orgSearchView.model.toQueryString({
               offset: page * orgSearchView.limit
             });
-            var href = m.urlRoot + "organisation?" + query
-            var $pageLink = $("<a>").attr("href", href).text(text);
+            href = m.urlRoot + "organisation?" + query;
+            $pageLink = $("<a>").attr("href", href).text(text);
             $pageLink.bind("click", pageClickHelper(page));
             $pages.append($("<li>").append($pageLink));
           }
         }
       }
-      
+
       orgSearchView.$paging.append($pages);
     },
 
@@ -1139,7 +1147,7 @@
     },
 
     addThrobber: function () {
-      var src = m.urlRoot + "static/image/throbber.gif"
+      var src = m.urlRoot + "static/image/throbber.gif";
       this.$throbber = $('<img class="throbber" width="16px" height="16px" alt="Loading." src="' + src + '" style="display: none;">');
       this.$el.find(".actions").prepend(this.$throbber);
       return this.$throbber;

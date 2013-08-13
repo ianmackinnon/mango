@@ -1,6 +1,6 @@
 "use strict";
 
-/*global window, $, _, Backbone, markdown, google */
+/*global window, $, _, Backbone, markdown, google, History */
 
 var m = {
 
@@ -20,17 +20,17 @@ var m = {
   },
 
   ukGeobox: new window.Geobox({
-    "south":49.829,
-    "north":58.988,
-    "west":-12.304,
-    "east":3.912
+    "south": 49.829,
+    "north": 58.988,
+    "west": -12.304,
+    "east": 3.912
   }),
 
   searchString: function () {
     var State = History.getState();
     var search = "";
     var index = State.url.indexOf("?");
-    if (index == -1) {
+    if (index === -1) {
       return "";
     }
     return State.url.substr(index + 1);
@@ -70,7 +70,7 @@ var m = {
 
   $template: function (name, data) {
     var html = m.template(name, data);
-    html = html.replace(/[\r\n]+/gm,"")
+    html = html.replace(/[\r\n]+/gm, "");
     var $el = $("<div>").html(html);
     return $el;
   },
@@ -116,7 +116,7 @@ var m = {
     },
     pageDate: function (date) {
       return $.datepicker.formatDate('D dd M yy', new Date(date));
-    },
+    }
 
   },
 
@@ -141,8 +141,8 @@ var m = {
 
       $tagList.empty();
 
-      $.each(tagPacket, function(index, value) {
-        if (value.id == excludeTagId) {
+      $.each(tagPacket, function (index, value) {
+        if (value.id === excludeTagId) {
           return;
         }
 	var $tagLi = m.$template("tag-li.html", {
@@ -151,7 +151,7 @@ var m = {
 	  note: showNotes,
           path: showPath,
           parameters: m.parameters,
-          entity_len: lengthName, 
+          entity_len: lengthName,
           entity_list_url: urlName
 	});
 	$tagList.append($tagLi);
@@ -159,11 +159,11 @@ var m = {
       });
     },
 
-    orgtagPacket: function(tag_list_id, orgtagPacket, options) {
+    orgtagPacket: function (tag_list_id, orgtagPacket, options) {
       return m.process.tagPacket(tag_list_id, orgtagPacket, "orgtag_list", "org_len", "org_list_url", options);
     },
 
-    eventtagPacket: function(tag_list_id, eventtagPacket, options) {
+    eventtagPacket: function (tag_list_id, eventtagPacket, options) {
       return m.process.tagPacket(tag_list_id, eventtagPacket, "eventtag_list", "event_len", "event_list_url", options);
     }
   },
@@ -261,33 +261,86 @@ var m = {
 
 
   initDsei: function () {
-    var $form = $("#mango-dsei-form-country");
-    $form.submit(false);
-    var $inputDisplay = $("#mango-dsei-input-country-display");
-    var $inputValue = $("#mango-dsei-input-country-value");
-    var url = m.urlRoot + "dsei-tag";
-    $.getJSON(url, function(data) {
-      var autocomplete = $inputDisplay.autocomplete({
-        source: data,
-        minLength: 0,
-        focus: function (event, ui) {
-          return false;
-        },
-        select: function (event, ui) {
-          //$inputDisplay.val(ui.item.label);
-          $inputValue.val(ui.item.value);
-          $form.unbind("submit", false);
-          $form.submit();
-          return false;
-        }
-      }).data("ui-autocomplete")._renderItem = function(ul, item) {
-        return $( "<li>" )
-          .append( "<a>" + item.label + "</a>" )
-          .appendTo(ul);
-      };
-      $inputDisplay.focus(function () {
-        $(this).autocomplete("search", $(this).val());
+    (function () {
+      var $form = $("#mango-dsei-form-country");
+      $form.submit(false);
+      var $inputDisplay = $("#mango-dsei-input-country-display");
+      var $inputValue = $("#mango-dsei-input-country-value");
+      var url = m.urlRoot + "dsei-tag";
+      $.getJSON(url, function (data) {
+        var autocomplete = $inputDisplay.autocomplete({
+          source: data,
+          minLength: 0,
+          focus: function (event, ui) {
+            return false;
+          },
+          select: function (event, ui) {
+            //$inputDisplay.val(ui.item.label);
+            $inputValue.val(ui.item.value);
+            $form.unbind("submit", false);
+            $form.submit();
+            return false;
+          }
+        }).data("ui-autocomplete")._renderItem = function (ul, item) {
+          return $("<li>")
+            .append("<a>" + item.label + "</a>")
+            .appendTo(ul);
+        };
+        $inputDisplay.focus(function () {
+          $(this).autocomplete("search", $(this).val());
+        });
       });
+    }());
+
+    (function () {
+      var $form = $("#mango-dsei-form-org");
+      $form.submit(false);
+      var $inputDisplay = $("#mango-dsei-input-org-display");
+      var url = m.urlRoot + "dsei-org";
+      $.getJSON(url, function (data) {
+        var autocomplete = $inputDisplay.autocomplete({
+          source: data,
+          minLength: 0,
+          focus: function (event, ui) {
+            return false;
+          },
+          select: function (event, ui) {
+            //$inputDisplay.val(ui.item.label);
+            window.location.href = m.urlRoot + ui.item.value.substring(1);
+            return false;
+          }
+        }).data("ui-autocomplete")._renderItem = function (ul, item) {
+          return $("<li>")
+            .append("<a>" + item.label + "</a>")
+            .appendTo(ul);
+        };
+        $inputDisplay.focus(function () {
+          $(this).autocomplete("search", $(this).val());
+        });
+      });
+    }());
+  },
+
+  initDseiMap: function (mapView) {
+    var orgCollection = new window.OrgCollection();
+    var orgCollectionView = new window.OrgCollectionView({
+      collection: orgCollection,
+      mapView: mapView
+    });
+    orgCollection.fetch({
+      data: {
+        tag: "dsei-2013",
+        pageView: "marker"
+      },
+      success: function (collection, response) {
+        orgCollectionView.initialize();
+        orgCollectionView.render(true);
+      },
+      error: function (collection, response) {
+        if (response.statusText !== "abort") {
+          console.log("error", collection, response);
+        }
+      }
     });
 
     var eventCollection = new window.EventCollection();
@@ -300,30 +353,9 @@ var m = {
         tag: "dsei-2013",
         pageView: "marker"
       },
-      success: function(collection, response) {
+      success: function (collection, response) {
         eventCollectionView.initialize();
         eventCollectionView.render(true);
-      },
-      error: function (collection, response) {
-        if (response.statusText !== "abort") {
-          console.log("error", collection, response);
-        }
-      }
-    });
-
-    var orgCollection = new window.OrgCollection();
-    var orgCollectionView = new window.OrgCollectionView({
-      collection: orgCollection,
-      mapView: mapView
-    });
-    orgCollection.fetch({
-      data: {
-        tag: "dsei-2013",
-        pageView: "marker"
-      },
-      success: function(collection, response) {
-        orgCollectionView.initialize();
-        orgCollectionView.render(true);
       },
       error: function (collection, response) {
         if (response.statusText !== "abort") {
@@ -335,6 +367,25 @@ var m = {
 
   initHome: function (mapView) {
     $("#mango-map-box").append(m.template("home-map-legend.html"));
+    var orgCollection = new window.OrgCollection();
+    var orgCollectionView = new window.OrgCollectionView({
+      collection: orgCollection,
+      mapView: mapView
+    });
+    orgCollection.fetch({
+      data: {
+        pageView: "marker"
+      },
+      success: function (collection, response) {
+        orgCollectionView.initialize();
+        orgCollectionView.render(true);
+      },
+      error: function (collection, response) {
+        if (response.statusText !== "abort") {
+          console.log("error", collection, response);
+        }
+      }
+    });
 
     var eventCollection = new window.EventCollection();
     var eventCollectionView = new window.EventCollectionView({
@@ -345,7 +396,7 @@ var m = {
       data: {
         pageView: "marker"
       },
-      success: function(collection, response) {
+      success: function (collection, response) {
         eventCollectionView.initialize();
         eventCollectionView.render(true);
       },
@@ -356,29 +407,10 @@ var m = {
       }
     });
 
-    var orgCollection = new window.OrgCollection();
-    var orgCollectionView = new window.OrgCollectionView({
-      collection: orgCollection,
-      mapView: mapView
-    });
-    orgCollection.fetch({
-      data: {
-        pageView: "marker"
-      },
-      success: function(collection, response) {
-        orgCollectionView.initialize();
-        orgCollectionView.render(true);
-      },
-      error: function (collection, response) {
-        if (response.statusText !== "abort") {
-          console.log("error", collection, response);
-        }
-      }
-    });
   },
 
   initOrg: function (mapView) {
-    $("div.address-row div.pin").each(function(i) {
+    $("div.address-row div.pin").each(function (i) {
       var $pin = $(this);
       var $circle = mapView.addMarker(
         parseFloat($pin.attr("latitude")),
@@ -403,18 +435,18 @@ var m = {
     });
     $("#org-search").replaceWith(orgSearchView.$el);
     orgSearchView.send();
-    
+
     if (window.History.enabled) {
       History.Adapter.bind(window, "statechange", orgSearchView.popstate);
     }
-    
+
     window.orgSearch = orgSearch;
 
     return orgSearch;
   },
 
   initEvent: function (mapView) {
-    $("div.address-row div.pin").each(function(i) {
+    $("div.address-row div.pin").each(function (i) {
       var $pin = $(this);
       var $circle = mapView.addMarker(
         $pin.attr("latitude"),
@@ -453,11 +485,11 @@ var m = {
     });
     $("#event-search").replaceWith(eventSearchView.$el);
     eventSearchView.send();
-    
+
     if (window.History.enabled) {
       History.Adapter.bind(window, "statechange", eventSearchView.popstate);
     }
-    
+
     window.eventSearch = eventSearch;
 
     return eventSearch;
@@ -509,7 +541,7 @@ var m = {
         },
         "error": m.ajaxError,
         "complete": function (jqXHR, textStatus) {
-        throbber.hide();
+          throbber.hide();
         }
       });
       throbber.show();
@@ -620,12 +652,6 @@ var m = {
       manual_control_span3.hide();
     };
 
-    manual_control_button.click(function () {
-      updateMarker();
-      clear_manual_position();
-      address_search();
-    });
-
     var updateMarker = mapView.clickDraggableMarker(set_manual_position);
 
     var address_search = function () {
@@ -633,7 +659,7 @@ var m = {
         "dataType": "json",
         "data": {
           "postal": postal.input.val(),
-          "lookup": lookup.input.val(),
+          "lookup": lookup.input.val()
         },
         "success": function (data, textStatus, jqXHR) {
           if (!data.latitude) {
@@ -649,6 +675,12 @@ var m = {
         "error": m.ajaxError
       });
     };
+
+    manual_control_button.click(function () {
+      updateMarker();
+      clear_manual_position();
+      address_search();
+    });
 
     search.click(address_search);
 
@@ -691,7 +723,7 @@ var m = {
     var inputPath = form.find("select[name='path']");
     inputName.focus().val(inputName.val());  // Move cursor to end.
     inputPath.after($("<span>").text("Select to prepend path to name."));
-    inputPath.change(function() {
+    inputPath.change(function () {
       if (!inputPath.val()) {
         return;
       }
@@ -780,19 +812,19 @@ var m = {
     }
   },
 
-  argumentCheckbox: function(value) {
+  argumentCheckbox: function (value) {
     if (value === true || value === false) {
       return value;
     }
-    return !!parseInt(value);
+    return !!parseInt(value, 10);
   },
 
-  checkboxToString: function(value) {
+  checkboxToString: function (value) {
     value = m.argumentCheckbox(value);
     return value && "1" || null;
   },
 
-  argumentMulti: function(valueNew, valueOld) {
+  argumentMulti: function (valueNew, valueOld) {
     var collection = valueOld ? _.clone(valueOld) : [];
     if (!valueNew) {
       return collection;
@@ -809,14 +841,14 @@ var m = {
     return _.union(collection, values);
   },
 
-  argumentVisibility: function(value) {
+  argumentVisibility: function (value) {
     if (_.contains(["public", "private", "pending", "all"], value)) {
       return value;
     }
-    return null
+    return null;
   },
 
-  compareUnsortedList: function(a, b) {
+  compareUnsortedList: function (a, b) {
     if (!a && !b) {
       return false;
     }
@@ -827,17 +859,17 @@ var m = {
     return difference.length > 0;
   },
 
-  compareLowercase: function(a, b) {
+  compareLowercase: function (a, b) {
     if (!a && !b) {
       return false;
     }
     if (!a || !b) {
       return true;
     }
-    return a.toLowerCase() != b.toLowerCase();
+    return a.toLowerCase() !== b.toLowerCase();
   },
 
-  compareGeobox: function(a, b) {
+  compareGeobox: function (a, b) {
     // a = old, b = new
     // return true if they differ, false otherwise.
     if (!a && !b) {
@@ -857,7 +889,7 @@ var m = {
     return difference > 0.05;
   },
 
-  multiToString: function(multi) {
+  multiToString: function (multi) {
     return multi.join(", ");
   },
 
@@ -962,8 +994,9 @@ var m = {
     }],
 
     [/^\/dsei$/, function () {
+      m.initDsei();
       m.initMap(function (mapView) {
-        m.initDsei(mapView);
+        m.initDseiMap(mapView);
       });
     }],
 
@@ -1054,7 +1087,7 @@ var m = {
       m.initTagForm();
       m.initOrgtagSearch("tag-form", "name", {
         showPath: true,
-        excludeTagId: parseInt(orgtagIdString)
+        excludeTagId: parseInt(orgtagIdString, 10)
       });
     }],
     [/^\/organisation-tag\/new$/, function () {
@@ -1079,7 +1112,7 @@ var m = {
       m.initTagForm();
       m.initEventtagSearch("tag-form", "name", {
         showPath: true,
-        excludeTagId: parseInt(eventtagIdString)
+        excludeTagId: parseInt(eventtagIdString, 10)
       });
     }],
     [/^\/event-tag\/new$/, function () {
@@ -1090,10 +1123,10 @@ var m = {
     }],
     [/^\/event-tag\/([1-9][0-9]*)\/note$/, function (eventtagIdString) {
       m.noteMarkdown();
-    }],
+    }]
   ],
 
-                
+
 
   handle: function () {
     m.setParameters();
@@ -1114,16 +1147,16 @@ var m = {
     });
   }
 };
-    
-    
-    
+
+
+
 $(window.document).ready(function () {
   window.document.cookie = 'j=1';
   $.ajaxSetup({ "traditional": true });
   m.currentUser = $("#account").find("a").length === 2;
   m.handle();
 });
-    
+
 
 
 

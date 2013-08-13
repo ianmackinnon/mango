@@ -69,7 +69,7 @@
     %if obj:
     <hr />
     <div class="action-bar no-border">
-      <h3>tags</h3>
+      <h3>Tags</h3>
 
       %if moderator and (parameters.get("view", None) == "edit"):
       <div class="actions">
@@ -283,8 +283,6 @@ if None in path_keys:
     %endif
   </div>
   
-</div>
-
 %if obj and "note_list" in obj:
 ${self.mini.render_note_section(obj["note_list"],
   obj["url"] + "/note", obj["url"],
@@ -292,6 +290,8 @@ ${self.mini.render_note_section(obj["note_list"],
   parameters=parameters,
   )}
 %endif
+
+</div>
 
 </%def>
 

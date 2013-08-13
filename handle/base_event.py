@@ -194,9 +194,9 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
             date_start = today
 
         if date_start:
-            event_query = event_query.filter(Event.start_date >= date_start)
+            event_query = event_query.filter(Event.end_date >= date_start)
         if date_end:
-            event_query = event_query.filter(Event.end_date <= date_end)
+            event_query = event_query.filter(Event.start_date <= date_end)
 
         if location:
             event_address_query = event_query \
@@ -224,10 +224,10 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
         if past:
             event_address_query = event_address_query \
-                .order_by(Event.start_date.desc())
+                .order_by(Event.end_date.desc())
         else:
             event_address_query = event_address_query \
-                .order_by(Event.end_date.asc())
+                .order_by(Event.start_date.asc())
 
         event_packet = {
             "location": location and location.to_obj(),

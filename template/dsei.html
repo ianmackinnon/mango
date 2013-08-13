@@ -15,18 +15,55 @@ text-align: center;
 font-family: 'Raleway', sans-serif;
 }
 
+#mango-map-box
+{
+float: none;
+width: 380px;
+height: 360px;
+margin: 0;
+border: 0;
+border-radius: 0;
+}
+#mango-map-canvas
+{
+width: 380px;
+height: 360px;
+}
+
 .mango-dsei
 {
-width: 940px;
+width: 900px;
 margin: auto;
 text-align: center;
 font-family: 'Raleway', sans-serif;
+}
+.mango-dsei:before,
+.mango-dsei:after
+{
+    content:"";
+    display:table;
+}
+.mango-dsei:after
+{
+    clear:both;
+}
+
+.ui-widget
+{
+    font-size: 12px;
+    font-family: helvetica;
+    font-weight: normal;
 }
 
 .mango-dsei img
 {
 display: inline-block;
-margin-top: 10px;
+margin-top: 34px;
+}
+
+#mango .mango-dsei p
+{
+margin: 4px 0;
 }
 
 .mango-dsei img:first-child
@@ -45,25 +82,23 @@ font-size: 80%;
 .mango-dsei-column-3
 {
 float: left;
-margin: 5px;
 }
 
-.mango-dsei-column-1 { width: 360px; }
-.mango-dsei-column-2 { width: 300px; }
+.mango-dsei-column-1 { width: 380px; }
+.mango-dsei-column-2 { width: 280px; }
 .mango-dsei-column-3 { width: 240px; }
 
 #mango .mango-dsei-action-box
 {
-width: 300px;
-margin: 0 4px;
-margin-bottom: 30px;
+margin: 0;
+margin-bottom: 10px;
 text-align: center;
 }
 
 #mango .mango-dsei-action-box h3
 {
 height: 40px;
-font-size: 18px;
+font-size: 15px;
 line-height:40px;
 margin:0;
 padding:0;
@@ -107,6 +142,12 @@ border-top-left-radius: 0;
 font-size: 13px;
 color: #C6181B;
 background: #eee;
+
+}
+#mango input::-moz-focus-inner /*Remove button padding in FF*/
+{ 
+    border: 0;
+    padding: 0;
 }
 #mango .mango-dsei-action-box input[type="submit"][disabled]
 {
@@ -120,7 +161,7 @@ height: 30px;
 width: 238px;
 line-height: 30px;
 margin: 0 auto;
-margin-bottom: 10px;
+margin-bottom: 12px;
 border: 1px solid #ddd;
 padding: 0 4px;
 border-radius: 6px;
@@ -128,6 +169,27 @@ font-size: 13px;
 color: #C6181B;
 background: #eee;
 }
+
+#mango .mango-dsei-column-1 .mango-dsei-action-box
+{
+text-align: left;
+}
+
+#mango .mango-dsei-column-1 .mango-dsei-action-box a
+{
+width: auto;
+display: inline-block;
+margin-top: 14px;
+padding: 0px 30px;
+}
+#mango .mango-dsei-column-1 .mango-dsei-action-box a:first-child
+{
+}
+#mango .mango-dsei-column-1 .mango-dsei-action-box a:last-child
+{
+margin-left: 25px;
+}
+
 
 .ui-autocomplete
 {
@@ -141,10 +203,15 @@ overflow-x: hidden;
 <h1>Mapping DSEI - the world's biggest arms fair</h1>
 
 <div class="mango-dsei">
-
+ 
   <div class="mango-dsei-column-1">
     <div id="mango-map-box">
       <div id="mango-map-canvas">Map loading...</div>
+    </div>
+
+    <div class="mango-dsei-action-box">
+      <a target="_blank" href="http://act.caat.org.uk/lobby/71">Email your MP</a>
+      <a target="_blank" href="http://www.stopthearmsfair.org.uk/events/direct-action-training-2013-08-17/">Direct action training</a>
     </div>
   </div>
 
@@ -200,6 +267,19 @@ overflow-x: hidden;
            id="mango-dsei-input-country-display"
            type="text"
            placeholder="Country name"
+           ><input type="submit" value="Choose" disabled>
+      </form>
+    </div>
+
+    <div class="mango-dsei-action-box">
+      <h3>Exhibitors by name</h3>
+      <form
+         id="mango-dsei-form-org"
+         >
+        <input
+           id="mango-dsei-input-org-display"
+           type="text"
+           placeholder="Company name"
            ><input type="submit" value="Choose" disabled>
       </form>
     </div>

@@ -36,7 +36,7 @@ from handle.auth import AuthRegisterHandler, \
     AuthLogoutHandler
 from handle.user import UserHandler, UserListHandler
 from handle.home import HomeHandler
-from handle.dsei import DseiHandler, DseiTagListHandler
+from handle.dsei import DseiHandler, DseiOrgListHandler, DseiTagListHandler
 from handle.note import NoteHandler, NoteNewHandler, NoteListHandler, \
     NoteRevisionListHandler, NoteRevisionHandler
 from handle.address import AddressHandler, \
@@ -263,6 +263,7 @@ class Application(tornado.web.Application):
 
             (r"/dsei", DseiHandler),
             (r"/dsei-tag", DseiTagListHandler),
+            (r"/dsei-org", DseiOrgListHandler),
 
             (r'/static/image/map/marker/(.*)',
              GenerateMarkerHandler, {'path': "static/image/map/marker"}),

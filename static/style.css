@@ -678,37 +678,41 @@ form.mango input[type="checkbox"]
     width: 384px;
 }
 
-.ui-state-default,
-.ui-widget-content .ui-state-default,
-.ui-widget-header .ui-state-default {
-    background-color: inherit;
-    background-image: inherit;
-}
-
 div.ui-datepicker,
 div.ui-timepicker
 {
     font-size: 80%;
+    color: #333;
+    background: #fff;
+    border: 1px solid #ccc;
 }
+div.ui-datepicker .ui-state-default,
+div.ui-datepicker .ui-widget-content .ui-state-default,
+div.ui-datepicker .ui-widget-header .ui-state-default,
+div.ui-timepicker .ui-state-default,
+div.ui-timepicker .ui-widget-content .ui-state-default,
+div.ui-timepicker .ui-widget-header .ui-state-default
+{
+    color: #363636;
+    background: #ccc;
+}
+
 div.ui-datepicker td,
 div.ui-timepicker td
 {
-	border: 1px solid #ffffff;
-	background: #404040 url(images/ui-bg_flat_100_404040_40x100.png) 50% 50% repeat-x;
+    border: 1px solid #ccc;
 }
 div.ui-datepicker td a,
 div.ui-datepicker td a.ui-state-highlight,
 div.ui-timepicker td a,
 div.ui-timepicker td a.ui-state-highlight
 {
-	font-weight: bold;
-	color: #ffffff;
+    background: #bbb;
 }
 div.ui-datepicker td a.ui-state-active,
 div.ui-timepicker td a.ui-state-active
 {
-	background: #d1b310;
-	color: #363636;
+    background: #d1b310;
 }
 
 #org-search .inputs,
@@ -860,12 +864,24 @@ div.ui-timepicker td a.ui-state-active
     width: auto;
 }
 
+#mango div.org-name-box
+{
+    margin: 0;
+    border: 0;
+    padding: 0;
+    padding-left: 22px;
+}
+
 #mango div.address-box
 {
-    margin-top: 2px;
-    border: 1px solid #aaa;
+    margin: 0;
+    border: 0;
+    border-top: 1px solid #eee;
     padding: 2px;
-    border-radius: 2px;
+}
+#mango div.address-box:first-child
+{
+    border-top: 0;
 }
 #mango div.address-box .actions
 {

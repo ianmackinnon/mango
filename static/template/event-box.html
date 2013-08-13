@@ -6,7 +6,7 @@
   <% } %>
   -
   <% if (event["end_date"] != event["start_date"]) { %>
-  <span class="end_date"><%= m.filter.pageDate(event["start_date"]) %></span>
+  <span class="end_date"><%= m.filter.pageDate(event["end_date"]) %></span>
   <% } %>
   <% if (event["end_time"]) { %>
   <span class="time"><%= event["end_time"] %></span>
