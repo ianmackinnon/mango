@@ -25,19 +25,20 @@
     
     <!-- Description Preview Start -->
     %if current_user and (parameters.get("view", None) == "edit"):
-    <hr />
+    <div class="mango-entity-section">
     <h3>Description Preview</h3>
     <div class="description markdown markdown-preview">
       %if obj and obj["description"]:
       ${obj["description"] | n, markdown_safe, convert_links}
       %endif
     </div>
+    </div>
     %endif
     <!-- Description Preview End -->
 
     <!-- Events Start -->
     %if obj:
-    <hr />
+    <div class="mango-entity-section">
     <div class="action-bar no-border">
       <h3>Events</h3>
 
@@ -72,12 +73,13 @@
        >tell us about it</a>!</p>
     %endif
     %endif
+    </div>
     %endif
     <!-- Events End -->
 
     <!-- Tags Start -->
     %if obj:
-    <hr />
+    <div class="mango-entity-section">
     <div class="action-bar no-border">
       <h3>Tags</h3>
 
@@ -118,6 +120,7 @@ if None in path_keys:
     %endfor
 
     %endif
+    </div>
     %endif
     <!-- Tags End -->
 

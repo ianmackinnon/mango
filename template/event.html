@@ -25,19 +25,20 @@
 
     <!-- Description Preview Start -->
     %if current_user and (parameters.get("view", None) == "edit"):
-    <hr />
+    <div class="mango-entity-section">
     <h3>Description Preview</h3>
     <div class="description markdown markdown-preview">
       %if obj and obj["description"]:
       ${obj["description"] | n, markdown_safe, convert_links}
       %endif
     </div>
+    </div>
     %endif
     <!-- Description Preview End -->
 
     <!-- Organisations Start -->
     %if obj:
-    <hr />
+    <div class="mango-entity-section">
     <div class="action-bar no-border">
       <h3>Companies</h3>
 
@@ -62,12 +63,13 @@
     %else:
     no companies linked yet.
     %endif
+    </div>
     %endif
     <!-- organisations end -->
 
     <!-- tags start -->
     %if obj:
-    <hr />
+    <div class="mango-entity-section">
     <div class="action-bar no-border">
       <h3>Tags</h3>
 
@@ -108,6 +110,7 @@ if None in path_keys:
     %endfor
 
     %endif
+    </div>
     %endif
     <!-- Tags End -->
 
@@ -301,7 +304,9 @@ ${self.mini.render_note_section(obj["note_list"],
 <h3>Event</h3>
     
 %if obj:
+<div class="event-name-box">    
 ${obj["name"]}
+</div>
 
 <h3>Time</h3>
 ${obj["start_date"] | n, page_date}

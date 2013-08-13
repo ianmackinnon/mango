@@ -41,6 +41,7 @@
 
     color: #333;
     background: #f8f8f8;
+    text-decoration: none;
 }
 #mango a.action:hover,
 mango input[type="submit"]:hover,
@@ -73,6 +74,17 @@ mango input[type="submit"]:hover,
     margin-bottom: 10px;
 }
 
+#mango .mango-entity-section
+{
+    clear: both;
+    margin: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+#mango .mango-entity-section:first-child
+{
+    border-bottom: 0;
+}
+
 #mango h1
 {
     text-align: left;
@@ -87,7 +99,9 @@ mango input[type="submit"]:hover,
 
 #mango h3
 {
-    margin: 8px 2px;
+    margin: 0;
+    padding: 4px;
+    line-height: 26px;
     line-height: 22px;
 }
 
@@ -145,16 +159,15 @@ form.mango input[disabled="disabled"]
 {
     width: 390px;
 
-    margin: 2px;
-    border: 1px solid #ccc;
-    border-radius: 2px;
-    padding: 2px;
+    margin: 0;
+    border: 0;
+    padding: 0;
 }
 
 #mango div.mango-box.full
 {
     float: left;
-    width: 765px;
+    width: 900px;
 }
 
 #mango div.mango-box.left
@@ -164,8 +177,9 @@ form.mango input[disabled="disabled"]
 
 #mango div.mango-box.right
 {
-    width: 365px;
     float: left;
+    width: 490px;
+    margin-left: 20px;
 }
 
 #mango div.center-box
@@ -359,18 +373,19 @@ form.mango input[type="checkbox"]
 
 #mango .action-bar
 {
+    clear: both;
     border: 1px solid #ccc;
     border-radius: 2px;
     overflow: visible;
-    margin: 2px;
+    margin: 0;
     margin-bottom: 12px;
-    padding: 2px;
+    padding: 0;
     line-height: 26px;
     min-height: 26px;
 }
 #mango .action-bar.no-border
 {
-    margin: 4px 2px;
+    margin: 0;
     border: none;
 }
 #mango .action-bar.right
@@ -378,7 +393,7 @@ form.mango input[type="checkbox"]
     text-align: right;
 }
 
-#mango .action-bar > *,
+#mango .action-bar > div,
 #mango .action-bar form > *
 {
     margin: 0;
@@ -404,8 +419,6 @@ form.mango input[type="checkbox"]
 {
     float: left;
     width: 80px;
-    line-height: 26px;
-    padding: 0 4px;
 }
 #mango .action-bar form .inputs
 {
@@ -413,8 +426,8 @@ form.mango input[type="checkbox"]
 }
 #mango .action-bar .actions
 {
-    margin: 0;
     float: right;
+    margin: 0;
     text-align: right;
     width: 80px;
     padding: 0 2px;
@@ -662,12 +675,12 @@ form.mango input[type="checkbox"]
 {
     float: left;
 
-    width: 390px;
+    width: 490px;
 
-    margin: 2px;
-    border: 1px solid #ccc;
-    border-radius: 2px;
-    padding: 2px;
+    margin: 0;
+    margin-left: 20px;
+    border: 0;
+    padding: 0;
 }
 
 #org-form label[name="description"],
@@ -718,7 +731,7 @@ div.ui-timepicker td a.ui-state-active
 #org-search .inputs,
 #event-search .inputs
 {
-    width: 593px;
+    width: 700px;
 }
 #org-search input[type="text"],
 #org-search input:not([type]),
@@ -731,7 +744,7 @@ div.ui-timepicker td a.ui-state-active
 #org-search label[name="tag"]
 {
     display: inline-block;
-    width: 485px; /* -4 * 2 */
+    width: 560px;
 }
 #org-search .inputs > label[name="tag"] > span,
 #org-search .inputs > label[name="nameSearch"] > span,
@@ -748,7 +761,7 @@ div.ui-timepicker td a.ui-state-active
     margin: 2px 0;
     border: 1px solid #ccc;
     padding: 0;
-    width: 432px;
+    width: 500px;
     min-height: 20px;
     vertical-align: bottom;
     border-radius: 2px;
@@ -864,7 +877,8 @@ div.ui-timepicker td a.ui-state-active
     width: auto;
 }
 
-#mango div.org-name-box
+#mango div.org-name-box,
+#mango div.event-name-box
 {
     margin: 0;
     border: 0;
@@ -877,7 +891,7 @@ div.ui-timepicker td a.ui-state-active
     margin: 0;
     border: 0;
     border-top: 1px solid #eee;
-    padding: 2px;
+    padding: 0;
 }
 #mango div.address-box:first-child
 {
@@ -890,7 +904,7 @@ div.ui-timepicker td a.ui-state-active
 }
 #mango div.address-row
 {
-    margin: 4px;
+    margin: 4px 0;
     overflow: auto;
 }
 #mango div.address-row .pin
@@ -915,6 +929,14 @@ div.ui-timepicker td a.ui-state-active
     display: inline;
     width: auto;
 }
+
+#mango .org_address_list div.address-row,
+#mango .event_address_list div.address-row
+{
+    border-top: 1px solid #eee;
+    padding-top: 4px;
+}
+
 
 /* tag */
 
@@ -1061,15 +1083,14 @@ div.ui-timepicker td a.ui-state-active
 {
     float: left;
 
-    width: 369px;
+    width: 390px;
 
-    margin: 2px;
-    border: 1px solid #ccc;
-    border-radius: 2px;
+    margin: 0;
+    border: 0;
 }
 #mango-map-canvas
 {
-    width: 369px;
+    width: 380px;
     height: 360px;
 }
 #mango-map-box div.caption
