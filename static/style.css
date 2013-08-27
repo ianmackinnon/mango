@@ -579,31 +579,28 @@ form.mango input[type="checkbox"]
 
 #mango div.user-introduction
 {
-    float: right;
-    width: 600px;
-
     margin-top: 6px;
-    border: 1px solid #ccc;
     padding: 6px;
 }
 
 #mango div.user-entities
 {
     clear: both;
-    margin-top: 6px;
-    border: 1px solid rgba(0, 0, 0, 0);
-    padding: 6px;
 }
 
 #mango div.user-entities > div.org,
-#mango div.user-entities > div.event
+#mango div.user-entities > div.event,
+#mango div.user-entities > div.address
 {
-    width: 350px;
+    width: 390px;
 
     margin-top: 6px;
-    border: 1px solid #ccc;
-    border-radius: 2px;
-    padding: 6px;
+    padding: 5px;
+}
+
+#mango div.user-entities > div.address
+{
+    display: none;
 }
 
 #mango div.user-entities > div.org
@@ -689,6 +686,12 @@ form.mango input[type="checkbox"]
 #event-form label[name="description"] textarea
 {
     width: 384px;
+}
+
+.form-hint
+{
+    width: 384px;
+    float: left;
 }
 
 div.ui-datepicker,
@@ -1245,7 +1248,7 @@ div.ui-timepicker td a.ui-state-active
 #mango .mango-social-bar p
 {
     float: left;
-    width: 310px;
+    width: 436px;
     min-height: 27px;
     margin: 2px 6px;
     padding: 4px;

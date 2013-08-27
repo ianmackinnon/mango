@@ -21,7 +21,9 @@
 <div class="section">
 
   <div id="mango-map-box">
+    %if obj:
     <div id="mango-map-canvas">Map loading...</div>
+    %endif
 
     <!-- Description Preview Start -->
     %if current_user and (parameters.get("view", None) == "edit"):
@@ -199,6 +201,7 @@ if None in path_keys:
       ${self.mini.visibility_input(obj, "public")}
 
       <input type="submit" value="Submit">
+      <p>You can add addresses, etc. after the event has been created.</a>
     </form>
 
     ${self.mini.delete_input(obj, next_="/event")}

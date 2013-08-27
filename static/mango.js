@@ -327,12 +327,34 @@ var m = {
       collection: orgCollection,
       mapView: mapView
     });
+    var eventCollection = new window.EventCollection();
+    var eventCollectionView = new window.EventCollectionView({
+      collection: eventCollection,
+      mapView: mapView
+    });
+
     orgCollection.fetch({
       data: {
         tag: "dsei-2013",
         pageView: "marker"
       },
       success: function (collection, response) {
+        eventCollection.fetch({
+          data: {
+            tag: "dsei-2013",
+            pageView: "marker"
+          },
+          success: function (collection, response) {
+            eventCollectionView.initialize();
+            eventCollectionView.render(true);
+          },
+          error: function (collection, response) {
+            if (response.statusText !== "abort") {
+              console.log("error", collection, response);
+            }
+          }
+        });
+
         orgCollectionView.initialize();
         orgCollectionView.render(true);
       },
@@ -343,26 +365,6 @@ var m = {
       }
     });
 
-    var eventCollection = new window.EventCollection();
-    var eventCollectionView = new window.EventCollectionView({
-      collection: eventCollection,
-      mapView: mapView
-    });
-    eventCollection.fetch({
-      data: {
-        tag: "dsei-2013",
-        pageView: "marker"
-      },
-      success: function (collection, response) {
-        eventCollectionView.initialize();
-        eventCollectionView.render(true);
-      },
-      error: function (collection, response) {
-        if (response.statusText !== "abort") {
-          console.log("error", collection, response);
-        }
-      }
-    });
   },
 
   initHome: function (mapView) {
