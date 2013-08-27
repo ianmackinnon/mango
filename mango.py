@@ -470,6 +470,8 @@ class Application(tornado.web.Application):
 
         # HTTP Server
 
+        self.forwarding_server_list = forwarding_server_list
+
         tornado.web.Application.__init__(self, self.handlers, **settings)
 
         print u"Mapping Application for NGOs (mango) running on port %d." % options.port

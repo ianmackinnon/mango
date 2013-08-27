@@ -2,6 +2,7 @@
 
 import re
 import json
+import time
 import codecs
 import hashlib
 import httplib
@@ -162,6 +163,21 @@ class BaseHandler(RequestHandler):
         self.has_javascript = bool(self.get_cookie("j"))
         self.set_parameters()
         self.next = self.get_argument("next", None)
+
+    def prepare(self):
+        self.start = time.time()
+
+    def on_finish(self):
+        remote_ip = self.request.remote_ip
+        if self.request.remote_ip in self.application.forwarding_server_list and "X-Forwarded-For" in self.request.headers:
+            remote_ip = self.request.headers["X-Forwarded-For"]
+        self.application.log_uri.info("%s, %s, %s, %s, %0.3f" % (
+                str(time.time()),
+                self.request.uri,
+                remote_ip,
+                repr(self.request.headers.get("User-Agent", "User-Agent")),
+                time.time() - self.start
+                ))
 
     def initialize(self, **kwargs):
         self.arg_type_handlers = kwargs.get("types", [])
