@@ -6,7 +6,7 @@ JQUERY_VERSION = $(word 2, $(JQUERY_VERSION_LIST))
 JQUERY_UI_VERSION = $(word 1, $(JQUERY_VERSION_LIST))
 JQUERY_UI_THEME_PATH = $(shell ls -d jquery-ui-*.custom/css/* | head -1)
 
-all : backbone-min.js underscore-min.js markdown.js tag-it.js tag-it.css jquery jquery.history.js jquery.ui.timepicker.js jquery.ui.timepicker.css
+all : backbone-min.js underscore-min.js markdown.js tag-it.js tag-it.css jquery jquery.history.js jquery.ui.timepicker.js jquery.ui.timepicker.css geolocation.py read_ini.sh
 
 backbone-min.js:
 	wget https://raw.github.com/documentcloud/backbone/master/backbone-min.js -O $@ || rm -f $@

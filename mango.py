@@ -72,6 +72,8 @@ from handle.contact import ContactHandler, \
 from handle.history import HistoryHandler
 from handle.moderation import ModerationQueueHandler
 
+import conf
+from model import get_database, connection_url_app, attach_search
 from model import Org, Orgtag, Orgalias, Event, Eventtag, Address, Note
 from model_v import Org_v, Event_v, Address_v, Note_v
 
@@ -80,17 +82,17 @@ from model_v import Org_v, Event_v, Address_v, Note_v
 define("port", default=8802, help="Run on the given port", type=int)
 define("root", default='', help="URL root", type=unicode)
 define("skin", default=u"default", help="skin with the given style", type=unicode)
-define("database", default="sqlite", help="Either 'sqlite' or 'mysql'. Default is 'sqlite'.", type=str)
-define("conf", default=".mango.conf", help="eg. .mango.conf", type=str)
 define("log", default=None, help="Log directory. Write permission required. Logging is disabled if this option is not set.", type=unicode)
+
+
 
 forwarding_server_list = [
     "127.0.0.1",
     ]
 
-
-
 DEFAULT_CACHE_PERIOD = 60 * 60 * 8  # 8 hours
+
+conf_path = ".mango.conf"
 
 
 
@@ -387,39 +389,28 @@ class Application(tornado.web.Application):
 
         # Database & Cache
 
-        if options.database == "mysql":
-            (database,
-             app_username, app_password,
-             admin_username, admin_password) = mysql.mysql_init.get_conf(options.conf)
-            self.database_namespace = 'mysql://%s' % database
-            connection_url = 'mysql://%s:%s@localhost/%s?charset=utf8' % (
-                admin_username, admin_password, database)
-        elif options.database == "sqlite":
-            database = self.sqlite_path
-            self.database_namespace = 'sqlite:///%s' % database
-            connection_url = 'sqlite:///%s' % database
-        else:
-            print "database options are sqlite and mysql."
-            sys.exit(1)
-
-        engine = create_engine(
-            connection_url,
-            )
-
-        if options.database == "mysql":
+        database = get_database()
+        if database == "mysql":
+            mysql_database = conf.get(conf_path, u"mysql", u"database")
+            self.database_namespace = 'mysql://%s' % mysql_database
             self.database_mtime = datetime.datetime.utcnow()
-        else:
+        elif options.database == "sqlite":
+            sqlite_database = self.sqlite_path
+            self.database_namespace = 'sqlite:///%s' % sqlite_database
             self.database_mtime = datetime.datetime.utcfromtimestamp(
-                os.path.getmtime(database))
+                os.path.getmtime(sqlite_database))
             
         self.cache = RedisCache(
             self.cache_namespace(self.database_mtime.isoformat()))
 
+        connection_url = connection_url_app()
+        engine = create_engine(connection_url,)
         self.orm = scoped_session(sessionmaker(
                 bind=engine,
                 autocommit=False,
                 query_cls=SafeQueryClass(),
                 ))
+        attach_search(engine, self.orm)
 
         # Logging
 

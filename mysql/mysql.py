@@ -1,12 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import re
-import os
-import sys
-import getpass
-import logging
-import ConfigParser
 from collections import namedtuple
 from optparse import OptionParser
 
@@ -76,15 +70,15 @@ def get_conf(path=conf_path):
 
 
 
-def connection_url_app():
-    options = get_conf()
+def connection_url_app(path=conf_path):
+    options = get_conf(path)
     return u'mysql://%s:%s@localhost/%s?charset=utf8' % (
         options.app_username, options.app_password, options.database)
     
 
 
-def connection_url_admin():
-    options = get_conf()
+def connection_url_admin(path=conf_path):
+    options = get_conf(path)
     return u'mysql://%s:%s@localhost/%s?charset=utf8' % (
         options.admin_username, options.admin_password, options.database)
 

@@ -23,10 +23,13 @@ from sqlalchemy.sql import func
 from sqlalchemy import Boolean, Integer, Float as FloatOrig, Numeric, Date, Time
 from sqlalchemy import Unicode as UnicodeOrig, String as StringOrig
 from sqlalchemy.dialects.mysql import LONGTEXT, DOUBLE, VARCHAR
+from sqlalchemy import event as sqlalchemy_event
 
 import geo
 
+import conf
 from mysql import mysql
+from search import search
 
 
 
@@ -40,7 +43,7 @@ Unicode = lambda : UnicodeOrig
 StringKey = lambda : StringOrig
 UnicodeKey = lambda : UnicodeOrig
 
-mysql_conf_path = ".mango.conf"
+conf_path = ".mango.conf"
 
 
 
@@ -55,14 +58,63 @@ def use_mysql():
 
 
 
+def get_database():
+    database = conf.get(conf_path, u"database", u"database")
+    if not database in [u'mysql', u'sqlite']:
+        log.error("""Value for database/database in configuration file '%s' is '%s'. Valid values are 'sqlite' or 'mysql'.""" % (database, conf_path))
+        sys.exit(1)
+    return database
+
+
+
+def set_database():
+    database = get_database()
+    if database == "mysql":
+        use_mysql()
+
+
+
+def sqlite_connection_url(username, password, database):
+    sqlite_path = conf.get(conf_path, u"sqlite", u"database")
+    return 'sqlite:///%s' % sqlite_path
+
+
+
+def mysql_connection_url(username, password, database):
+    return 'mysql://%s:%s@localhost/%s?charset=utf8' % (
+        username, password, database)
+
+
+
+def connection_url_admin():
+    database = conf.get(conf_path, u"database", u"database")
+    if database == "sqlite":
+        return sqlite_connection_url()
+    if database == "mysql":
+        username = conf.get(conf_path, u"mysql-admin", u"username")
+        password = conf.get(conf_path, u"mysql-admin", u"password")
+        database = conf.get(conf_path, u"mysql", u"database")
+        return mysql_connection_url(username, password, database)
+
+
+
+def connection_url_app():
+    database = conf.get(conf_path, u"database", u"database")
+    if database == "sqlite":
+        return sqlite_connection_url()
+    if database == "mysql":
+        username = conf.get(conf_path, u"mysql-app", u"username")
+        password = conf.get(conf_path, u"mysql-app", u"password")
+        database = conf.get(conf_path, u"mysql", u"database")
+        return mysql_connection_url(username, password, database)
+
+
+
 if __name__ == '__main__':
     log.addHandler(logging.StreamHandler())
-    log.setLevel(logging.WARNING)
+    search.log.addHandler(logging.StreamHandler())
 
-    usage = """%%prog [SQLITE]
-
-SQLITE :  Destination SQLite database. If not supplied, you must
-          specify MySQL credentials in '%s'.""" % mysql_conf_path
+    usage = """%%prog"""
 
     parser = OptionParser(usage=usage)
     parser.add_option("-v", "--verbose", action="count", dest="verbose",
@@ -75,15 +127,10 @@ SQLITE :  Destination SQLite database. If not supplied, you must
 
     log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[max(0, min(3, 1 + options.verbose - options.quiet))]
     log.setLevel(log_level)
+    search.log.setLevel(log_level)
 
-    if len(args) == 1:
-        # SQLite
-        sql_db = args[0]
-        connection_url = 'sqlite:///' + sql_db
-    else:
-        # MySQL
-        connection_url = mysql.connection_url_admin()
-        use_mysql()
+    set_database()
+
 
 
 
@@ -1734,8 +1781,51 @@ class Contact(Base, MangoEntity):
 
 
 
+def attach_search(engine, orm):
+    engine.search = search.get_search()
+    if not engine.search:
+        return
+
+    search.verify(engine.search, orm, Org, Orgalias)
+
+def org_after_insert_listener(mapper, connection, target):
+    if connection.engine.search:
+        search.index_org(connection.engine.search, target)
+
+def org_after_update_listener(mapper, connection, target):
+    if connection.engine.search:
+        search.index_org(connection.engine.search, target)
+
+def org_after_delete_listener(mapper, connection, target):
+    if connection.engine.search:
+        search.delete_org(connection.engine.search, target)
+
+def orgalias_after_insert_listener(mapper, connection, target):
+    if connection.engine.search:
+        orm = object_session(target)
+        search.index_orgalias(connection.engine.search, target, orm, Orgalias)
+
+def orgalias_after_update_listener(mapper, connection, target):
+    if connection.engine.search:
+        orm = object_session(target)
+        search.index_orgalias(connection.engine.search, target, orm, Orgalias)
+
+def orgalias_after_delete_listener(mapper, connection, target):
+    if connection.engine.search:
+        orm = object_session(target)
+        search.index_orgalias(connection.engine.search, target, orm, Orgalias)
+
+sqlalchemy_event.listen(Org, "after_insert", org_after_insert_listener)
+sqlalchemy_event.listen(Org, "after_update", org_after_update_listener)
+sqlalchemy_event.listen(Org, "after_delete", org_after_delete_listener)
+sqlalchemy_event.listen(Orgalias, "after_insert", orgalias_after_insert_listener)
+sqlalchemy_event.listen(Orgalias, "after_update", orgalias_after_update_listener)
+sqlalchemy_event.listen(Orgalias, "after_delete", orgalias_after_delete_listener)
+
+
 
 if __name__ == '__main__':
+    connection_url = connection_url_admin()
     engine = create_engine(connection_url)
     Base.metadata.create_all(engine)
 
