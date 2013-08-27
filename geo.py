@@ -258,6 +258,7 @@ def coords(address, cache=geocode_cache_default):
 
 def bounds(address_full, min_radius=None, cache=geocode_cache_default):
     global wait
+    bounds = None
     
     address = clean_address(address_full)
 
@@ -333,6 +334,7 @@ def bounds(address_full, min_radius=None, cache=geocode_cache_default):
 
         wait = max(0, wait - .1)
         break
-        
-    bounds.set_min_radius(min_radius)
+
+    if bounds:
+        bounds.set_min_radius(min_radius)
     return bounds
