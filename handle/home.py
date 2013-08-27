@@ -6,7 +6,9 @@ from base import BaseHandler
 
 class HomeHandler(BaseHandler):
     def get(self):
-        self.render('home.html')
+        self.redirect(self.url_root + "dsei")
+        return
+#        self.render('home.html')
 
 
 
