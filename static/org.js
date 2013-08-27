@@ -973,7 +973,7 @@
       if (!tags) {
         return;
       }
-      if (tags.indexOf("dsei-2013") === -1) {
+      if ($.inArray("dsei-2013", tags) === -1) {  // IE8 doesn't have Array.indexOf
         return;
       }
       var country = false;
