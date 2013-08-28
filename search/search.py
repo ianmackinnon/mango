@@ -45,7 +45,7 @@ def verify(es, orm, Org, Orgalias):
     try:
         if verify_org(es, orm, Org, Orgalias):
             return
-    except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
+    except pyelasticsearch.exceptions.ElasticHttpError:
         pass
 
     rebuild(es, orm, Org, Orgalias)

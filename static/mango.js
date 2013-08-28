@@ -813,7 +813,7 @@ var m = {
       }
       $.getJSON(url, {name: value}, function (data, textStatus, jqXHR) {
         _.each(data, function(org) {
-          org.url = m.urlRoot + "organisation/" + org.org_id;
+          org.url = "/organisation/" + org.org_id;
           $list.append($("<div>").html(m.template("org-box.html", {
             org: org,
             m: m,

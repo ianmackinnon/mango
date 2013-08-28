@@ -15,10 +15,9 @@ from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 
-import mysql.mysql_init
-
 from hashlib import md5
 
+from model import connection_url_app, attach_search
 from model import User, Org, Note, Address, Orgtag
 
 
@@ -180,17 +179,13 @@ ID:   Integer organisation IDs to merge."""
                       help="Print verbose information for debugging.", default=0)
     parser.add_option("-q", "--quiet", action="count", dest="quiet",
                       help="Suppress warnings.", default=0)
+
     parser.add_option("-t", "--threshold", action="store", dest="threshold",
                       help="Match ratio threshold.", default=0.9)
     parser.add_option("-k", "--characters", action="store", dest="characters", type=int,
                       help="Number of initial characters to assume the same.", default=2)
-    parser.add_option("-c", "--configuration", action="store",
-                      dest="configuration", help=".conf file.",
-                      default=".mango.conf")
     parser.add_option("-a", "--alpha", action="store", dest="alpha",
                       help="Letter of the alphabet to start at.", default=None)
-    parser.add_option("-d", "--database", action="store", dest="database",
-                      help="sqlite or mysql.", default="sqlite")
     parser.add_option("-n", "--dry-run", action="store_true", dest="dry_run",
                       help="Dry run.", default=None)
 
@@ -201,19 +196,13 @@ ID:   Integer organisation IDs to merge."""
         (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[verbosity]
         )
 
-    if options.database == "mysql":
-        (database,
-         app_username, app_password,
-         admin_username, admin_password) = mysql.mysql_init.get_conf(
-            options.configuration)
-        connection_url = 'mysql://%s:%s@localhost/%s?charset=utf8' % (
-            admin_username, admin_password, database)
-    else:
-        connection_url = 'sqlite:///mango.db'
 
-    engine = create_engine(connection_url, echo=False)
+    connection_url = connection_url_app()
+    engine = create_engine(connection_url,)
     Session = sessionmaker(bind=engine, autocommit=False)
     orm = Session()
+    attach_search(engine, orm)
+
 
     if len(args) == 0:
         main(orm, options.threshold, options.characters, options.alpha)

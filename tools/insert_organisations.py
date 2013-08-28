@@ -332,9 +332,9 @@ if __name__ == "__main__":
         options.public = bool(options.public)
 
     if options.search:
-        names = get_names(orm)
+        es = orm.get_bind().search
         for arg in args:
-            search(names, arg, just_search=True)
+            search(es, arg, just_search=True)
         sys.exit(0)
 
     for arg in args:
