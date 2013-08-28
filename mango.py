@@ -43,7 +43,7 @@ from handle.address import AddressHandler, \
     AddressRevisionListHandler, AddressRevisionHandler, \
     AddressEntityListHandler, \
     AddressLookupHandler, AddressNoteListHandler, AddressNoteHandler
-from handle.org import OrgHandler, OrgNewHandler, \
+from handle.org import OrgHandler, OrgNewHandler, OrgSearchHandler, \
     OrgRevisionListHandler, OrgRevisionHandler, \
     OrgListHandler, \
     OrgOrgaliasListHandler, \
@@ -289,6 +289,7 @@ class Application(tornado.web.Application):
 
             (r"/organisation", OrgListHandler),
             (r"/organisation/new", OrgNewHandler),
+            (r"/organisation/search", OrgSearchHandler),
             (r"/organisation/<id>", OrgHandler),
             (r"/organisation/<id>/revision", OrgRevisionListHandler),
             (r"/organisation/<id>/revision/<id>",

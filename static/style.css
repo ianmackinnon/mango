@@ -383,6 +383,16 @@ form.mango input[type="checkbox"]
     line-height: 26px;
     min-height: 26px;
 }
+#mango .action-bar:before,
+#mango .action-bar:after
+{
+    content: "";
+    display: table;
+}
+#mango .action-bar:after
+{
+    clear: both;
+}
 #mango .action-bar.no-border
 {
     margin: 0;
@@ -624,8 +634,10 @@ form.mango input[type="checkbox"]
 }
 #mango .visibility.bar.inline
 {
-    display: inline;
+    display: inline-block;
     margin-right: 6px;
+    width: 54px;
+    
 }
 #mango .visibility.public { background: #cfc; }
 #mango .visibility.private { background: #fcc; }

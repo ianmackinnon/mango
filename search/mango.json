@@ -2,14 +2,14 @@
   "settings": {
     "analysis": {
       "filter": {
-        "name_ngram_filter": {
+        "ngram_filter": {
           "type": "nGram",
           "max_gram": 10,
           "min_gram": 2
         }
       },
       "analyzer": {
-        "base_analyzer": {
+        "straight_analyzer": {
           "filter": [
             "standard",
             "lowercase",
@@ -23,7 +23,7 @@
             "standard",
             "lowercase",
             "asciifolding",
-            "name_ngram_filter"
+            "ngram_filter"
           ],
           "type": "custom",
           "tokenizer": "standard"
@@ -35,13 +35,23 @@
     "org": {
       "properties": {
         "alias": {
-          "type": "string",
-          "index_analyzer": "fuzzy_analyzer",
-          "search_analyzer": "fuzzy_analyzer"
+          "type": "multi_field",
+          "fields": {
+            "fuzzy": {
+              "type": "string",
+              "index_analyzer": "fuzzy_analyzer",
+              "search_analyzer": "fuzzy_analyzer"
+            },
+            "straight": {
+              "type": "string",
+              "index_analyzer": "straight_analyzer",
+              "search_analyzer": "straight_analyzer"
+            }
+          }
         },
         "name": {
           "type": "string",
-          "analyzer": "base_analyzer"
+          "analyzer": "straight_analyzer"
         }
       }
     }

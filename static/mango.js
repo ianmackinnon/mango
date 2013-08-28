@@ -423,6 +423,7 @@ var m = {
     mapView.fit();
 
     m.orgMarkdown();
+    m.orgSearch();
   },
 
   initOrgSearch: function (mapView) {
@@ -796,6 +797,34 @@ var m = {
     };
     if (text) {
       m.on_change(text.input, "org-form" + "_" + "text", on_change, 500);
+      on_change(text.input.val());
+    }
+  },
+
+  orgSearch: function () {
+    var form = $("#org-form");
+    var text = m.get_field(form, "name");
+    var $list = $("#mango-similar-org-list");
+    var url = m.urlRoot + "organisation/search";
+    var on_change = function (value) {
+      $list.empty();
+      if (!value) {
+        return;
+      }
+      $.getJSON(url, {name: value}, function (data, textStatus, jqXHR) {
+        _.each(data, function(org) {
+          org.url = m.urlRoot + "organisation/" + org.org_id;
+          $list.append($("<div>").html(m.template("org-box.html", {
+            org: org,
+            m: m,
+            parameters: m.parameters,
+            note: false
+          })));
+        });
+      });
+    };
+    if (text && $list) {
+      m.on_change(text.input, "org-form" + "_" + "name", on_change, 500);
       on_change(text.input.val());
     }
   },

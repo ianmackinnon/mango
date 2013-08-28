@@ -86,7 +86,7 @@ def delete_org(es, org):
 def build_org(es, orm, Org, Orgalias):
     log.warning("Bulk adding org : start")
     es.bulk_index("mango", "org",
-                  [org_doc(org) for org in orm.query(Org)[:100]],
+                  [org_doc(org) for org in orm.query(Org)[:10000]],
                   id_field="org_id",
                   )
     log.warning("Bulk adding org : end")

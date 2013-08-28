@@ -28,12 +28,17 @@
     <!-- Description Preview Start -->
     %if current_user and (parameters.get("view", None) == "edit"):
     <div class="mango-entity-section">
-    <h3>Description Preview</h3>
-    <div class="description markdown markdown-preview">
-      %if obj and obj["description"]:
-      ${obj["description"] | n, markdown_safe, convert_links}
+      %if not obj:
+      <h3>Similar companies</h3>
+      <div id="mango-similar-org-list"></div>
       %endif
-    </div>
+
+      <h3>Description Preview</h3>
+      <div class="description markdown markdown-preview">
+        %if obj and obj["description"]:
+        ${obj["description"] | n, markdown_safe, convert_links}
+        %endif
+      </div>
     </div>
     %endif
     <!-- Description Preview End -->

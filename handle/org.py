@@ -23,6 +23,8 @@ from model_v import Org_v, Address_v, \
 
 from handle.user import get_user_pending_org_address
 
+import Levenshtein
+
 
 
 class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
@@ -57,9 +59,10 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
                 }))
     
     def get(self):
+        is_json = self.content_type("application/json")
+
         min_radius = 10
 
-        is_json = self.content_type("application/json")
         name = self.get_argument("name", None, json=is_json)
         name_search = self.get_argument("nameSearch", None, json=is_json)
         tag_name_list = self.get_arguments_multi("tag", json=is_json)
@@ -138,6 +141,79 @@ class OrgNewHandler(BaseOrgHandler):
         self.render(
             'organisation.html',
             )
+
+
+
+class OrgSearchHandler(BaseOrgHandler):
+    def get(self):
+        is_json = self.content_type("application/json")
+        name = self.get_argument("name", None, json=is_json)
+        public = not self.moderator
+
+        search = self.orm.get_bind().search
+
+        if search:
+            data = {
+                "query": {
+                    "multi_match": {
+                        "fields": [
+                            "alias.straight^3",
+                            "alias.fuzzy",
+                            ],
+                        "query": name
+                        }
+                    }
+                }
+            if public:
+                data = {
+                    "query": {
+                        "filtered": {
+                            "filter": {
+                                "term": {
+                                    "public": 1
+                                    }
+                                },
+                            "query": {
+                                "multi_match": {
+                                    "fields": [
+                                        "alias.straight^3",
+                                        "alias.fuzzy",
+                                        ],
+                                    "query": name
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+            results = search.search(data, index="mango", doc_type="org")
+            org_list = []
+            for hit in results["hits"]["hits"]:
+                source = hit["_source"]
+                max_ratio = None
+                max_alias = None
+                for alias in source["alias"]:
+                    ratio = Levenshtein.ratio(name.lower(), alias.lower())
+                    if max_alias is None or ratio > max_ratio:
+                        max_alias = alias
+                        max_ratio = ratio
+                if max_alias == source["name"]:
+                    max_alias = None
+                org = {
+                    "org_id": source["org_id"],
+                    "name": source["name"],
+                    "alias": max_alias,
+                    "score": hit["_score"],
+                    }
+                if not public:
+                    org["public"] = source["public"]
+                org_list.append(org)
+            self.write_json(org_list)
+            return
+
+        self.write_json(1)
+        
+        
 
 
 

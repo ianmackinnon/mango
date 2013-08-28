@@ -8,7 +8,6 @@ import time
 import json
 import codecs
 import logging
-import Levenshtein
 
 from optparse import OptionParser
 
@@ -17,8 +16,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 import geo
-import mysql.mysql_init
 
+from model import connection_url_app, attach_search
 from model import User, Org, Orgalias, Note, Address, Orgtag
 
 
@@ -129,7 +128,28 @@ def get_org(orm, name):
 
 
 
-def search(names, search_text, just_search=False):
+def get_candidates(es, text_orig, text_search):
+    data = {
+        "query": {
+            "multi_match": {
+                "fields": [
+                    "alias.straight^3",
+                    "alias.fuzzy",
+                    ],
+                "query": text_search
+                }
+            }
+        }
+    results = es.search(data, index="mango", doc_type="org")
+    org_list = []
+    for hit in results["hits"]["hits"]:
+        source = hit["_source"]
+        source["score"] = hit["_score"]
+        org_list.append(source)
+    return org_list
+
+
+def search(es, search_text, just_search=False):
     org_id = None
     text = search_text
 
@@ -138,50 +158,18 @@ def search(names, search_text, just_search=False):
 
         sys.stderr.write((u"\nFind: '\033[92m%s\033[0m'\n\n" % (search_text)).encode("utf-8"))
 
-        for org_id, name_list in names.items():
-            length = len(name_list)
-            for name in name_list:
-                name_ngrams = text_to_ngrams(name)
-                for key in name_ngrams:
-                    if not key in ngrams:
-                        ngrams[key] = {}
-                    if not org_id in ngrams[key]:
-                        ngrams[key][org_id] = 0
-                    ngrams[key][org_id] += 1.0 / length
+        candidates = get_candidates(es, text, search_text)
 
-        for key in ngrams:
-            total = sum([freq for org_id, freq in ngrams[key].items()])
-            weight = 1.0 / total
-            for org_id in ngrams[key]:
-                ngrams[key][org_id] *= weight
-
-        candidates = {}
-        text_ngrams = text_to_ngrams(text)
-        for key in text_ngrams:
-            if not key in ngrams:
-                continue
-            for org_id, freq in ngrams[key].items():
-                if not org_id in candidates:
-                    candidates[org_id] = 0
-                candidates[org_id] += freq
-
-        candidates = sorted(candidates.items(), key=lambda x: x[1], reverse=True)
-
-        candidates_2 = [candidate for candidate in candidates if candidate[1] > 1]
-        if candidates_2:
-            candidates = candidates_2
-
-        if not candidates_2:
-            log.warning("        Low\n")
-        for i, (org_id, freq) in enumerate(candidates[:10], 1):
-            sys.stderr.write("  %4d: \033[37m%s %s\033[0m\n" % (i, org_id, freq))
-            for name in names[org_id]:
+        for i, org in enumerate(candidates, 1):
+            sys.stderr.write("  %4d: \033[37m%-5d %s\033[0m\n" % (i, org["org_id"], org["score"]))
+            for name in org["alias"]:
                 sys.stderr.write((u"        \033[94m%s\033[0m\n" % name).encode("utf-8"))
         sys.stderr.write("\n")
         sys.stderr.write(" Empty: None of the above\n")
         sys.stderr.write("  Text: Alternative search\n\n: ")
         if just_search:
             return
+
         choice = raw_input()
         if not len(choice):
             org_id = None
@@ -197,7 +185,7 @@ def search(names, search_text, just_search=False):
             break
         if choice > len(candidates):
             continue
-        org_id = candidates[choice - 1][0]
+        org_id = candidates[choice - 1]["org_id"]
         break
 
     return org_id
@@ -209,9 +197,8 @@ def select_org(orm, name, user):
     if org:
         return org
 
-    names = get_names(orm)
-
-    org_id = search(names, name)
+    es = orm.get_bind().search
+    org_id = search(es, name)
 
     if not org_id:
         return None
@@ -307,11 +294,7 @@ if __name__ == "__main__":
                       help="Print verbose information for debugging.", default=0)
     parser.add_option("-q", "--quiet", action="count", dest="quiet",
                       help="Suppress warnings.", default=0)
-    parser.add_option("-d", "--database", action="store", dest="database",
-                      help="sqlite or mysql.", default="sqlite")
-    parser.add_option("-c", "--configuration", action="store",
-                      dest="configuration", help=".conf file.",
-                      default=".mango.conf")
+
     parser.add_option("-t", "--tag", action="append", dest="tag",
                       help="Tag to apply to all insertions.", default=[])
     parser.add_option("-p", "--public", action="store",
@@ -337,19 +320,13 @@ if __name__ == "__main__":
         (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[verbosity]
         )
 
-    if options.database == "mysql":
-        (database,
-         app_username, app_password,
-         admin_username, admin_password) = mysql.mysql_init.get_conf(
-            options.configuration)
-        connection_url = 'mysql://%s:%s@localhost/%s?charset=utf8' % (
-            admin_username, admin_password, database)
-    else:
-        connection_url = 'sqlite:///mango.db'
 
-    engine = create_engine(connection_url, echo=False)
+    connection_url = connection_url_app()
+    engine = create_engine(connection_url,)
     Session = sessionmaker(bind=engine, autocommit=False)
     orm = Session()
+    attach_search(engine, orm)
+
 
     if options.public != None:
         options.public = bool(options.public)

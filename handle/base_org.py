@@ -265,6 +265,7 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
             for org, alias, address in org_alias_address_query:
                 org_packet["marker_list"].append({
                         "name": org.name,
+                        "alias": alias and alias.name,
                         "url": org.url,
                         "latitude": address and address.latitude,
                         "longitude": address and address.longitude,
@@ -291,6 +292,7 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                 for org_id, data in orgs.items()[(offset or 0):(offset or 0) + max_org_per_page]:
                     org = data["org"]
                     org_packet["org_list"].append(org.obj(
+                            alias=data["alias"],
                             public=self.moderator,
                             description=False,
                             ))
@@ -319,6 +321,7 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                         reverse=True
                         )
                     org_packet["org_list"].append(org.obj(
+                            alias=data["alias"],
                             public=self.moderator,
                             description=False,
                             address_list=address_list,
@@ -337,6 +340,7 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
             for org_id, data in orgs.items():
                 org = data["org"]
                 org_packet["org_list"].append(org.obj(
+                        alias=data["alias"],
                         public=self.moderator,
                         description=False,
                         ))
