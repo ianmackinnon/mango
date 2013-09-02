@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
+import re
+import sys
 import logging
+import ConfigParser
 from collections import namedtuple
 from optparse import OptionParser
 

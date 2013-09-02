@@ -829,27 +829,26 @@ class Org(Base, MangoEntity, NotableEntity):
         return o
 
     def merge(self, other, moderation_user):
-        # Merge other into this
+        "Merge other into self."
         
         session = object_session(self)
         assert session
 
         orgalias = Orgalias.get(session, other.name, self, moderation_user, other.public)
 
-        for alias in other.orgalias_list[::-1]:
-            alias.org = self
+        self.orgalias_list = list(set(self.orgalias_list + other.orgalias_list))
         self.note_list = list(set(self.note_list + other.note_list))
         self.address_list = list(set(self.address_list + other.address_list))
         self.orgtag_list = list(set(self.orgtag_list + other.orgtag_list))
         self.event_list = list(set(self.event_list + other.event_list))
         self.contact_list = list(set(self.contact_list + other.contact_list))
+        other.orgalias_list = []
         other.note_list = []
         other.address_list = []
         other.orgtag_list = []
         other.event_list = []
         other.contact_list = []
         session.delete(other)
-        #session.flush()
 
     @staticmethod
     def get(orm, name, accept_alias=None, moderation_user=None, public=None):
@@ -1781,7 +1780,10 @@ class Contact(Base, MangoEntity):
 
 
 
-def attach_search(engine, orm):
+def attach_search(engine, orm, enabled=True):
+    engine.search = None
+    if not enabled:
+        return
     engine.search = search.get_search()
     if not engine.search:
         return

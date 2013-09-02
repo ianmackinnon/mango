@@ -106,6 +106,7 @@ def rebuild(es, orm, Org, Orgalias):
     except:
         pass
 
+    print settings_path
     settings = json.load(open(settings_path))
 
     es.create_index("mango", settings)
@@ -114,96 +115,3 @@ def rebuild(es, orm, Org, Orgalias):
 
     
 
-
-
-
-def main(orm):
-    for hit in es.search("name.name_fuzzy:aerro", index="mango")["hits"]["hits"]:
-        print "%0.3f  %6s  %s" % (hit["_score"], hit["_source"]["public"], hit["_source"]["name"])
-
-    d = {
-        "query": {
-            "filtered": {
-                "query": {
-                    "query_string": {
-                        "fields": ["alias_name.name_fuzzy"],
-                        "query": "sys"
-                        }
-                    },
-                "filter": {
-                    "term": {
-                        "org_public": 1
-                        }
-                    }
-                }
-            }
-        }
-
-    print
-    print "d"
-    for hit in es.search(d, index="mango")["hits"]["hits"]:
-        print "%0.3f  %6s  %s  %s" % (hit["_score"], hit["_source"]["org_public"], hit["_source"]["org_name"], hit["_source"]["alias_name"])
-
-
-
-
-
-u"""
-
-curl http://localhost:9200/mango/org/_search?pretty=true -d '{
-  "query": {
-    "query_string": {
-      "fields": ["name"],
-      "query": "aero"
-    }
-  }
-}'
-
-curl http://localhost:9200/mango/org/_search?pretty=true -d '{
-  "query": {
-    "query_string": {
-      "fields": ["name.name_fuzzy"],
-      "query": "aerro"
-    }
-  }
-}'
-
-curl http://localhost:9200/mango/org/_search?pretty=true -d '{
-  "query": {
-    "filtered": {
-      "query": {
-        "query_string": {
-          "fields": ["name"],
-          "query": "aero"
-        }
-      },
-      "filter": {
-        "term": {
-          "public": 1
-        }
-      }
-    }
-  }
-}'
-
-curl http://localhost:9200/mango/org/_search?pretty=true -d '{
-  "query": {
-    "filtered": {
-      "query": {
-        "query_string": {
-          "fields": ["name.name_fuzzy"],
-          "query": "aerro"
-        }
-      },
-      "filter": {
-        "term": {
-          "public": 1
-        }
-      }
-    }
-  }
-}'
-
-
-
-"""

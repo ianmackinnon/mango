@@ -22,17 +22,17 @@ title_state = None
 <table class="history">
   <thead>
     <tr>
-      <th class="type">Type</th>
-      <th class="current">ID</th>
-      <th class="revision">Restore</th>
+      <th class="history-column-type">Type</th>
+      <th class="history-column-current">ID</th>
+      <th class="history-column-revision">Restore</th>
       %if moderator:
-      <th class="public">Public</th>
+      <th class="history-column-public">Public</th>
       %endif
-      <th class="content">Content</th>
+      <th class="history-column-content">Content</th>
       %if moderator:
-      <th class="user">User</th>
+      <th class="history-column-user">User</th>
       %endif
-      <th class="date">Date</th>
+      <th class="history-column-date">Date</th>
     </tr>
   </thead>
   <tbody>
@@ -63,8 +63,8 @@ user_link = url_rewrite("/user/%s" % (entity.user_id))
 %endif
 %if entity.existence_v:
     <tr>
-      <td class="type">${entity.type}</td>
-      <td class="current">
+      <td class="history-column-type">${entity.type}</td>
+      <td class="history-column-current">
         %if entity.existence:
         <a href="${link}">
           ${entity.entity_id}
@@ -73,7 +73,7 @@ user_link = url_rewrite("/user/%s" % (entity.user_id))
           ${entity.entity_id}
         %endif
       </td>
-      <td class="revision">
+      <td class="history-column-revision">
         %if entity.is_latest:
         ${entity.entity_v_id}
         %else:
@@ -82,17 +82,17 @@ user_link = url_rewrite("/user/%s" % (entity.user_id))
       </td>
       %if moderator:
       %if entity.user_moderator:
-      <td class="visibility ${self.mini.visibility_public(entity.public)}">
+      <td class="history-column-visibility ${self.mini.visibility_public(entity.public)}">
         ${self.mini.visibility_public(entity.public)}
       </td>
       %else:
-      <td class="visibility">
+      <td class="history-column-visibility">
       </td>
       %endif
       %endif
-      <td class="content"><div class="ellipsis">${entity_name(entity)}</div></td>
+      <td class="history-column-content"><div class="ellipsis">${entity_name(entity)}</div></td>
       %if moderator:
-      <td class="user">
+      <td class="history-column-user">
         <a href="${user_link}">
 	  <img width="24px" height="24px"
 	       src="http://gravatar.com/avatar/${entity.gravatar_hash}?d=identicon&s=24">
@@ -100,7 +100,7 @@ user_link = url_rewrite("/user/%s" % (entity.user_id))
         </a>
       </td>
       %endif
-      <td class="date">${datetime.datetime.fromtimestamp(entity.date).strftime("%Y/%m/%d %H:%M:%S")}</td>
+      <td class="history-column-date">${datetime.datetime.fromtimestamp(entity.date).strftime("%Y/%m/%d %H:%M:%S")}</td>
     </tr>
 %endif
     %endfor

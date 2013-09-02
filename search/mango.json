@@ -6,6 +6,40 @@
           "type": "nGram",
           "max_gram": 10,
           "min_gram": 2
+        },
+        "org_stop_filter": {
+          "type": "stop",
+          "stopwords": [
+            "aerospace",
+            "association",
+            "communications",
+            "company",
+            "corporation",
+            "confederation",
+            "consulting",
+            "developments",
+            "electronics",
+            "engineering",
+            "enterprises",
+            "gmbh",
+            "group",
+            "hydraulics",
+            "inc",
+            "industries",
+            "international",
+            "limited",
+            "ltd",
+            "manufacturing",
+            "precision",
+            "professional",
+            "recruitment",
+            "systems",
+            "technology",
+            "technologies",
+            "telecommunications",
+            "uk",
+            "worldwide"
+          ]
         }
       },
       "analyzer": {
@@ -13,7 +47,8 @@
           "filter": [
             "standard",
             "lowercase",
-            "asciifolding"
+            "asciifolding",
+            "org_stop_filter"
           ],
           "type": "custom",
           "tokenizer": "standard"
@@ -23,6 +58,7 @@
             "standard",
             "lowercase",
             "asciifolding",
+            "org_stop_filter",
             "ngram_filter"
           ],
           "type": "custom",

@@ -757,14 +757,14 @@ if not parameters:
 <table class="history">
   <thead>
     <tr>
-      <th class="type">Type</th>
-      <th class="id">ID</th>
-      <th class="revision">Rev.</th>
-      <th class="content">Content</th>
+      <th class="history-column-type">Type</th>
+      <th class="history-column-id">ID</th>
+      <th class="history-column-revision">Rev.</th>
+      <th class="history-column-content">Content</th>
       %if user:
-      <th class="user">User</th>
+      <th class="history-column-user">User</th>
       %endif
-      <th class="date">Date</th>
+      <th class="history-column-date">Date</th>
     </tr>
   </thead>
   <tbody>
@@ -779,18 +779,18 @@ if user:
     user_link = url_rewrite("/user/%s" % (entity["user_id"]))
 %>
     <tr>
-      <td class="type">${entity["type"]}</td>
-      <td class="id">
+      <td class="history-column-type">${entity["type"]}</td>
+      <td class="history-column-id">
         %if url:
         <a href="${url}">${entity["entity_id"]}</a>
         %else:
         ${entity["entity_id"]}
         %endif
       </td>
-      <td class="revision${not entity["existence_v"] and " deleted" or ""}"><a href="${revision_url}">${entity["existence_v"] and entity["entity_v_id"] or "deleted"}</a></td>
-      <td class="content"><div class="ellipsis">${history_entity_name(entity)}</div></td>
+      <td class="history-column-revision${not entity["existence_v"] and " deleted" or ""}"><a href="${revision_url}">${entity["existence_v"] and entity["entity_v_id"] or "deleted"}</a></td>
+      <td class="history-column-content"><div class="ellipsis">${history_entity_name(entity)}</div></td>
       %if user:
-      <td class="user">
+      <td class="history-column-user">
         <a href="${user_link}">
 	  <img width="24px" height="24px"
 	       src="http://gravatar.com/avatar/${entity["gravatar_hash"]}?d=identicon&s=24">
@@ -798,7 +798,7 @@ if user:
         </a>
       </td>
       %endif
-      <td class="date">${datetime.datetime.fromtimestamp(entity["date"]).strftime("%Y/%m/%d %H:%M:%S")}</td>
+      <td class="history-column-date">${datetime.datetime.fromtimestamp(entity["date"]).strftime("%Y/%m/%d %H:%M:%S")}</td>
     </tr>
     %endfor
   </tbody>

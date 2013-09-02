@@ -198,7 +198,7 @@ ID:   Integer organisation IDs to merge."""
 
 
     connection_url = connection_url_app()
-    engine = create_engine(connection_url,)
+    engine = create_engine(connection_url)
     Session = sessionmaker(bind=engine, autocommit=False)
     orm = Session()
     attach_search(engine, orm)
