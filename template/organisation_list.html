@@ -1,7 +1,29 @@
 <%inherit file="base.html"/>
 
 <%def name="title()"><%
-return "Companies"
+search_terms = [
+    u"Companies",
+    name_search or None,
+    location_string() or None,
+    tag_name_list and ", ".join([short for short in tag_name_list]) or None,
+    tag_all and "all tags" or None,
+    parameters.get("visibility", None),
+    ]
+title = " | ".join([term for term in search_terms if term is not None])
+return title
+%></%def>
+
+<%def name="location_string()"><%
+value = ""
+if location:
+    if 'name' in location:
+        value = location["name"]
+    else:
+        value = str(location["south"]) + ", " + \
+            str(location["north"]) + ", " + \
+            str(location["west"]) + ", " + \
+            str(location["east"])
+return value
 %></%def>
 
 <%def name="page()">
@@ -25,20 +47,9 @@ return "Companies"
       </label>
       <label name="location">
         <span>Location</span>
-<%
-value = ""
-if location:
-    if 'name' in location:
-        value = location["name"]
-    else:
-        value = str(location["south"]) + ", " + \
-            str(location["north"]) + ", " + \
-            str(location["west"]) + ", " + \
-            str(location["east"])
-%>
         <input
            name="location"
-           value="${value}"
+           value="${location_string()}"
            placeholder="Eg. NW1">
       </label>
       <label name="tag">

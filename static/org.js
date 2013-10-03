@@ -501,6 +501,7 @@
         window.History.pushState(null, null, url);
       }
       m.updateVisibilityButtons(url);
+      this.updatePageTitle(modelData);
     },
 
     isBig: function (geobox) {
@@ -576,6 +577,26 @@
         }
       });
       this.trigger("request", this.request);
+    },
+
+    updatePageTitle: function (attributes) {
+      var data = this.attributes ? _.clone(this.attributes) : {};
+      attributes = attributes ? _.clone(attributes) : {};
+      _.extend(data, attributes);
+
+      var searchTerms = [
+        "Companies",
+        data.nameSearch,
+        data.location && data.location.toText() || null,
+        data.tag && data.tag.join(", ") || null,
+        data.tagAll && "all tags" || null,
+        data.visibility || null
+      ];
+      var title = _.filter(searchTerms, function (term) {
+        return term !== null;
+      }).join(" | ");
+
+      document.title = title + " | CAAT Mapping Application"
     },
 
     toQueryString: function (attributes) {
