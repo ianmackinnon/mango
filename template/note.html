@@ -1,23 +1,14 @@
 <%inherit file="base.html"/>
 
-
-
-<%def name="title()">
-%if obj:
-%if "linked" in obj and obj["linked"] == 1:
-${obj["linked"][0]["name"]} | 
-%endif
-Note ${obj["id"]}
-%else:
-%if entity:
-${entity["name"]} | Add Note
-%else:
-New Note
-%endif
-%endif
-</%def>
-
-
+<%def name="title()"><%
+if obj:
+    if "linked" in obj and len(obj["linked"]) == 1:
+        return obj["linked"][0]["name"] + u" | Note %d" % obj["id"]
+    return u"Note %d" % obj["id"]
+if entity:
+    return entity["name"] + " | Add Note"
+return "New Note"
+%></%def>
 
 <%def name="page()">
 

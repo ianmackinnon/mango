@@ -1,6 +1,9 @@
 <%inherit file="base.html"/>
 
-<%def name="title()">${type_title} Tags</%def>
+<%def name="title()"><%
+return u"%s Tags" % type_title
+%></%def>
+
 
 <%def name="page()">
 

@@ -1,6 +1,8 @@
 <%inherit file="base.html"/>
 
-<%def name="title()">${obj and obj["name"] or "New Event"}</%def>
+<%def name="title()"><%
+return obj and obj["name"] or "New Event"
+%></%def>
 
 <%def name="logout_url()">
 <% return obj and obj.get("public", True) and uri or "/" %>

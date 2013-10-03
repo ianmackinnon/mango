@@ -407,7 +407,6 @@ class BaseHandler(RequestHandler):
         components = self.application.skin.load(
             static_url=self.static_url,
             url_root=self.url_root,
-            title=u"CAAT Mapping Application",
             stylesheets=stylesheets,
             )
 

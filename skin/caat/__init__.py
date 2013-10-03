@@ -8,8 +8,10 @@ from tornado.template import Loader
 
 
 
+re_title = re.compile('(<title>).*?(</title>)', re.IGNORECASE | re.DOTALL)
+
 def caat_fix_links(page):
-    soup = BeautifulSoup(page, "html.parser")
+    soup = BeautifulSoup(page, "lxml")
     
     regex = re.compile("^[/]")
     for link in soup.findAll(href=regex):
@@ -53,7 +55,12 @@ def load(**kwargs):
 
     splitter = '<!--split-->'
     assert splitter in text
-    header, footer = text.split(splitter)
+    header_html, footer = text.split(splitter)
+
+    def header(title=None):
+        if title is None:
+            return header_html
+        return re_title.sub("\\1" + title + "\\2", header_html)
 
     return {
         "header": header,

@@ -6,11 +6,12 @@ from tornado.template import Loader
 def load(**kwargs):
     loader = Loader("skin/guardian")
 
-    header = loader.load(u"header.html").generate(
-        static_url=kwargs.get("static_url", None),
-        title=kwargs["title"],
-        stylesheets=kwargs["stylesheets"],
-        )
+    def header(title=None):
+        return loader.load(u"header.html").generate(
+            static_url=kwargs.get("static_url", None),
+            title=title or "",
+            stylesheets=kwargs["stylesheets"],
+            )
     footer = loader.load(u"footer.html").generate()
 
     return {

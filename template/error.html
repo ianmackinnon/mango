@@ -1,6 +1,8 @@
 <%inherit file="base.html"/>
 
-<%def name="title()">${status_code}: ${status_message}</%def>
+<%def name="title()"><%
+return "%d: %s" % (status_code, status_message)
+%></%def>
 
 <%def name="page()">
 <h1>${status_code}: ${status_message}</h1>

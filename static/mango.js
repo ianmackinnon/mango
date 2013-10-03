@@ -27,13 +27,17 @@ var m = {
   }),
 
   searchString: function () {
-    var State = History.getState();
+    if (History.initHtml4 == 'undefined') {
+      var url = History.getState().url;
+    } else {
+      var url = window.location.href;
+    }
     var search = "";
-    var index = State.url.indexOf("?");
+    var index = url.indexOf("?");
     if (index === -1) {
       return "";
     }
-    return State.url.substr(index + 1);
+    return url.substr(index + 1);
   },
 
   _templateCache: {},

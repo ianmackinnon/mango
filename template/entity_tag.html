@@ -1,6 +1,8 @@
 <%inherit file="base.html"/>
 
-<%def name="title()">${obj["name"]} | Edit tags</%def>
+<%def name="title()"><%
+return obj["name"] + u" | Edit tags"
+%></%def>
 
 <%def name="page()">
 

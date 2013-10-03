@@ -1,13 +1,11 @@
 <%inherit file="base.html"/>
 
 
-<%def name="title()">
-%if entity:
-${entity["name"]} | contact
-%else:
-Contact ${obj["id"]}
-%endif
-</%def>
+<%def name="title()"><%
+if entity:
+    return entity["name"] + " | contact"
+return "Contact %d" % obj["id"]
+%></%def>
 
 <%def name="logout_url()">
 <% return obj and obj.get("public", True) and uri or "/" %>

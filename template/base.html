@@ -1,6 +1,4 @@
-${header | n}
-
-<body>
+${header(title=self.application_title()) | n}
 
 <div id="mango">
 
@@ -120,6 +118,7 @@ ${header | n}
 
 </div>
 
+
 %for script in scripts1:
 <script type="text/javascript" src="${static_url(script)}"></script>
 %endfor:
@@ -136,6 +135,11 @@ m.parameters = ${parameters_json | n};
 %endfor:
 
 ${footer | n}
+
+
+
+<%def name="application_title()"><%
+return (self.title() and self.title() + " | " or "") + u"CAAT Mapping Application" %></%def>
 
 <%def name="logout_url()"><% return uri %></%def>
 

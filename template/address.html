@@ -1,13 +1,18 @@
 <%inherit file="base.html"/>
 
+<%def name="title()"><%
+return obj and obj["name"] or "New Company"
+%></%def>
 
-<%def name="title()">
-%if entity:
-${entity["name"]} | address
-%else:
-Address ${obj["id"]}
-%endif
-</%def>
+<%def name="title()"><%
+if entity:
+    if obj:
+        return entity["name"] + u" | Address %d" % obj["id"]
+    return entity["name"] + u" | New Address"
+if obj:
+    return "Address %d" % obj["id"]
+return "New Address"
+%></%def>
 
 <%def name="logout_url()">
 <% return obj and obj.get("public", True) and uri or "/" %>
@@ -17,14 +22,27 @@ Address ${obj["id"]}
 
 <h1>
 %if entity:
+%if obj:
   <a
      href="${url_rewrite(entity["url"])}"
      >${entity["name"]}</a>
-  | address
+  | Address %{obj["id"]}
 %else:
+  <a
+     href="${url_rewrite(entity["url"])}"
+     >${entity["name"]}</a>
+  | New Address
+%endif:
+%else:
+%if obj:
 <a
    href="${url_rewrite(obj["url"])}"
    >Address ${obj["id"]}</a>
+%else:
+<a
+   href="${url_rewrite(obj["url"])}"
+   >New Address</a>
+%endif
 %endif
 </h1>
 

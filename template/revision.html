@@ -4,7 +4,9 @@
     import datetime
 %>
 
-<%def name="title()">Revision</%def>
+<%def name="title()"><%
+return "Revision"
+%></%def>
 
 <%def name="logout_url()">
 <% return obj and obj.get("public", True) and obj.get("uri", None) or "/" %>

@@ -128,7 +128,7 @@ def get_org(orm, name):
 
 
 
-def get_candidates(es, text_orig, text_search):
+def get_candidates(es, text):
     data = {
         "query": {
             "multi_match": {
@@ -136,7 +136,7 @@ def get_candidates(es, text_orig, text_search):
                     "alias.straight^3",
                     "alias.fuzzy",
                     ],
-                "query": text_search
+                "query": text
                 }
             }
         }
@@ -149,16 +149,16 @@ def get_candidates(es, text_orig, text_search):
     return org_list
 
 
-def search(es, search_text, just_search=False):
+def search(es, text_orig, just_search=False):
     org_id = None
-    text = search_text
+    text_search = text_orig
 
     while True:
         ngrams = {}
 
-        sys.stderr.write((u"\nFind: '\033[92m%s\033[0m'\n\n" % (search_text)).encode("utf-8"))
+        sys.stderr.write((u"\nFind: '\033[92m%s\033[0m'\n\n" % (text_orig)).encode("utf-8"))
 
-        candidates = get_candidates(es, text, search_text)
+        candidates = get_candidates(es, text_search)
 
         for i, org in enumerate(candidates, 1):
             sys.stderr.write("  %4d: \033[37m%-5d %s\033[0m\n" % (i, org["org_id"], org["score"]))
@@ -178,7 +178,7 @@ def search(es, search_text, just_search=False):
         try:
             choice = int(choice)
         except ValueError:
-            text = choice
+            text_search = choice
             continue
         if choice == 0:
             org_id = "  "
