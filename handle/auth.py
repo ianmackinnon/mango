@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import re
-
-import tornado.auth
-
-from tornado.web import HTTPError
-
 from urllib import urlencode
 
-from base import BaseHandler, authenticated
+import tornado.auth
+from tornado.web import HTTPError
+from sqlalchemy.orm.exc import NoResultFound
 
+from base import BaseHandler, authenticated
 from model import User, Auth, Session
 
 
@@ -27,7 +25,11 @@ class AuthLoginLocalHandler(BaseHandler):
     def get(self):
         if not self.is_local():
             raise tornado.web.HTTPError(404, "Not found")
-        user = self.orm.query(User).filter_by(user_id=-1).one()
+        user_id = self.get_argument_int("user", -1)
+        try:
+            user = self.orm.query(User).filter_by(user_id=user_id).one()
+        except NoResultFound:
+            raise tornado.web.HTTPError(404, "Not found")
         session = Session(
                 user,
                 self.get_remote_ip(),

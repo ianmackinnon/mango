@@ -7,3 +7,4 @@ static/image/map/marker
 mysql/migrate.bash
 mysql/import.my.sql
 vendor/
+.*.conf

@@ -80,7 +80,7 @@ class OrgtagNewHandler(BaseOrgtagHandler):
     @authenticated
     def get(self):
         if not self.moderator:
-            raise HTTPError(404)
+            raise HTTPError(403)
 
         path_list = self._get_path_list()
         self.render(
@@ -184,7 +184,7 @@ class OrgtagNoteListHandler(BaseOrgtagHandler, BaseNoteHandler):
     @authenticated
     def post(self, orgtag_id):
         if not self.moderator:
-            raise HTTPError(405)
+            raise HTTPError(403)
 
         orgtag = self._get_tag(orgtag_id)
         note = self._create_note()
@@ -194,6 +194,9 @@ class OrgtagNoteListHandler(BaseOrgtagHandler, BaseNoteHandler):
 
     @authenticated
     def get(self, orgtag_id): 
+        if not self.moderator:
+            raise HTTPError(403)
+
         orgtag = self._get_tag(orgtag_id)
 
         obj = orgtag.obj(
@@ -211,7 +214,7 @@ class OrgtagNoteHandler(BaseOrgtagHandler, BaseNoteHandler):
     @authenticated
     def put(self, orgtag_id, note_id):
         if not self.moderator:
-            raise HTTPError(405)
+            raise HTTPError(403)
 
         orgtag = self._get_tag(orgtag_id)
         note = self._get_note(note_id)
@@ -223,7 +226,7 @@ class OrgtagNoteHandler(BaseOrgtagHandler, BaseNoteHandler):
     @authenticated
     def delete(self, orgtag_id, note_id):
         if not self.moderator:
-            raise HTTPError(405)
+            raise HTTPError(403)
 
         orgtag = self._get_tag(orgtag_id)
         note = self._get_note(note_id)

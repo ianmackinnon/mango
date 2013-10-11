@@ -696,7 +696,7 @@ class OrgNoteListHandler(BaseOrgHandler, BaseNoteHandler):
     @authenticated
     def post(self, org_id):
         if not self.moderator:
-            raise HTTPError(404)
+            raise HTTPError(403)
 
         org = self._get_org(org_id)
         note = self._create_note()
@@ -708,7 +708,7 @@ class OrgNoteListHandler(BaseOrgHandler, BaseNoteHandler):
     @authenticated
     def get(self, org_id):
         if not self.moderator:
-            raise HTTPError(404)
+            raise HTTPError(403)
 
         org = self._get_org(org_id)
         obj = org.obj(
@@ -726,7 +726,7 @@ class OrgNoteHandler(BaseOrgHandler, BaseNoteHandler):
     @authenticated
     def put(self, org_id, note_id):
         if not self.moderator:
-            raise HTTPError(404)
+            raise HTTPError(403)
 
         org = self._get_org(org_id)
         note = self._get_note(note_id)
@@ -753,7 +753,7 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
     @authenticated
     def get(self, org_id):
         if not self.moderator:
-            raise HTTPError(404)
+            raise HTTPError(403)
 
         # org...
 
@@ -828,7 +828,7 @@ class OrgOrgaliasListHandler(BaseOrgHandler, BaseOrgtagHandler):
     @authenticated
     def get(self, org_id):
         if not self.moderator:
-            raise HTTPError(404)
+            raise HTTPError(403)
 
         # org...
 
@@ -868,7 +868,7 @@ class OrgOrgaliasListHandler(BaseOrgHandler, BaseOrgtagHandler):
     @authenticated
     def post(self, org_id):
         if not self.moderator:
-            raise HTTPError(404)
+            raise HTTPError(403)
             
         is_json = self.content_type("application/json")
         name = self.get_argument("name", json=is_json)
@@ -886,7 +886,7 @@ class OrgEventListHandler(BaseOrgHandler, BaseEventHandler):
     @authenticated
     def get(self, org_id):
         if not self.moderator:
-            raise HTTPError(404)
+            raise HTTPError(403)
             
         is_json = self.content_type("application/json")
 
@@ -942,7 +942,7 @@ class OrgEventHandler(BaseOrgHandler, BaseEventHandler):
     @authenticated
     def put(self, org_id, event_id):
         if not self.moderator:
-            raise HTTPError(404)
+            raise HTTPError(403)
             
         org = self._get_org(org_id)
         event = self._get_event(event_id)
@@ -954,7 +954,7 @@ class OrgEventHandler(BaseOrgHandler, BaseEventHandler):
     @authenticated
     def delete(self, org_id, event_id):
         if not self.moderator:
-            raise HTTPError(404)
+            raise HTTPError(403)
             
         org = self._get_org(org_id)
         event = self._get_event(event_id)

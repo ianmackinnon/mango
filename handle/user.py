@@ -6,9 +6,9 @@ from sqlalchemy.sql.expression import exists, and_, or_
 
 from base import BaseHandler, authenticated
 from model import User
-from model import Org, Event, Address
-from model_v import Org_v, Event_v, Address_v
-from model_v import org_address_v, event_address_v
+from model import Org, Event, Address, Contact
+from model_v import Org_v, Event_v, Address_v, Contact_v
+from model_v import org_address_v, event_address_v, org_contact_v, event_contact_v
 from model_v import get_history
 
 

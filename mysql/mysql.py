@@ -4,6 +4,7 @@
 import os
 import re
 import sys
+import getpass
 import logging
 import ConfigParser
 from collections import namedtuple

@@ -177,7 +177,9 @@ if None in path_keys:
       </label>
       ${self.mini.visibility_input(obj, "public")}
       <input type="submit" value="Save">
+      %if not obj:
       <p>You can add addresses, etc. after the company has been created.</a>
+      %endif
     </form>
 
     ${self.mini.delete_input(obj, next_="/organisation")}

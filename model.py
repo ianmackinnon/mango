@@ -502,7 +502,7 @@ class Auth(Base):
     auth_id = Column(Integer, primary_key=True)
 
     url = Column(StringKey(), nullable=False)
-    name_hash = Column(UnicodeKey(), nullable=False)
+    name_hash = Column(StringKey(), nullable=False)
     gravatar_hash = Column(String(), nullable=False)
     
     def __init__(self, url, name):
@@ -1750,7 +1750,7 @@ class Contact(Base, MangoEntity):
                  medium,
                  text, description=None, source=None,
                  moderation_user=None, public=None):
-
+        
         self.medium = medium
 
         self.text = sanitise_name(unicode(text))

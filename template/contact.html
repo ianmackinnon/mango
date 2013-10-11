@@ -62,7 +62,7 @@ if entity:
         <select name="medium">
 	  %for name in medium_list:
           <%
-             selected=name == obj and obj.get("medium", None) == name and " selected" or ""
+             selected=obj and obj.get("medium", None) == name and " selected" or ""
              %>
 	  <option value="${name}"${selected}>${name}</option>
 	  %endfor

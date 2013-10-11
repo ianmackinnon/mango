@@ -80,7 +80,7 @@ class EventtagNewHandler(BaseEventtagHandler):
     @authenticated
     def get(self):
         if not self.moderator:
-            raise HTTPError(404)
+            raise HTTPError(403)
 
         path_list = self._get_path_list()
         self.render(
@@ -184,7 +184,7 @@ class EventtagNoteListHandler(BaseEventtagHandler, BaseNoteHandler):
     @authenticated
     def post(self, eventtag_id):
         if not self.moderator:
-            raise HTTPError(405)
+            raise HTTPError(403)
 
         eventtag = self._get_tag(eventtag_id)
         note = self._create_note()
@@ -194,6 +194,9 @@ class EventtagNoteListHandler(BaseEventtagHandler, BaseNoteHandler):
 
     @authenticated
     def get(self, eventtag_id): 
+        if not self.moderator:
+            raise HTTPError(403)
+
         eventtag = self._get_tag(eventtag_id)
 
         obj = eventtag.obj(
@@ -211,7 +214,7 @@ class EventtagNoteHandler(BaseEventtagHandler, BaseNoteHandler):
     @authenticated
     def put(self, eventtag_id, note_id):
         if not self.moderator:
-            raise HTTPError(405)
+            raise HTTPError(403)
 
         eventtag = self._get_tag(eventtag_id)
         note = self._get_note(note_id)
@@ -223,7 +226,7 @@ class EventtagNoteHandler(BaseEventtagHandler, BaseNoteHandler):
     @authenticated
     def delete(self, eventtag_id, note_id):
         if not self.moderator:
-            raise HTTPError(405)
+            raise HTTPError(403)
 
         eventtag = self._get_tag(eventtag_id)
         note = self._get_note(note_id)

@@ -60,7 +60,7 @@ class NoteNewHandler(BaseNoteHandler):
     @authenticated
     def get(self):
         if not self.moderator:
-            raise HTTPError(404)
+            raise HTTPError(403)
         self.render('note.html')
 
 

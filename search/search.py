@@ -85,14 +85,10 @@ def delete_org(es, org):
 
 def build_org(es, orm, Org, Orgalias):
     log.warning("Bulk adding org : start")
-    es.bulk_index("mango", "org",
-                  [org_doc(org) for org in orm.query(Org)[:10000]],
-                  id_field="org_id",
-                  )
+    org_list = [org_doc(org) for org in orm.query(Org)]
+    if org_list:
+        es.bulk_index("mango", "org", org_list, id_field="org_id",)
     log.warning("Bulk adding org : end")
-
-
-
 
 
     
@@ -106,7 +102,6 @@ def rebuild(es, orm, Org, Orgalias):
     except:
         pass
 
-    print settings_path
     settings = json.load(open(settings_path))
 
     es.create_index("mango", settings)
