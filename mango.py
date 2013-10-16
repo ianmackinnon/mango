@@ -466,7 +466,8 @@ class Application(tornado.web.Application):
 
         tornado.web.Application.__init__(self, self.handlers, **settings)
 
-        print u"Mapping Application for NGOs (mango) running on port %d." % options.port
+        sys.stdout.write(u"Mapping Application for NGOs (mango) running on port %d.\n" % options.port)
+        sys.stdout.flush()
         
 
 
