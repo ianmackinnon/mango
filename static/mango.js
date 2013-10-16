@@ -264,13 +264,60 @@ var m = {
 
 
 
-  initDsei: function () {
+  initHomeMap: function (mapView, tag) {
+    var orgCollection = new window.OrgCollection();
+    var orgCollectionView = new window.OrgCollectionView({
+      collection: orgCollection,
+      mapView: mapView
+    });
+    var eventCollection = new window.EventCollection();
+    var eventCollectionView = new window.EventCollectionView({
+      collection: eventCollection,
+      mapView: mapView
+    });
+
+    var data = {
+      pageView: "marker",
+    }
+    if (tag) {
+      data.tag = tag
+    }
+
+    orgCollection.fetch({
+      data: data,
+      success: function (collection, response) {
+        eventCollection.fetch({
+          data: data,
+          success: function (collection, response) {
+            eventCollectionView.initialize();
+            eventCollectionView.render(true);
+          },
+          error: function (collection, response) {
+            if (response.statusText !== "abort") {
+              console.log("error", collection, response);
+            }
+          }
+        });
+
+        orgCollectionView.initialize();
+        orgCollectionView.render(true);
+      },
+      error: function (collection, response) {
+        if (response.statusText !== "abort") {
+          console.log("error", collection, response);
+        }
+      }
+    });
+
+  },
+
+  initHome: function (tagUrl, orgUrl) {
     (function () {
       var $form = $("#mango-dsei-form-country");
       $form.submit(false);
       var $inputDisplay = $("#mango-dsei-input-country-display");
       var $inputValue = $("#mango-dsei-input-country-value");
-      var url = m.urlRoot + "dsei-tag";
+      var url = m.urlRoot + tagUrl;
       $.getJSON(url, function (data) {
         var autocomplete = $inputDisplay.autocomplete({
           source: data,
@@ -300,7 +347,7 @@ var m = {
       var $form = $("#mango-dsei-form-org");
       $form.submit(false);
       var $inputDisplay = $("#mango-dsei-input-org-display");
-      var url = m.urlRoot + "dsei-org";
+      var url = m.urlRoot + orgUrl;
       $.getJSON(url, function (data) {
         var autocomplete = $inputDisplay.autocomplete({
           source: data,
@@ -323,96 +370,6 @@ var m = {
         });
       });
     }());
-  },
-
-  initDseiMap: function (mapView) {
-    var orgCollection = new window.OrgCollection();
-    var orgCollectionView = new window.OrgCollectionView({
-      collection: orgCollection,
-      mapView: mapView
-    });
-    var eventCollection = new window.EventCollection();
-    var eventCollectionView = new window.EventCollectionView({
-      collection: eventCollection,
-      mapView: mapView
-    });
-
-    orgCollection.fetch({
-      data: {
-        tag: "dsei-2013",
-        pageView: "marker"
-      },
-      success: function (collection, response) {
-        eventCollection.fetch({
-          data: {
-            tag: "dsei-2013",
-            pageView: "marker"
-          },
-          success: function (collection, response) {
-            eventCollectionView.initialize();
-            eventCollectionView.render(true);
-          },
-          error: function (collection, response) {
-            if (response.statusText !== "abort") {
-              console.log("error", collection, response);
-            }
-          }
-        });
-
-        orgCollectionView.initialize();
-        orgCollectionView.render(true);
-      },
-      error: function (collection, response) {
-        if (response.statusText !== "abort") {
-          console.log("error", collection, response);
-        }
-      }
-    });
-
-  },
-
-  initHome: function (mapView) {
-    $("#mango-map-box").append(m.template("home-map-legend.html"));
-    var orgCollection = new window.OrgCollection();
-    var orgCollectionView = new window.OrgCollectionView({
-      collection: orgCollection,
-      mapView: mapView
-    });
-    orgCollection.fetch({
-      data: {
-        pageView: "marker"
-      },
-      success: function (collection, response) {
-        orgCollectionView.initialize();
-        orgCollectionView.render(true);
-      },
-      error: function (collection, response) {
-        if (response.statusText !== "abort") {
-          console.log("error", collection, response);
-        }
-      }
-    });
-
-    var eventCollection = new window.EventCollection();
-    var eventCollectionView = new window.EventCollectionView({
-      collection: eventCollection,
-      mapView: mapView
-    });
-    eventCollection.fetch({
-      data: {
-        pageView: "marker"
-      },
-      success: function (collection, response) {
-        eventCollectionView.initialize();
-        eventCollectionView.render(true);
-      },
-      error: function (collection, response) {
-        if (response.statusText !== "abort") {
-          console.log("error", collection, response);
-        }
-      }
-    });
-
   },
 
   initOrg: function (mapView) {
@@ -1023,15 +980,16 @@ var m = {
 
   route: [
     [/^\/$/, function () {
+      m.initHome("country-tag", "home-org");
       m.initMap(function (mapView) {
-        m.initHome(mapView);
+        m.initHomeMap(mapView, null);
       });
     }],
 
     [/^\/dsei$/, function () {
-      m.initDsei();
+      m.initHome("country-tag", "dsei-org");
       m.initMap(function (mapView) {
-        m.initDseiMap(mapView);
+        m.initHomeMap(mapView, "dsei-2013");
       });
     }],
 
