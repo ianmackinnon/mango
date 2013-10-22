@@ -50,7 +50,8 @@ from handle.org import OrgHandler, OrgNewHandler, OrgSearchHandler, \
     OrgNoteListHandler, OrgNoteHandler, \
     OrgAddressListHandler, OrgAddressHandler, \
     OrgContactListHandler, OrgContactHandler, \
-    OrgEventHandler, OrgEventListHandler
+    OrgEventHandler, OrgEventListHandler, \
+    ModerationOrgDescHandler
 from handle.orgalias import OrgaliasHandler
 from handle.event import EventHandler, EventNewHandler, \
     EventRevisionListHandler, EventRevisionHandler, \
@@ -281,6 +282,8 @@ class Application(tornado.web.Application):
             (r"/auth/logout", AuthLogoutHandler),
             (r"/history", HistoryHandler),
             (r"/moderation/queue", ModerationQueueHandler),
+            (r"/moderation/organisation-description",
+             ModerationOrgDescHandler),
 
             (r"/user", UserListHandler),
             (r"/user/<id>", UserHandler),

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import json
+from collections import OrderedDict
 
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.expression import exists, or_, and_
@@ -963,6 +964,65 @@ class OrgEventHandler(BaseOrgHandler, BaseEventHandler):
             self.orm_commit()
         return self.redirect_next(org.url)
 
+
+
+
+
+
+
+
+
+class ModerationOrgDescHandler(BaseOrgHandler):
+    @authenticated
+    def get(self):
+        if not self.moderator:
+            raise HTTPError(403)
+
+        is_json = self.content_type("application/json")
+
+        name = self.get_argument("name", None, json=is_json)
+        name_search = self.get_argument("nameSearch", None, json=is_json)
+        offset = self.get_argument_int("offset", None, json=is_json)
+
+        name_subquery = self._get_name_search_query(
+            name=None,
+            name_search=None,
+            visibility=self.parameters.get("visibility", None),
+            ).subquery()
+
+        org_alias_query = self.orm.query(Org, Orgalias) \
+            .join(name_subquery, Org.org_id==name_subquery.c.org_id) \
+            .outerjoin(Orgalias, Orgalias.orgalias_id==name_subquery.c.orgalias_id)
+        
+
+        org_alias_query = org_alias_query.filter(Org.description != None)
+ 
+        org_packet = {
+            }
+        
+        orgs = OrderedDict()
+        for org, alias in org_alias_query:
+            if not org.org_id in orgs:
+                orgs[org.org_id] = {
+                    "org": org,
+                    "alias": alias and alias.name,
+                    }
+                
+        org_packet["org_list"] = []
+        for org_id, data in orgs.items():
+            org = data["org"]
+            org_packet["org_list"].append(org.obj(
+                    alias=data["alias"],
+                    public=self.moderator,
+                    ))
+
+        self.render(
+            'moderation_org_desc.html',
+            org_packet=org_packet,
+            name=name,
+            name_search=name_search,
+            offset=offset,
+            )
 
 
 

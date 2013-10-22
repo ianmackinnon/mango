@@ -1270,3 +1270,10 @@ div.ui-timepicker td a.ui-state-active
 }
 
 
+
+/* Moderator special pages */
+
+#mango table.org-description td
+{
+padding: 10px;
+}
