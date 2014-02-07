@@ -203,7 +203,11 @@ def select_org(orm, name, user):
     if not org_id:
         return None
 
-    org = orm.query(Org).filter_by(org_id=org_id).one()
+    try:
+        org = orm.query(Org).filter_by(org_id=org_id).one()
+    except NoResultFound as e:
+        log.warning("No result found for '%s', org_id '%d'." % (name, org_id))
+        raise e
 
     orgalias = Orgalias(name, org, user, False)
 
