@@ -215,7 +215,7 @@ def select_org(orm, name, user):
 
 
 
-def insert_fast(data, orm, public=None, tag_names=None, dry_run=None):
+def insert_fast(data, orm, public=None, tag_names=None, dry_run=None, address_exclusive=None):
     user = orm.query(User).filter_by(user_id=-1).one()
     tag_names = tag_names or []
     names = None
@@ -230,6 +230,7 @@ def insert_fast(data, orm, public=None, tag_names=None, dry_run=None):
         tags.append(tag)
 
     for chunk in data:
+        has_address = None
         log.info(("\n%s\n" % chunk["name"]).encode("utf-8"))
         org = select_org(orm, chunk["name"], user)
 
@@ -237,6 +238,10 @@ def insert_fast(data, orm, public=None, tag_names=None, dry_run=None):
             log.warning((u"\nCreating org %s\n" % chunk["name"]).encode("utf-8"))
             org = Org(chunk["name"], moderation_user=user, public=public,)
             orm.add(org)
+            # Querying org address list on a new org would trigger a commit
+            has_address = False
+        else:
+            has_address = bool(org.address_list)
 
         if tags:
             org.orgtag_list = list(set(tags + org.orgtag_list))
@@ -249,8 +254,7 @@ def insert_fast(data, orm, public=None, tag_names=None, dry_run=None):
                 if tag not in org.orgtag_list:
                     org.orgtag_list.append(tag)
             
-
-        if "address" in chunk:
+        if "address" in chunk and not (address_exclusive and has_address):
             for address_data in chunk["address"]:
                 if address_data["postal"] in \
                         [address.postal for address in org.address_list]:
@@ -309,6 +313,10 @@ if __name__ == "__main__":
                       dest="search",
                       help="Search string using import merge tool.",
                       default=None)
+    parser.add_option("-A", "--address-exclusive", action="store_true",
+                      dest="address_exclusive",
+                      help="Only import addresses if org has no existing address.",
+                      default=None)
     parser.add_option("-n", "--dry-run", action="store_true", dest="dry_run",
                       help="Dry run.", default=None)
 
@@ -348,5 +356,5 @@ if __name__ == "__main__":
             log.error("%s: Could not decode JSON data.", arg)
             continue
 
-        insert_fast(data, orm, options.public, options.tag, options.dry_run)
+        insert_fast(data, orm, options.public, options.tag, options.dry_run, options.address_exclusive)
 
