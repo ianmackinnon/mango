@@ -27,7 +27,7 @@ vendor:
 	chmod 600 .xsrf
 
 .mango.conf :
-	@echo "Set your configuration in 'mango.example.conf', rename it to '.mango.conf, and chmod it to 600.'." && false
+	@echo "Set your configuration in 'mango.example.conf', then rename it to '.mango.conf, and chmod it to 600.'." && false
 
 # SQLite
 

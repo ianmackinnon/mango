@@ -22,7 +22,7 @@ def get_search():
     es = pyelasticsearch.ElasticSearch(elasticsearch_path)
     try:
         es.refresh()
-    except pyelasticsearch.requests.exceptions.ConnectionError:
+    except pyelasticsearch.exceptions.ConnectionError:
         return
     return es
 

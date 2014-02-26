@@ -17,13 +17,13 @@ If you're using a virtual Python environment, repace 'pip' below with the path t
     sudo pip install \
       Mako tornado sqlalchemy markdown redis pysqlite BeautifulSoup4 \
       python-levenshtein mysql-python python-memcached BeautifulSoup \
-      httplib2 MySQLdb pyelasticsearch
+      httplib2 MySQLdb pyelasticsearch geopy
 
-Install 'geopy' from the GitHub repository, because we need Google Maps API v3 support which is not yet in the release version.
-
-    sudo pip install https://github.com/geopy/geopy/tarball/master
-      
     sudo npm install -g jslint
+
+    sudo apt-get install openjdk-7-jre-headless
+    # download elasticsearch deb from http://www.elasticsearch.org/download
+    sudo dpkg -i elasticsearch-0...
 
 
 ### 3rd party static content

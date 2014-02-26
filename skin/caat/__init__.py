@@ -60,7 +60,7 @@ def load(**kwargs):
     def header(title=None):
         if title is None:
             return header_html
-        return re_title.sub("\\1" + title + "\\2", header_html)
+        return re_title.sub(r"\g<1>" + title + r"\g<2>", header_html)
 
     return {
         "header": header,
