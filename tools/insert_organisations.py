@@ -17,7 +17,7 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 import geo
 
-from model import connection_url_app, attach_search
+from model import connection_url_app, attach_search, sanitise_name
 from model import User, Org, Orgalias, Note, Address, Orgtag
 
 
@@ -193,6 +193,8 @@ def search(es, text_orig, just_search=False):
 
 
 def select_org(orm, name, user):
+    name = sanitise_name(name)
+
     org = get_org(orm, name)
     if org:
         return org
