@@ -798,7 +798,7 @@ class Org(Base, MangoEntity, NotableEntity):
                  moderation_user=None, public=None):
         self.name = sanitise_name(name)
 
-        self.description = description
+        self.description = description and unicode(description) or None
 
         self.moderation_user = moderation_user
         self.a_time = 0
