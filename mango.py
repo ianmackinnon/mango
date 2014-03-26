@@ -127,6 +127,14 @@ class MemcacheCache(BaseCache):
         self._cache = memcache.Client(["127.0.0.1:11211"])
         self.set_namespace(namespace)
         
+    @property
+    def name(self):
+        return "memcache"
+        
+    @property
+    def connected(self):
+        return bool(self._cache.get_stats())
+
     def get(self, key):
         value = self._cache.get(self.key(key))
         return value
@@ -145,6 +153,18 @@ class RedisCache(BaseCache):
     def __init__(self, namespace):
         self._cache = redis.StrictRedis(host='localhost', port=6379, db=0)
         self.set_namespace(namespace)
+
+    @property
+    def name(self):
+        return "redis"
+        
+    @property
+    def connected(self):
+        try:
+            self._cache.ping()
+        except redis.ConnectionError as e:
+            return False
+        return True
         
     def get(self, key):
         try:
@@ -205,6 +225,7 @@ def url_type_id(text):
 class Application(tornado.web.Application):
 
     name = u"mango"
+    title = u"Mapping Application for NGOs (Mango)"
     sqlite_path = u"mango.db"
     max_age = 86400 * 365 * 10  # 10 years
 
@@ -397,7 +418,7 @@ class Application(tornado.web.Application):
             mysql_database = conf.get(conf_path, u"mysql", u"database")
             self.database_namespace = 'mysql://%s' % mysql_database
             self.database_mtime = datetime.datetime.utcnow()
-        elif options.database == "sqlite":
+        elif database == "sqlite":
             sqlite_database = self.sqlite_path
             self.database_namespace = 'sqlite:///%s' % sqlite_database
             self.database_mtime = datetime.datetime.utcfromtimestamp(
@@ -468,7 +489,17 @@ class Application(tornado.web.Application):
 
         tornado.web.Application.__init__(self, self.handlers, **settings)
 
-        sys.stdout.write(u"Mapping Application for NGOs (mango) running on port %d.\n" % options.port)
+        sys.stdout.write(u"""%s is running.
+  Address:   localhost:%d
+  Database:  %s
+  Cache:     %s (%s)
+""" % (
+                self.title,
+                options.port,
+                database,
+                self.cache.name,
+                self.cache.connected and "active" or "inactive",
+                ))
         sys.stdout.flush()
         
 

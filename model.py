@@ -834,6 +834,8 @@ class Org(Base, MangoEntity, NotableEntity):
         session = object_session(self)
         assert session
 
+        print "[", self.org_id, other.org_id, len(other.orgalias_list), "]"
+
         orgalias = Orgalias.get(session, other.name, self, moderation_user, other.public)
 
         self.orgalias_list = list(set(self.orgalias_list + other.orgalias_list))
@@ -848,6 +850,10 @@ class Org(Base, MangoEntity, NotableEntity):
         other.orgtag_list = []
         other.event_list = []
         other.contact_list = []
+
+        for alias in self.orgalias_list:
+            print alias.orgalias_id, alias.org_id, alias.name
+
         session.delete(other)
 
     @staticmethod
