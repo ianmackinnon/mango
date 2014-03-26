@@ -39,7 +39,7 @@ def load(**kwargs):
         )
     
     data = {
-        "pagetitle": "Arms Trade Map",
+        "pagetitle": "Company Map",
         "pagecreated": "2 August 2012",
         "pagedescription": "Expose and challenge the arms trade on your doorstep with CAAT's map of the arms trade.",
         }

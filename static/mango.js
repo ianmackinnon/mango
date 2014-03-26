@@ -993,6 +993,13 @@ var m = {
       });
     }],
 
+    [/^\/farnborough$/, function () {
+      m.initHome("country-tag", "farnborough-org");
+      m.initMap(function (mapView) {
+        m.initHomeMap(mapView, "farnborough-2014");
+      });
+    }],
+
     [/^\/note\/new$/, function () {
       m.noteMarkdown();
     }],

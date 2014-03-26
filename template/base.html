@@ -15,8 +15,11 @@ ${header(title=self.application_title()) | n}
   <nav id="nav-main">
     <div id="nav-pages">
       %if not header2:
-      <a href="${url_rewrite("/")}">Arms trade map</a>
-      <a href="${url_rewrite("/dsei")}">DSEI</a>
+      <a href="${url_rewrite("/")}">Home</a>
+      <!--
+      <a href="${url_rewrite("/farnborough")}">Farnborough 2014</a>
+      -->
+      <a href="${url_rewrite("/dsei")}">DSEI 2013</a>
       %endif
       <div class="nav-group">
         <a

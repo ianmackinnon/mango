@@ -15,6 +15,12 @@ class HomeHandler(BaseHandler):
 
 class CountryTagListHandler(BaseHandler):
     def get(self):
+        """
+        Returns all possible country tag names.
+        Does not take into account visibility or existance of orgs
+        in those categories.
+        """
+
         cache_key = "country-tag"
         value = self.cache.get(cache_key)
         if value:
@@ -28,18 +34,24 @@ class CountryTagListHandler(BaseHandler):
 
         results = self.orm.query(Orgtag) \
             .filter(Orgtag.base.contains(
-                u"Military export applicant to % in 2010")
+                u"Military export applicant to % in %")
                     ) \
             .all()
 
-        tag_list = []
+        tag_dict = {}
         for tag in results:
+            name = tag.name[38:-8]
+            if not name in tag_dict:
+                tag_dict[name] = []
+            tag_dict[name].append(tag.base_short)
+
+        tag_list = []
+        for key in sorted(tag_dict.keys()):
             tag_list.append({
-                    "label": tag.name[38:-8],
-                    "value": tag.base_short,
+                    "label": key,
+                    "value": ",".join(tag_dict[key])
                     })
 
-        tag_list.sort()
         self.cache.set(cache_key, json.dumps(tag_list))
         self.write_json(tag_list)
 
@@ -72,18 +84,26 @@ class HomeOrgListHandler(BaseHandler):
 
 
 
-class DseiHandler(BaseHandler):
+class FairHandler(BaseHandler):
     def get(self):
         self.render(
-            'dsei.html',
+            '%s.html' % self.name,
+            tag_name=self.tag_name,
             )
 
+class DseiHandler(FairHandler):
+    name = "dsei"
+    tag_name = "dsei-2013"
+
+class FarnboroughHandler(FairHandler):
+    name = "farnborough"
+    tag_name = "farnborough-2014"
 
 
-class DseiOrgListHandler(BaseHandler):
+
+class FairOrgListHandler(BaseHandler):
     def get(self):
-        cache_key = "dsei-org"
-        value = self.cache.get(cache_key)
+        value = self.cache.get(self.cache_key)
         if value:
             self.set_header(
                 "Content-Type",
@@ -93,22 +113,28 @@ class DseiOrgListHandler(BaseHandler):
             self.finish()
             return
 
-        dsei_tag = self.orm.query(Orgtag) \
-            .filter(Orgtag.base_short==u"dsei-2013") \
+        tag = self.orm.query(Orgtag) \
+            .filter(Orgtag.base_short==self.tag_name) \
             .first()
 
         org_list = []
 
-        if dsei_tag:
-            for org in dsei_tag.org_list_public:
+        if tag:
+            for org in tag.org_list_public:
                 org_list.append({
                         "label": org.name,
                         "value": org.url,
                         })
 
         org_list.sort()
-        self.cache.set(cache_key, json.dumps(org_list))
+        self.cache.set(self.cache_key, json.dumps(org_list))
         self.write_json(org_list)
 
+class DseiOrgListHandler(FairOrgListHandler):
+    cache_key = "dsei-org"
+    tag_name = u"dsei-2013"
 
+class FarnboroughOrgListHandler(FairOrgListHandler):
+    cache_key = "farnborough-org"
+    tag_name = u"farnborough-2014"
 

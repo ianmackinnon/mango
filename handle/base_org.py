@@ -198,6 +198,7 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                         .join(Orgtag) \
                         .filter(Orgtag.base_short==tag_name)
 # Temporarily allow non-public tag searches
+# while Farnborough 2014 tag is pending
 #                    e1 = self.filter_visibility(
 #                        e1, Orgtag, visibility, secondary=True)
                     org_alias_query = org_alias_query \
@@ -207,6 +208,7 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                     .join((Orgtag, Org.orgtag_list)) \
                     .filter(Orgtag.base_short.in_(tag_name_list))
 # Temporarily allow non-public tag searches
+# while Farnborough 2014 tag is pending
 #                org_alias_query = self.filter_visibility(
 #                    org_alias_query, Orgtag, visibility, secondary=True)
 
