@@ -12,8 +12,9 @@ import logging
 from optparse import OptionParser
 
 from sqlalchemy import create_engine, func
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, object_session 
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+from sqlalchemy.orm.util import has_identity 
 
 import geo
 
@@ -23,6 +24,7 @@ from model import User, Org, Orgalias, Note, Address, Orgtag
 
 
 log = logging.getLogger('insert_organisation')
+log_search = logging.getLogger('search')
 
 
 
@@ -149,17 +151,19 @@ def get_candidates(es, text):
     return org_list
 
 
-def search(es, text_orig, just_search=False):
+def search_org(es, text_orig, just_search=False):
     org_id = None
     text_search = text_orig
 
     while True:
         ngrams = {}
 
-        sys.stderr.write((u"\nFind: '\033[92m%s\033[0m'\n\n" % (text_orig)).encode("utf-8"))
 
         candidates = get_candidates(es, text_search)
+        if not candidates:
+            break
 
+        sys.stderr.write((u"\nFind: '\033[92m%s\033[0m'\n\n" % (text_orig)).encode("utf-8"))
         for i, org in enumerate(candidates, 1):
             sys.stderr.write("  %4d: \033[37m%-5d %s\033[0m\n" % (i, org["org_id"], org["score"]))
             for name in org["alias"]:
@@ -192,18 +196,21 @@ def search(es, text_orig, just_search=False):
 
 
 
-def select_org(orm, name, user):
+def select_org(orm, name, user, search=True):
     name = sanitise_name(name)
 
     org = get_org(orm, name)
     if org:
         return org
 
+    if not search:
+        return
+
     es = orm.get_bind().search
-    org_id = search(es, name)
+    org_id = search_org(es, name)
 
     if not org_id:
-        return None
+        return
 
     try:
         org = orm.query(Org).filter_by(org_id=org_id).one()
@@ -217,7 +224,7 @@ def select_org(orm, name, user):
 
 
 
-def insert_fast(data, orm, public=None, tag_names=None, dry_run=None, address_exclusive=None):
+def insert_fast(data, orm, public=None, tag_names=None, dry_run=None, address_exclusive=None, search=True):
     user = orm.query(User).filter_by(user_id=-1).one()
     tag_names = tag_names or []
     names = None
@@ -234,7 +241,7 @@ def insert_fast(data, orm, public=None, tag_names=None, dry_run=None, address_ex
     for chunk in data:
         has_address = None
         log.info(("\n%s\n" % chunk["name"]).encode("utf-8"))
-        org = select_org(orm, chunk["name"], user)
+        org = select_org(orm, chunk["name"], user, search)
 
         if not org:
             log.warning((u"\nCreating org %s\n" % chunk["name"]).encode("utf-8"))
@@ -267,6 +274,7 @@ def insert_fast(data, orm, public=None, tag_names=None, dry_run=None, address_ex
                     )
                 address.geocode()
                 log.debug(address)
+                orm.add(address)
                 org.address_list.append(address)
 
         if "note" in chunk:
@@ -278,6 +286,7 @@ def insert_fast(data, orm, public=None, tag_names=None, dry_run=None, address_ex
                     moderation_user=user, public=None,
                     )
                 log.debug(note)
+                orm.add(note)
                 org.note_list.append(note)
         
         if not (orm.new or orm.dirty or orm.deleted):
@@ -296,6 +305,7 @@ def insert_fast(data, orm, public=None, tag_names=None, dry_run=None, address_ex
 
 if __name__ == "__main__":
     log.addHandler(logging.StreamHandler())
+    log_search.addHandler(logging.StreamHandler())
 
     usage = """%prog JSON..."""
 
@@ -315,6 +325,10 @@ if __name__ == "__main__":
                       dest="search",
                       help="Search string using import merge tool.",
                       default=None)
+    parser.add_option("-d", "--do-not-search", action="store_true",
+                      dest="no_search",
+                      help="Do not search for similar org names.",
+                      default=None)
     parser.add_option("-A", "--address-exclusive", action="store_true",
                       dest="address_exclusive",
                       help="Only import addresses if org has no existing address.",
@@ -330,14 +344,14 @@ if __name__ == "__main__":
 
     verbosity = max(0, min(3, 1 + options.verbose - options.quiet))
 
-    log.setLevel(
-        (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[verbosity]
-        )
+    log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[max(0, min(3, 1 + options.verbose - options.quiet))]
 
+    log.setLevel(log_level)
+    log_search.setLevel(log_level)
 
     connection_url = connection_url_app()
     engine = create_engine(connection_url,)
-    Session = sessionmaker(bind=engine, autocommit=False)
+    Session = sessionmaker(bind=engine, autocommit=False, autoflush=False)
     orm = Session()
     attach_search(engine, orm)
 
@@ -348,7 +362,7 @@ if __name__ == "__main__":
     if options.search:
         es = orm.get_bind().search
         for arg in args:
-            search(es, arg, just_search=True)
+            search_org(es, arg, just_search=True)
         sys.exit(0)
 
     for arg in args:
@@ -358,5 +372,5 @@ if __name__ == "__main__":
             log.error("%s: Could not decode JSON data.", arg)
             continue
 
-        insert_fast(data, orm, options.public, options.tag, options.dry_run, options.address_exclusive)
+        insert_fast(data, orm, options.public, options.tag, options.dry_run, options.address_exclusive, (not options.no_search))
 
