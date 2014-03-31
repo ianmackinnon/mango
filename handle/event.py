@@ -152,6 +152,11 @@ class DiaryHandler(EventListHandler):
 class EventNewHandler(BaseOrgHandler):
     @authenticated
     def get(self):
+        if self.parameters.get("view", None) != "edit":
+            self.next = "/event"
+            self.redirect_next()
+            return
+
         self.render(
             'event.html',
             )

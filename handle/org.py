@@ -139,6 +139,11 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
 class OrgNewHandler(BaseOrgHandler):
     @authenticated
     def get(self):
+        if self.parameters.get("view", None) != "edit":
+            self.next = "/organisation"
+            self.redirect_next()
+            return
+
         self.render(
             'organisation.html',
             )

@@ -1,14 +1,41 @@
 <%inherit file="base.html"/>
 
+
+
 <%def name="title()"><%
 return obj and obj["name"] or "New Event"
 %></%def>
+
+
 
 <%def name="logout_url()">
 <% return obj and obj.get("public", True) and uri or "/" %>
 </%def>
 
+
+
+<%def name="split_tags(tag_list)">
+<%
+
+path_dict = {}
+for tag in tag_list:
+    if not tag["path"] in path_dict:
+        path_dict[tag["path"]] = []
+    path_dict[tag["path"]].append(tag)
+path_keys = sorted(path_dict.keys(), key=lambda key: len(path_dict[key]))
+if None in path_keys:
+    path_keys.append(path_keys.pop(path_keys.index(None)))
+
+return path_keys, path_dict
+%>
+</%def>
+
+
+
 <%def name="page()">
+<%
+edit = parameters.get("view", None) == "edit"
+%>
 
 <h1>
   %if obj:
@@ -28,25 +55,25 @@ return obj and obj["name"] or "New Event"
     %endif
 
     <!-- Description Preview Start -->
-    %if current_user and (parameters.get("view", None) == "edit"):
+    %if edit:
     <div class="mango-entity-section">
-    <h3>Description Preview</h3>
-    <div class="description markdown markdown-preview">
-      %if obj and obj["description"]:
-      ${obj["description"] | n, markdown_safe, convert_links}
-      %endif
-    </div>
+      <h3>Description Preview</h3>
+      <div class="description markdown markdown-preview">
+        %if obj and obj["description"]:
+        ${obj["description"] | n, markdown_safe, convert_links}
+        %endif
+      </div>
     </div>
     %endif
     <!-- Description Preview End -->
 
     <!-- Organisations Start -->
-    %if obj:
+    %if obj and (edit or not moderator or obj["org_list"]):
     <div class="mango-entity-section">
     <div class="action-bar no-border">
       <h3>Companies</h3>
 
-      %if moderator and (parameters.get("view", None) == "edit"):
+      %if edit and moderator:
       <div class="actions">
         <a
            href="${url_rewrite("%s/organisation" % obj["url"])}"
@@ -56,7 +83,7 @@ return obj and obj["name"] or "New Event"
       %endif
     </div>
 
-    %if obj and "org_list" in obj:
+    %if obj["org_list"]:
     <ul class="org_list">
       %for org in obj["org_list"]:
       ${self.mini.org_box(
@@ -64,71 +91,54 @@ return obj and obj["name"] or "New Event"
         )}
       %endfor
     </ul>
-    %else:
-    no companies linked yet.
     %endif
+
     </div>
     %endif
-    <!-- organisations end -->
+    <!-- Organisations End -->
 
-    <!-- tags start -->
-    %if obj:
+    <!-- Tags Start -->
+    %if obj and (edit or obj.get("eventtag_list", None)):
     <div class="mango-entity-section">
-    <div class="action-bar no-border">
-      <h3>Tags</h3>
+      <div class="action-bar no-border">
+        <h3>Tags</h3>
 
-      %if moderator and (parameters.get("view", None) == "edit"):
-      <div class="actions">
-        <a
-           href="${url_rewrite("%s/tag" % obj["url"])}"
-           class="action"
-           >edit tags</a>
+        %if edit and moderator:
+        <div class="actions">
+          <a
+             href="${url_rewrite("%s/tag" % obj["url"])}"
+             class="action"
+             >Edit tags</a>
+        </div>
+        %endif
       </div>
-      %endif
-    </div>
 
-    %if "eventtag_list" in obj:
-
-<%
-type_tag_list = "eventtag_list"
-
-path_dict = {}
-for tag in obj[type_tag_list]:
-    if not tag["path"] in path_dict:
-        path_dict[tag["path"]] = []
-    path_dict[tag["path"]].append(tag)
-path_keys = sorted(path_dict.keys(), key=lambda key: len(path_dict[key]))
-if None in path_keys:
-    path_keys.append(path_keys.pop(path_keys.index(None)))
-%>
-
-    %for key in path_keys:
-    <h4>${key or "Other"}</h4>
-    <ul class="tag_list">
-      %for tag in path_dict[key]:
-      ${self.mini.tag_li(
-        tag, visibility=True, parameters=parameters,
-        )}
+      <%
+         tag_keys, tag_dict = split_tags(obj["eventtag_list"])
+         %>
+      %for key in tag_keys:
+      <h4>${key or "Other"}</h4>
+      <ul class="tag_list">
+        %for tag in tag_dict[key]:
+        ${self.mini.tag_li(
+          tag,
+          visibility=True,
+          parameters=parameters,
+          )}
+        %endfor
+      </ul>
       %endfor
-    </ul>
-    %endfor
 
-    %endif
     </div>
     %endif
     <!-- Tags End -->
-
 
   </div>
   
   <div class="form-by-map" id="event-form">
     ${self.mini.visibility_bar(obj)}
     
-    %if current_user and (parameters.get("view", None) == "edit"):
-    %if edit_block:
-    <p class="warning">Editing is disabled because <a href="${url_rewrite(version_url)}">pending suggested revisions</a> exist.</p>
-    ${event_browse(obj)}
-    %else:
+    %if edit and not edit_block:
     <h3>Event</h3>
 
     <form
@@ -208,121 +218,152 @@ if None in path_keys:
 
     ${self.mini.delete_input(obj, next_="/event")}
 
-    %endif
     %else:
-    ${event_browse(obj)}
-    %endif
 
+    %if edit_block:
+    <p class="warning">Editing is disabled because <a href="${url_rewrite(version_url)}">pending suggested revisions</a> exist.</p>
+    %endif:
 
-    %if obj:
-    %if "contact_list" in obj:
-    <div class="action-bar no-border">
-      <h3>Contact</h3>
-
-      %if current_user and (parameters.get("view", None) == "edit"):
-      <div class="actions">
-        <a
-           href="${url_rewrite("%s/contact" % obj["url"])}"
-           class="action"
-           >Add contact</a>
+    <!-- Name Start -->
+    <div class="mango-entity-section">
+      <h3>Event</h3>
+      <div class="event-name-box">    
+        ${obj["name"]}
       </div>
-      %endif
     </div>
+    <!-- Name End -->
 
-    %for contact in obj["contact_list"]:
-    ${self.mini.contact_box(
-      contact,
-      "%s%s" % (obj["url"], contact["url"]), unlink=True,
-      parameters=parameters,
-      )}
-    %endfor
-    %endif
-    %endif
+    <!-- Time Start -->
+    <div class="mango-entity-section">
+      <h3>Time</h3>
+      ${obj["start_date"] | n, page_date}
+    </div>
+    <!-- Time End -->
 
+    <!-- Description Start -->
+    %if obj["description"]:
+    <div class="mango-entity-section">
 
-    %if obj:
-    %if "address_list" in obj:
-    <div class="action-bar no-border">
-      <h3>Addresses</h3>
-
-      %if current_user and (parameters.get("view", None) == "edit"):
-      <div class="actions">
-        <a
-           href="${url_rewrite("%s/address" % obj["url"])}"
-           class="action"
-           >Add address</a>
+      <h3>Description</h3>
+      <div class="description-preview markdown">
+        %if obj["description"]:
+        ${obj["description"] | n, markdown_safe, convert_links}
+        %endif
       </div>
-      %endif
+
     </div>
-
-    %for address in obj["address_list"]:
-    ${self.mini.address_box(
-      address,
-      "%s%s" % (obj["url"], address["url"]), unlink=True,
-      parameters=parameters,
-      )}
-    %endfor
     %endif
+    <!-- Description End -->
+
     %endif
 
-    %if obj:
-    %if moderator and (parameters.get("view", None) == "edit"):
-    <h3>Duplicate Event</h3>
 
-    <form
-       class="mango"
-       action="${url_rewrite(obj["url"] + "/duplicate")}"
-       method="post"
-       >
-      <input name="_xsrf" type="hidden" value="${xsrf}">
-      <input name="_method" type="hidden" value="post">
-      <label name="start_date" status="">
-	<span>Duplicate Start Date</span>
-	<span class="requirement"></span>
-	<input
-           name="start_date"
-           placeholder="Format is 'YYYY-MM-DD', eg. '2012-07-24'."
-           value=""
-           >
-      </label>
-      <input type="submit" value="Duplicate">
-    </form>
+    <!-- Contacts Start -->
+    %if obj and (edit or obj["contact_list"]):
+    <div class="mango-entity-section">
+      <div class="action-bar no-border">
+        <h3>Contact</h3>
+
+        %if edit:
+        <div class="actions">
+          <a
+             href="${url_rewrite("%s/contact" % obj["url"])}"
+             class="action"
+             >Add contact</a>
+        </div>
+        %endif
+
+      </div>
+
+      %for contact in obj["contact_list"]:
+      ${self.mini.contact_box(
+        contact,
+        "%s%s" % (obj["url"],
+        contact["url"]),
+        unlink=True,
+        parameters=parameters,
+        )}
+      %endfor
+
+    </div>
     %endif
+    <!-- Contacts End -->
+
+    <!-- Address Start -->
+    %if obj and (edit or obj["address_list"]):
+    <div class="mango-entity-section">
+      <div class="action-bar no-border">
+        <h3>Addresses</h3>
+
+        %if edit:
+        <div class="actions">
+          <a
+             href="${url_rewrite("%s/address" % obj["url"])}"
+             class="action"
+             >Add address</a>
+        </div>
+        %endif
+      </div>
+
+      %for address in obj["address_list"]:
+      ${self.mini.address_box(
+        address,
+        "%s%s" % (obj["url"],
+        address["url"]),
+        unlink=True,
+        parameters=parameters,
+        )}
+      %endfor
+
+    </div>
     %endif
+    <!-- Address End -->
+
+    <!-- Duplicate Start -->
+    %if obj and moderator and edit:
+    <div class="mango-entity-section">
+      <h3>Duplicate Event</h3>
+
+      <form
+         class="mango"
+         action="${url_rewrite(obj["url"] + "/duplicate")}"
+         method="post"
+         >
+        <input name="_xsrf" type="hidden" value="${xsrf}">
+        <input name="_method" type="hidden" value="post">
+        <label name="start_date" status="">
+	  <span>Duplicate Start Date</span>
+	  <span class="requirement"></span>
+	  <input
+             name="start_date"
+             placeholder="Format is 'YYYY-MM-DD', eg. '2012-07-24'."
+             value=""
+             >
+        </label>
+        <input type="submit" value="Duplicate">
+      </form>
+    </div>
+    %endif
+    <!-- Duplicate End -->
+
   </div>
   
-%if obj and "note_list" in obj:
+</div>
+
+<!-- Note Start -->
+%if obj and (edit and obj["note_list"]):
 ${self.mini.render_note_section(obj["note_list"],
-  obj["url"] + "/note", obj["url"],
-  note_search, note_order, unlink_url=obj["url"],
+  obj["url"] + "/note",
+  obj["url"],
+  note_search,
+  note_order,
+  unlink_url=obj["url"],
   parameters=parameters,
   )}
 %endif
-
-</div>
+<!-- Note End -->
 
 </%def>
 
 
-
-<%def name="event_browse(obj)">
-<h3>Event</h3>
-    
-%if obj:
-<div class="event-name-box">    
-${obj["name"]}
-</div>
-
-<h3>Time</h3>
-${obj["start_date"] | n, page_date}
-
-%if obj["description"]:
-<h3>Description</h3>
-
-<div class="description-preview markdown">
-  ${obj["description"] | n, markdown_safe, convert_links}
-</div>
-%endif
-%endif
-</%def>
 

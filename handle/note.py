@@ -61,6 +61,12 @@ class NoteNewHandler(BaseNoteHandler):
     def get(self):
         if not self.moderator:
             raise HTTPError(403)
+
+        if self.parameters.get("view", None) != "edit":
+            self.next = "/note"
+            self.redirect_next()
+            return
+
         self.render('note.html')
 
 

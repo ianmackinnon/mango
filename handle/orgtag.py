@@ -82,6 +82,11 @@ class OrgtagNewHandler(BaseOrgtagHandler):
         if not self.moderator:
             raise HTTPError(403)
 
+        if self.parameters.get("view", None) != "edit":
+            self.next = "/orgtag"
+            self.redirect_next()
+            return
+
         path_list = self._get_path_list()
         self.render(
             'tag.html',
