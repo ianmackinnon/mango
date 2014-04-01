@@ -72,60 +72,22 @@ edit = parameters.get("view", None) == "edit"
     %endif
     <!-- Description Preview End -->
 
-    <!-- Events Start -->
-    %if obj and (edit or not moderator or obj["event_list"]):
-    <div class="mango-entity-section">
-    <div class="action-bar no-border">
-      <h3>Events</h3>
-
-      %if edit and moderator:
-      <div class="actions">
-        <a
-           href="${url_rewrite("%s/event" % obj["url"])}"
-           class="action"
-           >Edit events</a>
-      </div>
-      %endif
-    </div>
-
-    %if obj["event_list"]:
-    <ul class="event_list">
-      %for event in obj["event_list"]:
-      ${self.mini.event_box(
-        event, parameters=parameters,
-        )}
-      %endfor
-    </ul>
-    %elif not current_user:
-    <p>No events yet.
-    <a
-       href="${url_rewrite("/creative-action.php")}"
-       >Learn more about organising your own</a>,
-    then 
-    <a
-       href="${url_rewrite("/submit.php")}"
-       >tell us about it</a>!</p>
-    %endif
-
-    </div>
-    %endif
-    <!-- Events End -->
-
     <!-- Tags Start -->
     %if obj and (edit or obj.get("orgtag_list", None)):
     <div class="mango-entity-section">
+
+      %if edit and moderator:
       <div class="action-bar no-border">
         <h3>Tags</h3>
 
-        %if edit and moderator:
         <div class="actions">
           <a
              href="${url_rewrite("%s/tag" % obj["url"])}"
              class="action"
              >Edit tags</a>
         </div>
-        %endif
       </div>
+      %endif
 
       <%
          tag_keys, tag_dict = split_tags(obj["orgtag_list"])
@@ -200,15 +162,6 @@ edit = parameters.get("view", None) == "edit"
     <p class="warning">Editing is disabled because <a href="${url_rewrite(version_url)}">pending suggested revisions</a> exist.</p>
     %endif:
 
-    <!-- Name Start -->
-    <div class="mango-entity-section">
-      <h3>Company</h3>
-      <div class="org-name-box">    
-        ${obj["name"]}
-      </div>
-    </div>
-    <!-- Name End -->
-
     <!-- Description Start -->
     %if obj["description"] or not moderator:
     <div class="mango-entity-section">
@@ -219,7 +172,7 @@ edit = parameters.get("view", None) == "edit"
         ${obj["description"] | n, markdown_safe, convert_links}
         %else:
         <p>There is no description yet for this company.</p>
-        <p>Read <a href="http://www.caat.org.uk/resources/mapping/about-this-map.php">about the map</a> to see the inclusion criteria for companies.</p>
+        <p>Read <a href="http://www.caat.org.uk/resources/mapping/about-this-map.php">about the map</a> to see why companies are included on the map.</p>
         %endif
       </div>
 
@@ -229,6 +182,45 @@ edit = parameters.get("view", None) == "edit"
 
     %endif
 
+
+    <!-- Events Start -->
+    %if obj and (edit or not moderator or obj["event_list"]):
+    <div class="mango-entity-section">
+    <div class="action-bar no-border">
+      <h3>Events</h3>
+
+      %if edit and moderator:
+      <div class="actions">
+        <a
+           href="${url_rewrite("%s/event" % obj["url"])}"
+           class="action"
+           >Edit events</a>
+      </div>
+      %endif
+    </div>
+
+    %if obj["event_list"]:
+    <ul class="event_list">
+      %for event in obj["event_list"]:
+      ${self.mini.event_box(
+        event, parameters=parameters,
+        )}
+      %endfor
+    </ul>
+    %elif not current_user:
+    <p>No events yet.
+    <a
+       href="${url_rewrite("/creative-action.php")}"
+       >Learn more about organising your own</a>,
+    then 
+    <a
+       href="${url_rewrite("/submit.php")}"
+       >tell us about it</a>!</p>
+    %endif
+
+    </div>
+    %endif
+    <!-- Events End -->
 
     <!-- Contacts Start -->
     %if obj and (edit or obj["contact_list"]):

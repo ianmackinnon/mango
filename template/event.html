@@ -67,51 +67,22 @@ edit = parameters.get("view", None) == "edit"
     %endif
     <!-- Description Preview End -->
 
-    <!-- Organisations Start -->
-    %if obj and (edit or not moderator or obj["org_list"]):
-    <div class="mango-entity-section">
-    <div class="action-bar no-border">
-      <h3>Companies</h3>
-
-      %if edit and moderator:
-      <div class="actions">
-        <a
-           href="${url_rewrite("%s/organisation" % obj["url"])}"
-           class="action"
-           >Edit companies</a>
-      </div>
-      %endif
-    </div>
-
-    %if obj["org_list"]:
-    <ul class="org_list">
-      %for org in obj["org_list"]:
-      ${self.mini.org_box(
-        org, parameters=parameters,
-        )}
-      %endfor
-    </ul>
-    %endif
-
-    </div>
-    %endif
-    <!-- Organisations End -->
-
     <!-- Tags Start -->
     %if obj and (edit or obj.get("eventtag_list", None)):
     <div class="mango-entity-section">
+
+      %if edit and moderator:
       <div class="action-bar no-border">
         <h3>Tags</h3>
 
-        %if edit and moderator:
         <div class="actions">
           <a
              href="${url_rewrite("%s/tag" % obj["url"])}"
              class="action"
              >Edit tags</a>
         </div>
-        %endif
       </div>
+      %endif
 
       <%
          tag_keys, tag_dict = split_tags(obj["eventtag_list"])
@@ -224,15 +195,6 @@ edit = parameters.get("view", None) == "edit"
     <p class="warning">Editing is disabled because <a href="${url_rewrite(version_url)}">pending suggested revisions</a> exist.</p>
     %endif:
 
-    <!-- Name Start -->
-    <div class="mango-entity-section">
-      <h3>Event</h3>
-      <div class="event-name-box">    
-        ${obj["name"]}
-      </div>
-    </div>
-    <!-- Name End -->
-
     <!-- Time Start -->
     <div class="mango-entity-section">
       <h3>Time</h3>
@@ -257,6 +219,36 @@ edit = parameters.get("view", None) == "edit"
 
     %endif
 
+
+    <!-- Organisations Start -->
+    %if obj and (edit or not moderator or obj["org_list"]):
+    <div class="mango-entity-section">
+    <div class="action-bar no-border">
+      <h3>Companies</h3>
+
+      %if edit and moderator:
+      <div class="actions">
+        <a
+           href="${url_rewrite("%s/organisation" % obj["url"])}"
+           class="action"
+           >Edit companies</a>
+      </div>
+      %endif
+    </div>
+
+    %if obj["org_list"]:
+    <ul class="org_list">
+      %for org in obj["org_list"]:
+      ${self.mini.org_box(
+        org, parameters=parameters,
+        )}
+      %endfor
+    </ul>
+    %endif
+
+    </div>
+    %endif
+    <!-- Organisations End -->
 
     <!-- Contacts Start -->
     %if obj and (edit or obj["contact_list"]):
