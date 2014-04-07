@@ -26,9 +26,15 @@ for tag in obj[type_tag_list]:
 path_keys = sorted(path_dict.keys())
 if None in path_keys:
     path_keys.append(path_keys.pop(path_keys.index(None)))
+
+tag_id_list = [tag["id"] for tag in obj[type_tag_list]]
+group_key = group_tag_list and group_tag_list[0]["path"]
 %>
 
 %for key in path_keys:
+%if key == group_key:
+<% continue %>
+%endif
 <h4>${key or "Other"}</h4>
 <ul class="tag_list">
   %for tag in path_dict[key]:
@@ -40,13 +46,53 @@ if None in path_keys:
 </ul>
 %endfor
 
-</div>    
+</div>
+
 
 <div class="mango-box right">
+  %if path_list:
+  <form
+     action="${url_rewrite(obj["url"] + "/tag", parameters)}"
+     >
+    ${self.mini.form_parameters()}
+    <label>
+      <span>Group view:</span>
+      <select name="group">
+        <option value=""></option>
+        %for path_full, path_short in path_list:
+        <option value="${path_short}"${' selected' if path_short == group else ""}>${path_full}</option>
+        %endfor
+      </select>
+    </label>
+    <input type="submit" value="Submit">
+  </form>
+  %endif
+
+  %if group_tag_list:
+
+  <h3>${group_key} Tags</h3>
+
+  <form
+     action=""
+     method="post"
+     >
+    <input name="_xsrf" type="hidden" value="${xsrf}">
+
+    <input type="hidden" name="group" value="${group}">
+
+    %for tag in group_tag_list:
+    <input type="checkbox" name="tag" value="${tag['id']}"${' checked' if tag['id'] in tag_id_list else ''}> ${tag['base']} <br>
+    %endfor
+    <input type="submit" value="Submit">
+  </form>
+
+  %else:
+
   <h3>Available Tags</h3>
 
   <div class="action-bar">
     <form id="tag-search">
+      ${self.mini.form_parameters()}
       <label name="search">
         <span>Search</span>
         <input name="search" value="${search or ''}">
@@ -85,9 +131,6 @@ if None in path_keys:
   </div>
 
   <ul id="tag_list" class="tag_list">
-    <%
-       tag_id_list = [tag["id"] for tag in obj[type_tag_list]]
-       %>
     %for tag in tag_list:
     %if tag["id"] not in tag_id_list:
     ${self.mini.tag_li(tag, entity={
@@ -101,6 +144,8 @@ if None in path_keys:
     %endfor
   </ul>
   
+  %endif
+
 </div>
 
 </div>

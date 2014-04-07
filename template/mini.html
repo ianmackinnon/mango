@@ -6,6 +6,19 @@ u"○◌◍●"
 
 
 
+<%def name="form_parameters()">\
+%if current_user:
+%if parameters.get("view", None):
+<input type="hidden" name="view" value="${parameters["view"]}">
+%endif
+%if parameters.get("visibility", None):
+<input type="hidden" name="visibility" value="${parameters["visibility"]}">
+%endif
+%endif
+</%def>
+
+
+
 <%def name="visibility_public(public)">\
 ${{True: "public", False: "private", None: "pending",}[public]}
 </%def>

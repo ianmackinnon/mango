@@ -16,7 +16,7 @@ from eventtag import BaseEventtagHandler
 from address import BaseAddressHandler
 from contact import BaseContactHandler
 
-from model import Event, Note, Address, Org
+from model import Event, Note, Address, Org, Eventtag, event_eventtag
 
 from model_v import Event_v, Address_v, \
     event_address_v
@@ -699,9 +699,39 @@ class EventNoteHandler(BaseEventHandler, BaseNoteHandler):
 
 class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
     @authenticated
+    def post(self, event_id):
+        if not self.moderator:
+            raise HTTPError(405)
+
+        is_json = self.content_type("application/json")
+        group = self.get_argument("group", None, json=is_json)
+        tag_id_list = self.get_arguments_int("tag")
+
+        event = self._get_event(event_id)
+
+        if not group:
+            raise HTTPError(404)
+
+        group_tag_query = self.orm.query(Eventtag) \
+            .filter_by(path_short=group) \
+            .order_by(Eventtag.base_short)
+
+        for tag in group_tag_query:
+            if tag.eventtag_id not in tag_id_list:
+                while tag in event.eventtag_list:
+                    event.eventtag_list.remove(tag)
+            if tag.eventtag_id in tag_id_list and tag not in event.eventtag_list:
+                event.eventtag_list.append(tag)
+
+        return self.redirect(self.request.uri)
+
+    @authenticated
     def get(self, event_id):
         if not self.moderator:
             raise HTTPError(403)
+
+        is_json = self.content_type("application/json")
+        group = self.get_argument("group", None, json=is_json)
 
         # event...
 
@@ -726,6 +756,19 @@ class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
         (eventtag_list, name, name_short, base, base_short,
          path, search, sort) = self._get_tag_search_args("event_len")
 
+        group_tag_list = []
+        if group:
+            group_tag_query = self.orm.query(Eventtag) \
+                .filter_by(path_short=group) \
+                .order_by(Eventtag.base_short)
+            group_tag_list = [eventtag.obj() for eventtag in group_tag_query]
+
+        path_query = self.orm.query(Eventtag.path, Eventtag.path_short) \
+            .filter(Eventtag.path!=None) \
+            .group_by(Eventtag.path_short)
+        path_list = list(path_query)
+        print path_list
+
         self.render(
             'entity_tag.html',
             obj=obj,
@@ -740,6 +783,9 @@ class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
             type_entity_list="event_list",
             type_li_template="event_li",
             type_length="event_len",
+            path_list=path_list,
+            group=group,
+            group_tag_list=group_tag_list,
             )
 
 

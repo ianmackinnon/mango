@@ -25,7 +25,12 @@ if sipri:
 %endif
       <tr>
         <td><a 
-               href="${url_rewrite(org.url)}"
+               href="${url_rewrite(org.url + '/tag', {
+                     'sort':'name',
+                     'path':True,
+                     'visibility':'all',
+                     'view':'edit',
+                     })}"
                >${org.name}</a>
 %if tags:
 ${", ".join(tags)}

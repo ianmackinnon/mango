@@ -758,9 +758,39 @@ class OrgNoteHandler(BaseOrgHandler, BaseNoteHandler):
 
 class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
     @authenticated
+    def post(self, org_id):
+        if not self.moderator:
+            raise HTTPError(405)
+
+        is_json = self.content_type("application/json")
+        group = self.get_argument("group", None, json=is_json)
+        tag_id_list = self.get_arguments_int("tag")
+
+        org = self._get_org(org_id)
+
+        if not group:
+            raise HTTPError(404)
+
+        group_tag_query = self.orm.query(Orgtag) \
+            .filter_by(path_short=group) \
+            .order_by(Orgtag.base_short)
+
+        for tag in group_tag_query:
+            if tag.orgtag_id not in tag_id_list:
+                while tag in org.orgtag_list:
+                    org.orgtag_list.remove(tag)
+            if tag.orgtag_id in tag_id_list and tag not in org.orgtag_list:
+                org.orgtag_list.append(tag)
+
+        return self.redirect(self.request.uri)
+
+    @authenticated
     def get(self, org_id):
         if not self.moderator:
             raise HTTPError(403)
+
+        is_json = self.content_type("application/json")
+        group = self.get_argument("group", None, json=is_json)
 
         # org...
 
@@ -787,6 +817,18 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
         (orgtag_list, name, name_short, base, base_short,
          path, search, sort) = self._get_tag_search_args("org_len")
 
+        group_tag_list = []
+        if group:
+            group_tag_query = self.orm.query(Orgtag) \
+                .filter_by(path_short=group) \
+                .order_by(Orgtag.base_short)
+            group_tag_list = [orgtag.obj() for orgtag in group_tag_query]
+
+        path_query = self.orm.query(Orgtag.path, Orgtag.path_short) \
+            .filter(Orgtag.path!=None) \
+            .group_by(Orgtag.path_short)
+        path_list = list(path_query)
+
         self.render(
             'entity_tag.html',
             obj=obj,
@@ -801,6 +843,9 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
             type_entity_list="org_list",
             type_li_template="org_li",
             type_length="org_len",
+            path_list=path_list,
+            group=group,
+            group_tag_list=group_tag_list,
             )
 
 
@@ -1100,6 +1145,3 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             'moderation_org_include.html',
             packet=packet,
             )
-
-
-
