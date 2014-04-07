@@ -783,8 +783,8 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
 
         # orgtag...
 
-        (orgtag_list, name, name_short, base, base_short, path, search) = \
-            self._get_tag_search_args("org_len")
+        (orgtag_list, name, name_short, base, base_short,
+         path, search, sort) = self._get_tag_search_args("org_len")
 
         self.render(
             'entity_tag.html',
@@ -792,6 +792,7 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
             tag_list=orgtag_list,
             path=path,
             search=search,
+            sort=sort,
             type_title="Company",
             type_title_plural="Companies",
             type_url="organisation",
@@ -968,12 +969,6 @@ class OrgEventHandler(BaseOrgHandler, BaseEventHandler):
             org.event_list.remove(event)
             self.orm_commit()
         return self.redirect_next(org.url)
-
-
-
-
-
-
 
 
 

@@ -475,6 +475,10 @@ var m = {
     var pathValue = function () {
       return $path.is(":checked") && 1 || null;
     };
+    var $sort = form.find("select[name='sort']");
+    var sortValue = function () {
+      return $sort.val() || null;
+    };
     var visibility = form.find("input[name='visibility']");
     var throbber = $("<img>").attr({
       "src": m.urlRoot + "static/image/throbber.gif",
@@ -489,7 +493,8 @@ var m = {
       }
       var data = {
         search: search.input.val(),
-        path: pathValue()
+        path: pathValue(),
+        sort: sortValue()
       };
       if (visibility.length) {
         data.visibility = visibility.val();
@@ -515,6 +520,7 @@ var m = {
       m.on_change(search.input, id + "_" + field, change, 500);
     }
     $path.change(change);
+    $sort.change(change);
     visibility.change(change);
   },
 
@@ -1045,6 +1051,11 @@ var m = {
       m.noteMarkdown();
     }],
     [/^\/organisation\/([1-9][0-9]*)\/tag$/, function (orgIdString) {
+      m.initOrgtagSearch("tag-search", "search", {
+        showEntity: true,
+        showNotes: true
+      });
+      $("#tag-search input[name='search']").focus();
       m.visibility();
     }],
     [/^\/event\/([1-9][0-9]*)$/, function (eventIdString) {
@@ -1066,6 +1077,14 @@ var m = {
       m.noteMarkdown();
     }],
 
+    [/^\/event\/([1-9][0-9]*)\/tag$/, function (orgIdString) {
+      m.initOrgtagSearch("tag-search", "search", {
+        showEntity: true,
+        showNotes: true
+      });
+      $("#tag-search input[name='search']").focus();
+      m.visibility();
+    }],
     [/^\/address\/([1-9][0-9]*)$/, function (addressIdString) {
       m.initMap(function (mapView) {
         m.initAddress(mapView);
@@ -1080,7 +1099,7 @@ var m = {
         showEntity: true,
         showNotes: true
       });
-      $("#orgtag-search input[name='search']").focus();
+      $("#tag-search input[name='search']").focus();
       m.visibility();
     }],
     [/^\/organisation-tag\/([1-9][0-9]*)$/, function (orgtagIdString) {
@@ -1105,7 +1124,7 @@ var m = {
         showEntity: true,
         showNotes: true
       });
-      $("#eventtag-search input[name='search']").focus();
+      $("#tag-search input[name='search']").focus();
       m.visibility();
     }],
     [/^\/event-tag\/([1-9][0-9]*)$/, function (eventtagIdString) {

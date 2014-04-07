@@ -55,8 +55,24 @@ if None in path_keys:
         <span>Path</span>
         <input type="checkbox" name="path" value="1"${path and ' checked="checked"' or ''}>
       </label>
-      ${self.mini.visibility_search_input(visibility, current_user)}
+    <label name="order">
+      <span>Order by</span>
+      <select name="sort">
+        <option value="freq"
+                ${sort in ("freq", None) and "selected='selected'" or ""}
+                >Frequency</option>
+        <option value="name"
+                ${sort == "name" and "selected='selected'" or ""}
+                >Name</option>
+        <option value="date"
+                ${sort == "date" and "selected='selected'" or ""}
+                >Date</option>
+      </select>
+    </label>
+    ${self.mini.visibility_search_input(visibility, current_user)}
+    <div class="actions">
       <input type="submit" value="Submit">
+    </div>
     </form>
 
     <ul class="actions">

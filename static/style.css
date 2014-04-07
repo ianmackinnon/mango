@@ -106,6 +106,7 @@ mango input[type="submit"]:hover,
 
 #mango table
 {
+    margin: 0;
     border-collapse: collapse;
     border-spacing: 0;
 }
@@ -1013,7 +1014,11 @@ div.ui-timepicker td a.ui-state-active
 #mango #tag-search
 {
     float: left;
-    width: 350px;
+    width: 490px;
+}
+#mango #tag-search div.actions
+{
+    width: 60px;
 }
 #mango #tag-search input[name='search']
 {

@@ -73,7 +73,7 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         
         return [entry.path for entry in path_list]
         
-    def _get_tag_entity_count_search(self, name=None, name_short=None, base=None, base_short=None, path=None, search=None, visibility=None):
+    def _get_tag_entity_count_search(self, name=None, name_short=None, base=None, base_short=None, path=None, search=None, sort=None, visibility=None):
 
         tag_list = self.orm.query(self.Tag)
         entity_q = self.orm.query(self.Entity)
@@ -126,14 +126,24 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
             results = results\
                 .order_by(search_member.startswith(search).desc())
 
-        results = results\
-            .order_by(s.c.count.desc())\
-            .all()
+        if sort:
+            sort_dict = {
+                "name": getattr(self.Tag, "name_short" if path else "base_short"),
+                "date": getattr(self.Tag, "a_time").desc(),
+                "freq": s.c.count.desc(),
+                }
 
-        tag_and_org_count_list = results
+            results = results\
+                .order_by(sort_dict[sort])
+
+        tag_and_org_count_list = results.all()
 
         return tag_and_org_count_list
         
+    def get_argument_sort(self, json=False):
+        return self.get_argument_allowed(
+            "sort", ("name", "date", "freq"), None, json)
+
     def _get_tag_search_args(self, entity_len):
         is_json = self.content_type("application/json")
         name = self.get_argument("name", None, json=is_json)
@@ -142,6 +152,7 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         base_short = self.get_argument("base_short", None, json=is_json)
         path = self.get_argument_bool("path", None, json=is_json)
         search = self.get_argument("search", None, json=is_json)
+        sort = self.get_argument("sort", None, json=is_json)
 
         entity_count_list = self._get_tag_entity_count_search(
             name=name,
@@ -150,6 +161,7 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
             base_short=base_short,
             path=path,
             search=search,
+            sort=sort,
             visibility=self.parameters.get("visibility", None),
             )
 
@@ -160,7 +172,6 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                     entity_len: entity_count,
                     }))
 
-        
-
-        return tag_list, name, name_short, base, base_short, path, search
+        return (tag_list, name, name_short, base, base_short,
+                path, search, sort)
 

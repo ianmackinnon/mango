@@ -54,8 +54,8 @@ class OrgtagListHandler(BaseOrgtagHandler,
         return MangoEntityListHandlerMixin.post(self)
         
     def get(self):
-        (orgtag_list, name, name_short, base, base_short, path, search) = \
-            self._get_tag_search_args("org_len")
+        (orgtag_list, name, name_short, base, base_short,
+         path, search, sort) = self._get_tag_search_args("org_len")
 
         if self.accept_type("json"):
             self.write_json(orgtag_list)
@@ -65,6 +65,7 @@ class OrgtagListHandler(BaseOrgtagHandler,
                 tag_list=orgtag_list,
                 path=path,
                 search=search,
+                sort=sort,
                 visibility=self.parameters.get("visibility", None),
                 type_title="Company",
                 type_title_plural="Companies",

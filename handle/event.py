@@ -723,8 +723,8 @@ class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
 
         # eventtag...
 
-        (eventtag_list, name, name_short, base, base_short, path, search) = \
-            self._get_tag_search_args("event_len")
+        (eventtag_list, name, name_short, base, base_short,
+         path, search, sort) = self._get_tag_search_args("event_len")
 
         self.render(
             'entity_tag.html',
@@ -732,6 +732,7 @@ class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
             tag_list=eventtag_list,
             path=path,
             search=search,
+            sort=sort,
             type_title="Event",
             type_title_plural="Events",
             type_url="event",
