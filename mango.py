@@ -24,7 +24,7 @@ from tornado.options import define, options
 from sqlalchemy import create_engine, __version__ as sqlalchemy_version
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm.query import Query
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, OperationalError
 
 import mysql.mysql_init
 
@@ -54,7 +54,8 @@ from handle.org import OrgHandler, OrgNewHandler, OrgSearchHandler, \
     OrgAddressListHandler, OrgAddressHandler, \
     OrgContactListHandler, OrgContactHandler, \
     OrgEventHandler, OrgEventListHandler, \
-    ModerationOrgDescHandler
+    ModerationOrgDescHandler, \
+    ModerationOrgIncludeHandler
 from handle.orgalias import OrgaliasHandler
 from handle.event import EventHandler, EventNewHandler, \
     EventRevisionListHandler, EventRevisionHandler, \
@@ -310,6 +311,8 @@ class Application(tornado.web.Application):
             (r"/moderation/queue", ModerationQueueHandler),
             (r"/moderation/organisation-description",
              ModerationOrgDescHandler),
+            (r"/moderation/organisation-inclusion",
+             ModerationOrgIncludeHandler),
 
             (r"/user", UserListHandler),
             (r"/user/<id>", UserHandler),
@@ -439,6 +442,12 @@ class Application(tornado.web.Application):
                 autocommit=False,
                 query_cls=SafeQueryClass(),
                 ))
+        try:
+            self.orm.query(Org).first()
+        except OperationalError as e:
+            sys.stderr.write("Cannot connect to database %s.\n" % database)
+            sys.exit(1)
+            
         attach_search(engine, self.orm)
 
         # Logging

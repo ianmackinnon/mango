@@ -64,6 +64,7 @@ clean-mysql:
 mysql : .mango.mysql.conf mysql-exist clean-mysql
 # Empty and build a fresh mango database (admin)
 	./model.py
+	mysql --defaults-extra-file=.mango.mysql.conf < mysql/org_include.mysql.sql
 	mysql --defaults-extra-file=.mango.mysql.conf < mysql/build.mysql.sql
 	mysql --defaults-extra-file=.mango.mysql.conf < mysql/build_triggers.mysql.sql
 	mysql --defaults-extra-file=.mango.mysql.conf < mysql/seed.mysql.sql
@@ -71,6 +72,7 @@ mysql : .mango.mysql.conf mysql-exist clean-mysql
 mysql-import : .mango.mysql.conf mysql-exist clean-mysql $(MYSQL_IMPORT)
 # Empty and build the mango database from import data (admin)
 	./model.py
+	mysql --defaults-extra-file=.mango.mysql.conf < mysql/org_include.mysql.sql
 	mysql --defaults-extra-file=.mango.mysql.conf < mysql/build.mysql.sql
 	mysql --defaults-extra-file=.mango.mysql.conf < "$(MYSQL_IMPORT)"
 	mysql --defaults-extra-file=.mango.mysql.conf < mysql/build_triggers.mysql.sql

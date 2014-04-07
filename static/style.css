@@ -182,6 +182,12 @@ form.mango input[disabled="disabled"]
     margin-left: 20px;
 }
 
+#mango div.mango-box.third
+{
+    float: left;
+    width: 300px;
+}
+
 #mango div.center-box
 {
     text-align: center;

@@ -4,7 +4,8 @@ import json
 from collections import OrderedDict
 
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.sql.expression import exists, or_, and_
+from sqlalchemy.sql import func
+from sqlalchemy.sql.expression import exists, literal_column, or_, and_
 from tornado.web import HTTPError
 
 from base import authenticated, sha1_concat, \
@@ -17,7 +18,7 @@ from orgtag import BaseOrgtagHandler
 from address import BaseAddressHandler
 from contact import BaseContactHandler
 
-from model import Org, Note, Address, Orgalias, Event
+from model import Org, Note, Address, Orgalias, Event, Orgtag, org_orgtag
 
 from model_v import Org_v, Address_v, \
     org_address_v
@@ -1022,6 +1023,82 @@ class ModerationOrgDescHandler(BaseOrgHandler):
             name=name,
             name_search=name_search,
             offset=offset,
+            )
+
+
+
+class ModerationOrgIncludeHandler(BaseOrgHandler):
+    @authenticated
+    def get(self):
+        if not self.moderator:
+            raise HTTPError(403)
+
+        is_json = self.content_type("application/json")
+
+        org_list = self.orm.query(Org) \
+            .limit(10)
+
+        dsei_query = self.orm.query(func.count(Orgtag.orgtag_id).label("count")) \
+            .join(org_orgtag) \
+            .add_columns(org_orgtag.c.org_id) \
+            .filter(Orgtag.name_short.startswith(u"products-and-services|dsei%")) \
+            .group_by(org_orgtag.c.org_id) \
+            .subquery()
+
+        sipri_query = self.orm.query(func.count(Orgtag.orgtag_id).label("count")) \
+            .join(org_orgtag) \
+            .add_columns(org_orgtag.c.org_id) \
+            .filter(Orgtag.name_short.startswith(u"products-and-services|sipri%")) \
+            .group_by(org_orgtag.c.org_id) \
+            .subquery()
+
+        sap_query = self.orm.query(func.count(Orgtag.orgtag_id).label("count")) \
+            .join(org_orgtag) \
+            .add_columns(org_orgtag.c.org_id) \
+            .filter(Orgtag.name_short.startswith(u"products-and-services|security%")) \
+            .group_by(org_orgtag.c.org_id) \
+            .subquery()
+
+        exist_clause = "exists (select 1 from org_include where org_include.org_id = org.org_id)"
+        
+        org_query = self.orm.query(Org) \
+            .outerjoin(dsei_query, dsei_query.c.org_id==Org.org_id) \
+            .outerjoin(sap_query, sap_query.c.org_id==Org.org_id) \
+            .outerjoin(sipri_query, sipri_query.c.org_id==Org.org_id) \
+            .add_columns(
+                literal_column(exist_clause).label("include"),
+                func.coalesce(dsei_query.c.count, 0).label("dsei"),
+                func.coalesce(sap_query.c.count, 0).label("sap"),
+                func.coalesce(sipri_query.c.count, 0).label("sipri"),
+                ) \
+            .filter(or_(
+                Org.public==True,
+                exist_clause,
+                )) \
+            .order_by("((dsei > 0) * 4 + (sap > 0) * 2 + (sipri > 0)) desc", Org.name)
+                
+        packet = {
+            "included": [],
+            "over_included": [],
+            "under_included_pending": [],
+            "under_included_private": [],
+            }
+
+        for org, include, dsei, sap, sipri in org_query:
+            if org.public:
+                if include:
+                    packet["included"].append((org, dsei, sap, sipri))
+                else:
+                    packet["over_included"].append((org, dsei, sap, sipri))
+            else:
+                if org.public is None:
+                    packet["under_included_private"].append((org, dsei, sap, sipri))
+                else:
+                    packet["under_included_pending"].append((org, dsei, sap, sipri))
+
+        self.render(
+            'moderation_org_include.html',
+            packet=packet,
             )
 
 

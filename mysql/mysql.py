@@ -240,11 +240,19 @@ def mysql_test(options):
 def drop_database_tables(cursor):
     cursor.execute("SET FOREIGN_KEY_CHECKS = 0;");
     while True:
-        cursor.execute("show tables;");
+        cursor.execute("show full tables where table_type = 'VIEW';");
         result = cursor.fetchone()
         if not result:
             break
-        (name, ) = result
+        (name, type_) = result
+        cursor.execute("drop view %s;" % name)
+        log.debug("Dropped view %s." % name)
+    while True:
+        cursor.execute("show full tables where table_type = 'BASE TABLE';");
+        result = cursor.fetchone()
+        if not result:
+            break
+        (name, type_) = result
         cursor.execute("drop table %s;" % name)
         log.debug("Dropped table %s." % name)
     cursor.execute("SET FOREIGN_KEY_CHECKS = 1;");
