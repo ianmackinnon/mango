@@ -1295,3 +1295,58 @@ div.ui-timepicker td a.ui-state-active
 {
 padding: 10px;
 }
+
+#mango div.inclusion
+{
+    margin: 10px 0;
+}
+
+#mango div.inclusion:before,
+#mango div.inclusion:after
+{
+    content: "";
+    display: table;
+}
+
+#mango div.inclusion:after
+{
+    clear: both;
+}
+
+#mango div.inclusion div.visibility
+{
+    margin: 10px 0;
+    height: 60px;
+}
+#mango div.inclusion div.visibility:before,
+#mango div.inclusion div.visibility:after
+{
+    content: "";
+    display: table;
+}
+#mango div.inclusion div.visibility:after
+{
+    clear: both;
+}
+
+#mango div.inclusion ul
+{
+    float: left;
+    width: 188px;
+    margin: 0;
+    padding: 6px;
+    list-style: none;
+}
+#mango div.inclusion li
+{
+    margin: 0;
+}
+#mango div.inclusion div.total
+{
+    display: inline-block;
+    width: 88px;
+    padding: 6px;
+    font-size: 30px;
+    line-height: 44px;
+    text-align: right;
+}

@@ -1083,6 +1083,20 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
         org_list = self.orm.query(Org) \
             .limit(10)
 
+        act_query = self.orm.query(func.count(Orgtag.orgtag_id).label("count")) \
+            .join(org_orgtag) \
+            .add_columns(org_orgtag.c.org_id) \
+            .filter(Orgtag.path_short=='activity') \
+            .group_by(org_orgtag.c.org_id) \
+            .subquery()
+
+        veh_query = self.orm.query(func.count(Orgtag.orgtag_id).label("count")) \
+            .join(org_orgtag) \
+            .add_columns(org_orgtag.c.org_id) \
+            .filter(Orgtag.name_short==u"products-and-services|dsei-2011|dsei-2011-armoured-vehicles") \
+            .group_by(org_orgtag.c.org_id) \
+            .subquery()
+
         dsei_query = self.orm.query(func.count(Orgtag.orgtag_id).label("count")) \
             .join(org_orgtag) \
             .add_columns(org_orgtag.c.org_id) \
@@ -1107,39 +1121,92 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
         exist_clause = "exists (select 1 from org_include where org_include.org_id = org.org_id)"
         
         org_query = self.orm.query(Org) \
+            .outerjoin(act_query, act_query.c.org_id==Org.org_id) \
+            .outerjoin(veh_query, veh_query.c.org_id==Org.org_id) \
             .outerjoin(dsei_query, dsei_query.c.org_id==Org.org_id) \
             .outerjoin(sap_query, sap_query.c.org_id==Org.org_id) \
             .outerjoin(sipri_query, sipri_query.c.org_id==Org.org_id) \
             .add_columns(
                 literal_column(exist_clause).label("include"),
+                func.coalesce(act_query.c.count, 0).label("act"),
+                func.coalesce(veh_query.c.count, 0).label("veh"),
                 func.coalesce(dsei_query.c.count, 0).label("dsei"),
                 func.coalesce(sap_query.c.count, 0).label("sap"),
                 func.coalesce(sipri_query.c.count, 0).label("sipri"),
                 ) \
-            .filter(or_(
-                Org.public==True,
-                exist_clause,
-                )) \
-            .order_by("((dsei > 0) * 4 + (sap > 0) * 2 + (sipri > 0)) desc", Org.name)
-                
+            .order_by("((dsei > 0) * 4 + (sap > 0) * 2 + (sipri > 0)) desc",
+                      Org.name)
+
+
         packet = {
-            "included": [],
-            "over_included": [],
-            "under_included_pending": [],
-            "under_included_private": [],
+            "act_include_public": 0,
+            "act_exclude_public": [],
+            "act_exclude_private": 0,
+            "act_include_private": [],
+            "act_include_pending": [],
+
+            "veh_public": [],
+            "veh_private": [],
+            "veh_pending": [],
+
+            "include_public": [],
+            "include_private": [],
+            "include_pending": [],
+
+            "remove_public": [],
+            "remove_private": [],
+            "exclude_pending": 0,
             }
 
-        for org, include, dsei, sap, sipri in org_query:
-            if org.public:
-                if include:
-                    packet["included"].append((org, dsei, sap, sipri))
+        for org, include, act, veh, dsei, sap, sipri in org_query:
+            if act:
+                if org.public:
+                    if include:
+                        packet["act_include_public"] += 1
+                    else:
+                        packet["act_exclude_public"] \
+                            .append((org, dsei, sap, sipri))
+                elif org.public == False:
+                    if not include:
+                        packet["act_exclude_private"] += 1
+                    else:
+                        packet["act_include_private"] \
+                            .append((org, dsei, sap, sipri))
                 else:
-                    packet["over_included"].append((org, dsei, sap, sipri))
+                    if not include:
+                        pass # Nothing
+                    else:
+                        packet["act_include_pending"] \
+                            .append((org, dsei, sap, sipri))
+            elif veh:
+                if org.public:
+                    packet["veh_public"] \
+                        .append((org, dsei, sap, sipri))
+                elif org.public == False:
+                    packet["veh_private"] \
+                        .append((org, dsei, sap, sipri))
+                else:
+                    packet["veh_pending"] \
+                        .append((org, dsei, sap, sipri))
+            elif include:
+                if org.public:
+                    packet["include_public"] \
+                        .append((org, dsei, sap, sipri))
+                elif org.public == False:
+                    packet["include_private"] \
+                        .append((org, dsei, sap, sipri))
+                else:
+                    packet["include_pending"] \
+                        .append((org, dsei, sap, sipri))
             else:
-                if org.public is None:
-                    packet["under_included_private"].append((org, dsei, sap, sipri))
+                if org.public:
+                    packet["remove_public"] \
+                        .append((org, dsei, sap, sipri))
+                elif org.public == False:
+                    packet["remove_private"] \
+                        .append((org, dsei, sap, sipri))
                 else:
-                    packet["under_included_pending"].append((org, dsei, sap, sipri))
+                    packet["exclude_pending"] += 1
 
         self.render(
             'moderation_org_include.html',
