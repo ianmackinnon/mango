@@ -1,5 +1,41 @@
-<li class="tag<% if (parameters.visibility && "public" in tag) { %> has-visibility<% } %>"><span class="tag_name"><a
-   href="<%= m.urlRewrite(tag["url"], parameters) %>"
-   ><% if (path) { %><%=m.filter.nbsp(m.filter.h(tag["name"]))%><% } else { %><%=m.filter.nbsp(m.filter.h(tag["base"]))%><% } %></a></span><% if (entity) { %><% if (tag[entity_len]) { %>&nbsp;(<span class="number"><a
-   href="<%= m.urlRewrite(tag[entity_list_url], parameters) %>"
-   ><%=tag[entity_len]%></a></span>)<% } %><% } %><% if (note && tag["note_len"]) { %><span class="has-notes">…</span><% } %><% if (parameters.visibility && "public" in tag) { %>&nbsp;<%=m.template("visibility-bar.html", {obj: tag})%><% } %></li><% if (path) { %><br /><% } %>
+<li
+   class="tag<% if (parameters.visibility && "public" in tag) { %> has-visibility<% } %>"
+   title="<%= tag["name"] + (tag["description"] ? '\n\n' + tag["description"] : '') %>"
+   >
+
+  <span class="tag_name">
+    <a
+       href="<%= m.urlRewrite(tag["url"], parameters) %>"
+       >
+      <% if (path) { %>
+      <%=m.filter.nbsp(m.filter.h(tag["name"]))%>
+      <% } else { %>
+      <%=m.filter.nbsp(m.filter.h(tag["base"]))%>
+      <% } %>
+    </a>
+  </span>
+
+  <% if (entity && tag[entity_len]) { %>
+  &nbsp;(
+  <span class="number">
+    <a
+       href="<%= m.urlRewrite(tag[entity_list_url], parameters) %>"
+       ><%=tag[entity_len]%></a>
+  </span>
+  )
+  <% } %>
+
+  <% if (note && tag["note_len"]) { %>
+  <span class="has-notes">…</span>
+  <% } %>
+
+  <% if (parameters.visibility && "public" in tag) { %>
+  &nbsp;
+  <%=m.template("visibility-bar.html", {obj: tag})%>
+  <% } %>
+
+</li>
+
+<% if (path) { %>
+<br />
+<% } %>

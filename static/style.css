@@ -844,17 +844,25 @@ div.ui-timepicker td a.ui-state-active
 
 #address-form label[name="lookup"]
 {
-    float: right;
+    float: left;
+    margin-left: 10px;
 }
+#address-form label[name="postal"],
+#address-form label[name="postal"] textarea,
 #address-form label[name="lookup"],
 #address-form label[name="lookup"] textarea
 {
-    width: 188px;
+    width: 220px;
 }
 #address-form label[name="source"],
 #address-form label[name="source"] textarea
 {
-    width: 359px;
+    width: 456px;
+}
+#tag-form label[name="description"],
+#tag-form label[name="description"] textarea
+{
+    width: 384px;
 }
 #manual_position_clear
 {

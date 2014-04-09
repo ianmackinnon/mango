@@ -558,7 +558,7 @@ class User(Base):
 
     def __init__(self, auth, name, moderator=False, locked=False):
         self.auth = auth
-        self.name = unicode(name)
+        self.name = sanitise_name(name)
         self.moderator = moderator
         self.locked = locked
 
@@ -1414,6 +1414,7 @@ class Orgtag(Base, MangoEntity, NotableEntity):
     base_short = Column(UnicodeKey(), nullable=False)
     path = Column(Unicode())
     path_short = Column(Unicode())
+    description = Column(Unicode())
 
     moderation_user = relationship(User, backref='moderation_orgtag_list')
 
@@ -1447,6 +1448,7 @@ class Orgtag(Base, MangoEntity, NotableEntity):
 
     content = [
         "name",
+        "description",
         ]
 
     content_hints = [
@@ -1462,8 +1464,12 @@ class Orgtag(Base, MangoEntity, NotableEntity):
     def entity_id(cls):
         return cls.orgtag_id
 
-    def __init__(self, name, moderation_user=None, public=None):
-        self.name = name
+    def __init__(self,
+                 name,
+                 description=None,
+                 moderation_user=None, public=None):
+        self.name = sanitise_name(name)
+        self.description = description and unicode(description) or None
 
         self.moderation_user = moderation_user
         self.a_time = 0
@@ -1486,11 +1492,14 @@ class Orgtag(Base, MangoEntity, NotableEntity):
     @staticmethod
     def get(orm, name, moderation_user=None, public=None):
         try:
-            orgtag = orm.query(Orgtag).filter(Orgtag.name == name).one()
+            orgtag = orm.query(Orgtag) \
+                .filter(Orgtag.name==name) \
+                .one()
         except NoResultFound:
             orgtag = Orgtag(
                 name,
-                moderation_user=moderation_user, public=public,
+                moderation_user=moderation_user,
+                public=public,
                 )
             orm.add(orgtag)
         return orgtag
@@ -1520,6 +1529,7 @@ class Eventtag(Base, MangoEntity, NotableEntity):
     base_short = Column(UnicodeKey(), nullable=False)
     path = Column(Unicode())
     path_short = Column(Unicode())
+    description = Column(Unicode())
 
     moderation_user = relationship(User, backref='moderation_eventtag_list')
 
@@ -1553,6 +1563,7 @@ class Eventtag(Base, MangoEntity, NotableEntity):
 
     content = [
         "name",
+        "description",
         ]
 
     content_hints = [
@@ -1568,8 +1579,12 @@ class Eventtag(Base, MangoEntity, NotableEntity):
     def entity_id(cls):
         return cls.eventtag_id
 
-    def __init__(self, name, moderation_user=None, public=None):
-        self.name = name
+    def __init__(self,
+                 name,
+                 description=None,
+                 moderation_user=None, public=None):
+        self.name = sanitise_name(name)
+        self.description = description and unicode(description) or None
 
         self.moderation_user = moderation_user
         self.a_time = 0
@@ -1592,11 +1607,14 @@ class Eventtag(Base, MangoEntity, NotableEntity):
     @staticmethod
     def get(orm, name, moderation_user=None, public=None):
         try:
-            eventtag = orm.query(Eventtag).filter(Eventtag.name == name).one()
+            eventtag = orm.query(Eventtag) \
+                .filter(Eventtag.name==name) \
+                .one()
         except NoResultFound:
             eventtag = Eventtag(
                 name,
-                moderation_user=moderation_user, public=public,
+                moderation_user=moderation_user,
+                public=public,
                 )
             orm.add(eventtag)
         return eventtag

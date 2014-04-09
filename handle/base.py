@@ -49,7 +49,7 @@ def authenticated(f):
 
 
 def newline(text):
-    return text.replace("\n", "<br />")
+    return text.replace("\n", "<br>")
 
 
 

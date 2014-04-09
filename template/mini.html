@@ -423,7 +423,7 @@ if not parameters:
 %>\
 <li class="tag${(visibility and 'public' in tag) and ' has-visibility' or ''}"
    %if not path:
-   title="${tag["name"] | n, h, unicode}"\
+   title="${tag["name"] + (tag["description"] and '\n\n' + tag["description"] or "")}"\
    %endif
 >\
 <span

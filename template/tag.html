@@ -64,11 +64,19 @@ if obj:
       %endif
       <label name="name">
 	<span>Name</span>
+	<span class="requirement">(required)</span>
 	<input name="name" value="${obj and obj["name"] or ''}">
       </label>
       <label name="name_short">
 	<span>Short Name</span>
 	<input name="name_short" disabled value="${obj and obj["name_short"] or ''}">
+      </label>
+      <label name="description" class="textarea">
+        <span>Description</span>
+	<span class="requirement">(optional)</span>
+        <textarea
+           name="description"
+           >${obj and obj["description"] or ""}</textarea>
       </label>
       ${self.mini.visibility_input(obj, "public")}
       <input type="submit" value="Submit">
@@ -85,6 +93,12 @@ if obj:
     <ul id="tag_list" class="tag_list" class="block-right">
     </ul>
   </div>
+
+  %else:
+  
+  %if obj and obj["description"]:
+  <p>${obj["description"] | n, h, unicode, newline}</p>
+  %endif
 
   %endif
 

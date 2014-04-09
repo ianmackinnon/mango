@@ -74,7 +74,8 @@ var m = {
 
   $template: function (name, data) {
     var html = m.template(name, data);
-    html = html.replace(/[\r\n]+/gm, "");
+    html = html.replace(/>\s+/gm, ">");
+    html = html.replace(/\s+</gm, "<");
     var $el = $("<div>").html(html);
     return $el;
   },

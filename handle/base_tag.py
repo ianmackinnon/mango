@@ -36,13 +36,16 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         return tag
 
     def _create_tag(self, id_=None):
-        name, public = self._get_arguments()
+        name, description, public = self._get_arguments()
 
         moderation_user = self.current_user
 
         tag = self.Tag(
             name,
-            moderation_user=moderation_user, public=public,)
+            description=description,
+            moderation_user=moderation_user,
+            public=public,
+            )
 
         if id_:
             setattr(tag, self.tag_id, id_)
@@ -56,13 +59,14 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
     def _get_arguments(self):
         is_json = self.content_type("application/json")
         name = self.get_argument("name", json=is_json)
+        description = self.get_argument("description", None, json=is_json)
         path = self.get_argument("path", None, json=is_json)
         public = self.get_argument_public("public", json=is_json)
         
         if name and path:
             name = u"%s | %s" % (path.strip(), name.strip())
             
-        return name, public
+        return name, description, public
 
     def _get_path_list(self):
         path_list = self.orm.query(self.Tag.path.distinct().label("path")) \
