@@ -187,6 +187,48 @@ last_tags = tags
 </div>
 %endif
 
+%if packet["gun_public"] or packet["gun_private"] or packet["gun_pending"]:
+<div class="inclusion">
+  <h3>DSEI guns tag: Add activity tags:</h3>
+
+  <div class="mango-box third">
+    <div class="visibility public">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>Have DSEI guns tag</li>
+        <li>Public</li>
+      </ul>
+      <div class="total">${len(packet["gun_public"])}</div>
+    </div>
+    ${self.inclusion_table("gun_public", hint=False)}
+  </div>
+
+  <div class="mango-box third">
+    <div class="visibility private">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>Have DSEI guns tag</li>
+        <li>Private</li>
+      </ul>
+      <div class="total">${len(packet["gun_private"])}</div>
+    </div>
+    ${self.inclusion_table("gun_private", hint=False)}
+  </div>
+
+  <div class="mango-box third">
+    <div class="visibility pending">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>Have DSEI guns tag</li>
+        <li>Pending</li>
+      </ul>
+      <div class="total">${len(packet["gun_pending"])}</div>
+    </div>
+    ${self.inclusion_table("gun_pending", hint=False)}
+  </div>
+</div>
+%endif
+
 %if packet["remove_public"] or packet["include_private"] or packet["include_pending"]:
 <div class="inclusion">
   <h3>Probably have wrong visibility setting: Add activity tags:</h3>

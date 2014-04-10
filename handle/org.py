@@ -1097,6 +1097,13 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
+        gun_query = self.orm.query(func.count(Orgtag.orgtag_id).label("count")) \
+            .join(org_orgtag) \
+            .add_columns(org_orgtag.c.org_id) \
+            .filter(Orgtag.name_short==u"products-and-services|dsei-2011|dsei-2011-guns") \
+            .group_by(org_orgtag.c.org_id) \
+            .subquery()
+
         dsei_query = self.orm.query(func.count(Orgtag.orgtag_id).label("count")) \
             .join(org_orgtag) \
             .add_columns(org_orgtag.c.org_id) \
@@ -1123,6 +1130,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
         org_query = self.orm.query(Org) \
             .outerjoin(act_query, act_query.c.org_id==Org.org_id) \
             .outerjoin(veh_query, veh_query.c.org_id==Org.org_id) \
+            .outerjoin(gun_query, gun_query.c.org_id==Org.org_id) \
             .outerjoin(dsei_query, dsei_query.c.org_id==Org.org_id) \
             .outerjoin(sap_query, sap_query.c.org_id==Org.org_id) \
             .outerjoin(sipri_query, sipri_query.c.org_id==Org.org_id) \
@@ -1130,6 +1138,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 literal_column(exist_clause).label("include"),
                 func.coalesce(act_query.c.count, 0).label("act"),
                 func.coalesce(veh_query.c.count, 0).label("veh"),
+                func.coalesce(gun_query.c.count, 0).label("gun"),
                 func.coalesce(dsei_query.c.count, 0).label("dsei"),
                 func.coalesce(sap_query.c.count, 0).label("sap"),
                 func.coalesce(sipri_query.c.count, 0).label("sipri"),
@@ -1149,6 +1158,10 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "veh_private": [],
             "veh_pending": [],
 
+            "gun_public": [],
+            "gun_private": [],
+            "gun_pending": [],
+
             "include_public": [],
             "include_private": [],
             "include_pending": [],
@@ -1158,7 +1171,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "exclude_pending": 0,
             }
 
-        for org, include, act, veh, dsei, sap, sipri in org_query:
+        for org, include, act, veh, gun, dsei, sap, sipri in org_query:
             if act:
                 if org.public:
                     if include:
@@ -1187,6 +1200,16 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                         .append((org, dsei, sap, sipri))
                 else:
                     packet["veh_pending"] \
+                        .append((org, dsei, sap, sipri))
+            elif gun:
+                if org.public:
+                    packet["gun_public"] \
+                        .append((org, dsei, sap, sipri))
+                elif org.public == False:
+                    packet["gun_private"] \
+                        .append((org, dsei, sap, sipri))
+                else:
+                    packet["gun_pending"] \
                         .append((org, dsei, sap, sipri))
             elif include:
                 if org.public:
