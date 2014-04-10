@@ -26,7 +26,7 @@ from model import Medium, Auth, User, Orgtag, Eventtag, Org, Orgalias, Event, Ad
 log = logging.getLogger('seed_data')
 
 
-lorem_markdown = u"Lorem ipsum dolor sit amet\n\nconsectetur adipisicing elit, sed do eiusmod tempor\n\nincididunt ut labore et dolore magna aliqua."
+lorem_markdown = u"ÜunicÖde. Lorem ipsum dolor sit amet\n\nconsectetur adipisicing elit, sed do eiusmod tempor\n\nincididunt ut labore et dolore magna aliqua."
 
 
 
@@ -52,11 +52,11 @@ def main(orm):
     orgtag_1 = Orgtag(u"Org Tag 1", **public_1)
     eventtag_1 = Eventtag(u"Event Tag 1", **public_1)
 
-    org_1 = Org(u"Random Incorporated", lorem_markdown, **public_1)
+    org_1 = Org(u"RÄndom Incorporated", lorem_markdown, **public_1)
     org_1.orgtag_list.append(orgtag_1)
     org_1_alias_1 = Orgalias(u"Randcorp", org_1, **public_1)
     org_1_address_1 = Address(
-        u"1 Victoria Street, London, SW1H 0ET",
+        u"1 VictoriÀ Street, London, SW1H 0ET",
         u"source",
         **public_1
         )
@@ -67,24 +67,24 @@ def main(orm):
     org_1.note_list.append(org_1_note_1)
 
     event_1 = Event(
-        u"Event 1",
+        u"Event 1 Ü",
         datetime.date(2014, 12, 1),
         datetime.date(2014, 12, 1),
-        u"An event",
+        u"An event Ü",
         datetime.time(11, 44),
         datetime.time(13, 52),
         **public_1
         )
     event_1.eventtag_list.append(eventtag_1)
     event_1_address_1 = Address(
-        u"1 Victoria Street, London, SW1H 0ET",
+        u"1 VictoriÀ Street, London, SW1H 0ET",
         u"source",
         **public_1
         )
     event_1.address_list.append(event_1_address_1)
     event_1_contact_1 = Contact(email, u"blah@example.com", u"desc", u"source", **public_1)
     event_1.contact_list.append(event_1_contact_1)
-    event_1_note_1 = Note(u"Event 1 Note 1.", u"source", **public_1)
+    event_1_note_1 = Note(u"Event 1 NÖte 1.", u"source", **public_1)
     event_1.note_list.append(event_1_note_1)
 
     orm.add_all((

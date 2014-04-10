@@ -32,11 +32,11 @@ def load(**kwargs):
     head = loader.load("head.html").generate(
         static_url=static_url,
         stylesheets=kwargs["stylesheets"],
-        )
+        ).decode("utf-8")
 
     nav = loader.load("nav.html").generate(
         url_root=url_root,
-        )
+        ).decode("utf-8")
     
     data = {
         "pagetitle": "Company Map",

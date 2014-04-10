@@ -144,7 +144,7 @@ ${footer | n}
 
 
 <%def name="application_title()"><%
-return (self.title() and self.title() + " | " or "") + u"CAAT Mapping Application" %></%def>
+return (self.title() and self.title() + u" | " or u"") + u"CAAT Mapping Application" %></%def>
 
 <%def name="logout_url()"><% return uri %></%def>
 

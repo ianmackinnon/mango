@@ -11,7 +11,7 @@ def load(**kwargs):
             static_url=kwargs.get("static_url", None),
             title=title or "",
             stylesheets=kwargs["stylesheets"],
-            )
+            ).decode("utf-8")
     footer = loader.load(u"footer.html").generate()
 
     return {
