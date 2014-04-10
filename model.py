@@ -304,6 +304,9 @@ class MangoEntity(object):
                 
             obj[name] = value
 
+        if hasattr(self, "obj_extra"):
+            obj.update(self.obj_extra(obj))
+
         obj.update(kwargs)
             
         return obj
@@ -1063,11 +1066,11 @@ class Event(Base, MangoEntity, NotableEntity):
 
     content = [
         "name",
-        "start_date",
-        "end_date",
+        "start_date",  # '..._date' causes formatting in 'obj()'
+        "end_date",  # '..._date' causes formatting in 'obj()'
         "description",
-        "start_time",
-        "end_time",
+        "start_time",  # '..._time' causes formatting in 'obj()'
+        "end_time",  # '..._time' causes formatting in 'obj()'
         ]
 
     @classproperty
@@ -1212,6 +1215,12 @@ class Address(Base, MangoEntity, NotableEntity):
         "longitude",
         "latitude",
         ]
+
+    @staticmethod
+    def obj_extra(obj):
+        return {
+            "name": obj["postal"].replace("\n", ", "),
+            }
 
     @classproperty
     @classmethod

@@ -145,7 +145,6 @@ class NoteHandler(BaseNoteHandler, MangoEntityHandlerMixin):
             linked=(address_list + orgtag_list + org_list or []),
             )
 
-
         version_url=None
         if self.moderator and self._count_note_history(note_id) > 1:
             version_url="%s/revision" % note.url

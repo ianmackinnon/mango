@@ -2,7 +2,7 @@
 
 <%def name="title()"><%
 if obj:
-    if "linked" in obj and len(obj["linked"]) == 1:
+    if len(obj.get("linked", [])) == 1:
         return obj["linked"][0]["name"] + u" | Note %d" % obj["id"]
     return u"Note %d" % obj["id"]
 if entity:

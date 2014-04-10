@@ -22,7 +22,9 @@ org_id = 1
 orgtag_id = 1
 event_id = 1
 eventtag_id = 1
-note_id = 1
+note_org_id = 1
+note_event_id = 2
+note_address_id = 3
 address_id = 1
 contact_id = 1
 
@@ -67,7 +69,9 @@ class Http(object):
         "/event-tag",
         "/event-tag/%s" % eventtag_id,
         "/note",
-        "/note/%s" % note_id,
+        "/note/%s" % note_org_id,
+        "/note/%s" % note_event_id,
+        "/note/%s" % note_address_id,
         "/address/%s" % address_id,
         "/contact/%s" % contact_id,
         ]

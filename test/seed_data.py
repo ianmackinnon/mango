@@ -65,6 +65,8 @@ def main(orm):
     org_1.contact_list.append(org_1_contact_1)
     org_1_note_1 = Note(u"Note about RI.", u"source", **public_1)
     org_1.note_list.append(org_1_note_1)
+    org_1_address_1_note_1 = Note(u"Note about RI address.", u"source", **public_1)
+    org_1_address_1.note_list.append(org_1_address_1_note_1)
 
     event_1 = Event(
         u"Event 1 Ü",
