@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 
 from sqlalchemy.sql import func
+from sqlalchemy.orm.exc import NoResultFound
+
+from tornado.web import HTTPError
 
 from base import BaseHandler, MangoBaseEntityHandlerMixin
-
 from model import short_name, detach
 
 
@@ -31,7 +33,7 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         try:
             tag = query.one()
         except NoResultFound:
-            raise HTTPError(404, "%d: No such orgtag" % orgtag_id)
+            raise HTTPError(404, "%d: No such orgtag" % tag_id)
 
         return tag
 

@@ -26,6 +26,14 @@ note_id = 1
 address_id = 1
 contact_id = 1
 
+org_n_id = 404
+orgtag_n_id = 404
+event_n_id = 404
+eventtag_n_id = 404
+note_n_id = 404
+address_n_id = 404
+contact_n_id = 404
+
 error_html = "/tmp/mango-error.html"
 
 
@@ -37,6 +45,16 @@ class Http(object):
         "/organisation-tag",
         "/event",
         "/event-tag",
+        ]
+
+    html_path_list_none = [
+        "/organisation/%s" % org_n_id,
+        "/organisation-tag/%s" % orgtag_n_id,
+        "/event/%s" % event_n_id,
+        "/event-tag/%s" % eventtag_n_id,
+        "/note/%s" % note_n_id,
+        "/address/%s" % address_n_id,
+        "/contact/%s" % contact_n_id,
         ]
 
     html_path_list_public = [
@@ -128,6 +146,14 @@ class Http(object):
 
         return content
         
+    def get_html_not_found(self, path, cookie=None):
+        headers = {}
+        if cookie:
+            headers["Cookie"] = cookie
+        response, content = self.get_http(path, headers)
+        
+        self.assertEqual(response.status, 404, msg=path)
+
     def get_html_not_authenticated(self, path, cookie=None):
         headers = {}
         if cookie:
@@ -168,6 +194,11 @@ class TestPublic(unittest.TestCase, Http):
         for path in self.json_path_list:
             data = self.get_json_data(path)
             self.assertNotEqual(len(data), 0, msg=path)
+
+    def test_html_none(self):
+        log.info("Public User / Non-existant HTML")
+        for path in self.html_path_list_none:
+            self.get_html_not_found(path)
 
     def test_html_public(self):
         log.info("Public User / Authorised HTML")
