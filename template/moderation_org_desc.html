@@ -1,0 +1,27 @@
+<%inherit file="base.html"/>
+
+<%def name="title()"><% return u"Companies with Descriptions" %></%def>
+
+<%def name="page()">
+
+<h1>Companies with Descriptions</h1>
+
+<table class="org-description">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    %for org in org_packet["org_list"]:
+    <tr>
+      <td><a href="${url_rewrite(org["url"])}">${org["name"]}</a></td>
+      <td>${org["description"] | n, markdown_safe, convert_links}</td>
+    </tr>
+    %endfor
+  </tbody>
+</table>
+
+</%def>
+
