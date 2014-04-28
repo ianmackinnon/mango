@@ -782,7 +782,7 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
             if tag.orgtag_id in tag_id_list and tag not in org.orgtag_list:
                 org.orgtag_list.append(tag)
 
-        return self.redirect(self.request.uri)
+        return self.redirect(self.url_rewrite(self.request.uri))
 
     @authenticated
     def get(self, org_id):
@@ -1090,17 +1090,10 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
-        veh_query = self.orm.query(func.count(Orgtag.orgtag_id).label("count")) \
+        esy_query = self.orm.query(func.count(Orgtag.orgtag_id).label("count")) \
             .join(org_orgtag) \
             .add_columns(org_orgtag.c.org_id) \
-            .filter(Orgtag.name_short==u"products-and-services|dsei-2011|dsei-2011-armoured-vehicles") \
-            .group_by(org_orgtag.c.org_id) \
-            .subquery()
-
-        gun_query = self.orm.query(func.count(Orgtag.orgtag_id).label("count")) \
-            .join(org_orgtag) \
-            .add_columns(org_orgtag.c.org_id) \
-            .filter(Orgtag.name_short==u"products-and-services|dsei-2011|dsei-2011-guns") \
+            .filter(Orgtag.name_short==u"exhibitor|eurosatory-2014") \
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
@@ -1129,16 +1122,14 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
         
         org_query = self.orm.query(Org) \
             .outerjoin(act_query, act_query.c.org_id==Org.org_id) \
-            .outerjoin(veh_query, veh_query.c.org_id==Org.org_id) \
-            .outerjoin(gun_query, gun_query.c.org_id==Org.org_id) \
+            .outerjoin(esy_query, esy_query.c.org_id==Org.org_id) \
             .outerjoin(dsei_query, dsei_query.c.org_id==Org.org_id) \
             .outerjoin(sap_query, sap_query.c.org_id==Org.org_id) \
             .outerjoin(sipri_query, sipri_query.c.org_id==Org.org_id) \
             .add_columns(
                 literal_column(exist_clause).label("include"),
                 func.coalesce(act_query.c.count, 0).label("act"),
-                func.coalesce(veh_query.c.count, 0).label("veh"),
-                func.coalesce(gun_query.c.count, 0).label("gun"),
+                func.coalesce(esy_query.c.count, 0).label("esy"),
                 func.coalesce(dsei_query.c.count, 0).label("dsei"),
                 func.coalesce(sap_query.c.count, 0).label("sap"),
                 func.coalesce(sipri_query.c.count, 0).label("sipri"),
@@ -1154,13 +1145,9 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "act_include_private": [],
             "act_include_pending": [],
 
-            "veh_public": [],
-            "veh_private": [],
-            "veh_pending": [],
-
-            "gun_public": [],
-            "gun_private": [],
-            "gun_pending": [],
+            "esy_public": [],
+            "esy_private": [],
+            "esy_pending": [],
 
             "include_public": [],
             "include_private": [],
@@ -1171,7 +1158,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "exclude_pending": 0,
             }
 
-        for org, include, act, veh, gun, dsei, sap, sipri in org_query:
+        for org, include, act, esy, dsei, sap, sipri in org_query:
             if act:
                 if org.public:
                     if include:
@@ -1191,25 +1178,15 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                     else:
                         packet["act_include_pending"] \
                             .append((org, dsei, sap, sipri))
-            elif veh:
+            elif esy:
                 if org.public:
-                    packet["veh_public"] \
+                    packet["esy_public"] \
                         .append((org, dsei, sap, sipri))
                 elif org.public == False:
-                    packet["veh_private"] \
+                    packet["esy_private"] \
                         .append((org, dsei, sap, sipri))
                 else:
-                    packet["veh_pending"] \
-                        .append((org, dsei, sap, sipri))
-            elif gun:
-                if org.public:
-                    packet["gun_public"] \
-                        .append((org, dsei, sap, sipri))
-                elif org.public == False:
-                    packet["gun_private"] \
-                        .append((org, dsei, sap, sipri))
-                else:
-                    packet["gun_pending"] \
+                    packet["esy_pending"] \
                         .append((org, dsei, sap, sipri))
             elif include:
                 if org.public:

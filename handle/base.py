@@ -383,14 +383,6 @@ class BaseHandler(RequestHandler):
                 self.next or default_url or '/'
                 ))
 
-    def force_parameter(self, key, value, default=None):
-        if self.parameters.get(key, default) != value:
-            self.redirect(self.url_rewrite(
-                self.request.uri,
-                options={key: value}
-                ))
-            return True
-
     def static_url(self, path, include_host=None):
 
 
