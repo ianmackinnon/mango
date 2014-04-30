@@ -458,6 +458,8 @@ class Orgtag_v(Base):
     base_short = Column(Unicode(), nullable=False)
     path = Column(Unicode())
     path_short = Column(Unicode())
+    description = Column(Unicode())
+    virtual = Column(Boolean)
 
 
 
@@ -548,6 +550,8 @@ class Eventtag_v(Base):
     base_short = Column(Unicode(), nullable=False)
     path = Column(Unicode())
     path_short = Column(Unicode())
+    description = Column(Unicode())
+    virtual = Column(Boolean)
 
 
 

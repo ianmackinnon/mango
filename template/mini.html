@@ -456,6 +456,10 @@ ${tag["base"] | n, h, unicode, nbsp}\
 <span class="has-notes">…</span>\
 %endif
 %if moderator and (parameters.get("view", None) == "edit"):
+%if tag["virtual"]:
+&nbsp;\
+<span class="virtual">(virtual)</span>\
+%else:
 %if link and link_url:
 <span>\
 <form
@@ -488,6 +492,7 @@ ${tag["base"] | n, h, unicode, nbsp}\
 <input type="submit" value="✕">\
 </form>\
 </span>\
+%endif
 %endif
 %endif
 %if visibility and "public" in tag:

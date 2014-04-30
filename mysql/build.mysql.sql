@@ -116,6 +116,8 @@ CREATE TABLE orgtag_v (
     base_short LONGTEXT NOT NULL, 
     path LONGTEXT, 
     path_short LONGTEXT, 
+    description longtext,
+    virtual boolean,
 
     KEY orgtag_id (orgtag_id),
     KEY moderation_user_id (moderation_user_id),
@@ -137,6 +139,8 @@ CREATE TABLE eventtag_v (
     base_short LONGTEXT NOT NULL, 
     path LONGTEXT, 
     path_short LONGTEXT, 
+    description longtext,
+    virtual boolean,
 
     KEY eventtag_id (eventtag_id),
     KEY moderation_user_id (moderation_user_id),

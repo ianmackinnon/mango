@@ -49,6 +49,13 @@ if obj:
       %if put:
       <input name="_method" type="hidden" value="put">
       %endif
+      %if obj and obj["virtual"] is not None:
+      <h4>Virtual Tag</h4>
+      <label name="name">
+	<span>Name (may not be changed for virtual tags)</span>
+	<input name="name" readonly value="${obj and obj["name"] or ''}">
+      </label>
+      %else:
       %if path_list:
       <label name="path">
 	<span>Path</span>
@@ -67,6 +74,7 @@ if obj:
 	<span class="requirement">(required)</span>
 	<input name="name" value="${obj and obj["name"] or ''}">
       </label>
+      %endif
       <label name="name_short">
 	<span>Short Name</span>
 	<input name="name_short" disabled value="${obj and obj["name_short"] or ''}">

@@ -1000,6 +1000,10 @@ div.ui-timepicker td a.ui-state-active
 {
     padding-right: 0;
 }
+#mango ul.tag_list li.tag span.virtual
+{
+    opacity: 0.5;
+}
 #mango ul.alias_list input,
 #mango ul.tag_list input
 {

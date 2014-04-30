@@ -124,6 +124,9 @@ class EventtagHandler(BaseEventtagHandler,
         new_entity = self._create(entity_id)
 
         if not old_entity.content_same(new_entity):
+            if old_entity.virtual is not None:
+                if old_entity.name != new_entity.name:
+                    raise HTTPError(404, "May not change the name of a virtual tag.")
             old_entity.content_copy(new_entity, self.current_user)
             self.orm_commit()
         

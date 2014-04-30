@@ -1401,6 +1401,12 @@ class TagExtension(MapperExtension):
 
 
 class Orgtag(Base, MangoEntity, NotableEntity):
+    u"""
+    virtual:  None = normal
+              True = virtual
+              False = virtual, currently active in an event
+    """
+
     __tablename__ = 'orgtag'
     __table_args__ = (
         UniqueConstraint('base_short'),    
@@ -1424,6 +1430,7 @@ class Orgtag(Base, MangoEntity, NotableEntity):
     path = Column(Unicode())
     path_short = Column(Unicode())
     description = Column(Unicode())
+    virtual = Column(Boolean)
 
     moderation_user = relationship(User, backref='moderation_orgtag_list')
 
@@ -1466,6 +1473,7 @@ class Orgtag(Base, MangoEntity, NotableEntity):
         "base_short",
         "path",
         "path_short",
+        "virtual",
         ]
 
     @classproperty
@@ -1479,6 +1487,7 @@ class Orgtag(Base, MangoEntity, NotableEntity):
                  moderation_user=None, public=None):
         self.name = sanitise_name(name)
         self.description = description and unicode(description) or None
+        self.virtual = None
 
         self.moderation_user = moderation_user
         self.a_time = 0
@@ -1516,6 +1525,12 @@ class Orgtag(Base, MangoEntity, NotableEntity):
         
 
 class Eventtag(Base, MangoEntity, NotableEntity):
+    u"""
+    virtual:  None = normal
+              True = virtual
+              False = virtual, currently active in an event
+    """
+
     __tablename__ = 'eventtag'
     __table_args__ = (
         UniqueConstraint('base_short'),    
@@ -1539,6 +1554,7 @@ class Eventtag(Base, MangoEntity, NotableEntity):
     path = Column(Unicode())
     path_short = Column(Unicode())
     description = Column(Unicode())
+    virtual = Column(Boolean)
 
     moderation_user = relationship(User, backref='moderation_eventtag_list')
 
@@ -1594,6 +1610,7 @@ class Eventtag(Base, MangoEntity, NotableEntity):
                  moderation_user=None, public=None):
         self.name = sanitise_name(name)
         self.description = description and unicode(description) or None
+        self.virtual = None
 
         self.moderation_user = moderation_user
         self.a_time = 0
@@ -1856,6 +1873,144 @@ sqlalchemy_event.listen(Org, "after_delete", org_after_delete_listener)
 sqlalchemy_event.listen(Orgalias, "after_insert", orgalias_after_insert_listener)
 sqlalchemy_event.listen(Orgalias, "after_update", orgalias_after_update_listener)
 sqlalchemy_event.listen(Orgalias, "after_delete", orgalias_after_delete_listener)
+
+
+virtual_orgtag_list = [
+    (
+        u"Market | Military export applicant",
+        Orgtag.name_short.like(
+            u"market|military-export-applicant-to-%-in-%"),
+    ),
+    (
+        u"Market | Military export applicant in 2010",
+        Orgtag.name_short.like(
+            u"market|military-export-applicant-to-%-in-2010"),
+    ),
+    (
+        u"Market | Military export applicant in 2011",
+        Orgtag.name_short.like(
+            u"market|military-export-applicant-to-%-in-2011"),
+    ),
+    (
+        u"Market | Military export applicant in 2012",
+        Orgtag.name_short.like(
+            u"market|military-export-applicant-to-%-in-2012"),
+    ),
+    (
+        u"Exhibitor | DSEi",
+        Orgtag.name_short.like(
+            u"exhibitor|dsei-%"),
+    ),
+    (
+        u"Activity | Military",
+        and_(
+            Orgtag.path_short ==u"activity",
+            Orgtag.public==True,
+        ),
+    ),
+]
+
+
+
+def virtual_org_orgtag_all(org):
+    if not virtual_orgtag_list:
+        return
+
+    orm = object_session(org)
+    if not orm:
+        raise Exception("Neither org or orgtag attached to session.")
+
+    for virtual_name, filter_search in virtual_orgtag_list:
+        virtual_tag = orm.query(Orgtag) \
+            .filter_by(name=virtual_name) \
+            .filter_by(virtual=True) \
+            .first()
+
+        if not virtual_tag:
+            continue
+
+        has_virtual_tag = orm.query(Orgtag) \
+            .join(Org, Orgtag.org_list) \
+            .filter(Org.org_id==org.org_id) \
+            .filter(filter_search)
+
+        if has_virtual_tag.count():
+            if virtual_tag not in org.orgtag_list:
+                # Flag the virtual tag so it doesn't trigger a value error
+                virtual_tag.virtual = False
+                org.orgtag_list.append(virtual_tag)
+        else:
+            if virtual_tag in org.orgtag_list:
+                # Flag the virtual tag so it doesn't trigger a value error
+                virtual_tag.virtual = False
+                org.orgtag_list.remove(virtual_tag)
+
+    
+
+def virtual_org_orgtag_edit(org, orgtag, add=None):
+    """
+    Gets called:
+      before the orgtag is appended,
+      after the orgtag is removed.
+    """
+
+    if not virtual_orgtag_list:
+        return
+
+    if orgtag.virtual:
+        log.warning(u"Cannot edit the membership of a virtual tag (%s).", orgtag.name)
+        return
+
+    if orgtag.virtual is False:
+        # We're adding a virtual tag for a parent function call
+        orgtag.virtual = True
+        return
+
+    orm = object_session(org) or object_session(orgtag)
+    if not orm:
+        raise Exception("Neither org or orgtag attached to session.")
+
+    for virtual_name, filter_search in virtual_orgtag_list:
+        virtual_tag = orm.query(Orgtag) \
+            .filter_by(name=virtual_name) \
+            .filter_by(virtual=True) \
+            .first()
+
+        if not virtual_tag:
+            continue
+
+        has_virtual_tag_this = orm.query(Orgtag) \
+            .filter(Orgtag.orgtag_id==orgtag.orgtag_id) \
+            .filter(filter_search)
+
+        has_virtual_tag_others = orm.query(Orgtag) \
+            .join(Org, Orgtag.org_list) \
+            .filter(Org.org_id==org.org_id) \
+            .filter(filter_search)
+
+        if ((add and has_virtual_tag_this.count()) or has_virtual_tag_others.count()):
+            if virtual_tag not in org.orgtag_list:
+                # Flag the virtual tag so it doesn't trigger a value error
+                virtual_tag.virtual = False
+                org.orgtag_list.append(virtual_tag)
+                return
+        else:
+            if virtual_tag in org.orgtag_list:
+                # Flag the virtual tag so it doesn't trigger a value error
+                virtual_tag.virtual = False
+                org.orgtag_list.remove(virtual_tag)
+                return
+
+
+
+def org_orgtag_append_listener(org, orgtag, initiator):
+    virtual_org_orgtag_edit(org, orgtag, add=True)
+
+def org_orgtag_remove_listener(org, orgtag, initiator):
+    virtual_org_orgtag_edit(org, orgtag, add=False)
+
+sqlalchemy_event.listen(Org.orgtag_list, 'append', org_orgtag_append_listener)
+sqlalchemy_event.listen(Org.orgtag_list, 'remove', org_orgtag_remove_listener)
 
 
 

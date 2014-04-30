@@ -53,6 +53,7 @@ def main(orm):
     eventtag_1 = Eventtag(u"Event Tag 1", **public_1)
 
     org_1 = Org(u"RÄndom Incorporated", lorem_markdown, **public_1)
+    orm.add(org_1)
     org_1.orgtag_list.append(orgtag_1)
     org_1_alias_1 = Orgalias(u"Randcorp", org_1, **public_1)
     org_1_address_1 = Address(
@@ -77,6 +78,7 @@ def main(orm):
         datetime.time(13, 52),
         **public_1
         )
+    orm.add(event_1)
     event_1.eventtag_list.append(eventtag_1)
     event_1_address_1 = Address(
         u"1 VictoriÀ Street, London, SW1H 0ET",
