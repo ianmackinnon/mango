@@ -226,10 +226,10 @@ def coords(address, cache=geocode_cache_default):
                 # https://developers.google.com/maps/documentation/geocoding/#RegionCodes
                 region=geocode_default_region,  
                 )
-        except geopy.geocoders.google.GQueryError as e:
+        except geopy.geocoders.googlev3.GeocoderQueryError as e:
             print e
             return None
-        except geopy.geocoders.google.GTooManyQueriesError as e:
+        except geopy.geocoders.googlev3.GeocoderQuotaExceeded as e:
             print e
             wait += 1
             continue
