@@ -148,6 +148,48 @@ last_tags = tags
 </div>
 %endif
 
+%if packet["d11_public"] or packet["d11_private"] or packet["d11_pending"]:
+<div class="inclusion">
+  <h3>DSEi 2011 probable exclusion tags: Add activity tags:</h3>
+
+  <div class="mango-box third">
+    <div class="visibility public">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>Have Eurosatory 2014 tag</li>
+        <li>Public</li>
+      </ul>
+      <div class="total">${len(packet["d11_public"])}</div>
+    </div>
+    ${self.inclusion_table("d11_public", hint=False)}
+  </div>
+
+  <div class="mango-box third">
+    <div class="visibility private">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>Have Eurosatory 2014 tag</li>
+        <li>Private</li>
+      </ul>
+      <div class="total">${len(packet["d11_private"])}</div>
+    </div>
+    ${self.inclusion_table("d11_private", hint=False)}
+  </div>
+
+  <div class="mango-box third">
+    <div class="visibility pending">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>Have Eurosatory 2014 tag</li>
+        <li>Pending</li>
+      </ul>
+      <div class="total">${len(packet["d11_pending"])}</div>
+    </div>
+    ${self.inclusion_table("d11_pending", hint=False)}
+  </div>
+</div>
+%endif
+
 %if packet["esy_public"] or packet["esy_private"] or packet["esy_pending"]:
 <div class="inclusion">
   <h3>Eurosatory 2014 tag: Add activity tags:</h3>

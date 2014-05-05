@@ -1090,6 +1090,45 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
+        d11_query = self.orm.query(func.count(Orgtag.orgtag_id).label("count")) \
+                            .join(org_orgtag) \
+                            .add_columns(org_orgtag.c.org_id) \
+                            .filter(Orgtag.orgtag_id.in_((
+                                1008,  # Electro-Mechanical Actuators, Sensors & Assemblies
+                                877,  # Rescue & Survival Equipment
+                                1020,  # Shelters
+                                905,  # Satellite Communications
+                                944,  # Fire Control Systems
+                                922,  # Batteries, Chargers & Systems
+                                983,  # Government Agencies
+                                862,  # Academic
+                                1007,  # Air Conditioning, Heating & ECUs
+                                1015,  # Bomb Blast Doors
+                                1047,  # Breathing Air Purifiers
+                                1027,  # Consultancy Services
+                                1085,  # Filters. Fluid, Gas & Air
+                                1067,  # Firefighting
+                                1057,  # Footwear
+                                865,  # IT Consulting
+                                1024,  # Lighting
+                                1072,  # Lubricants
+                                1051,  # Meteorology
+                                1059,  # Military Hospitals
+                                933,  # Mobile Containers
+                                1097,  # Office Accommodation
+                                1069,  # Personal Hygiene
+                                1092,  # Personnel, HR & Recruitment
+                                1103,  # PortableRoadwayRepairs
+                                1026,  # Publications
+                                1096,  # SMELand
+                                1075,  # Slip Ring Systems
+                                934,  # Storage Equipment
+                                1102,  # Umbilicals
+                                1065,  # Water Purification
+                            ))) \
+            .group_by(org_orgtag.c.org_id) \
+            .subquery()
+
         esy_query = self.orm.query(func.count(Orgtag.orgtag_id).label("count")) \
             .join(org_orgtag) \
             .add_columns(org_orgtag.c.org_id) \
@@ -1122,6 +1161,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
         
         org_query = self.orm.query(Org) \
             .outerjoin(act_query, act_query.c.org_id==Org.org_id) \
+            .outerjoin(d11_query, d11_query.c.org_id==Org.org_id) \
             .outerjoin(esy_query, esy_query.c.org_id==Org.org_id) \
             .outerjoin(dsei_query, dsei_query.c.org_id==Org.org_id) \
             .outerjoin(sap_query, sap_query.c.org_id==Org.org_id) \
@@ -1129,6 +1169,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .add_columns(
                 literal_column(exist_clause).label("include"),
                 func.coalesce(act_query.c.count, 0).label("act"),
+                func.coalesce(d11_query.c.count, 0).label("d11"),
                 func.coalesce(esy_query.c.count, 0).label("esy"),
                 func.coalesce(dsei_query.c.count, 0).label("dsei"),
                 func.coalesce(sap_query.c.count, 0).label("sap"),
@@ -1145,6 +1186,10 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "act_include_private": [],
             "act_include_pending": [],
 
+            "d11_public": [],
+            "d11_private": [],
+            "d11_pending": [],
+
             "esy_public": [],
             "esy_private": [],
             "esy_pending": [],
@@ -1158,7 +1203,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "exclude_pending": 0,
             }
 
-        for org, include, act, esy, dsei, sap, sipri in org_query:
+        for org, include, act, d11, esy, dsei, sap, sipri in org_query:
             if act:
                 if org.public:
                     if include:
@@ -1178,6 +1223,16 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                     else:
                         packet["act_include_pending"] \
                             .append((org, dsei, sap, sipri))
+            elif d11:
+                if org.public:
+                    packet["d11_public"] \
+                        .append((org, dsei, sap, sipri))
+                elif org.public == False:
+                    packet["d11_private"] \
+                        .append((org, dsei, sap, sipri))
+                else:
+                    packet["d11_pending"] \
+                        .append((org, dsei, sap, sipri))
             elif esy:
                 if org.public:
                     packet["esy_public"] \
