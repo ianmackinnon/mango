@@ -902,17 +902,8 @@
       $input.tagit({
         placeholderText: $input.attr("placeholder"),
         tagSource: function (search, showChoices) {
-          var start = [];
-          var middle = [];
-          view.eventtagCollection.each(function (eventtag) {
-            var index = eventtag.get("base_short").toLowerCase().indexOf(search.term);
-            if (index === 0) {
-              start.push(eventtag.toAutocomplete());
-            } else if (index > 0) {
-              middle.push(eventtag.toAutocomplete());
-            }
-          });
-          showChoices(start.concat(middle));
+          showChoices(window.tagCollectionSearch(
+            view.eventtagCollection, search, limit));
         },
         onTagAddedAfter: function (event, tag) {
           if (!view.tagReady) {

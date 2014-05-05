@@ -881,23 +881,15 @@
         return;
       }
       var view = this;
+      var limit = 20;
 
       var $input = view.$el.find("input[name='tag']");
       this.tagReady = false;
       $input.tagit({
         placeholderText: $input.attr("placeholder"),
         tagSource: function (search, showChoices) {
-          var start = [];
-          var middle = [];
-          view.orgtagCollection.each(function (orgtag) {
-            var index = orgtag.get("base_short").toLowerCase().indexOf(search.term);
-            if (index === 0) {
-              start.push(orgtag.toAutocomplete());
-            } else if (index > 0) {
-              middle.push(orgtag.toAutocomplete());
-            }
-          });
-          showChoices(start.concat(middle));
+          showChoices(window.tagCollectionSearch(
+            view.orgtagCollection, search, limit));
         },
         onTagAddedAfter: function (event, tag) {
           if (!view.tagReady) {
