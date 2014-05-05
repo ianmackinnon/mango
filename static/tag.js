@@ -10,7 +10,7 @@
     toAutocomplete: function () {
       return {
         value: this.get("base_short"),
-        label: this.get("name")
+        label: this.get("base_short") + " (" + this.get("path") + ")"
       };
     }
   });
@@ -25,12 +25,26 @@
 
   window.OrgtagCollection = Backbone.Collection.extend({
     url: m.urlRoot + "organisation-tag",
-    model: window.Orgtag
+    model: window.Orgtag,
+
+    parse: function (response) {
+      response = _.sortBy(response, function (orgtag) {
+        return orgtag["name_short"];
+      });
+      return response;
+    }
   });
 
   window.EventtagCollection = Backbone.Collection.extend({
     url: m.urlRoot + "event-tag",
-    model: window.Eventtag
+    model: window.Eventtag,
+
+    parse: function (response) {
+      response = _.sortBy(response, function (orgtag) {
+        return orgtag["name_short"];
+      });
+      return response;
+    }
   });
 
 }(jQuery));
