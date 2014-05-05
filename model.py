@@ -1903,10 +1903,7 @@ virtual_orgtag_list = [
     ),
     (
         u"Activity | Military",
-        and_(
-            Orgtag.path_short ==u"activity",
-            Orgtag.public==True,
-        ),
+        Orgtag.path_short ==u"activity",
     ),
 ]
 

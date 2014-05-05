@@ -33,7 +33,6 @@ select *
     select 1
     from org_orgtag
     join orgtag using (orgtag_id)
-    where path_short = 'activity'
-    and base_short in ('armed-forces', 'bespoke-firearms', 'exhibitions', 'government', 'medical', 'media')
+    where path_short = 'activity-exclusion'
     and org_orgtag.org_id = org.org_id
     );

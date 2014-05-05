@@ -1086,7 +1086,10 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
         act_query = self.orm.query(func.count(Orgtag.orgtag_id).label("count")) \
             .join(org_orgtag) \
             .add_columns(org_orgtag.c.org_id) \
-            .filter(Orgtag.path_short=='activity') \
+            .filter(or_(
+                Orgtag.path_short=='activity',
+                Orgtag.path_short=='activity-exclusion'
+                )) \
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
@@ -1136,24 +1139,30 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
-        dsei_query = self.orm.query(func.count(Orgtag.orgtag_id).label("count")) \
+        dsei_query = self.orm.query(func.count(Orgtag.orgtag_id) \
+                                    .label("count")) \
             .join(org_orgtag) \
             .add_columns(org_orgtag.c.org_id) \
-            .filter(Orgtag.name_short.startswith(u"products-and-services|dsei%")) \
+            .filter(Orgtag.name_short.startswith(
+                u"products-and-services|dsei%")) \
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
-        sipri_query = self.orm.query(func.count(Orgtag.orgtag_id).label("count")) \
+        sipri_query = self.orm.query(func.count(Orgtag.orgtag_id) \
+                                     .label("count")) \
             .join(org_orgtag) \
             .add_columns(org_orgtag.c.org_id) \
-            .filter(Orgtag.name_short.startswith(u"products-and-services|sipri%")) \
+            .filter(Orgtag.name_short.startswith(
+                u"products-and-services|sipri%")) \
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
-        sap_query = self.orm.query(func.count(Orgtag.orgtag_id).label("count")) \
+        sap_query = self.orm.query(func.count(Orgtag.orgtag_id) \
+                                   .label("count")) \
             .join(org_orgtag) \
             .add_columns(org_orgtag.c.org_id) \
-            .filter(Orgtag.name_short.startswith(u"products-and-services|security%")) \
+            .filter(Orgtag.name_short.startswith(
+                u"products-and-services|security%")) \
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
