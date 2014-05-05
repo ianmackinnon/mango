@@ -504,7 +504,7 @@ class Application(tornado.web.Application):
         tornado.web.Application.__init__(self, self.handlers, **settings)
 
         sys.stdout.write(u"""%s is running.
-  Address:   localhost:%d
+  Address:   http://localhost:%d
   Database:  %s
   Cache:     %s (%s)
 """ % (
