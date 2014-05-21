@@ -159,6 +159,7 @@ class BaseHandler(RequestHandler):
         self.messages = []
         self.scripts = []
         RequestHandler.__init__(self, *args, **kwargs)
+        self.orm = self.application.orm()
         self.url_root = self.request.headers.get(u"X-Forwarded-Root", "/")
         self.has_javascript = bool(self.get_cookie("j"))
         self.set_parameters()
@@ -178,6 +179,7 @@ class BaseHandler(RequestHandler):
                 repr(self.request.headers.get("User-Agent", "User-Agent")),
                 time.time() - self.start
                 ))
+        self.application.orm.remove()
 
     def initialize(self, **kwargs):
         self.arg_type_handlers = kwargs.get("types", [])
@@ -790,10 +792,6 @@ class BaseHandler(RequestHandler):
     @property
     def contributor(self):
         return bool(self.current_user and not self.current_user.moderator)
-
-    @property
-    def orm(self):
-        return self.application.orm
 
     @property
     def cache(self):

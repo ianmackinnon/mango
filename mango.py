@@ -442,13 +442,15 @@ class Application(tornado.web.Application):
                 autocommit=False,
                 query_cls=SafeQueryClass(),
                 ))
+
         try:
             self.orm.query(Org).first()
         except OperationalError as e:
             sys.stderr.write("Cannot connect to database %s.\n" % database)
             sys.exit(1)
-            
         attach_search(engine, self.orm)
+        self.orm.remove()
+            
 
         # Logging
 

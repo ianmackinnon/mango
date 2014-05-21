@@ -39,6 +39,7 @@ class AuthLoginLocalHandler(BaseHandler):
         self.orm.add(session)
         self.orm.flush()
         self.start_session(str(session.session_id))
+        self.orm.commit()
         return self.redirect_next()
 
 
@@ -94,6 +95,7 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
         self.orm.add(session)
         self.orm.flush()
         self.start_session(str(session.session_id))
+        self.orm.commit()
 
         return self.redirect_next()
 
@@ -121,6 +123,7 @@ class AuthVisitHandler(BaseHandler):
         self.orm.add(session)
         self.orm.flush()
         self.start_session(str(session.session_id))
+        self.orm.commit()
 
         return self.redirect_next()
 
