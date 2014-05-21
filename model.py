@@ -1903,7 +1903,7 @@ virtual_orgtag_list = [
     ),
     (
         u"Activity | Military",
-        Orgtag.path_short ==u"activity",
+        Orgtag.path_short==u"activity",
     ),
 ]
 
@@ -1918,29 +1918,44 @@ def virtual_org_orgtag_all(org):
         raise Exception("Neither org or orgtag attached to session.")
 
     for virtual_name, filter_search in virtual_orgtag_list:
+        log.debug(u"\nVirtual tag: %s" % (virtual_name))
+        
         virtual_tag = orm.query(Orgtag) \
             .filter_by(name=virtual_name) \
             .filter_by(virtual=True) \
             .first()
 
         if not virtual_tag:
+            log.debug(u"  Virtual tag does not exist.")
             continue
 
         has_virtual_tag = orm.query(Orgtag) \
             .join(Org, Orgtag.org_list) \
             .filter(Org.org_id==org.org_id) \
+            .filter(Orgtag.virtual==None) \
             .filter(filter_search)
+
+        log.debug(u"  Has %d child tags." % has_virtual_tag.count())
+        if log.level == logging.DEBUG:
+            for child_tag in has_virtual_tag:
+                log.debug(u"    %s" % child_tag.name_short)
 
         if has_virtual_tag.count():
             if virtual_tag not in org.orgtag_list:
+                log.debug(u"  Adding parent tag.")
                 # Flag the virtual tag so it doesn't trigger a value error
                 virtual_tag.virtual = False
                 org.orgtag_list.append(virtual_tag)
+            else:
+                log.debug(u"  Already has parent tag.")
         else:
             if virtual_tag in org.orgtag_list:
+                log.debug(u"  Removing parent tag.")
                 # Flag the virtual tag so it doesn't trigger a value error
                 virtual_tag.virtual = False
                 org.orgtag_list.remove(virtual_tag)
+            else:
+                log.debug(u"  Doesn't have parent tag.")
 
     
 
