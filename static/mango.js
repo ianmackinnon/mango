@@ -136,7 +136,7 @@ var m = {
   },
 
   process: {
-    tagPacket: function (tagListId, tagPacket, tagListName, lengthName, urlName, options) {
+    tagPacket: function (tagListId, tagPacket, tagListName, options) {
       var showEntity = options && options.showEntity;
       var showNotes = options && options.showNotes;
       var showPath = options && options.showPath;
@@ -145,7 +145,7 @@ var m = {
       var $tagList = $(tagListId);
 
       $tagList.empty();
-
+      
       $.each(tagPacket, function (index, value) {
         if (value.id === excludeTagId) {
           return;
@@ -155,9 +155,7 @@ var m = {
 	  entity: showEntity,
 	  note: showNotes,
           path: showPath,
-          parameters: m.parameters,
-          entity_len: lengthName,
-          entity_list_url: urlName
+          parameters: m.parameters
 	});
 	$tagList.append($tagLi);
 	$tagList.append(" ");
@@ -165,11 +163,11 @@ var m = {
     },
 
     orgtagPacket: function (tag_list_id, orgtagPacket, options) {
-      return m.process.tagPacket(tag_list_id, orgtagPacket, "orgtag_list", "org_len", "org_list_url", options);
+      return m.process.tagPacket(tag_list_id, orgtagPacket, "orgtag_list", options);
     },
 
     eventtagPacket: function (tag_list_id, eventtagPacket, options) {
-      return m.process.tagPacket(tag_list_id, eventtagPacket, "eventtag_list", "event_len", "event_list_url", options);
+      return m.process.tagPacket(tag_list_id, eventtagPacket, "eventtag_list", options);
     }
   },
 

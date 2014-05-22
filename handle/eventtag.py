@@ -18,8 +18,9 @@ class BaseEventtagHandler(BaseTagHandler):
     Entity = Event
     tag_id = "eventtag_id"
     entity_id = "event_id"
-    cross_table = event_eventtag
     tag_type = "eventtag"
+    entity_type = "event"
+    cross_table = event_eventtag
 
     def _get_full_eventtag_list(self):
         eventtag_and_event_count_list = \
@@ -55,7 +56,7 @@ class EventtagListHandler(BaseEventtagHandler,
         
     def get(self):
         (eventtag_list, name, name_short, base, base_short,
-         path, search, sort) = self._get_tag_search_args("event_len")
+         path, search, sort) = self._get_tag_search_args()
 
         if self.accept_type("json"):
             self.write_json(eventtag_list)
@@ -69,7 +70,6 @@ class EventtagListHandler(BaseEventtagHandler,
                 visibility=self.parameters.get("visibility", None),
                 type_title="Event",
                 type_title_plural="Events",
-                type_url="event",
                 type_entity_list="event_list",
                 type_li_template="event_li",
                 type_length="event_len",

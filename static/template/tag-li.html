@@ -15,12 +15,16 @@
     </a>
   </span>
 
-  <% if (entity && tag[entity_len]) { %>
+  <% if (entity) { %>
   &nbsp;(
   <span class="number">
     <a
-       href="<%= m.urlRewrite(tag[entity_list_url], parameters) %>"
-       ><%=tag[entity_len]%></a>
+       href="<%= m.urlRewrite(
+             "/" + tag["tagged_url"],
+                                   _.extend(parameters, {
+                                   tag: tag["base_short"]
+                                   })) %>"
+       ><%=tag["tagged_count"]%></a>
   </span>
   )
   <% } %>

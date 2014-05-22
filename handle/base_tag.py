@@ -6,7 +6,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from tornado.web import HTTPError
 
 from base import BaseHandler, MangoBaseEntityHandlerMixin
-from model import short_name, detach
+from model import short_name, detach, url_directory
 
 
 
@@ -150,7 +150,7 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         return self.get_argument_allowed(
             "sort", ("name", "date", "freq"), None, json)
 
-    def _get_tag_search_args(self, entity_len):
+    def _get_tag_search_args(self):
         is_json = self.content_type("application/json")
         name = self.get_argument("name", None, json=is_json)
         name_short = self.get_argument("name_short", None, json=is_json)
@@ -171,12 +171,15 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
             visibility=self.parameters.get("visibility", None),
             )
 
+        entity_url = url_directory[self.entity_type]
+
         tag_list = []
         for tag, entity_count in entity_count_list:
             tag_list.append(tag.obj(**{
-                    "public": self.moderator,
-                    entity_len: entity_count,
-                    }))
+                "public": self.moderator,
+                "tagged_count": entity_count,
+                "tagged_url": entity_url,
+            }))
 
         return (tag_list, name, name_short, base, base_short,
                 path, search, sort)

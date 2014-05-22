@@ -440,13 +440,13 @@ ${tag["base"] | n, h, unicode, nbsp}\
 </a>\
 </span>\
 \
-%if entity and tag.get(entity["len"], None):
+%if entity:
 &nbsp;\
 (\
 <span class="number">\
 <a
-   href="${url_rewrite("/%s" % entity["url"], options=dict(tag=tag["base_short"]))}"
-   >${tag[entity["len"]]}</a>\
+   href="${url_rewrite("/%s" % tag["tagged_url"], options=dict(tag=tag["base_short"]))}"
+   >${tag["tagged_count"]}</a>\
 </span>\
 )\
 %endif

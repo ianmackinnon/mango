@@ -18,8 +18,9 @@ class BaseOrgtagHandler(BaseTagHandler):
     Entity = Org
     tag_id = "orgtag_id"
     entity_id = "org_id"
-    cross_table = org_orgtag
     tag_type = "orgtag"
+    entity_type = "org"
+    cross_table = org_orgtag
 
     def _get_full_orgtag_list(self):
         orgtag_and_org_count_list = \
@@ -55,7 +56,7 @@ class OrgtagListHandler(BaseOrgtagHandler,
         
     def get(self):
         (orgtag_list, name, name_short, base, base_short,
-         path, search, sort) = self._get_tag_search_args("org_len")
+         path, search, sort) = self._get_tag_search_args()
 
         if self.accept_type("json"):
             self.write_json(orgtag_list)
@@ -69,7 +70,6 @@ class OrgtagListHandler(BaseOrgtagHandler,
                 visibility=self.parameters.get("visibility", None),
                 type_title="Company",
                 type_title_plural="Companies",
-                type_url="organisation",
                 type_entity_list="org_list",
                 type_li_template="org_li",
                 type_length="org_len",

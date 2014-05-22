@@ -49,12 +49,8 @@ return u"%s Tags" % type_title
 </div>
 <ul id="tag_list" class="tag_list">
   %for tag in tag_list:
-  ${self.mini.tag_li(tag, entity={
-  "len": type_length,
-  "url": type_url,
-  }, note=True,
-  path=path,
-  visibility=True, parameters=parameters)}
+  ${self.mini.tag_li(tag, entity=True, note=True, path=path,
+    visibility=True, parameters=parameters)}
   %endfor
 </ul>
 

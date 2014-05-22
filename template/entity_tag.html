@@ -133,10 +133,7 @@ group_key = group_tag_list and group_tag_list[0]["path"]
   <ul id="tag_list" class="tag_list">
     %for tag in tag_list:
     %if tag["id"] not in tag_id_list:
-    ${self.mini.tag_li(tag, entity={
-      "len": type_length,
-      "url": type_url,
-      }, note=False, path=path,
+    ${self.mini.tag_li(tag, entity=True, note=False, path=path,
       link_url="%s/tag/%s" % (obj["url"], tag["id"]),
       link=True, next=uri,
       visibility=True, parameters=parameters)}
