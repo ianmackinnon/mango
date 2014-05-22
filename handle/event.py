@@ -754,7 +754,7 @@ class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
         # eventtag...
 
         (eventtag_list, name, name_short, base, base_short,
-         path, search, sort) = self._get_tag_search_args("event_len")
+         path, search, sort) = self._get_tag_search_args()
 
         group_tag_list = []
         if group:
@@ -767,7 +767,6 @@ class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
             .filter(Eventtag.path!=None) \
             .group_by(Eventtag.path_short)
         path_list = list(path_query)
-        print path_list
 
         self.render(
             'entity_tag.html',

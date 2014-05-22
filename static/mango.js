@@ -140,23 +140,32 @@ var m = {
       var showEntity = options && options.showEntity;
       var showNotes = options && options.showNotes;
       var showPath = options && options.showPath;
-      var excludeTagId = options && options.excludeTagId;
+      var showLink = options && options.showLink;
+      var entityUrl = options && options.entityUrl;
+      var excludeTagIdList = options && options.excludeTagIdList;
 
       var $tagList = $(tagListId);
 
       $tagList.empty();
       
       $.each(tagPacket, function (index, value) {
-        if (value.id === excludeTagId) {
+        if (_.contains(excludeTagIdList, value.id)) {
           return;
         }
-	var $tagLi = m.$template("tag-li.html", {
+        var templateParameters = {
 	  tag: value,
 	  entity: showEntity,
 	  note: showNotes,
           path: showPath,
+          link: showLink,
+          unlink: false,
+          next: window.location.href,
           parameters: m.parameters
-	});
+	};
+        if (showLink) {
+          templateParameters.linkUrl = entityUrl + "/tag/" + value.id;
+        }
+	var $tagLi = m.$template("tag-li.html", templateParameters);
 	$tagList.append($tagLi);
 	$tagList.append(" ");
       });
@@ -221,17 +230,19 @@ var m = {
       url = m.urlRoot + url.substring(1);
     }
     var query = null;
-    $.each(parameters, function (key, value) {
-      if (!value) {
-        return;
-      }
-      if (query === null) {
-        query = "";
-      } else {
-        query += "&";
-      }
-      query += encodeURIComponent(key) + "=" + encodeURIComponent(value);
-    });
+    if (parameters) {
+      $.each(parameters, function (key, value) {
+        if (!value) {
+          return;
+        }
+        if (query === null) {
+          query = "";
+        } else {
+          query += "&";
+        }
+        query += encodeURIComponent(key) + "=" + encodeURIComponent(value);
+      });
+    }
     if (!!query) {
       var join = (url.indexOf("?") < 0) && "?" || "&";
       url += join + query;
@@ -485,6 +496,8 @@ var m = {
     }).hide();
     form.find("input[type='submit']").before(throbber);
     var xhr = null;
+
+    options.excludeTagIdList = currentTagList;  // Defined in entity_tag.html script tag.
 
     var change = function (value) {
       if (xhr && xhr.readyState !== 4) {
@@ -1052,7 +1065,9 @@ var m = {
     [/^\/organisation\/([1-9][0-9]*)\/tag$/, function (orgIdString) {
       m.initOrgtagSearch("tag-search", "search", {
         showEntity: true,
-        showNotes: true
+        showNotes: true,
+        showLink: true,
+        entityUrl: "/organisation/" + orgIdString
       });
       $("#tag-search input[name='search']").focus();
       m.visibility();
@@ -1076,10 +1091,12 @@ var m = {
       m.noteMarkdown();
     }],
 
-    [/^\/event\/([1-9][0-9]*)\/tag$/, function (orgIdString) {
-      m.initOrgtagSearch("tag-search", "search", {
+    [/^\/event\/([1-9][0-9]*)\/tag$/, function (eventIdString) {
+      m.initEventtagSearch("tag-search", "search", {
         showEntity: true,
-        showNotes: true
+        showNotes: true,
+        showLink: true,
+        entityUrl: "/event/" + eventIdString
       });
       $("#tag-search input[name='search']").focus();
       m.visibility();
@@ -1105,7 +1122,7 @@ var m = {
       m.initTagForm();
       m.initOrgtagSearch("tag-form", "name", {
         showPath: true,
-        excludeTagId: parseInt(orgtagIdString, 10)
+        excludeTagIdList: [parseInt(orgtagIdString, 10)]
       });
     }],
     [/^\/organisation-tag\/new$/, function () {
@@ -1130,7 +1147,7 @@ var m = {
       m.initTagForm();
       m.initEventtagSearch("tag-form", "name", {
         showPath: true,
-        excludeTagId: parseInt(eventtagIdString, 10)
+        excludeTagIdList: [parseInt(eventtagIdString, 10)]
       });
     }],
     [/^\/event-tag\/new$/, function () {
@@ -1171,7 +1188,6 @@ var m = {
 $(window.document).ready(function () {
   window.document.cookie = 'j=1';
   $.ajaxSetup({ "traditional": true });
-  m.currentUser = $("#account").find("a").length === 2;
   m.handle();
 });
 

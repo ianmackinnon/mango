@@ -134,6 +134,10 @@ ${header(title=self.application_title()) | n}
 <script type="text/javascript">
 m.urlRoot = "${url_root | n}";
 m.parameters = ${parameters_json | n};
+m.currentUser = !!${int(bool(current_user))};
+m.moderator = !!${int(moderator)};
+m.xsrf = "${xsrf | n}";
+m.next = "${next_ or "" | n}" || null;
 </script>
 %for script in scripts3:
 <script type="text/javascript" src="${static_url(script)}"></script>

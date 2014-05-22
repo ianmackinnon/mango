@@ -21,7 +21,7 @@
     <a
        href="<%= m.urlRewrite(
              "/" + tag["tagged_url"],
-                                   _.extend(parameters, {
+                                   _.extend(_.clone(parameters), {
                                    tag: tag["base_short"]
                                    })) %>"
        ><%=tag["tagged_count"]%></a>
@@ -32,6 +32,55 @@
   <% if (note && tag["note_len"]) { %>
   <span class="has-notes">…</span>
   <% } %>
+
+<%
+if (m.moderator && parameters.view == "edit") {
+  if (tag["virtual"]) {
+%>
+    &nbsp;
+    <span class="virtual">(virtual)</span>
+<%
+  } else {
+    if (link) {
+%>
+      <span>
+      <form
+         action="<%= m.urlRewrite(linkUrl, parameters) %>"
+         method="post"
+         >
+      <input name="_xsrf" type="hidden" value="<%= m.xsrf %>">
+      <input name="_method" type="hidden" value="put">
+<%    if (next) { %>
+        <input name="next" type="hidden" value="<%= m.urlRewrite(next, {}) %>">
+<%    } %>
+      &nbsp;
+      <input type="submit" value="+">
+      </form>
+      </span>
+<%     
+    }
+
+    if (unlink) {
+%>
+      <span>
+      <form
+         action="<%= m.urlRewrite(linkUrl, parameters) %>"
+         method="post"
+         >
+      <input name="_xsrf" type="hidden" value="<%= m.xsrf %>">
+      <input name="_method" type="hidden" value="delete">
+<%    if (next) { %>
+        <input name="next" type="hidden" value="<%= m.urlRewrite(next, {}) %>">
+<%    } %>
+      &nbsp;
+      <input type="submit" value="✕">
+      </form>
+      </span>
+<%     
+    }
+  }
+}
+%>
 
   <% if (parameters.visibility && "public" in tag) { %>
   &nbsp;

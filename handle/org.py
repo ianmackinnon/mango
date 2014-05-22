@@ -815,7 +815,7 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
         # orgtag...
 
         (orgtag_list, name, name_short, base, base_short,
-         path, search, sort) = self._get_tag_search_args("org_len")
+         path, search, sort) = self._get_tag_search_args()
 
         group_tag_list = []
         if group:

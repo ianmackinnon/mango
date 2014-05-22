@@ -425,6 +425,7 @@ class BaseHandler(RequestHandler):
 
                 "geo_in": self.geo_in,
                 "next": self.next,
+                "next_": self.next,
                 "messages": self.messages,
                 "newline": newline,
                 "newline_comma": newline_comma,

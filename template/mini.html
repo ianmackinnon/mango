@@ -455,6 +455,7 @@ ${tag["base"] | n, h, unicode, nbsp}\
 &nbsp;\
 <span class="has-notes">…</span>\
 %endif
+\
 %if moderator and (parameters.get("view", None) == "edit"):
 %if tag["virtual"]:
 &nbsp;\
@@ -463,9 +464,9 @@ ${tag["base"] | n, h, unicode, nbsp}\
 %if link and link_url:
 <span>\
 <form
-   action="${url_rewrite(link_url)}"
-   method="post"
-   >\
+action="${url_rewrite(link_url)}"
+method="post"
+>\
 <input name="_xsrf" type="hidden" value="${xsrf}">\
 <input name="_method" type="hidden" value="put">\
 %if next:
@@ -480,9 +481,9 @@ ${tag["base"] | n, h, unicode, nbsp}\
 %if unlink and link_url:
 <span>\
 <form
-   action="${url_rewrite(link_url)}"
-   method="post"
-   >\
+action="${url_rewrite(link_url)}"
+method="post"
+>\
 <input name="_xsrf" type="hidden" value="${xsrf}">\
 <input name="_method" type="hidden" value="delete">\
 %if next:
@@ -495,14 +496,17 @@ ${tag["base"] | n, h, unicode, nbsp}\
 %endif
 %endif
 %endif
+\
 %if visibility and "public" in tag:
 &nbsp;\
 ${visibility_bar(tag)}\
 %endif
 </li>
+\
 %if path:
 <br/>
 %endif
+\
 </%def>
 
 
