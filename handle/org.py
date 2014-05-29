@@ -18,7 +18,7 @@ from orgtag import BaseOrgtagHandler
 from address import BaseAddressHandler
 from contact import BaseContactHandler
 
-from model import Org, Note, Address, Orgalias, Event, Orgtag, org_orgtag
+from model import Org, Note, Address, Orgalias, Event, Orgtag, org_orgtag, org_note
 
 from model_v import Org_v, Address_v, \
     org_address_v
@@ -1093,52 +1093,6 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
-        d11_query = self.orm.query(func.count(Orgtag.orgtag_id).label("count")) \
-                            .join(org_orgtag) \
-                            .add_columns(org_orgtag.c.org_id) \
-                            .filter(Orgtag.orgtag_id.in_((
-                                1008,  # Electro-Mechanical Actuators, Sensors & Assemblies
-                                877,  # Rescue & Survival Equipment
-                                1020,  # Shelters
-                                905,  # Satellite Communications
-                                944,  # Fire Control Systems
-                                922,  # Batteries, Chargers & Systems
-                                983,  # Government Agencies
-                                862,  # Academic
-                                1007,  # Air Conditioning, Heating & ECUs
-                                1015,  # Bomb Blast Doors
-                                1047,  # Breathing Air Purifiers
-                                1027,  # Consultancy Services
-                                1085,  # Filters. Fluid, Gas & Air
-                                1067,  # Firefighting
-                                1057,  # Footwear
-                                865,  # IT Consulting
-                                1024,  # Lighting
-                                1072,  # Lubricants
-                                1051,  # Meteorology
-                                1059,  # Military Hospitals
-                                933,  # Mobile Containers
-                                1097,  # Office Accommodation
-                                1069,  # Personal Hygiene
-                                1092,  # Personnel, HR & Recruitment
-                                1103,  # PortableRoadwayRepairs
-                                1026,  # Publications
-                                1096,  # SMELand
-                                1075,  # Slip Ring Systems
-                                934,  # Storage Equipment
-                                1102,  # Umbilicals
-                                1065,  # Water Purification
-                            ))) \
-            .group_by(org_orgtag.c.org_id) \
-            .subquery()
-
-        esy_query = self.orm.query(func.count(Orgtag.orgtag_id).label("count")) \
-            .join(org_orgtag) \
-            .add_columns(org_orgtag.c.org_id) \
-            .filter(Orgtag.name_short==u"exhibitor|eurosatory-2014") \
-            .group_by(org_orgtag.c.org_id) \
-            .subquery()
-
         dsei_query = self.orm.query(func.count(Orgtag.orgtag_id) \
                                     .label("count")) \
             .join(org_orgtag) \
@@ -1146,6 +1100,13 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .filter(Orgtag.name_short.startswith(
                 u"products-and-services|dsei%")) \
             .group_by(org_orgtag.c.org_id) \
+            .subquery()
+
+        note_query = self.orm.query(func.count(Note.note_id) \
+                                     .label("count")) \
+            .join(org_note) \
+            .add_columns(org_note.c.org_id) \
+            .group_by(org_note.c.org_id) \
             .subquery()
 
         sipri_query = self.orm.query(func.count(Orgtag.orgtag_id) \
@@ -1170,19 +1131,17 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
         
         org_query = self.orm.query(Org) \
             .outerjoin(act_query, act_query.c.org_id==Org.org_id) \
-            .outerjoin(d11_query, d11_query.c.org_id==Org.org_id) \
-            .outerjoin(esy_query, esy_query.c.org_id==Org.org_id) \
             .outerjoin(dsei_query, dsei_query.c.org_id==Org.org_id) \
             .outerjoin(sap_query, sap_query.c.org_id==Org.org_id) \
             .outerjoin(sipri_query, sipri_query.c.org_id==Org.org_id) \
+            .outerjoin(note_query, note_query.c.org_id==Org.org_id) \
             .add_columns(
                 literal_column(exist_clause).label("include"),
                 func.coalesce(act_query.c.count, 0).label("act"),
-                func.coalesce(d11_query.c.count, 0).label("d11"),
-                func.coalesce(esy_query.c.count, 0).label("esy"),
                 func.coalesce(dsei_query.c.count, 0).label("dsei"),
                 func.coalesce(sap_query.c.count, 0).label("sap"),
                 func.coalesce(sipri_query.c.count, 0).label("sipri"),
+                func.coalesce(note_query.c.count, 0).label("note"),
                 ) \
             .order_by("((dsei > 0) * 4 + (sap > 0) * 2 + (sipri > 0)) desc",
                       Org.name)
@@ -1195,13 +1154,17 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "act_include_private": [],
             "act_include_pending": [],
 
-            "d11_public": [],
-            "d11_private": [],
-            "d11_pending": [],
+            "desc_public": [],
+            "desc_private": [],
+            "desc_pending": [],
 
-            "esy_public": [],
-            "esy_private": [],
-            "esy_pending": [],
+            "sipri_public": [],
+            "sipri_private": [],
+            "sipri_pending": [],
+
+            "note_public": [],
+            "note_private": [],
+            "note_pending": [],
 
             "include_public": [],
             "include_private": [],
@@ -1212,63 +1175,73 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "exclude_pending": 0,
             }
 
-        for org, include, act, d11, esy, dsei, sap, sipri in org_query:
+        for org, include, act, dsei, sap, sipri, note in org_query:
             if act:
                 if org.public:
                     if include:
                         packet["act_include_public"] += 1
                     else:
                         packet["act_exclude_public"] \
-                            .append((org, dsei, sap, sipri))
+                            .append((org, dsei, sap))
                 elif org.public == False:
                     if not include:
                         packet["act_exclude_private"] += 1
                     else:
                         packet["act_include_private"] \
-                            .append((org, dsei, sap, sipri))
+                            .append((org, dsei, sap))
                 else:
                     if not include:
                         pass # Nothing
                     else:
                         packet["act_include_pending"] \
-                            .append((org, dsei, sap, sipri))
-            elif d11:
+                            .append((org, dsei, sap))
+            elif org.description:
                 if org.public:
-                    packet["d11_public"] \
-                        .append((org, dsei, sap, sipri))
+                    packet["desc_public"] \
+                        .append((org, dsei, sap))
                 elif org.public == False:
-                    packet["d11_private"] \
-                        .append((org, dsei, sap, sipri))
+                    packet["desc_private"] \
+                        .append((org, dsei, sap))
                 else:
-                    packet["d11_pending"] \
-                        .append((org, dsei, sap, sipri))
-            elif esy:
+                    packet["desc_pending"] \
+                        .append((org, dsei, sap))
+            elif note > 3:
                 if org.public:
-                    packet["esy_public"] \
-                        .append((org, dsei, sap, sipri))
+                    packet["note_public"] \
+                        .append((org, dsei, sap))
                 elif org.public == False:
-                    packet["esy_private"] \
-                        .append((org, dsei, sap, sipri))
+                    packet["note_private"] \
+                        .append((org, dsei, sap))
                 else:
-                    packet["esy_pending"] \
-                        .append((org, dsei, sap, sipri))
+                    packet["note_pending"] \
+                        .append((org, dsei, sap))
+            elif sipri:
+                if org.public:
+                    packet["sipri_public"] \
+                        .append((org, dsei, sap))
+                elif org.public == False:
+                    packet["sipri_private"] \
+                        .append((org, dsei, sap))
+                else:
+                    packet["sipri_pending"] \
+                        .append((org, dsei, sap))
             elif include:
                 if org.public:
                     packet["include_public"] \
-                        .append((org, dsei, sap, sipri))
+                        .append((org, dsei, sap))
                 elif org.public == False:
                     packet["include_private"] \
-                        .append((org, dsei, sap, sipri))
+                        .append((org, dsei, sap))
                 else:
                     packet["include_pending"] \
-                        .append((org, dsei, sap, sipri))
+                        .append((org, dsei, sap))
             else:
                 if org.public:
                     packet["remove_public"] \
-                        .append((org, dsei, sap, sipri))
+                        .append((org, dsei, sap))
                 elif org.public == False:
                     packet["remove_private"] \
-                        .append((org, dsei, sap, sipri))
+                        .append((org, dsei, sap))
                 else:
                     packet["exclude_pending"] += 1
 

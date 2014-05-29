@@ -10,14 +10,12 @@ last_tags = None
 %>
       %for row in packet[key][:200]:
 <%
-(org, dsei, sap, sipri) = row
+(org, dsei, sap) = row
 tags = []
 if dsei:
     tags.append("D")
 if sap:
     tags.append("P")
-if sipri:
-    tags.append("S")
 
 if link=="tags":
     url=url_rewrite(org.url + '/tag', {
@@ -148,86 +146,132 @@ last_tags = tags
 </div>
 %endif
 
-%if packet["d11_public"] or packet["d11_private"] or packet["d11_pending"]:
+%if packet["desc_public"] or packet["desc_private"] or packet["desc_pending"]:
 <div class="inclusion">
-  <h3>DSEi 2011 probable exclusion tags: Add activity tags:</h3>
+  <h3>Description: Add activity tags:</h3>
 
   <div class="mango-box third">
     <div class="visibility public">
       <ul>
         <li>Do not have activity tags</li>
-        <li>Have Eurosatory 2014 tag</li>
+        <li>Have description</li>
         <li>Public</li>
       </ul>
-      <div class="total">${len(packet["d11_public"])}</div>
+      <div class="total">${len(packet["desc_public"])}</div>
     </div>
-    ${self.inclusion_table("d11_public", hint=False)}
+    ${self.inclusion_table("desc_public", hint=False)}
   </div>
 
   <div class="mango-box third">
     <div class="visibility private">
       <ul>
         <li>Do not have activity tags</li>
-        <li>Have Eurosatory 2014 tag</li>
+        <li>Have description</li>
         <li>Private</li>
       </ul>
-      <div class="total">${len(packet["d11_private"])}</div>
+      <div class="total">${len(packet["desc_private"])}</div>
     </div>
-    ${self.inclusion_table("d11_private", hint=False)}
+    ${self.inclusion_table("desc_private", hint=False)}
   </div>
 
   <div class="mango-box third">
     <div class="visibility pending">
       <ul>
         <li>Do not have activity tags</li>
-        <li>Have Eurosatory 2014 tag</li>
+        <li>Have description</li>
         <li>Pending</li>
       </ul>
-      <div class="total">${len(packet["d11_pending"])}</div>
+      <div class="total">${len(packet["desc_pending"])}</div>
     </div>
-    ${self.inclusion_table("d11_pending", hint=False)}
+    ${self.inclusion_table("desc_pending", hint=False)}
   </div>
 </div>
 %endif
 
-%if packet["esy_public"] or packet["esy_private"] or packet["esy_pending"]:
+%if packet["sipri_public"] or packet["sipri_private"] or packet["sipri_pending"]:
 <div class="inclusion">
-  <h3>Eurosatory 2014 tag: Add activity tags:</h3>
+  <h3>Sipri 100: Add activity tags:</h3>
+
+  <% criterion = "In Sipri top 100." %>
 
   <div class="mango-box third">
     <div class="visibility public">
       <ul>
         <li>Do not have activity tags</li>
-        <li>Have Eurosatory 2014 tag</li>
+        <li>${criterion}</li>
         <li>Public</li>
       </ul>
-      <div class="total">${len(packet["esy_public"])}</div>
+      <div class="total">${len(packet["sipri_public"])}</div>
     </div>
-    ${self.inclusion_table("esy_public", hint=False)}
+    ${self.inclusion_table("sipri_public", hint=False)}
   </div>
 
   <div class="mango-box third">
     <div class="visibility private">
       <ul>
         <li>Do not have activity tags</li>
-        <li>Have Eurosatory 2014 tag</li>
+        <li>${criterion}</li>
         <li>Private</li>
       </ul>
-      <div class="total">${len(packet["esy_private"])}</div>
+      <div class="total">${len(packet["sipri_private"])}</div>
     </div>
-    ${self.inclusion_table("esy_private", hint=False)}
+    ${self.inclusion_table("sipri_private", hint=False)}
   </div>
 
   <div class="mango-box third">
     <div class="visibility pending">
       <ul>
         <li>Do not have activity tags</li>
-        <li>Have Eurosatory 2014 tag</li>
+        <li>${criterion}</li>
         <li>Pending</li>
       </ul>
-      <div class="total">${len(packet["esy_pending"])}</div>
+      <div class="total">${len(packet["sipri_pending"])}</div>
     </div>
-    ${self.inclusion_table("esy_pending", hint=False)}
+    ${self.inclusion_table("sipri_pending", hint=False)}
+  </div>
+</div>
+%endif
+
+%if packet["note_public"] or packet["note_private"] or packet["note_pending"]:
+<div class="inclusion">
+  <h3>Has notes: Add activity tags:</h3>
+
+  <% criterion = "Have more than 3 notes." %>
+
+  <div class="mango-box third">
+    <div class="visibility public">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>${criterion}</li>
+        <li>Public</li>
+      </ul>
+      <div class="total">${len(packet["note_public"])}</div>
+    </div>
+    ${self.inclusion_table("note_public", hint=False)}
+  </div>
+
+  <div class="mango-box third">
+    <div class="visibility private">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>${criterion}</li>
+        <li>Private</li>
+      </ul>
+      <div class="total">${len(packet["note_private"])}</div>
+    </div>
+    ${self.inclusion_table("note_private", hint=False)}
+  </div>
+
+  <div class="mango-box third">
+    <div class="visibility pending">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>${criterion}</li>
+        <li>Pending</li>
+      </ul>
+      <div class="total">${len(packet["note_pending"])}</div>
+    </div>
+    ${self.inclusion_table("note_pending", hint=False)}
   </div>
 </div>
 %endif
@@ -241,7 +285,6 @@ last_tags = tags
     <p>Key:
       <strong>D</strong>: has a DSEI product tag,
       <strong>P</strong>: has a Security & Policing product tag,
-      <strong>S</strong>: has a SIPRI product tag.
     </p>
   </div>
   
@@ -293,7 +336,6 @@ last_tags = tags
     <p>Key:
       <strong>D</strong>: has a DSEI product tag,
       <strong>P</strong>: has a Security & Policing product tag,
-      <strong>S</strong>: has a SIPRI product tag.
     </p>
   </div>
   
