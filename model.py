@@ -1597,6 +1597,7 @@ class Eventtag(Base, MangoEntity, NotableEntity):
         "base_short",
         "path",
         "path_short",
+        "virtual",
         ]
 
     @classproperty
