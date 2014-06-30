@@ -64,7 +64,7 @@ group_key = group_tag_list and group_tag_list[0]["path"]
         %endfor
       </select>
     </label>
-    <input type="submit" value="Submit">
+    <input type="submit" value="Update view">
   </form>
   %endif
 
@@ -75,15 +75,35 @@ group_key = group_tag_list and group_tag_list[0]["path"]
   <form
      action=""
      method="post"
+     id="group-tag"
      >
     <input name="_xsrf" type="hidden" value="${xsrf}">
 
     <input type="hidden" name="group" value="${group}">
 
-    %for tag in group_tag_list:
-    <input type="checkbox" name="tag" value="${tag['id']}"${' checked' if tag['id'] in tag_id_list else ''}> ${tag['base']} <br>
-    %endfor
+    <input type="submit" value="Submit"> <br>
+
+    <div class="group-tag-columns">
+      <div class="group-tag-column">
+        %for tag in group_tag_list[:(len(group_tag_list) + 1)/2]:
+        <label>
+          <input type="checkbox" name="tag" value="${tag['id']}"${' checked' if tag['id'] in tag_id_list else ''}>
+          <span>${tag['base'].split(" : ")[-1]}</span>
+        </label>
+        %endfor
+      </div>
+      <div class="group-tag-column">
+        %for tag in group_tag_list[(len(group_tag_list) + 1)/2:]:
+        <label>
+          <input type="checkbox" name="tag" value="${tag['id']}"${' checked' if tag['id'] in tag_id_list else ''}>
+          <span>${tag['base'].split(" : ")[-1]}</span>
+        </label>
+        %endfor
+      </div>
+    </div>
+
     <input type="submit" value="Submit">
+
   </form>
 
   %else:

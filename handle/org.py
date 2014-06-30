@@ -781,6 +781,9 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
                     org.orgtag_list.remove(tag)
             if tag.orgtag_id in tag_id_list and tag not in org.orgtag_list:
                 org.orgtag_list.append(tag)
+                
+        if group_tag_query:
+            self.orm_commit()
 
         return self.redirect(self.url_rewrite(self.request.uri))
 

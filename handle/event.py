@@ -723,6 +723,9 @@ class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
             if tag.eventtag_id in tag_id_list and tag not in event.eventtag_list:
                 event.eventtag_list.append(tag)
 
+        if group_tag_query:
+            self.orm_commit()
+
         return self.redirect(self.request.uri)
 
     @authenticated

@@ -1043,6 +1043,44 @@ div.ui-timepicker td a.ui-state-active
     width: 150px;
 }
 
+#mango .group-tag-columns:before,
+#mango .group-tag-columns:after {
+    content:"";
+    display:table;
+}
+
+#mango .group-tag-columns:after {
+    clear: both;
+}
+#mango .group-tag-column {
+    float: left;
+    width: 45%;
+}
+
+#mango #group-tag label
+{
+    display: block;
+    margin: 2px;
+}
+#mango #group-tag label
+{
+    border: 1px solid #ccc;
+    padding: 0 4px;
+    padding-right: 8px;
+    line-height: 20px;
+    border-radius: 2px;
+    background: #f8f8f8;
+}
+#mango #group-tag label input
+{
+    vertical-align: middle;
+    position: relative;
+    top: -1px;
+}
+#mango #group-tag span
+{
+}
+
 #mango .has-notes
 {
     background: #fff;
