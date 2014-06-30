@@ -188,6 +188,50 @@ last_tags = tags
 </div>
 %endif
 
+%if packet["farn_public"] or packet["farn_private"] or packet["farn_pending"]:
+<div class="inclusion">
+  <h3>Farnborough 2014: Add activity tags:</h3>
+
+  <% criterion = "Attending Farnborough 2014." %>
+
+  <div class="mango-box third">
+    <div class="visibility public">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>${criterion}</li>
+        <li>Public</li>
+      </ul>
+      <div class="total">${len(packet["farn_public"])}</div>
+    </div>
+    ${self.inclusion_table("farn_public", hint=False)}
+  </div>
+
+  <div class="mango-box third">
+    <div class="visibility private">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>${criterion}</li>
+        <li>Private</li>
+      </ul>
+      <div class="total">${len(packet["farn_private"])}</div>
+    </div>
+    ${self.inclusion_table("farn_private", hint=False)}
+  </div>
+
+  <div class="mango-box third">
+    <div class="visibility pending">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>${criterion}</li>
+        <li>Pending</li>
+      </ul>
+      <div class="total">${len(packet["farn_pending"])}</div>
+    </div>
+    ${self.inclusion_table("farn_pending", hint=False)}
+  </div>
+</div>
+%endif
+
 %if packet["sipri_public"] or packet["sipri_private"] or packet["sipri_pending"]:
 <div class="inclusion">
   <h3>Sipri 100: Add activity tags:</h3>

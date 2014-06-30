@@ -1102,11 +1102,12 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
-        note_query = self.orm.query(func.count(Note.note_id) \
+        farn_query = self.orm.query(func.count(Orgtag.orgtag_id) \
                                      .label("count")) \
-            .join(org_note) \
-            .add_columns(org_note.c.org_id) \
-            .group_by(org_note.c.org_id) \
+            .join(org_orgtag) \
+            .add_columns(org_orgtag.c.org_id) \
+            .filter(Orgtag.name_short==u"exhibitor|farnborough-2014") \
+            .group_by(org_orgtag.c.org_id) \
             .subquery()
 
         sipri_query = self.orm.query(func.count(Orgtag.orgtag_id) \
@@ -1116,6 +1117,13 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .filter(Orgtag.name_short.startswith(
                 u"products-and-services|sipri%")) \
             .group_by(org_orgtag.c.org_id) \
+            .subquery()
+
+        note_query = self.orm.query(func.count(Note.note_id) \
+                                     .label("count")) \
+            .join(org_note) \
+            .add_columns(org_note.c.org_id) \
+            .group_by(org_note.c.org_id) \
             .subquery()
 
         sap_query = self.orm.query(func.count(Orgtag.orgtag_id) \
@@ -1133,6 +1141,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .outerjoin(act_query, act_query.c.org_id==Org.org_id) \
             .outerjoin(dsei_query, dsei_query.c.org_id==Org.org_id) \
             .outerjoin(sap_query, sap_query.c.org_id==Org.org_id) \
+            .outerjoin(farn_query, farn_query.c.org_id==Org.org_id) \
             .outerjoin(sipri_query, sipri_query.c.org_id==Org.org_id) \
             .outerjoin(note_query, note_query.c.org_id==Org.org_id) \
             .add_columns(
@@ -1140,6 +1149,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 func.coalesce(act_query.c.count, 0).label("act"),
                 func.coalesce(dsei_query.c.count, 0).label("dsei"),
                 func.coalesce(sap_query.c.count, 0).label("sap"),
+                func.coalesce(farn_query.c.count, 0).label("farn"),
                 func.coalesce(sipri_query.c.count, 0).label("sipri"),
                 func.coalesce(note_query.c.count, 0).label("note"),
                 ) \
@@ -1158,6 +1168,10 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "desc_private": [],
             "desc_pending": [],
 
+            "farn_public": [],
+            "farn_private": [],
+            "farn_pending": [],
+
             "sipri_public": [],
             "sipri_private": [],
             "sipri_pending": [],
@@ -1175,7 +1189,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "exclude_pending": 0,
             }
 
-        for org, include, act, dsei, sap, sipri, note in org_query:
+        for org, include, act, dsei, sap, farn, sipri, note in org_query:
             if act:
                 if org.public:
                     if include:
@@ -1214,6 +1228,16 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                         .append((org, dsei, sap))
                 else:
                     packet["note_pending"] \
+                        .append((org, dsei, sap))
+            elif farn:
+                if org.public:
+                    packet["farn_public"] \
+                        .append((org, dsei, sap))
+                elif org.public == False:
+                    packet["farn_private"] \
+                        .append((org, dsei, sap))
+                else:
+                    packet["farn_pending"] \
                         .append((org, dsei, sap))
             elif sipri:
                 if org.public:
