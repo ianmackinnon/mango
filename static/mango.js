@@ -393,6 +393,13 @@ var m = {
     });
     mapView.fit();
 
+    $("input[name='end_date']").datepicker({
+      dateFormat: "yy-mm-dd",
+      numberOfMonths: 1,
+      changeMonth: true,
+      changeYear: true
+    });
+
     m.orgMarkdown();
     m.orgSearch();
   },

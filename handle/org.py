@@ -482,6 +482,7 @@ class OrgRevisionHandler(BaseOrgHandler):
         fields = (
             ("name", "name"),
             ("description", "markdown"),
+            ("end_date", "date"),
             ("public", "public")
             )
 
@@ -1091,7 +1092,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .add_columns(org_orgtag.c.org_id) \
             .filter(or_(
                 Orgtag.path_short=='activity',
-                Orgtag.path_short=='activity-exclusion'
+                Orgtag.path_short=='activity-exclusion',
                 )) \
             .group_by(org_orgtag.c.org_id) \
             .subquery()
@@ -1156,6 +1157,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 func.coalesce(sipri_query.c.count, 0).label("sipri"),
                 func.coalesce(note_query.c.count, 0).label("note"),
                 ) \
+            .filter(Org.end_date==None) \
             .order_by("((dsei > 0) * 4 + (sap > 0) * 2 + (sipri > 0)) desc",
                       Org.name)
 

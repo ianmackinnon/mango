@@ -42,19 +42,18 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
         name = self.get_argument("name", json=is_json)
         description = self.get_argument("description", None, json=is_json);
+        end_date = self.get_argument_date("end_date", None, json=is_json)
 
         public, moderation_user = self._create_revision()
 
         if version:
             org = Org_v(
                 id_,
-                name,
-                description,
+                name, description, end_date,
                 moderation_user=moderation_user, public=public)
         else:
             org = Org(
-                name,
-                description,
+                name, description, end_date,
                 moderation_user=moderation_user, public=public)
             
             if id_:

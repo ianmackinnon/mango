@@ -677,6 +677,7 @@ class Org(Base, MangoEntity, NotableEntity):
 
     name = Column(Unicode(), nullable=False)
     description = Column(Unicode())
+    end_date = Column(Date)
 
     moderation_user_id = Column(Integer, ForeignKey(User.user_id))
     a_time = Column(Float(), nullable=False)
@@ -789,6 +790,7 @@ class Org(Base, MangoEntity, NotableEntity):
     content = [
         "name",
         "description",
+        "end_date",  # '..._date' causes formatting in 'obj()'
         ]
 
     @classproperty
@@ -797,11 +799,12 @@ class Org(Base, MangoEntity, NotableEntity):
         return cls.org_id
 
     def __init__(self,
-                 name, description=None,
+                 name, description=None, end_date=None,
                  moderation_user=None, public=None):
         self.name = sanitise_name(name)
 
         self.description = description and unicode(description) or None
+        self.end_date = end_date
 
         self.moderation_user = moderation_user
         self.a_time = 0

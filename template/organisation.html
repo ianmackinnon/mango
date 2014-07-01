@@ -131,7 +131,15 @@ edit = parameters.get("view", None) == "edit"
 	<span class="requirement">(required)</span>
 	<input name="name" value="${obj and obj["name"] or ''}">
       </label>
-      
+      <label name="end_date">
+	<span>Ceased operating</span>
+	<span class="requirement"></span>
+	<input
+           name="end_date"
+           placeholder="Format is 'YYYY-MM-DD', eg. '2012-07-24'."
+           value="${obj and obj["end_date"] | n, form_date}"
+           >
+      </label>
       <div class="form-hint">
         <p>Enter description using <a href='http://daringfireball.net/projects/markdown/syntax'>Markdown syntax</a>.</p>
       </div>
@@ -161,6 +169,15 @@ edit = parameters.get("view", None) == "edit"
     %if edit_block:
     <p class="warning">Editing is disabled because <a href="${url_rewrite(version_url)}">pending suggested revisions</a> exist.</p>
     %endif:
+
+    <!-- Time Start -->
+    %if obj["end_date"]:
+    <div class="mango-entity-section">
+      <h3>Ceased operation</h3>
+      ${obj["end_date"] | n, page_date}
+    </div>
+    %endif
+    <!-- Time End -->
 
     <!-- Description Start -->
     %if obj["description"] or not moderator:

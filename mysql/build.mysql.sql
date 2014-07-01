@@ -18,6 +18,7 @@ CREATE TABLE org_v (
 
     name LONGTEXT NOT NULL, 
     description longtext,
+    end_date date,
 
     KEY org_id (org_id),
     KEY moderation_user_id (moderation_user_id),

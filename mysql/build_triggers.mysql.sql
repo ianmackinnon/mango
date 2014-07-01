@@ -33,12 +33,12 @@ for each row begin
     insert into org_v (
         org_id,
         moderation_user_id, a_time, public, existence,
-	name, description
+	name, description, end_date
         )
         values (
 	new.org_id,
 	new.moderation_user_id, 0, new.public, 1,
-	new.name, new.description
+	new.name, new.description, new.end_date
 	);
 end $$
 
@@ -48,12 +48,12 @@ for each row begin
     insert into org_v (
         org_id,
         moderation_user_id, a_time, public, existence,
-	name, description
+	name, description, end_date
         )
         values (
 	new.org_id,
 	new.moderation_user_id, 0, new.public, 1,
-	new.name, new.description
+	new.name, new.description, new.end_date
 	);
 end $$
 
@@ -62,12 +62,12 @@ for each row begin
     insert into org_v (
         org_id,
         moderation_user_id, a_time, public, existence,
-	name, description
+	name, description, end_date
         )
         values (
 	old.org_id,
 	old.moderation_user_id, 0, old.public, 0,
-	old.name, old.description
+	old.name, old.description, old.end_date
 	);
 end $$
 
