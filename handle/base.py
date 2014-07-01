@@ -399,7 +399,7 @@ class BaseHandler(RequestHandler):
             if b:
                 a[:] = filter(lambda x: x not in b, a)
             
-        scripts1 = ["jquery.min.js", "jquery-ui/jquery-ui.min.js", "tag-it.js", "underscore-min.js", "backbone-min.js", "markdown.js", "jquery.history.js", "jquery.ui.timepicker.js"]
+        scripts1 = ["jquery.min.js", "jquery-ui/jquery-ui.min.js", "tag-it.js", "underscore-min.js", "backbone-min.js", "markdown.js", "jquery.history.js", "jquery.ui.timepicker.js", "markerclusterer.js"]
         scripts2 = ["geobox.js", "mango.js"]
         scripts3 = ["map.js", "address.js", "tag.js", "event.js", "org.js"]
         stylesheets = ["jquery-ui/jquery-ui.css", "tag-it.css", "jquery.ui.timepicker.css", "style.css"]

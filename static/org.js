@@ -266,6 +266,7 @@
       this._modelViews = [];
       this._addressModelViews = [];
       view.many = null;
+      this.mapView.cluster(this.collection.markerList && this.collection.markerList.length > 1000 && m.parameters.visibility == "all");
       if (this.collection.markerList) {
         view.many = true;
         _.each(this.collection.markerList, function (model) {

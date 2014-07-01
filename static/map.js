@@ -52,6 +52,18 @@
       this.dots = [];
       this.render();
       this.frames = {};
+      MarkerClusterer.prototype.MARKER_CLUSTER_IMAGE_PATH_ = m.urlRewrite("/static/image/map/marker/cluster-", {});
+    },
+
+    cluster: function (enabled) {
+      enabled = !!enabled;
+      if (this.clusterer && !enabled) {
+        this.clusterer.clearMarkers();
+        delete this.clusterer;
+      }
+      if (enabled && !this.clusterer) {
+        this.clusterer = new MarkerClusterer(this.map);
+      }
     },
 
     render: function () {
@@ -149,6 +161,9 @@
         var dot = this.dots.pop(0);
         dot.setMap(null);
       }
+      if (this.clusterer) {
+        this.clusterer.clearMarkers();
+      }
     },
 
     markerIconUrl: function (style, color, letter) {
@@ -239,10 +254,15 @@
       var zIndex = Math.round((100 - latitude) * 100);
       var marker = new google.maps.Marker({
         position: position,
-        map: this.map,
         icon: dotIconUrl,
         title: title
       });
+
+      if (this.clusterer) {
+        this.clusterer.addMarker(marker);
+      } else {
+        marker.setMap(this.map);
+      }
 
       if (onClick) {
         google.maps.event.addListener(marker, 'click', onClick);

@@ -92,6 +92,14 @@ class GenerateHandler(StaticFileHandler):
 class GenerateMarkerHandler(GenerateHandler):
     etag = False
 
+    cluster_sizes = [
+        (53, 26),
+        (56, 27), 
+        (66, 31),
+        (78, 37), 
+        (90, 42), 
+        ]
+
     def compute_etag(self):
         return None
 
@@ -121,29 +129,48 @@ class GenerateMarkerHandler(GenerateHandler):
             template = 'map-marker-pin.svg'
             path = path[:-4]
             form = path[4:].split("-")
+        elif path.startswith("cluster-"): 
+            template = 'map-marker-cluster.svg'
+            path = path[:-4]
+            form = None
+            n = path[8:]
+            try:
+                width, diameter = self.cluster_sizes[int(n) - 1]
+            except ValueError:
+                raise HTTPError(404)
         else:
             raise HTTPError(404)
 
-        if len(form) == 2:
-            (fill, text, ) = form
-            if not re.match("[0-9a-zA-Z?]$", text):
+        if form:
+            # circle, pin, dot
+            if len(form) == 2:
+                (fill, text, ) = form
+                if not re.match("[0-9a-zA-Z?]$", text):
+                    raise HTTPError(404)
+                if not re.match("[0-9a-fA-F]{6}$", fill):
+                    raise HTTPError(404)
+                svg = self.render(template,
+                                  text=text,
+                                  fill="#" + fill,
+                                  )
+            elif len(form) == 1:
+                (fill, ) = form
+                if not re.match("[0-9a-fA-F]{6}$", fill):
+                    raise HTTPError(404)
+                svg = self.render(template,
+                                  text="",
+                                  fill="#" + fill,
+                                  )
+            else:
                 raise HTTPError(404)
-            if not re.match("[0-9a-fA-F]{6}$", fill):
-                raise HTTPError(404)
-            svg = self.render(template,
-                              text=text,
-                              fill="#" + fill,
-                              )
-        elif len(form) == 1:
-            (fill, ) = form
-            if not re.match("[0-9a-fA-F]{6}$", fill):
-                raise HTTPError(404)
-            svg = self.render(template,
-                              text="",
-                              fill="#" + fill,
-                              )
         else:
-            raise HTTPError(404)
+            # cluster
+            svg = self.render(template,
+                              width=width,
+                              offset=float(width)/2,
+                              radius=float(diameter)/2,
+                              fill="#ee6666",
+            )
 
         # Using stdout, because convert does odd things with a question
         #   mark in the output filename.
