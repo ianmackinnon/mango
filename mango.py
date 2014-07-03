@@ -288,6 +288,7 @@ class Application(tornado.web.Application):
 
         self.handlers = [
             (r"/", HomeHandler),
+            (r"/home", HomeHandler),
             (r"/home-org", HomeOrgListHandler),
             (r"/dsei", DseiHandler),
             (r"/dsei-org", DseiOrgListHandler),
