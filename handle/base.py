@@ -169,13 +169,10 @@ class BaseHandler(RequestHandler):
         self.start = time.time()
 
     def on_finish(self):
-        remote_ip = self.request.remote_ip
-        if self.request.remote_ip in self.application.forwarding_server_list and "X-Forwarded-For" in self.request.headers:
-            remote_ip = self.request.headers["X-Forwarded-For"]
         self.application.log_uri.info("%s, %s, %s, %s, %0.3f" % (
                 str(time.time()),
                 self.request.uri,
-                remote_ip,
+                self.request.remote_ip,
                 repr(self.request.headers.get("User-Agent", "User-Agent")),
                 time.time() - self.start
                 ))
@@ -273,14 +270,8 @@ class BaseHandler(RequestHandler):
         return False
 
     def is_local(self):
-        if "X-Forwarded-For" in self.request.headers:
-            return False
+        raise NotImplementedError
         return self.request.remote_ip == "127.0.0.1"
-
-    def get_remote_ip(self):
-        if "X-Forwarded-For" in self.request.headers:
-            return self.request.headers["X-Forwarded-For"]
-        return self.request.remote_ip
 
     def get_accept_language(self):
         if "Accept-Language" in self.request.headers:
@@ -410,12 +401,14 @@ class BaseHandler(RequestHandler):
             static_url=self.static_url,
             url_root=self.url_root,
             stylesheets=stylesheets,
+            protocol=self.request.protocol,
             )
 
         mako_template = self.application.lookup.get_template(template_name)
 
         kwargs.update({
                 "url_root": self.url_root,
+                "protocol": self.request.protocol,
                 "static_url": self.static_url,
                 "scripts1": scripts1,
                 "scripts2": scripts2,

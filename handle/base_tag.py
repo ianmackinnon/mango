@@ -38,7 +38,7 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         return tag
 
     def _create_tag(self, id_=None):
-        name, description, public = self._get_arguments()
+        name, description, public = self._get_entity_arguments()
 
         moderation_user = self.current_user
 
@@ -56,9 +56,7 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
         return tag
 
-        
-
-    def _get_arguments(self):
+    def _get_entity_arguments(self):
         is_json = self.content_type("application/json")
         name = self.get_argument("name", json=is_json)
         description = self.get_argument("description", None, json=is_json)

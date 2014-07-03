@@ -97,7 +97,7 @@ user_link = url_rewrite("/user/%s" % (entity.user_id))
       <td class="history-column-user">
         <a href="${user_link}">
 	  <img width="24px" height="24px"
-	       src="http://gravatar.com/avatar/${entity.gravatar_hash}?d=identicon&s=24">
+	       src="${protocol}://gravatar.com/avatar/${entity.gravatar_hash}?d=identicon&s=24">
 	  ${entity.user_name}
         </a>
       </td>

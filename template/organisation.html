@@ -189,7 +189,7 @@ edit = parameters.get("view", None) == "edit"
         ${obj["description"] | n, markdown_safe, convert_links}
         %else:
         <p>There is no description yet for this company.</p>
-        <p>Read <a href="http://www.caat.org.uk/resources/mapping/about-this-map.php">about the map</a> to see why companies are included on the map.</p>
+        <p>Read <a href="${protocol}://www.caat.org.uk/resources/mapping/about-this-map.php">about the map</a> to see why companies are included on the map.</p>
         %endif
       </div>
 

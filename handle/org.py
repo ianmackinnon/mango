@@ -704,7 +704,7 @@ class OrgNoteListHandler(BaseOrgHandler, BaseNoteHandler):
     @authenticated
     def post(self, org_id):
         if not self.moderator:
-            raise HTTPError(403)
+            raise HTTPError(404)
 
         org = self._get_org(org_id)
         note = self._create_note()

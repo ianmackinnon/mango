@@ -11,6 +11,7 @@ from base import BaseHandler, authenticated
 from model import User, Auth, Session
 
 
+
 class AuthRegisterHandler(BaseHandler):
     def get(self):
         self.next = self.url_rewrite("/user/self", parameters={})
@@ -32,7 +33,7 @@ class AuthLoginLocalHandler(BaseHandler):
             raise tornado.web.HTTPError(404, "Not found")
         session = Session(
                 user,
-                self.get_remote_ip(),
+                self.request.remote_ip,
                 self.get_accept_language(),
                 self.get_user_agent(),
                 )
@@ -56,6 +57,7 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
         if self.get_argument("openid.mode", None):
             self.get_authenticated_user(self.async_callback(self._on_auth))
             return
+
         login_args = {
             "next": self.next or self.application.url_root,
             }
@@ -88,7 +90,7 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
 
         session = Session(
                 user,
-                self.get_remote_ip(),
+                self.request.remote_ip,
                 self.get_accept_language(),
                 self.get_user_agent(),
                 )
@@ -116,7 +118,7 @@ class AuthVisitHandler(BaseHandler):
 
         session = Session(
                 user,
-                self.get_remote_ip(),
+                self.request.remote_ip,
                 self.get_accept_language(),
                 self.get_user_agent(),
                 )

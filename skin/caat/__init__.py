@@ -10,14 +10,14 @@ from tornado.template import Loader
 
 re_title = re.compile('(<title>).*?(</title>)', re.IGNORECASE | re.DOTALL)
 
-def caat_fix_links(page):
+def caat_fix_links(page, protocol="http"):
     soup = BeautifulSoup(page, "lxml")
     
     regex = re.compile("^[/]")
     for link in soup.findAll(href=regex):
-        link["href"] = "http://www.caat.org.uk" + link["href"]
+        link["href"] = "%s://www.caat.org.uk%s" % (protocol, link["href"])
     for link in soup.findAll(src=regex):
-        link["src"] = "http://www.caat.org.uk" + link["src"]
+        link["src"] = "%s://www.caat.org.uk%s" % (protocol, link["src"])
         
     text = unicode(soup)
     return text
@@ -28,6 +28,7 @@ def load(**kwargs):
     loader = Loader("skin/caat")
     url_root = kwargs["url_root"]
     static_url = kwargs["static_url"]
+    protocol = kwargs.get("protocol", "http")
 
     head = loader.load("head.html").generate(
         static_url=static_url,
@@ -44,12 +45,12 @@ def load(**kwargs):
         "pagedescription": "Expose and challenge the arms trade on your doorstep with CAAT's map of the arms trade.",
         }
 
-    uri = u"http://www.caat.org.uk/resources/app-skin.php"
+    uri = u"%s://www.caat.org.uk/resources/app-skin.php" % protocol
     uri += "?" + urllib.urlencode(data)
 
     page = urllib.urlopen(uri).read()
 
-    text = caat_fix_links(page)
+    text = caat_fix_links(page, protocol=protocol)
     text = text.replace(u"</head>", u"%s</head>" % head)
     text = text.replace(u'<div id="app"', u'%s<div id="app"' % nav)
 

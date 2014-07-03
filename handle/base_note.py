@@ -26,11 +26,15 @@ class BaseNoteHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                                   note_v_id,
                                   )
 
-    def _create_note(self, id_=None, version=False):
+    def _get_entity_arguments(self):
         is_json = self.content_type("application/json")
-
         text = self.get_argument("text", json=is_json)
         source = self.get_argument("source", json=is_json)
+
+        return text, source
+
+    def _create_note(self, id_=None, version=False):
+        text, source = self._get_entity_arguments()
 
         public, moderation_user = self._create_revision()
 

@@ -30,7 +30,7 @@ class BaseOrgaliasHandler(BaseHandler):
 
         return orgalias
 
-    def _get_arguments(self):
+    def _get_entity_arguments(self):
         is_json = self.content_type("application/json")
         name = self.get_argument("name", json=is_json)
         public = self.get_argument_public("public", json=is_json)
@@ -92,7 +92,7 @@ class OrgaliasHandler(BaseOrgaliasHandler):
             raise HTTPError(404)
 
         orgalias = self._get_orgalias(orgalias_id)
-        name, public = BaseOrgaliasHandler._get_arguments(self)
+        name, public = BaseOrgaliasHandler._get_entity_arguments(self)
 
         if orgalias.name == name and \
                 orgalias.public == public:

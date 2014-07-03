@@ -642,13 +642,8 @@ class EventNoteListHandler(BaseEventHandler, BaseNoteHandler):
             raise HTTPError(403)
 
         event = self._get_event(event_id)
+        note = self._create_note()
 
-        text, source, public = BaseNoteHandler._get_arguments(self)
-        
-        note = Note(text, source,
-                    moderation_user=self.current_user,
-                    public=public,
-                    )
         event.note_list.append(note)
         self.orm_commit()
         return self.redirect_next(event.url)

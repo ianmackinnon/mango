@@ -244,7 +244,7 @@ elif contact["medium"] == "Email":
     contact_url = "mailto:%s" % contact["text"]
 elif contact["medium"] == "Website":
     contact_url = "%s" % contact["text"]
-    if not contact_url.startswith("http://"):
+    if not (contact_url.startswith("http://") or contact_url.startswith("https://")):
         contact_url = "http://%s" % contact["text"]
 elif contact["medium"] == "Twitter":
     contact_url = "https://twitter.com/%s" % contact["text"]
@@ -815,7 +815,7 @@ if user:
       <td class="history-column-user">
         <a href="${user_link}">
 	  <img width="24px" height="24px"
-	       src="http://gravatar.com/avatar/${entity["gravatar_hash"]}?d=identicon&s=24">
+	       src="${protocol}://gravatar.com/avatar/${entity["gravatar_hash"]}?d=identicon&s=24">
 	  ${entity["user_name"]}
         </a>
       </td>

@@ -22,7 +22,7 @@ return u"Users"
        href="${url_rewrite("/user/%d" % user.user_id)}"
        >
       <img width="24px" height="24px"
-	   src="http://gravatar.com/avatar/${hash}?d=identicon&s=24">
+	   src="${protocol}://gravatar.com/avatar/${hash}?d=identicon&s=24">
       ${user.name}
     </a>
     %if user.moderator:
