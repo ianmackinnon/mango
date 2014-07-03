@@ -29,6 +29,7 @@ def load(**kwargs):
     url_root = kwargs["url_root"]
     static_url = kwargs["static_url"]
     protocol = kwargs.get("protocol", "http")
+    offsite = kwargs.get("offsite", None)
 
     head = loader.load("head.html").generate(
         static_url=static_url,
@@ -50,7 +51,9 @@ def load(**kwargs):
 
     page = urllib.urlopen(uri).read()
 
-    text = caat_fix_links(page, protocol=protocol)
+    text = page
+    if offsite:
+        text = caat_fix_links(page, protocol=protocol)
     text = text.replace(u"</head>", u"%s</head>" % head)
     text = text.replace(u'<div id="app"', u'%s<div id="app"' % nav)
 

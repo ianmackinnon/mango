@@ -86,6 +86,7 @@ from model_v import Org_v, Event_v, Address_v, Note_v
 define("port", default=8802, help="Run on the given port", type=int)
 define("root", default='', help="URL root", type=unicode)
 define("skin", default=u"default", help="skin with the given style", type=unicode)
+define("offsite", default=None, help="Correct skin-specific links when offsite.", type=bool)
 define("log", default=None, help="Log directory. Write permission required. Logging is disabled if this option is not set.", type=unicode)
 
 
@@ -492,6 +493,8 @@ class Application(tornado.web.Application):
             sys.stdout.write("Fatal: Skin '%s' not found.\n" % options.skin)
             sys.exit(1)
 
+        self.offsite = options.offsite
+        
         self.lookup = TemplateLookup(
             directories=['template'],
             input_encoding='utf-8',

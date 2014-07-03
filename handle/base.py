@@ -402,6 +402,7 @@ class BaseHandler(RequestHandler):
             url_root=self.url_root,
             stylesheets=stylesheets,
             protocol=self.request.protocol,
+            offsite=self.application.offsite,
             )
 
         mako_template = self.application.lookup.get_template(template_name)
