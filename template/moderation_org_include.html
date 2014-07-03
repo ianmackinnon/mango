@@ -117,7 +117,7 @@ last_tags = tags
       </ul>
       <div class="total">${len(packet["act_exclude_public"])}</div>
     </div>
-    ${self.inclusion_table("act_exclude_public", link="org", hint=False)}
+    ${self.inclusion_table("act_exclude_public", link="org", hint=True)}
   </div>
 
   <div class="mango-box third">
@@ -129,7 +129,7 @@ last_tags = tags
       </ul>
       <div class="total">${len(packet["act_include_private"])}</div>
     </div>
-    ${self.inclusion_table("act_include_private", link="org", hint=False)}
+    ${self.inclusion_table("act_include_private", link="org", hint=True)}
   </div>
 
   <div class="mango-box third">
@@ -141,7 +141,7 @@ last_tags = tags
       </ul>
       <div class="total">${len(packet["act_include_pending"])}</div>
     </div>
-    ${self.inclusion_table("act_include_pending", link="org", hint=False)}
+    ${self.inclusion_table("act_include_pending", link="org", hint=True)}
   </div>
 </div>
 %endif
@@ -159,7 +159,7 @@ last_tags = tags
       </ul>
       <div class="total">${len(packet["desc_public"])}</div>
     </div>
-    ${self.inclusion_table("desc_public", hint=False)}
+    ${self.inclusion_table("desc_public", hint=True)}
   </div>
 
   <div class="mango-box third">
@@ -171,7 +171,7 @@ last_tags = tags
       </ul>
       <div class="total">${len(packet["desc_private"])}</div>
     </div>
-    ${self.inclusion_table("desc_private", hint=False)}
+    ${self.inclusion_table("desc_private", hint=True)}
   </div>
 
   <div class="mango-box third">
@@ -183,7 +183,7 @@ last_tags = tags
       </ul>
       <div class="total">${len(packet["desc_pending"])}</div>
     </div>
-    ${self.inclusion_table("desc_pending", hint=False)}
+    ${self.inclusion_table("desc_pending", hint=True)}
   </div>
 </div>
 %endif
@@ -203,7 +203,7 @@ last_tags = tags
       </ul>
       <div class="total">${len(packet["farn_public"])}</div>
     </div>
-    ${self.inclusion_table("farn_public", hint=False)}
+    ${self.inclusion_table("farn_public", hint=True)}
   </div>
 
   <div class="mango-box third">
@@ -215,7 +215,7 @@ last_tags = tags
       </ul>
       <div class="total">${len(packet["farn_private"])}</div>
     </div>
-    ${self.inclusion_table("farn_private", hint=False)}
+    ${self.inclusion_table("farn_private", hint=True)}
   </div>
 
   <div class="mango-box third">
@@ -227,7 +227,7 @@ last_tags = tags
       </ul>
       <div class="total">${len(packet["farn_pending"])}</div>
     </div>
-    ${self.inclusion_table("farn_pending", hint=False)}
+    ${self.inclusion_table("farn_pending", hint=True)}
   </div>
 </div>
 %endif
@@ -247,7 +247,7 @@ last_tags = tags
       </ul>
       <div class="total">${len(packet["sipri_public"])}</div>
     </div>
-    ${self.inclusion_table("sipri_public", hint=False)}
+    ${self.inclusion_table("sipri_public", hint=True)}
   </div>
 
   <div class="mango-box third">
@@ -259,7 +259,7 @@ last_tags = tags
       </ul>
       <div class="total">${len(packet["sipri_private"])}</div>
     </div>
-    ${self.inclusion_table("sipri_private", hint=False)}
+    ${self.inclusion_table("sipri_private", hint=True)}
   </div>
 
   <div class="mango-box third">
@@ -271,7 +271,7 @@ last_tags = tags
       </ul>
       <div class="total">${len(packet["sipri_pending"])}</div>
     </div>
-    ${self.inclusion_table("sipri_pending", hint=False)}
+    ${self.inclusion_table("sipri_pending", hint=True)}
   </div>
 </div>
 %endif
@@ -291,7 +291,7 @@ last_tags = tags
       </ul>
       <div class="total">${len(packet["note_public"])}</div>
     </div>
-    ${self.inclusion_table("note_public", hint=False)}
+    ${self.inclusion_table("note_public", hint=True)}
   </div>
 
   <div class="mango-box third">
@@ -303,7 +303,7 @@ last_tags = tags
       </ul>
       <div class="total">${len(packet["note_private"])}</div>
     </div>
-    ${self.inclusion_table("note_private", hint=False)}
+    ${self.inclusion_table("note_private", hint=True)}
   </div>
 
   <div class="mango-box third">
@@ -315,7 +315,7 @@ last_tags = tags
       </ul>
       <div class="total">${len(packet["note_pending"])}</div>
     </div>
-    ${self.inclusion_table("note_pending", hint=False)}
+    ${self.inclusion_table("note_pending", hint=True)}
   </div>
 </div>
 %endif
