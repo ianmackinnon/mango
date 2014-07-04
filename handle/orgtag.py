@@ -247,3 +247,43 @@ class OrgtagNoteHandler(BaseOrgtagHandler, BaseNoteHandler):
 
 
 
+class ModerationOrgtagActivityHandler(BaseOrgtagHandler):
+    @authenticated
+    def get(self):
+        if not self.moderator:
+            raise HTTPError(403)
+
+        query = self.orm.query(Orgtag) \
+            .join(org_orgtag, org_orgtag.c.orgtag_id==Orgtag.orgtag_id) \
+            .add_column(func.count(org_orgtag.c.org_id).label("count")) \
+            .filter(Orgtag.path_short.in_([
+                'activity',
+                'activity-exclusion',
+            ])) \
+            .filter(Orgtag.virtual==None) \
+            .group_by(Orgtag.orgtag_id) \
+            .order_by(Orgtag.path_short, Orgtag.name_short)
+
+        orgtag_list = []
+        for orgtag, count in query.all():
+            obj = orgtag.obj(public=True)
+            obj.update({
+                "count": count,
+            })
+            orgtag_list.append(obj)
+        
+        self.render(
+            'moderation_orgtag_activity.html',
+            orgtag_list=orgtag_list,
+            )
+
+
+
+        
+
+        
+
+        
+        
+
+

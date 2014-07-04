@@ -68,7 +68,8 @@ from handle.event import EventHandler, EventNewHandler, \
     EventOrgHandler, EventOrgListHandler, \
     DiaryHandler
 from handle.orgtag import OrgtagHandler, OrgtagListHandler, \
-    OrgtagNewHandler, OrgtagNoteListHandler, OrgtagNoteHandler
+    OrgtagNewHandler, OrgtagNoteListHandler, OrgtagNoteHandler, \
+    ModerationOrgtagActivityHandler
 from handle.eventtag import EventtagHandler, EventtagListHandler, \
     EventtagNewHandler, EventtagNoteListHandler, EventtagNoteHandler
 from handle.contact import ContactHandler, \
@@ -310,11 +311,14 @@ class Application(tornado.web.Application):
             (r"/auth/visit", AuthVisitHandler),
             (r"/auth/logout", AuthLogoutHandler),
             (r"/history", HistoryHandler),
+
             (r"/moderation/queue", ModerationQueueHandler),
             (r"/moderation/organisation-description",
              ModerationOrgDescHandler),
             (r"/moderation/organisation-inclusion",
              ModerationOrgIncludeHandler),
+            (r"/moderation/organisation-tag-activity",
+             ModerationOrgtagActivityHandler),
 
             (r"/user", UserListHandler),
             (r"/user/<id>", UserHandler),

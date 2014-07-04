@@ -1392,3 +1392,43 @@ padding: 10px;
     line-height: 44px;
     text-align: right;
 }
+
+
+
+
+
+#mango table .mango-col-activity-name    {width: 20%;}
+#mango table .mango-col-activity-count   {width: 5%;}
+#mango table .mango-col-activity-desc    {width: 70%;}
+
+#mango table td.numeric,
+#mango table th.numeric {
+    text-align: right;
+}
+
+#mango table.mango-activity {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+#mango table.mango-activity td,
+#mango table.mango-activity th {
+    vertical-align: top;
+    border: 1px solid #eee;
+    padding: 2px;
+    position: relative;
+}
+#mango table.mango-activity textarea {
+    display: inline-block;
+    width: 70%;
+    height: 60px;
+    margin: 1px 0;
+    border: 1px solid #eee;
+}
+#mango table.mango-activity input[type='submit'] {
+    display: inline-block;
+    width: 20%;
+    margin: 1px 0;
+    position: absolute;
+    left: 500px;
+}
+

@@ -706,7 +706,7 @@ if not parameters:
 
 
 
-<%def name="visibility_input(entity=None, default='pending')">
+<%def name="visibility_input(entity=None, default='pending', hidden=False)">
 <%
     if not moderator:
         return ""
@@ -728,17 +728,22 @@ if not parameters:
     selected = {}
     for option in options.keys():
         selected[option] = ""
+    value = default
     if entity:
         if entity.get("public", None) is True:
-            selected["true"] = "selected='selected'"
+            value = "true"
         elif entity.get("public") is False:
-            selected["false"] = "selected='selected'"
+            value = "false"
         else:
-            selected["null"] = "selected='selected'"
+            value = "null"
     else:
-        selected[default] = "selected='selected'"
-%>
+        value = default
+    selected[value] = "selected='selected'"
 
+%>
+    %if hidden:
+    <input name="public" type="hidden" value="${value}">
+    %else:
     <div class="action-bar no-border section">
       <h3>Visibility</h3>
       <select name="public">
@@ -747,6 +752,7 @@ if not parameters:
 	%endfor
       </select>
     </div>
+    %endif
 </%def>
 
 
