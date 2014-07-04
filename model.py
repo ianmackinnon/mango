@@ -1886,24 +1886,14 @@ virtual_orgtag_list = [
             u"market|military-export-applicant-to-%-in-%"),
     ),
     (
-        u"Market | Military export applicant in 2010",
-        Orgtag.name_short.like(
-            u"market|military-export-applicant-to-%-in-2010"),
-    ),
-    (
-        u"Market | Military export applicant in 2011",
-        Orgtag.name_short.like(
-            u"market|military-export-applicant-to-%-in-2011"),
-    ),
-    (
-        u"Market | Military export applicant in 2012",
-        Orgtag.name_short.like(
-            u"market|military-export-applicant-to-%-in-2012"),
-    ),
-    (
         u"Exhibitor | DSEi",
         Orgtag.name_short.like(
             u"exhibitor|dsei-%"),
+    ),
+    (
+        u"Exhibitor | Farnborough",
+        Orgtag.name_short.like(
+            u"exhibitor|farnborough-%"),
     ),
     (
         u"Activity | Military",
