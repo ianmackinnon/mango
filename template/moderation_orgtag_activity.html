@@ -1,0 +1,56 @@
+<%inherit file="base.html"/>
+
+<%def name="title()"><% return u"Activity Tag Descriptions" %></%def>
+
+<%def name="page()">
+
+<h1>Activity Tag Descriptions</h1>
+
+<table class="mango-activity">
+  
+  <col class="mango-col-activity-name">
+  <col class="mango-col-activity-count">
+  <col class="mango-col-activity-desc">
+
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th class="numeric"># Co.</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    %for obj in orgtag_list:
+    <tr>
+      <td><a href="${url_rewrite(obj["url"])}">${obj["base"]}</a></td>
+      <td class="visibility ${self.mini.visibility_public(obj["public"])} numeric">${obj["count"]}</td>
+      <td>
+        %if parameters.get("view", None) == "edit":
+        <form
+           class="mango"
+           action="${url_rewrite(obj["url"])}"
+           method="post"
+           >
+          <input name="_xsrf" type="hidden" value="${xsrf}">
+          <input name="_method" type="hidden" value="put">
+          <input name="next" type="hidden" value="${url_rewrite(uri)}">
+	  <input name="name" type="hidden" value="${obj["name"]}">
+          ${self.mini.visibility_input(obj, hidden=True)}
+          <textarea
+             name="description"
+             >${obj and obj["description"] or ""}</textarea>
+          <input type="submit" value="Submit">
+        </form>
+        %else:
+        ${obj["description"] | n, markdown_safe, convert_links}
+        %endif
+      </td>
+    </tr>
+    %endfor
+  </tbody>
+
+</table>
+
+</%def>
+
