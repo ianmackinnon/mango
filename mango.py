@@ -35,7 +35,9 @@ from handle.auth import AuthRegisterHandler, \
     AuthVisitHandler, \
     AuthLogoutHandler
 from handle.user import UserHandler, UserListHandler
-from handle.home import HomeHandler, HomeOrgListHandler, HomeTargetListHandler, \
+from handle.home import \
+    HomeRedirectHandler, \
+    HomeHandler, HomeOrgListHandler, HomeTargetListHandler, \
     DseiHandler, DseiOrgListHandler, DseiTargetListHandler, \
     FarnboroughHandler, FarnboroughOrgListHandler, FarnboroughTargetListHandler
 from handle.note import NoteHandler, NoteNewHandler, NoteListHandler, \
@@ -287,7 +289,7 @@ class Application(tornado.web.Application):
             return int(text)
 
         self.handlers = [
-            (r"/", HomeHandler),
+            (r"/", HomeRedirectHandler),
             (r"/home", HomeHandler),
             (r"/home-org", HomeOrgListHandler),
             (r"/home-target", HomeTargetListHandler),

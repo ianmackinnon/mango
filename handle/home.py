@@ -9,6 +9,13 @@ from model import Org, Orgtag, org_orgtag
 
 
 
+class HomeRedirectHandler(BaseHandler):
+    def get(self):
+        self.redirect(self.url_root + "farnborough")
+        return
+
+
+
 class HomeHandler(BaseHandler):
     def get(self):
         self.render('home.html')
