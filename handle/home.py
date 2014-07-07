@@ -2,8 +2,10 @@
 
 import json
 
+from sqlalchemy.sql import func
+
 from base import BaseHandler
-from model import Org, Orgtag
+from model import Org, Orgtag, org_orgtag
 
 
 
@@ -13,15 +15,14 @@ class HomeHandler(BaseHandler):
 
 
 
-class CountryTagListHandler(BaseHandler):
-    def get(self):
-        """
-        Returns all possible country tag names.
-        Does not take into account visibility or existance of orgs
-        in those categories.
-        """
+class HomeTargetListHandler(BaseHandler):
+    tag_base = None
 
-        cache_key = "country-tag"
+    def get(self):
+        visibility=self.parameters.get("visibility", None)
+
+        cache_key = "country-tag-%s-%s" % (self.tag_base or "home", visibility)
+
         value = self.cache.get(cache_key)
         if value:
             self.set_header(
@@ -32,28 +33,36 @@ class CountryTagListHandler(BaseHandler):
             self.finish()
             return
 
-        results = self.orm.query(Orgtag) \
-            .filter(Orgtag.base.contains(
-                u"Military export applicant to % in %")
-                    ) \
-            .all()
+        q1 = self.orm.query(Org.org_id.label("org_id"))
+        q1 = self.filter_visibility(
+            q1, Org, visibility)
+        if self.tag_base:
+            q1 = q1 \
+                .join(org_orgtag) \
+                .join(Orgtag) \
+                .filter(Orgtag.base_short==self.tag_base)
+        q1 = q1 \
+            .subquery()
 
-        tag_dict = {}
-        for tag in results:
-            name = tag.name[38:-8]
-            if not name in tag_dict:
-                tag_dict[name] = []
-            tag_dict[name].append(tag.base_short)
+        q2 = self.orm.query(func.substr(Orgtag.base, 30), Orgtag.base_short) \
+            .join(org_orgtag, Orgtag.orgtag_id==org_orgtag.c.orgtag_id) \
+            .join(q1, q1.c.org_id==org_orgtag.c.org_id) \
+            .add_columns(func.count(q1.c.org_id)) \
+            .filter(Orgtag.path_short=="market") \
+            .filter(Orgtag.base_short.startswith("military-export-applicant-to-%")) \
+            .filter(~Orgtag.base_short.startswith("military-export-applicant-to-%-in-____")) \
+            .group_by(Orgtag.orgtag_id) \
+            .order_by(Orgtag.base)
 
-        tag_list = []
-        for key in sorted(tag_dict.keys()):
-            tag_list.append({
-                    "label": key,
-                    "value": ",".join(tag_dict[key])
-                    })
+        results = q2.all()
 
-        self.cache.set(cache_key, json.dumps(tag_list))
-        self.write_json(tag_list)
+        data = {
+            "tagName": self.tag_base,
+            "countries": results
+        }
+
+        self.cache.set(cache_key, json.dumps(data))
+        self.write_json(data)
 
 
 
@@ -98,6 +107,12 @@ class DseiHandler(FairHandler):
 class FarnboroughHandler(FairHandler):
     name = "farnborough"
     tag_name = "farnborough-2014"
+
+class DseiTargetListHandler(HomeTargetListHandler):
+    tag_base = "dsei-2013"
+
+class FarnboroughTargetListHandler(HomeTargetListHandler):
+    tag_base = "farnborough-2014"
 
 
 

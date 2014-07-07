@@ -259,7 +259,7 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         org_packet = {
             "location": location and location.to_obj(),
             }
-        
+
         if page_view == "marker":
             # Just want markers for all matches.
             org_packet["marker_list"] = []

@@ -329,6 +329,16 @@ var m = {
       var $inputValue = $("#mango-dsei-input-country-value");
       var url = m.urlRoot + tagUrl;
       $.getJSON(url, function (data) {
+        var tagName = data.tagName;
+        var countries = data.countries;
+        var data = [];
+        _.each(countries, function (el) {
+          data.push({
+            "value": el[1],
+            "label": el[0],
+            "count": el[2],
+          });
+        });
         var autocomplete = $inputDisplay.autocomplete({
           source: data,
           minLength: 0,
@@ -344,7 +354,7 @@ var m = {
           }
         }).data("ui-autocomplete")._renderItem = function (ul, item) {
           return $("<li>")
-            .append("<a>" + item.label + "</a>")
+            .append("<a>" + item.label + " (" + item.count + ")</a>")
             .appendTo(ul);
         };
         $inputDisplay.focus(function () {
@@ -1005,21 +1015,21 @@ var m = {
 
   route: [
     [/^\/$/, function () {
-      m.initHome("country-tag", "home-org");
+      m.initHome("home-target", "home-org");
       m.initMap(function (mapView) {
         m.initHomeMap(mapView, null);
       });
     }],
 
     [/^\/dsei$/, function () {
-      m.initHome("country-tag", "dsei-org");
+      m.initHome("dsei-target", "dsei-org");
       m.initMap(function (mapView) {
         m.initHomeMap(mapView, "dsei-2013");
       });
     }],
 
     [/^\/farnborough$/, function () {
-      m.initHome("country-tag", "farnborough-org");
+      m.initHome("farnborough-target", "farnborough-org");
       m.initMap(function (mapView) {
         m.initHomeMap(mapView, "farnborough-2014");
       });
