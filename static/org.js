@@ -978,11 +978,7 @@
         "farnborough-2014": {
           role: "Farnborough arms exhibitor",  // 's' appended for plurals
           hashtags: ["FIA2014"]
-        },
-        "dsei-2013": {
-          role: "SEI arms fair exhibitor",  // 's' appended for plurals
-          hashtags: ["stopdsei"]
-        },
+        }
       };
 
       var orgSearchView = this;
@@ -992,13 +988,11 @@
       $paragraph.empty();
 
       var tags = orgSearchView.model.get("tag");
-      console.log(tags);
       if (!tags) {
         return;
       }
 
       var number = Math.max(orgCollection.length, orgCollection.orgLength);
-      console.log(number);
       if (!number) {
         return;
       }
