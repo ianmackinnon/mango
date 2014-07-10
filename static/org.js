@@ -974,22 +974,41 @@
     },
 
     renderSocial: function (orgCollection) {
+      var socialTags = {
+        "farnborough-2014": {
+          role: "Farnborough arms exhibitor",  // 's' appended for plurals
+          hashtags: ["FIA2014"]
+        },
+        "dsei-2013": {
+          role: "SEI arms fair exhibitor",  // 's' appended for plurals
+          hashtags: ["stopdsei"]
+        },
+      };
+
       var orgSearchView = this;
       var $paragraph = orgSearchView.$social.find("p");
       var $anchor = orgSearchView.$social.find("a");
       orgSearchView.$social.hide();
       $paragraph.empty();
-      var number = Math.max(orgCollection.length, orgCollection.orgLength);
-      if (!number) {
-        return;
-      }
+
       var tags = orgSearchView.model.get("tag");
+      console.log(tags);
       if (!tags) {
         return;
       }
-      if ($.inArray("dsei-2013", tags) === -1) {  // IE8 doesn't have Array.indexOf
+
+      var number = Math.max(orgCollection.length, orgCollection.orgLength);
+      console.log(number);
+      if (!number) {
         return;
       }
+
+      var socialTag = _.first(_.intersection(_.keys(socialTags), tags));
+      if (!socialTag) {
+        return;
+      }
+      socialTag = socialTags[socialTag];
+
       var country = false;
       if (orgSearchView.model.get("tagAll")) {
         _.each(tags, function (tag) {
@@ -1014,22 +1033,22 @@
         return;
       }
       var text = "";
-      if (country) {
+      if (country) { 
         if (number === 1) {
-          text = number + " DSEI arms fair exhibitor applied to export military items to " + country + ".";
+          text = number + " " + socialTag.role + " applied to export military items to " + country + ".";
         } else {
-          text = number + " DSEI arms fair exhibitors applied to export military items to " + country + ".";
+          text = number + " " + socialTag.role + "s applied to export military items to " + country + ".";
         }
       } else {
         if (number === 1) {
-          text = number + " DSEI arms fair exhibitor has an address " + location + ".";
+          text = number + " " + socialTag.role + " has an address " + location + ".";
         } else {
-          text = number + " DSEI arms fair exhibitors have addresses " + location + ".";
+          text = number + " " + socialTag.role + "s have addresses " + location + ".";
         }
       }
       var tweetData = {
         url: window.location.href,
-        hashtags: ["stopdsei"],
+        hashtags: socialTag.hashtags,
         text: text
       };
       var twitterUrl = "https://twitter.com/intent/tweet?" + $.param(tweetData);
