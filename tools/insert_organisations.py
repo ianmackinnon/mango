@@ -152,6 +152,8 @@ def get_candidates(es, text):
 
 
 def search_org(es, text_orig, just_search=False):
+    """Returns False to skip"""
+
     org_id = None
     text_search = text_orig
 
@@ -170,13 +172,19 @@ def search_org(es, text_orig, just_search=False):
                 sys.stderr.write((u"        \033[94m%s\033[0m\n" % name).encode("utf-8"))
         sys.stderr.write("\n")
         sys.stderr.write(" Empty: None of the above\n")
-        sys.stderr.write("  Text: Alternative search\n\n: ")
+        sys.stderr.write("  Text: Alternative search\n: ")
+        sys.stderr.write("   '-': Skip\n\n: ")
         if just_search:
             return
 
         choice = raw_input()
+        choice = choice.strip()
         if not len(choice):
             org_id = None
+            break
+        sys.stderr.write("\n")
+        if choice == "-":
+            org_id = False
             break
         sys.stderr.write("\n")
         try:
@@ -197,6 +205,8 @@ def search_org(es, text_orig, just_search=False):
 
 
 def select_org(orm, name, user, search=True):
+    """Returns False to skip"""
+
     name = sanitise_name(name)
 
     org = get_org(orm, name)
@@ -210,7 +220,7 @@ def select_org(orm, name, user, search=True):
     org_id = search_org(es, name)
 
     if not org_id:
-        return
+        return org_id
 
     try:
         org = orm.query(Org).filter_by(org_id=org_id).one()
@@ -224,7 +234,7 @@ def select_org(orm, name, user, search=True):
 
 
 
-def insert_fast(data, orm, public=None, tag_names=None, dry_run=None, address_exclusive=None, search=True):
+def insert_fast(data, orm, public=None, tag_names=None, dry_run=None, address_exclusive=None, search=True, org_id_whitelist=None):
     user = orm.query(User).filter_by(user_id=-1).one()
     tag_names = tag_names or []
     names = None
@@ -242,6 +252,11 @@ def insert_fast(data, orm, public=None, tag_names=None, dry_run=None, address_ex
         has_address = None
         log.info(("\n%s\n" % chunk["name"]).encode("utf-8"))
         org = select_org(orm, chunk["name"], user, search)
+
+        if org is False or (org_id_whitelist and ((not org) or (org.org_id not in org_id_whitelist))):
+            log.info("Skipping org: %s", org and org.org_id)
+            orm.rollback()
+            continue
 
         if not org:
             log.warning((u"\nCreating org %s\n" % chunk["name"]).encode("utf-8"))
@@ -333,6 +348,10 @@ if __name__ == "__main__":
                       dest="address_exclusive",
                       help="Only import addresses if org has no existing address.",
                       default=None)
+    parser.add_option("-L", "--limit-org", action="store",
+                      dest="limit_org",
+                      help="Only apply changes to orgs whose IDs are supplied (a comma separated string)",
+                      default=None)
     parser.add_option("-n", "--dry-run", action="store_true", dest="dry_run",
                       help="Dry run.", default=None)
 
@@ -365,6 +384,12 @@ if __name__ == "__main__":
             search_org(es, arg, just_search=True)
         sys.exit(0)
 
+    org_id_whitelist = None
+    if options.limit_org:
+        org_id_whitelist = []
+        for id_ in options.limit_org.split(","):
+            org_id_whitelist.append(int(id_))
+
     for arg in args:
         try:
             data = json.load(codecs.open(arg, "r", "utf8"))
@@ -372,5 +397,5 @@ if __name__ == "__main__":
             log.error("%s: Could not decode JSON data.", arg)
             continue
 
-        insert_fast(data, orm, options.public, options.tag, options.dry_run, options.address_exclusive, (not options.no_search))
+        insert_fast(data, orm, options.public, options.tag, options.dry_run, options.address_exclusive, (not options.no_search), org_id_whitelist)
 
