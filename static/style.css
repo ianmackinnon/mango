@@ -1397,9 +1397,19 @@ padding: 10px;
 
 
 
-#mango table .mango-col-activity-name    {width: 20%;}
-#mango table .mango-col-activity-count   {width: 5%;}
-#mango table .mango-col-activity-desc    {width: 70%;}
+#mango table.mango-activity {
+    margin: auto;
+}
+#mango table.mango-activity.wide {
+}
+#mango table.mango-activity.wide.edit {
+}
+
+#mango table .mango-col-activity-name    {width: 104px;}
+#mango table .mango-col-activity-visibility    {width: 73px;}
+#mango table .mango-col-activity-count   {width: 73px;}
+#mango table .mango-col-activity-desc    {width: 359px;}
+#mango table.mango-activity.wide.edit .mango-col-activity-desc    {width: 459px;}
 
 #mango table td.numeric,
 #mango table th.numeric {
@@ -1414,9 +1424,16 @@ padding: 10px;
 #mango table.mango-activity th {
     vertical-align: top;
     border: 1px solid #eee;
-    padding: 2px;
+    padding: 10px;
     position: relative;
 }
+#mango table.mango-activity td > p:first-child,
+#mango table.mango-activity td > p:last-child {
+    margin-left: 0; 
+    margin-right: 0; 
+}
+#mango table.mango-activity td > p:first-child { margin-top: 0; }
+#mango table.mango-activity td > p:last-child { margin-bottom: 0; }
 #mango table.mango-activity textarea {
     display: inline-block;
     width: 70%;
@@ -1424,11 +1441,16 @@ padding: 10px;
     margin: 1px 0;
     border: 1px solid #eee;
 }
+
+#mango table.mango-activity.edit td.mango-cell-activity-desc {
+    padding: 6px;
+}
+
 #mango table.mango-activity input[type='submit'] {
     display: inline-block;
     width: 20%;
     margin: 1px 0;
     position: absolute;
-    left: 500px;
+    left: 350px;
 }
 

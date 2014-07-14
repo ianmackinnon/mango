@@ -247,25 +247,30 @@ class OrgtagNoteHandler(BaseOrgtagHandler, BaseNoteHandler):
 
 
 
-class ModerationOrgtagActivityHandler(BaseOrgtagHandler):
-    @authenticated
+class OrgtagActivityHandler(BaseOrgtagHandler):
     def get(self):
-        if not self.moderator:
-            raise HTTPError(403)
+        path_list = ['activity', 'activity-exclusion']
 
-        query = self.orm.query(Orgtag) \
-            .join(org_orgtag, org_orgtag.c.orgtag_id==Orgtag.orgtag_id) \
-            .add_column(func.count(org_orgtag.c.org_id).label("count")) \
-            .filter(Orgtag.path_short.in_([
-                'activity',
-                'activity-exclusion',
-            ])) \
+        visibility = self.parameters.get("visibility", None)
+
+        q1 = self.orm.query(org_orgtag.c.orgtag_id) \
+            .join(Org, org_orgtag.c.org_id==Org.org_id) \
+            .add_column(Org.org_id)
+        q1 = self.filter_visibility(q1, Org, visibility=visibility)
+        s1 = q1.subquery()
+
+        q2 = self.orm.query(Orgtag) \
+             .outerjoin(s1, Orgtag.orgtag_id==s1.c.orgtag_id) \
+             .add_column(func.count(s1.c.org_id).label("count"))
+        q2 = self.filter_visibility(q2, Orgtag, visibility='all')
+        q2 = q2 \
+            .filter(Orgtag.path_short.in_(path_list)) \
             .filter(Orgtag.virtual==None) \
             .group_by(Orgtag.orgtag_id) \
             .order_by(Orgtag.path_short, Orgtag.name_short)
 
-        orgtag_list = []
-        for orgtag, count in query.all():
+        orgtag_list=[]
+        for orgtag, count in q2.all():
             obj = orgtag.obj(public=True)
             obj.update({
                 "count": count,
@@ -277,6 +282,14 @@ class ModerationOrgtagActivityHandler(BaseOrgtagHandler):
             orgtag_list=orgtag_list,
             )
 
+
+
+class ModerationOrgtagActivityHandler(OrgtagActivityHandler):
+    @authenticated
+    def get(self):
+        if not self.moderator:
+            raise HTTPError(404)
+        return OrgtagActivityHandler.get(self)
 
 
         

@@ -70,6 +70,7 @@ from handle.event import EventHandler, EventNewHandler, \
     DiaryHandler
 from handle.orgtag import OrgtagHandler, OrgtagListHandler, \
     OrgtagNewHandler, OrgtagNoteListHandler, OrgtagNoteHandler, \
+    OrgtagActivityHandler, \
     ModerationOrgtagActivityHandler
 from handle.eventtag import EventtagHandler, EventtagListHandler, \
     EventtagNewHandler, EventtagNoteListHandler, EventtagNoteHandler
@@ -299,6 +300,7 @@ class Application(tornado.web.Application):
             (r"/farnborough", FarnboroughHandler),
             (r"/farnborough-org", FarnboroughOrgListHandler),
             (r"/farnborough-target", FarnboroughTargetListHandler),
+            (r"/activity-tags", OrgtagActivityHandler),
 
             (r'/static/image/map/marker/(.*)',
              GenerateMarkerHandler, {'path': "static/image/map/marker"}),

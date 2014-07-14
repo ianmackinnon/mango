@@ -6,16 +6,22 @@
 
 <h1>Activity Tag Descriptions</h1>
 
-<table class="mango-activity">
+<table class="mango-activity${' wide' if moderator else ''}${' edit' if moderator and (parameters.get("view", None) == "edit") else ''}">
   
   <col class="mango-col-activity-name">
+  %if moderator:
+  <col class="mango-col-activity-visibility">
+  %endif
   <col class="mango-col-activity-count">
   <col class="mango-col-activity-desc">
 
   <thead>
     <tr>
       <th>Name</th>
-      <th class="numeric"># Co.</th>
+      %if moderator:
+      <th>Visibility</th>
+      %endif
+      <th class="numeric">Companies</th>
       <th>Description</th>
     </tr>
   </thead>
@@ -24,8 +30,11 @@
     %for obj in orgtag_list:
     <tr>
       <td><a href="${url_rewrite(obj["url"])}">${obj["base"]}</a></td>
-      <td class="visibility ${self.mini.visibility_public(obj["public"])} numeric">${obj["count"]}</td>
-      <td>
+      %if moderator:
+      <td class="visibility ${self.mini.visibility_public(obj["public"])}">${"Public" if obj["public"] else "Pending" if obj["public"] is None else "Private"}</td>
+      %endif
+      <th class="numeric"><a href="${url_rewrite('/organisation', {'tag':obj['base_short']})}">${obj["count"]}</a></th>
+      <td class="mango-cell-activity-desc">
         %if parameters.get("view", None) == "edit":
         <form
            class="mango"
@@ -43,7 +52,7 @@
           <input type="submit" value="Submit">
         </form>
         %else:
-        ${obj["description"] | n, markdown_safe, convert_links}
+        ${obj["description"] or "" | n, markdown_safe, convert_links}
         %endif
       </td>
     </tr>
