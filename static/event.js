@@ -487,10 +487,10 @@
       var searchData = this.attributesFromQueryString(searchString);
       var queryData = this.attributesFromQueryString(queryString);
       searchString = this.toQueryString(
-        _.extend(this.defaultParameters(), searchData)
+        _.extend(_.clone(this.defaultParameters()), searchData)
       );
       queryString = this.toQueryString(
-        _.extend(this.defaultParameters(), queryData)
+        _.extend(_.clone(this.defaultParameters()), queryData)
       );
 
       if (searchString === queryString) {
