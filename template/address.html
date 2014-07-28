@@ -66,9 +66,9 @@ return "New Address"
 
 <%
 action = (entity and not obj) and "%s/address" % entity["url"] or obj["url"]
-next = None
+next_ = None
 if entity:
-    next = entity["url"]
+    next_ = entity["url"]
 %>
 
     <form
@@ -80,8 +80,8 @@ if entity:
       %if obj:
       <input name="_method" type="hidden" value="put">
       %endif
-      %if next:
-      <input name="next" type="hidden" value="${url_rewrite(next, parameters={})}">
+      %if next_:
+      <input name="next" type="hidden" value="${url_rewrite(next_, parameters={})}">
       %endif
       <label name="postal"
              status="${obj and obj.get("postal", "") and 'good' or 'bad'}"

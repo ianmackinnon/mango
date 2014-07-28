@@ -14,16 +14,19 @@ from model import User, Auth, Session
 
 class AuthRegisterHandler(BaseHandler):
     def get(self):
-        self.next = self.url_rewrite("/user/self", parameters={})
+        self.next_ = self.url_rewrite("/user/self", parameters={})
         self.render(
             'register.html',
-            next=self.next,
+            next_=self.next_,
             )
 
 
 
 class AuthLoginLocalHandler(BaseHandler):
     def get(self):
+        if not self.application.local_auth:
+            print u"Local authentication is not enabled."
+            raise tornado.web.HTTPError(404, "Not found")
         if not self.is_local():
             raise tornado.web.HTTPError(404, "Not found")
         user_id = self.get_argument_int("user", -1)
@@ -59,7 +62,7 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
             return
 
         login_args = {
-            "next": self.next or self.application.url_root,
+            "next": self.next_ or self.application.url_root,
             }
         login_url = self.get_login_url() + "?" + urlencode(login_args)
         self.authenticate_redirect(login_url)
@@ -83,7 +86,7 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
             user = User(auth, user_name, moderator=False)
             self.orm.add(user)
             self.orm.commit()
-            self.next = "/user/%d" % user.user_id
+            self.next_ = "/user/%d" % user.user_id
 
         if user and user.locked:
             raise HTTPError(400, "Account locked.")
@@ -114,7 +117,7 @@ class AuthVisitHandler(BaseHandler):
         self.orm.commit()
         user.name = "Anonymous %d" % user.user_id
         self.orm.commit()
-        self.next = "/user/%d" % user.user_id
+        self.next_ = "/user/%d" % user.user_id
 
         session = Session(
                 user,
@@ -150,8 +153,8 @@ class AuthLogoutHandler(BaseHandler):
             session.close_commit()
         self.end_session()
         self.clear_cookie("_xsrf")
-        if self.next and self.path_is_authenticated(self.next):
-            self.next = self.url_root
+        if self.next_ and self.path_is_authenticated(self.next_):
+            self.next_ = self.url_root
         return self.redirect_next()
 
 

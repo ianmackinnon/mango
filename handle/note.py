@@ -63,7 +63,7 @@ class NoteNewHandler(BaseNoteHandler):
             raise HTTPError(403)
 
         if self.parameters.get("view", None) != "edit":
-            self.next = "/note"
+            self.next_ = "/note"
             self.redirect_next()
             return
 
@@ -114,7 +114,7 @@ class NoteHandler(BaseNoteHandler, MangoEntityHandlerMixin):
         note = self._get_note(note_id, required=required)
 
         if not note:
-            self.next = "%s/revision" % note_v.url
+            self.next_ = "%s/revision" % note_v.url
             return self.redirect_next()
 
         if self.deep_visible():
@@ -253,7 +253,7 @@ class NoteRevisionHandler(BaseNoteHandler):
 
         if self.moderator:
             if note and note.a_time == note_v.a_time:
-                self.next = note.url
+                self.next_ = note.url
                 return self.redirect_next()
         else:
             if not ((note_v.moderation_user == self.current_user) or \
@@ -271,7 +271,7 @@ class NoteRevisionHandler(BaseNoteHandler):
             if note and newest_note_v.a_time < note.a_time:
                 raise HTTPError(404)
             if newest_note_v == note_v:
-                self.next = note_v.url
+                self.next_ = note_v.url
                 return self.redirect_next()
             note = newest_note_v
 

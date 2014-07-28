@@ -357,16 +357,15 @@ if __name__ == "__main__":
 
     (options, args) = parser.parse_args()
 
-    if len(args) == 0:
-        parser.print_usage()
-        sys.exit(1)
-
-    verbosity = max(0, min(3, 1 + options.verbose - options.quiet))
-
-    log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[max(0, min(3, 1 + options.verbose - options.quiet))]
+    log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[
+        max(0, min(3, 1 + options.verbose - options.quiet))]
 
     log.setLevel(log_level)
     log_search.setLevel(log_level)
+
+    if len(args) == 0:
+        parser.print_usage()
+        sys.exit(1)
 
     connection_url = connection_url_app()
     engine = create_engine(connection_url,)

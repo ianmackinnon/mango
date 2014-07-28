@@ -85,7 +85,7 @@ class OrgtagNewHandler(BaseOrgtagHandler):
             raise HTTPError(403)
 
         if self.parameters.get("view", None) != "edit":
-            self.next = "/orgtag"
+            self.next_ = "/orgtag"
             self.redirect_next()
             return
 
@@ -212,7 +212,7 @@ class OrgtagNoteListHandler(BaseOrgtagHandler, BaseNoteHandler):
         obj = orgtag.obj(
             public=self.moderator,
             )
-        self.next = orgtag.url
+        self.next_ = orgtag.url
         self.render(
             'note.html',
             entity=obj

@@ -153,7 +153,7 @@ class EventNewHandler(BaseOrgHandler):
     @authenticated
     def get(self):
         if self.parameters.get("view", None) != "edit":
-            self.next = "/event"
+            self.next_ = "/event"
             self.redirect_next()
             return
 
@@ -202,7 +202,7 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
         event = self._get_event(event_id, required=required)
 
         if self.moderator and not event:
-            self.next = "%s/revision" % event_v.url
+            self.next_ = "%s/revision" % event_v.url
             return self.redirect_next()
 
         if event:
@@ -382,7 +382,7 @@ class EventRevisionHandler(BaseEventHandler):
 
         if self.moderator:
             if event and event.a_time == event_v.a_time:
-                self.next = event.url
+                self.next_ = event.url
                 return self.redirect_next()
         else:
             if not ((event_v.moderation_user == self.current_user) or \
@@ -400,7 +400,7 @@ class EventRevisionHandler(BaseEventHandler):
             if event and newest_event_v.a_time < event.a_time:
                 raise HTTPError(404)
             if newest_event_v == event_v:
-                self.next = event_v.url
+                self.next_ = event_v.url
                 return self.redirect_next()
             event = newest_event_v
 
@@ -657,7 +657,7 @@ class EventNoteListHandler(BaseEventHandler, BaseNoteHandler):
         obj = event.obj(
             public=self.moderator,
             )
-        self.next = event.url
+        self.next_ = event.url
         self.render(
             'note.html',
             entity=obj,
@@ -862,7 +862,7 @@ class EventOrgListHandler(BaseEventHandler, BaseOrgHandler):
                         ),
                     ))
 
-        self.next = event.url
+        self.next_ = event.url
         self.render(
             'event_organisation.html',
             obj=obj,

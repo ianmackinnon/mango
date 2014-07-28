@@ -141,7 +141,7 @@ class OrgNewHandler(BaseOrgHandler):
     @authenticated
     def get(self):
         if self.parameters.get("view", None) != "edit":
-            self.next = "/organisation"
+            self.next_ = "/organisation"
             self.redirect_next()
             return
 
@@ -263,7 +263,7 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
         org = self._get_org(org_id, required=required)
 
         if self.moderator and not org:
-            self.next = "%s/revision" % org_v.url
+            self.next_ = "%s/revision" % org_v.url
             return self.redirect_next()
 
         if org:
@@ -448,7 +448,7 @@ class OrgRevisionHandler(BaseOrgHandler):
 
         if self.moderator:
             if org and org.a_time == org_v.a_time:
-                self.next = org.url
+                self.next_ = org.url
                 return self.redirect_next()
         else:
             if not ((org_v.moderation_user == self.current_user) or \
@@ -466,7 +466,7 @@ class OrgRevisionHandler(BaseOrgHandler):
             if org and newest_org_v.a_time < org.a_time:
                 raise HTTPError(404)
             if newest_org_v == org_v:
-                self.next = org_v.url
+                self.next_ = org_v.url
                 return self.redirect_next()
             org = newest_org_v
 
@@ -722,7 +722,7 @@ class OrgNoteListHandler(BaseOrgHandler, BaseNoteHandler):
         obj = org.obj(
             public=self.moderator,
             )
-        self.next = org.url
+        self.next_ = org.url
         self.render(
             'note.html',
             entity=obj
@@ -892,7 +892,7 @@ class OrgOrgaliasListHandler(BaseOrgHandler, BaseOrgtagHandler):
         org = self._get_org(org_id)
 
         if self.parameters.get("view", None) != "edit":
-            self.next = org.url
+            self.next_ = org.url
             self.redirect_next()
 
         if self.deep_visible():
@@ -984,7 +984,7 @@ class OrgEventListHandler(BaseOrgHandler, BaseEventHandler):
                     public=public,
                     ))
 
-        self.next = org.url
+        self.next_ = org.url
         self.render(
             'organisation_event.html',
             obj=obj,

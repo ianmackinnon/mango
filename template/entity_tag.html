@@ -40,7 +40,7 @@ group_key = group_tag_list and group_tag_list[0]["path"]
   %for tag in path_dict[key]:
   ${self.mini.tag_li(tag, entity=False, note=False,
   link_url="%s/tag/%s" % (obj["url"], tag["id"]),
-  unlink=True, next=uri,
+  unlink=True, next_=uri,
   visibility=True, parameters=parameters)}
   %endfor
 </ul>
@@ -155,7 +155,7 @@ group_key = group_tag_list and group_tag_list[0]["path"]
     %if tag["id"] not in tag_id_list:
     ${self.mini.tag_li(tag, entity=True, note=False, path=path,
       link_url="%s/tag/%s" % (obj["url"], tag["id"]),
-      link=True, next=uri,
+      link=True, next_=uri,
       visibility=True, parameters=parameters)}
     %endif
     %endfor

@@ -175,7 +175,7 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
         address = self._get_address(address_id, required=required)
 
         if self.moderator and not address:
-            self.next = "%s/revision" % address_v.url
+            self.next_ = "%s/revision" % address_v.url
             return self.redirect_next()
 
         if address:
@@ -349,7 +349,7 @@ class AddressRevisionHandler(BaseAddressHandler):
 
         if self.moderator:
             if address and address.a_time == address_v.a_time:
-                self.next = address.url
+                self.next_ = address.url
                 return self.redirect_next()
         else:
             if not ((address_v.moderation_user == self.current_user) or \
@@ -367,7 +367,7 @@ class AddressRevisionHandler(BaseAddressHandler):
             if address and newest_address_v.a_time < address.a_time:
                 raise HTTPError(404)
             if newest_address_v == address_v:
-                self.next = address_v.url
+                self.next_ = address_v.url
                 return self.redirect_next()
             address = newest_address_v
 

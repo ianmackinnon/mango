@@ -163,7 +163,7 @@ class BaseHandler(RequestHandler):
         self.url_root = self.request.headers.get(u"X-Forwarded-Root", "/")
         self.has_javascript = bool(self.get_cookie("j"))
         self.set_parameters()
-        self.next = self.get_argument("next", None)
+        self.next_ = self.get_argument("next", None)
 
     def prepare(self):
         self.start = time.time()
@@ -270,7 +270,6 @@ class BaseHandler(RequestHandler):
         return False
 
     def is_local(self):
-        raise NotImplementedError
         return self.request.remote_ip == "127.0.0.1"
 
     def get_accept_language(self):
@@ -360,20 +359,20 @@ class BaseHandler(RequestHandler):
 
     def redirect_next(self, default_url=None):
         """
-        Redirects to self.next if supplied, else the default url, else '/'.
+        Redirects to self.next_ if supplied, else the default url, else '/'.
 
         Does not terminate handle execution, so usual syntax should be:
 
             return self.redirect_next()
 
-        self.next:
+        self.next_:
             *should* include url_root when used on pages
             *shouldn't* include url_root when used in handlers
             *should* include important query options everywhere
             *shouln't* include duplicate parameters anywhere
         """
         self.redirect(self.url_rewrite(
-                self.next or default_url or '/'
+                self.next_ or default_url or '/'
                 ))
 
     def static_url(self, path, include_host=None):
@@ -418,8 +417,7 @@ class BaseHandler(RequestHandler):
                 "footer": components["footer"],
 
                 "geo_in": self.geo_in,
-                "next": self.next,
-                "next_": self.next,
+                "next_": self.next_,
                 "messages": self.messages,
                 "newline": newline,
                 "newline_comma": newline_comma,

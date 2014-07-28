@@ -54,7 +54,7 @@ class OrgaliasHandler(BaseOrgaliasHandler):
         orgalias = self._get_orgalias(orgalias_id, options)
 
         if self.parameters.get("view", None) != "edit":
-            self.next = orgalias.org.url
+            self.next_ = orgalias.org.url
             self.redirect_next()
             return
 

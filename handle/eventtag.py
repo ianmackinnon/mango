@@ -85,7 +85,7 @@ class EventtagNewHandler(BaseEventtagHandler):
             raise HTTPError(403)
 
         if self.parameters.get("view", None) != "edit":
-            self.next = "/eventtag"
+            self.next_ = "/eventtag"
             self.redirect_next()
             return
 
@@ -212,7 +212,7 @@ class EventtagNoteListHandler(BaseEventtagHandler, BaseNoteHandler):
         obj = eventtag.obj(
             public=self.moderator,
             )
-        self.next = eventtag.url
+        self.next_ = eventtag.url
         self.render(
             'note.html',
             entity=obj

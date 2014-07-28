@@ -13,6 +13,7 @@ from sqlalchemy import create_engine
 
 import mysql.mysql_init
 
+from model import connection_url_admin
 from model import Auth, User, Session
 
 
@@ -34,11 +35,6 @@ Set moderator status of user, creating user if they don't already exist.
                       help="Print verbose information for debugging.", default=0)
     parser.add_option("-q", "--quiet", action="count", dest="quiet",
                       help="Suppress warnings.", default=0)
-    parser.add_option("-d", "--database", action="store", dest="database",
-                      help="sqlite or mysql.", default="sqlite")
-    parser.add_option("-c", "--configuration", action="store",
-                      dest="configuration", help=".conf file.",
-                      default=".mango.conf")
     parser.add_option("-m", "--moderator", action="store", dest="moderator",
                       help="0 or 1.", default=None)
     parser.add_option("-l", "--lock", action="store", dest="lock",
@@ -46,11 +42,15 @@ Set moderator status of user, creating user if they don't already exist.
 
     (options, args) = parser.parse_args()
 
+    log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[
+        max(0, min(3, 1 + options.verbose - options.quiet))]
+
+    log.setLevel(log_level)
+
     if not len(args) == 2:
         parser.print_usage()
         sys.exit(1)
 
-    verbosity = max(0, min(3, 1 + options.verbose - options.quiet))
 
     if options.moderator is not None:
         if options.moderator not in ["0", "1"]:
@@ -62,17 +62,8 @@ Set moderator status of user, creating user if they don't already exist.
             raise Exception("lock must be 0 or 1")
         options.lock = bool(int(options.lock))
 
-    if options.database == "mysql":
-        (database,
-         app_username, app_password,
-         admin_username, admin_password) = mysql.mysql_init.get_conf(
-            options.configuration)
-        connection_url = 'mysql://%s:%s@localhost/%s?charset=utf8' % (
-            admin_username, admin_password, database)
-    else:
-        connection_url = 'sqlite:///mango.db'
-
-    engine = create_engine(connection_url)
+    connection_url = connection_url_admin()
+    engine = create_engine(connection_url,)
     Session = sessionmaker(bind=engine, autocommit=False)
     orm = Session()
 

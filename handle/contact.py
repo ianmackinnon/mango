@@ -184,7 +184,7 @@ class ContactHandler(BaseContactHandler, MangoEntityHandlerMixin):
         contact = self._get_contact(contact_id, required=required)
 
         if self.moderator and not contact:
-            self.next = "%s/revision" % contact_v.url
+            self.next_ = "%s/revision" % contact_v.url
             return self.redirect_next()
 
         if contact:
@@ -345,7 +345,7 @@ class ContactRevisionHandler(BaseContactHandler):
 
         if self.moderator:
             if contact and contact.a_time == contact_v.a_time:
-                self.next = contact.url
+                self.next_ = contact.url
                 return self.redirect_next()
         else:
             if not ((contact_v.moderation_user == self.current_user) or \
@@ -363,7 +363,7 @@ class ContactRevisionHandler(BaseContactHandler):
             if contact and newest_contact_v.a_time < contact.a_time:
                 raise HTTPError(404)
             if newest_contact_v == contact_v:
-                self.next = contact_v.url
+                self.next_ = contact_v.url
                 return self.redirect_next()
             contact = newest_contact_v
 
