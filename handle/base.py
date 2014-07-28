@@ -25,6 +25,8 @@ import geo
 
 from model import Session, Address, User
 
+from base_moderation import has_pending
+
 
 
 md_safe = markdown.Markdown(
@@ -441,6 +443,11 @@ class BaseHandler(RequestHandler):
                 "parameters": self.parameters,
                 "parameters_json": json.dumps(self.parameters),
                 })
+
+        if self.moderator:
+            kwargs.update({
+                "has_queue": has_pending(self.orm)
+            })
 
         try:
             self.write(mako_template.render(**kwargs))

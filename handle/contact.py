@@ -18,7 +18,8 @@ from model import User, Medium, Contact, Org, Event, \
     org_contact, event_contact, detach
 
 from model_v import Contact_v, \
-    accept_contact_org_v, accept_contact_event_v
+    org_contact_v, event_contact_v, \
+    mango_suggestion_append_approved, mango_suggestion_append_suggestion
 
 from handle.user import get_user_pending_contact_event, get_user_pending_contact_org
 
@@ -200,25 +201,21 @@ class ContactHandler(BaseContactHandler, MangoEntityHandlerMixin):
 
         if self.contributor:
             contact_id = contact and contact.contact_id or contact_v.contact_id
-            for org_v in get_user_pending_contact_org(
-                self.orm, self.current_user, contact_id):
-                
-                for i, org in enumerate(org_list):
-                    if org.org_id == org_v.org_id:
-                        org_list[i] = org_v
-                        break
-                else:
-                    org_list.append(org_v)
 
-            for event_v in get_user_pending_contact_event(
-                self.orm, self.current_user, contact_id):
-                
-                for i, event in enumerate(event_list):
-                    if event.event_id == event_v.event_id:
-                        event_list[i] = event_v
-                        break
-                else:
-                    event_list.append(event_v)
+            if contact_v:
+                mango_suggestion_append_approved(
+                    self.orm, org_list, Org, org_contact_v,
+                    contact_id, "contact_id", "org_id")
+                mango_suggestion_append_approved(
+                    self.orm, event_list, Event, event_contact_v,
+                    contact_id, "contact_id", "event_id")
+
+            mango_suggestion_append_suggestion(
+                self.orm, org_list, get_user_pending_contact_org,
+                self.current_user, contact_id, "org_id")
+            mango_suggestion_append_suggestion(
+                self.orm, event_list, get_user_pending_contact_event,
+                self.current_user, contact_id, "event_id")
 
         org_list = [org.obj(public=public) for org in org_list]
         event_list = [event.obj(public=public) for event in event_list]

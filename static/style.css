@@ -291,6 +291,11 @@ form.mango input[disabled="disabled"]
     background: #eee;
 }
 
+#nav-moderator a.attention
+{
+    background: #D3DEF1;
+}
+
 
 
 /* Forms */

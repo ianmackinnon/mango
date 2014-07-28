@@ -11,6 +11,7 @@ from sqlalchemy import Unicode as UnicodeOrig, String as StringOrig
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.mysql import LONGTEXT, DOUBLE
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.sql.expression import exists
 
 import geo
 
@@ -32,6 +33,30 @@ def use_mysql():
     Float = lambda : DOUBLE()
     String = lambda : LONGTEXT(charset="latin1", collation="latin1_swedish_ci")
     Unicode = lambda : LONGTEXT(charset="utf8", collation="utf8_general_ci")
+
+
+
+def mango_suggestion_append_approved(orm, source_list, Target, link_v, source_id, source_id_name, target_id_name):
+    # To do: Prevent this from showing deleted, pending and private entities that have been added to a pending entity.
+
+    query = orm.query(Target) \
+        .filter(exists().where(and_(
+            getattr(link_v.c, source_id_name) == source_id,
+            getattr(link_v.c, target_id_name) == getattr(Target, target_id_name)
+        )))
+    for item in query.all():
+        source_list.append(item)
+
+
+def mango_suggestion_append_suggestion(orm, source_list, get_pending, user, source_id, target_id_name):
+    for entity_v in get_pending(orm, user, source_id):
+        for i, entity in enumerate(source_list):
+            if getattr(entity, target_id_name) == getattr(entity_v, target_id_name):
+                source_list[i] = entity_v
+                break
+        else:
+            source_list.append(entity_v)
+    
 
 
 
@@ -382,6 +407,7 @@ class Org_v(Base, MangoEntity):
 
     name = Column(Unicode(), nullable=False)
     description = Column(Unicode())
+    end_date = Column(Date)
 
     moderation_user_id = Column(Integer, ForeignKey(User.user_id))
     a_time = Column(Float(), nullable=False)
@@ -392,6 +418,7 @@ class Org_v(Base, MangoEntity):
     content = [
         "name",
         "description",
+        "end_date",
         ]
 
     @classproperty
@@ -406,7 +433,7 @@ class Org_v(Base, MangoEntity):
     
     def __init__(self,
                  org_id,
-                 name, description=None,
+                 name, description=None, end_date=None,
                  moderation_user=None, public=None):
 
         #
@@ -417,6 +444,7 @@ class Org_v(Base, MangoEntity):
         self.name = sanitise_name(name)
 
         self.description = description
+        self.end_date = end_date
 
         self.moderation_user = moderation_user
         self.a_time = 0
@@ -715,6 +743,7 @@ class Contact_v(Base, MangoEntity):
     medium = relationship(Medium)
 
     content = [
+        "medium_id",
         "text",
         "description",
         "source",

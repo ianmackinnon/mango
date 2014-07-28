@@ -5,7 +5,7 @@ from collections import OrderedDict
 
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
-from sqlalchemy.sql.expression import exists, literal_column, or_, and_
+from sqlalchemy.sql.expression import literal_column, or_, and_
 from tornado.web import HTTPError
 
 from base import authenticated, sha1_concat, \
@@ -18,12 +18,16 @@ from orgtag import BaseOrgtagHandler
 from address import BaseAddressHandler
 from contact import BaseContactHandler
 
-from model import Org, Note, Address, Orgalias, Event, Orgtag, org_orgtag, org_note
+from model import Org, Note, Address, Orgalias, Event, Orgtag, Contact, \
+    org_orgtag, org_note
 
-from model_v import Org_v, Address_v, \
-    org_address_v
+from model_v import Org_v, Address_v, Contact_v, \
+    org_address_v, org_contact_v, \
+    mango_suggestion_append_approved, mango_suggestion_append_suggestion
 
-from handle.user import get_user_pending_org_address
+from handle.user import \
+    get_user_pending_org_address, \
+    get_user_pending_org_contact
 
 import Levenshtein
 
@@ -299,24 +303,19 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
             org_id = org and org.org_id or org_v.org_id
 
             if org_v:
-                # This current shows contributers all the deleted, pending and private addresses that have been added to their pending organisation
-                query = self.orm.query(Address) \
-                    .filter(exists().where(and_(
-                            org_address_v.c.org_id == org_id,
-                            org_address_v.c.address_id == Address.address_id,
-                            )))
-                for address in query.all():
-                    address_list.append(address)
+                mango_suggestion_append_approved(
+                    self.orm, address_list, Address, org_address_v,
+                    org_id, "org_id", "address_id")
+                mango_suggestion_append_approved(
+                    self.orm, contact_list, Contact, org_contact_v,
+                    org_id, "org_id", "contact_id")
 
-            for address_v in get_user_pending_org_address(
-                self.orm, self.current_user, org_id):
-                
-                for i, address in enumerate(address_list):
-                    if address.address_id == address_v.address_id:
-                        address_list[i] = address_v
-                        break
-                else:
-                    address_list.append(address_v)
+            mango_suggestion_append_suggestion(
+                self.orm, address_list, get_user_pending_org_address,
+                self.current_user, org_id, "address_id")
+            mango_suggestion_append_suggestion(
+                self.orm, contact_list, get_user_pending_org_contact,
+                self.current_user, org_id, "contact_id")
 
         address_list = [address.obj(public=public) for address in address_list]
         orgtag_list = [orgtag.obj(public=public) for orgtag in orgtag_list]

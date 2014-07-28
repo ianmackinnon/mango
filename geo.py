@@ -221,9 +221,8 @@ def coords(address, cache=geocode_cache_default):
             if term in address.lower():
                 return None
         try:
-            address, (latitude, longitude) = geocoder.geocode(
+            result = geocoder.geocode(
                 address.encode("utf-8"),
-                # https://developers.google.com/maps/documentation/geocoding/#RegionCodes
                 region=geocode_default_region,  
                 )
         except geopy.geocoders.googlev3.GeocoderQueryError as e:
@@ -233,15 +232,16 @@ def coords(address, cache=geocode_cache_default):
             print e
             wait += 1
             continue
-        except geopy.geocoders.base.GeocoderError as e:
-            print e
-            return None
         except URLError as e:
             print e
             return None
         except ValueError as e:
             print e
             return None
+        if result is None:
+            return None
+
+        address, (latitude, longitude) = result
 
         value = json.dumps((latitude, longitude))
         try:

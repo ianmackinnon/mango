@@ -63,6 +63,9 @@ return u"Moderation Queue"
     %for address_id, address in org["address"].items():
     ${address_list(address_id, address, bool(org["url"]))}
     %endfor
+    %for contact_id, contact in org["contact"].items():
+    ${contact_list(contact_id, contact, bool(org["url"]))}
+    %endfor
   </ul>
 </li>
 </%def>
@@ -90,6 +93,9 @@ return u"Moderation Queue"
     %for address_id, address in event["address"].items():
     ${address_list(address_id, address, bool(event["url"]))}
     %endfor
+    %for contact_id, contact in event["contact"].items():
+    ${contact_list(contact_id, contact, bool(event["url"]))}
+    %endfor
   </ul>
 </li>
 </%def>
@@ -109,6 +115,28 @@ return u"Moderation Queue"
   :
   %if open:
   <a href="${url_rewrite(address["revision_url"])}">moderate</a>
+  %else:
+  review parent first
+  %endif
+  %endif
+</li>
+</%def>
+
+
+
+<%def name="contact_list(contact_id, contact, open=True)">
+<li>
+  contact
+  :
+  %if contact["url"]:
+  <a href="${url_rewrite(contact["url"])}">${contact_id}</a>
+  %else:
+  ${contact_id}
+  %endif
+  %if contact["revision_url"]:
+  :
+  %if open:
+  <a href="${url_rewrite(contact["revision_url"])}">moderate</a>
   %else:
   review parent first
   %endif

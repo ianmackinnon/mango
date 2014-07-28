@@ -18,10 +18,13 @@ from contact import BaseContactHandler
 
 from model import Event, Note, Address, Org, Eventtag, event_eventtag
 
-from model_v import Event_v, Address_v, \
-    event_address_v
+from model_v import Event_v, Address_v, Contact_v, \
+    event_address_v, event_contact_v, \
+    mango_suggestion_append_approved, mango_suggestion_append_suggestion
 
-from handle.user import get_user_pending_event_address
+from handle.user import \
+    get_user_pending_event_address, \
+    get_user_pending_event_contact
 
 
 
@@ -233,26 +236,21 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
 
         if self.contributor:
             event_id = event and event.event_id or event_v.event_id
-            
-            if not event:
-                # This current shows contributers all the deleted, pending and private addresses that have been added to their pending event
-                query = self.orm.query(Address) \
-                    .filter(exists().where(and_(
-                            event_address_v.c.event_id == event_id,
-                            event_address_v.c.address_id == Address.address_id,
-                            )))
-                for address in query.all():
-                    address_list.append(address)
-            
-            for address_v in get_user_pending_event_address(
-                self.orm, self.current_user, event_id):
-                
-                for i, address in enumerate(address_list):
-                    if address.address_id == address_v.address_id:
-                        address_list[i] = address_v
-                        break
-                else:
-                    address_list.append(address_v)
+
+            if event_v:
+                mango_suggestion_append_approved(
+                    self.orm, address_list, Address, event_address_v,
+                    event_id, "event_id", "address_id")
+                mango_suggestion_append_approved(
+                    self.orm, contact_list, Contact, event_contact_v,
+                    event_id, "event_id", "contact_id")
+
+            mango_suggestion_append_suggestion(
+                self.orm, address_list, get_user_pending_event_address,
+                self.current_user, event_id, "address_id")
+            mango_suggestion_append_suggestion(
+                self.orm, contact_list, get_user_pending_event_contact,
+                self.current_user, event_id, "contact_id")
 
         org_list = [org.obj(public=public) for org in org_list]
         address_list = [address.obj(public=public) for address in address_list]

@@ -21,6 +21,60 @@ class AuthRegisterHandler(BaseHandler):
             )
 
 
+def delete_inactive_users(orm):
+    away_time = 60 * 60 * 24 * 30  # 30 Days in seconds
+    away_time = 10
+
+    inner_sql = u"""select user_id, unix_timestamp() - max(session.a_time) as away
+  from user
+  left outer join session using (user_id)
+  where auth_id is null
+    and not exists (
+      select moderation_user_id
+        from (
+          select distinct(moderation_user_id)
+            from org_v
+          union select distinct(moderation_user_id)
+            from event_v
+          union select distinct(moderation_user_id)
+            from address_v
+          union select distinct(moderation_user_id)
+            from contact_v
+          ) as q1
+        where q1.moderation_user_id = user_id
+    )
+  group by user_id
+  having away is null or away > %d""" % away_time
+
+    session_sql = u"""delete
+  from session
+  where exists (
+    select 1
+      from (
+        %s
+      ) as q2
+      where q2.user_id = session.user_id
+    )
+  ;""" % inner_sql
+    user_sql = u"""delete
+  from user
+  where exists (
+    select 1
+      from (
+        %s
+      ) as q2
+      where q2.user_id = user.user_id
+    )
+  ;""" % inner_sql
+    
+    engine = orm.connection().engine
+
+    engine.execute("Begin")
+    engine.execute(session_sql)
+    engine.execute(user_sql)
+    engine.execute("Commit")
+
+
 
 class AuthLoginLocalHandler(BaseHandler):
     def get(self):
@@ -54,6 +108,11 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
     
     @tornado.web.asynchronous
     def get(self):
+
+        print "A"
+        delete_inactive_users(self.orm)
+        print "B"
+
         if self.current_user:
             return self.redirect_next()
 

@@ -213,6 +213,38 @@ def get_user_pending_event_address(orm, user, event_id):
 
 
 
+def get_user_pending_org_contact(orm, user, org_id):
+    Contact_v_all = aliased(Contact_v)
+    Contact_v_new = aliased(Contact_v)
+
+    query = orm.query(Contact_v_all) \
+        .outerjoin((
+            Contact,
+            Contact.contact_id == Contact_v_all.contact_id
+            )) \
+        .join((
+            org_contact_v,
+            and_(
+                org_contact_v.c.contact_id == Contact_v_all.contact_id,
+                org_contact_v.c.org_id == org_id,
+                org_contact_v.c.existence == 1,
+                )
+            )) \
+        .filter(Contact_v_all.moderation_user_id==user.user_id) \
+        .filter(~exists().where(and_(
+                Contact_v_new.contact_id == Contact_v_all.contact_id,
+                Contact_v_new.a_time > Contact_v_all.a_time,
+                ))) \
+        .filter(or_(
+                Contact.a_time == None,
+                Contact_v_all.a_time > Contact.a_time,
+                )) \
+        .order_by(Contact_v_all.a_time.desc())
+
+    return query.all()
+
+
+
 def get_user_pending_contact_org(orm, user, contact_id):
     Org_v_all = aliased(Org_v)
     Org_v_new = aliased(Org_v)
@@ -240,6 +272,38 @@ def get_user_pending_contact_org(orm, user, contact_id):
                 Org_v_all.a_time > Org.a_time,
                 )) \
         .order_by(Org_v_all.a_time.desc()) \
+
+    return query.all()
+
+
+
+def get_user_pending_event_contact(orm, user, event_id):
+    Contact_v_all = aliased(Contact_v)
+    Contact_v_new = aliased(Contact_v)
+
+    query = orm.query(Contact_v_all) \
+        .outerjoin((
+            Contact,
+            Contact.contact_id == Contact_v_all.contact_id
+            )) \
+        .join((
+            event_contact_v,
+            and_(
+                event_contact_v.c.contact_id == Contact_v_all.contact_id,
+                event_contact_v.c.event_id == event_id,
+                event_contact_v.c.existence == 1,
+                )
+            )) \
+        .filter(Contact_v_all.moderation_user_id==user.user_id) \
+        .filter(~exists().where(and_(
+                Contact_v_new.contact_id == Contact_v_all.contact_id,
+                Contact_v_new.a_time > Contact_v_all.a_time,
+                ))) \
+        .filter(or_(
+                Contact.a_time == None,
+                Contact_v_all.a_time > Contact.a_time,
+                )) \
+        .order_by(Contact_v_all.a_time.desc())
 
     return query.all()
 
