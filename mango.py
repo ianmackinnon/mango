@@ -291,7 +291,7 @@ class Application(tornado.web.Application):
             return int(text)
 
         self.handlers = [
-            (r"/", HomeRedirectHandler),
+            (r"/", HomeHandler),
             (r"/home", HomeHandler),
             (r"/home-org", HomeOrgListHandler),
             (r"/home-target", HomeTargetListHandler),

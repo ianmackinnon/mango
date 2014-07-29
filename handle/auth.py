@@ -109,9 +109,7 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
     @tornado.web.asynchronous
     def get(self):
 
-        print "A"
         delete_inactive_users(self.orm)
-        print "B"
 
         if self.current_user:
             return self.redirect_next()

@@ -1006,7 +1006,7 @@
       var country = false;
       if (orgSearchView.model.get("tagAll")) {
         _.each(tags, function (tag) {
-          var match = tag.match(/^military-export-applicant-to-([\w\-]*)-in-2010$/);
+          var match = tag.match(/^military-export-applicant-to-([\w\-]*)$/);
           if (match) {
             country = match[1];
           }
