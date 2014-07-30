@@ -151,7 +151,9 @@ class OrgtagHandler(BaseOrgtagHandler,
             Org,
             visibility=self.parameters.get("visibility", None),
             )
-        org_list = org_list_query.all()
+        org_list = org_list_query \
+            .order_by(Org.name) \
+            .all()
 
         note_list, note_count = orgtag.note_list_filtered(
             note_search=note_search,

@@ -55,9 +55,9 @@ class HomeTargetListHandler(BaseHandler):
             .join(org_orgtag, Orgtag.orgtag_id==org_orgtag.c.orgtag_id) \
             .join(q1, q1.c.org_id==org_orgtag.c.org_id) \
             .add_columns(func.count(q1.c.org_id)) \
-            .filter(Orgtag.path_short=="market") \
-            .filter(Orgtag.base_short.startswith("military-export-applicant-to-%")) \
-            .filter(~Orgtag.base_short.startswith("military-export-applicant-to-%-in-____")) \
+            .filter(Orgtag.path_short==u"market") \
+            .filter(Orgtag.base_short.startswith(u"military-export-applicant-to-%")) \
+            .filter(~Orgtag.base_short.startswith(u"military-export-applicant-to-%-in-____")) \
             .group_by(Orgtag.orgtag_id) \
             .order_by(Orgtag.base)
 

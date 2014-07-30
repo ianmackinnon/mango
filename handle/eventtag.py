@@ -151,7 +151,9 @@ class EventtagHandler(BaseEventtagHandler,
             Event,
             visibility=self.parameters.get("visibility", None),
             )
-        event_list = event_list_query.all()
+        event_list = event_list_query \
+            .order_by(Event.start_date.desc()) \
+            .all()
 
         note_list, note_count = eventtag.note_list_filtered(
             note_search=note_search,
