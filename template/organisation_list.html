@@ -27,6 +27,18 @@ return value
 %></%def>
 
 <%def name="page()">
+<%
+name_hint = ""
+tag_hint = ""
+if org_packet:
+    name_hint = "Eg. BAE Systems"
+    tag_hint = "Eg. missiles, tanks"
+    try:
+        name_hint = "Eg. " + ", ".join(org_packet["hint"]["name"])
+        tag_hint = "Eg. " + ", ".join(org_packet["hint"]["tag"])
+    except KeyError as e:
+        pass
+%>
 
 <h1>Companies</h1>
 
@@ -43,7 +55,7 @@ return value
         <input
            name="nameSearch"
            value="${name_search or ""}"
-           placeholder="Eg. BAE Systems">
+           placeholder="${name_hint}">
       </label>
       <label name="location">
         <span>Location</span>
@@ -57,7 +69,7 @@ return value
         <input
            name="tag"
            value="${tag_name_list and ", ".join([short for short in tag_name_list]) or ""}"
-           placeholder="Eg. vigil, march">
+           placeholder="${tag_hint}">
       </label>
       <label name="tagAll">
         <span>Match all tags</span>

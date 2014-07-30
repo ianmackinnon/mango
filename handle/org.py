@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import json
+import random
 from collections import OrderedDict
 
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
-from sqlalchemy.sql.expression import literal_column, or_, and_
+from sqlalchemy.sql.expression import literal_column, or_, and_, not_, distinct
 from tornado.web import HTTPError
 
 from base import authenticated, sha1_concat, \
@@ -63,7 +64,81 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
                 "visibility": visibility,
                 "pageView": page_view,
                 }))
-    
+
+    @staticmethod
+    def _get_random_suggestions(results, count=2):
+        suggestions = []
+
+        for i in xrange(count):
+            total = 0
+            for name, freq in results:
+                total += freq
+
+            target = random.randrange(total)
+            total = 0
+            for i, (name, freq) in enumerate(results):
+                total += freq
+                if total > target:
+                    suggestions.append(results.pop(i)[0])
+                    break
+
+        return suggestions
+
+    def _get_tag_suggestions(self, tag_list):
+        include = [
+            'exhibitor',
+            'delegate',
+            'market',
+            'activity',
+        ]
+
+        results = []
+        for path_short in include:
+            q = self.orm.query(Orgtag.base_short, func.count(Org.org_id).label("freq")) \
+                .join(org_orgtag, org_orgtag.c.orgtag_id==Orgtag.orgtag_id) \
+                .join(Org, Org.org_id==org_orgtag.c.org_id) \
+                .filter(Orgtag.public==True, Orgtag.virtual==None) \
+                .filter(Orgtag.path_short==path_short) \
+                .filter(Org.public==True) \
+                .group_by(Orgtag.orgtag_id) \
+                .order_by(func.count(Org.org_id).desc()) \
+                .limit(10)
+            
+            results += list(q.all())
+
+        return self._get_random_suggestions(results, 2)
+
+
+    def _get_name_suggestion(self, has_name, count=2):
+        suggestions = []
+        if has_name:
+            return suggestions
+
+        q = self.orm.query(Org.name, func.count(Orgtag.orgtag_id).label("freq")) \
+            .join(org_orgtag, org_orgtag.c.org_id==Org.org_id) \
+            .join(Orgtag, Orgtag.orgtag_id==org_orgtag.c.orgtag_id) \
+            .filter(Org.public==True) \
+            .filter(Orgtag.public==True, Orgtag.virtual==None) \
+            .group_by(Org.org_id) \
+            .order_by(func.count(Orgtag.orgtag_id).desc()) \
+            .limit(30)
+
+        results = q.all()
+
+        return self._get_random_suggestions(results, 2)
+
+    def _get_suggestions(self, tag_list, has_name):
+        suggestions = {}
+        tag = self._get_tag_suggestions(tag_list)
+        name = self._get_name_suggestion(has_name)
+
+        if tag:
+            suggestions["tag"] = tag
+        if name:
+            suggestions["name"] = name
+
+        return suggestions
+
     def get(self):
         is_json = self.content_type("application/json")
 
@@ -121,6 +196,9 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
             offset=offset,
             page_view=page_view,
             )
+
+        org_packet["hint"] = self._get_suggestions(
+            tag_name_list, bool(name or name_search))
 
         if cache_key:
             self.cache.set(cache_key, json.dumps(org_packet))

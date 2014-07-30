@@ -10,7 +10,8 @@
     <input
        name="nameSearch"
        value="<%= orgSearch.nameSearch || "" %>"
-       placeholder="Eg. BAE Systems">
+       placeholder="<%= (hint && hint.name) ? 'Eg. ' + hint.name.join(', ') : ''%>"
+       >
   </label>
   <label name="location">
     <span>Location</span>
@@ -24,7 +25,8 @@
     <input
        name="tag"
        value="<%= orgSearch.tag || "" %>"
-       placeholder="Eg. missiles, tanks">
+       placeholder="<%= (hint && hint.tag) ? 'Eg. ' + hint.tag.join(', ') : ''%>"
+       >
   </label>
   <label name="tagAll">
     <span>Match all tags</span>

@@ -247,6 +247,7 @@
       this.location = resp.location;
       this.markerList = resp.marker_list;
       this.orgLength = resp.org_length;
+      this.hint = resp.hint;
       return resp.org_list;
     }
   });
@@ -847,11 +848,21 @@
     },
 
     render: function () {
+      var hint = null;
+      if (this.model.lastResult && this.model.lastResult.hint) {
+        hint = this.model.lastResult.hint
+      }
       $(this.el).html(m.template(this.templateName, {
         currentUser: m.currentUser,
-        orgSearch: this.model.toJSON()
+        orgSearch: this.model.toJSON(),
+        hint: hint
       }));
       this.setupTagInput();
+
+      var $inputTag = $("input[name='tag']");
+      $inputTag = $inputTag.next().find("input")
+      $inputTag.width(400);
+
       this.addThrobber();
       return this;
     },
@@ -963,6 +974,7 @@
 
         orgSearchView.renderPages(orgCollection, orgCollectionView.many);
         orgSearchView.renderSocial(orgCollection);
+        orgSearchView.renderHints(orgCollection);
         orgSearchView.$results = rendered.$el;
 
         if (orgCollectionView.many) {
@@ -1053,6 +1065,24 @@
       $paragraph.append($("<a>").append('"' + text + '"'));
       orgSearchView.$social.show();
     },
+
+    renderHints: function (orgCollection) {
+
+      if (orgCollection.hint) {
+        if (orgCollection.hint.name) {
+          var $inputName = $("input[name='nameSearch']");
+          $inputName.attr("placeholder", "Eg. " + orgCollection.hint.name.join(", "));
+        }
+        if (orgCollection.hint.tag) {
+          var $inputTag = $("input[name='tag']");
+          $inputTag.attr("placeholder", "Eg. " + orgCollection.hint.tag.join(", "));
+          $inputTag = $inputTag.next().find("input")
+          $inputTag.attr("placeholder", "Eg. " + orgCollection.hint.tag.join(", "));
+          $inputTag.width(400);
+        }
+      }
+    },
+
 
     renderPages: function (orgCollection, many) {
       var orgSearchView = this;
