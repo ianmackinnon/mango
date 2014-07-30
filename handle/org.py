@@ -54,7 +54,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
         return self._get_org
 
     @staticmethod
-    def _cache_key(name_search, tag_name_list, tag_all, page_view, visibility):
+    def _cache_key(name_search, tag_name_list, tag_all, page_view, visibility, moderator):
         if not visibility:
             visibility = "public"
         return sha1_concat(json.dumps({
@@ -62,6 +62,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
                 "tag": tuple(set(tag_name_list)),
                 "tagAll": tag_all,
                 "visibility": visibility,
+                "moderator": moderator,
                 "pageView": page_view,
                 }))
 
@@ -178,6 +179,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
                 tag_all,
                 page_view,
                 self.parameters.get("visibility", None),
+                self.moderator,
                 )
             value = self.cache.get(cache_key)
             if value:

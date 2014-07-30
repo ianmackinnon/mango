@@ -48,7 +48,7 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
         return self._get_event
 
     @staticmethod
-    def _cache_key(name_search, past, tag_name_list, tag_all,page_view, visibility):
+    def _cache_key(name_search, past, tag_name_list, tag_all,page_view, visibility, moderator):
         if not visibility:
             visibility = "public"
         return sha1_concat(json.dumps({
@@ -57,6 +57,7 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
                 "tag": tuple(set(tag_name_list)),
                 "tagAll": tag_all,
                 "visibility": visibility,
+                "moderator": moderator,
                 "pageView": page_view,
                 }))
     
@@ -99,6 +100,7 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
                 tag_all,
                 page_view,
                 self.parameters.get("visibility", None),
+                self.moderator,
                 )
             value = self.cache.get(cache_key)
             if value:
