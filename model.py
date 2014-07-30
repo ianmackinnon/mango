@@ -362,7 +362,7 @@ address_note = Table(
     'address_note', Base.metadata,
     Column('address_id', Integer, ForeignKey('address.address_id'), primary_key=True),
     Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
-    Column('a_time', Float()),
+    Column('a_time', Float(), nullable=False, default=0),
     mysql_engine='InnoDB',
    )
 
@@ -372,7 +372,7 @@ org_note = Table(
     'org_note', Base.metadata,
     Column('org_id', Integer, ForeignKey('org.org_id'), primary_key=True),
     Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
-    Column('a_time', Float()),
+    Column('a_time', Float(), nullable=False, default=0),
     mysql_engine='InnoDB',
     )
 
@@ -382,7 +382,7 @@ event_note = Table(
     'event_note', Base.metadata,
     Column('event_id', Integer, ForeignKey('event.event_id'), primary_key=True),
     Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
-    Column('a_time', Float()),
+    Column('a_time', Float(), nullable=False, default=0),
     mysql_engine='InnoDB',
     )
 
@@ -392,7 +392,7 @@ orgtag_note = Table(
     'orgtag_note', Base.metadata,
     Column('orgtag_id', Integer, ForeignKey('orgtag.orgtag_id'), primary_key=True),
     Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
-    Column('a_time', Float()),
+    Column('a_time', Float(), nullable=False, default=0),
     mysql_engine='InnoDB',
     )
 
@@ -402,7 +402,7 @@ eventtag_note = Table(
     'eventtag_note', Base.metadata,
     Column('eventtag_id', Integer, ForeignKey('eventtag.eventtag_id'), primary_key=True),
     Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
-    Column('a_time', Float()),
+    Column('a_time', Float(), nullable=False, default=0),
     mysql_engine='InnoDB',
     )
 
@@ -412,7 +412,7 @@ org_address = Table(
     'org_address', Base.metadata,
     Column('org_id', Integer, ForeignKey('org.org_id'), primary_key=True),
     Column('address_id', Integer, ForeignKey('address.address_id'), primary_key=True),
-    Column('a_time', Float()),
+    Column('a_time', Float(), nullable=False, default=0),
     mysql_engine='InnoDB',
     )
 
@@ -422,7 +422,7 @@ event_address = Table(
     'event_address', Base.metadata,
     Column('event_id', Integer, ForeignKey('event.event_id'), primary_key=True),
     Column('address_id', Integer, ForeignKey('address.address_id'), primary_key=True),
-    Column('a_time', Float()),
+    Column('a_time', Float(), nullable=False, default=0),
     mysql_engine='InnoDB',
     )
 
@@ -432,7 +432,7 @@ org_orgtag = Table(
     'org_orgtag', Base.metadata,
     Column('org_id', Integer, ForeignKey('org.org_id'), primary_key=True),
     Column('orgtag_id', Integer, ForeignKey('orgtag.orgtag_id'), primary_key=True),
-    Column('a_time', Float()),
+    Column('a_time', Float(), nullable=False, default=0),
     mysql_engine='InnoDB',
     )
 
@@ -442,7 +442,7 @@ event_eventtag = Table(
     'event_eventtag', Base.metadata,
     Column('event_id', Integer, ForeignKey('event.event_id'), primary_key=True),
     Column('eventtag_id', Integer, ForeignKey('eventtag.eventtag_id'), primary_key=True),
-    Column('a_time', Float()),
+    Column('a_time', Float(), nullable=False, default=0),
     mysql_engine='InnoDB',
     )
 
@@ -452,7 +452,7 @@ org_event = Table(
     'org_event', Base.metadata,
     Column('org_id', Integer, ForeignKey('org.org_id'), primary_key=True),
     Column('event_id', Integer, ForeignKey('event.event_id'), primary_key=True),
-    Column('a_time', Float()),
+    Column('a_time', Float(), nullable=False, default=0),
     mysql_engine='InnoDB',
     )
 
@@ -462,7 +462,7 @@ org_contact = Table(
     'org_contact', Base.metadata,
     Column('org_id', Integer, ForeignKey('org.org_id'), primary_key=True),
     Column('contact_id', Integer, ForeignKey('contact.contact_id'), primary_key=True),
-    Column('a_time', Float()),
+    Column('a_time', Float(), nullable=False, default=0),
     mysql_engine='InnoDB',
     )
 
@@ -472,7 +472,7 @@ event_contact = Table(
     'event_contact', Base.metadata,
     Column('event_id', Integer, ForeignKey('event.event_id'), primary_key=True),
     Column('contact_id', Integer, ForeignKey('contact.contact_id'), primary_key=True),
-    Column('a_time', Float()),
+    Column('a_time', Float(), nullable=False, default=0),
     mysql_engine='InnoDB',
     )
 

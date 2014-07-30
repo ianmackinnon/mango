@@ -658,7 +658,7 @@ class BaseHandler(RequestHandler):
         if not args:
             return ret
         for arg in args:
-            ret += [value.strip() for value in arg.split(delimiter)]
+            ret += [unicode(value.strip()) for value in arg.split(delimiter)]
         return ret
 
     def get_arguments_int(self, name):

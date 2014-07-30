@@ -87,10 +87,10 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
 
     def _get_tag_suggestions(self, tag_list):
         include = [
-            'exhibitor',
-            'delegate',
-            'market',
-            'activity',
+            u'exhibitor',
+            u'delegate',
+            u'market',
+            u'activity',
         ]
 
         results = []
