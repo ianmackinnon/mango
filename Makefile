@@ -89,8 +89,10 @@ $(MYSQL_TEST) : mysql/build.mysql.sql mysql/build_triggers.mysql.sql mysql/seed.
 	mysqldump --defaults-extra-file=.mango.mysqldump.conf $$(./mysql/mysql.py -k database) > $(TMP)
 	mv $(TMP) $@
 
-mysql-test : .mango.mysql.conf mysql-exist $(MYSQL_TEST)
+mysql-test : .mango.mysql.conf mysql-exist
 # Empty and build the mango database from test data (admin)
+	-find $(MYSQL_TEST) -mtime +5 -exec rm {} \;
+	make $(MYSQL_TEST)
 	mysql --defaults-extra-file=.mango.mysql.conf < "$(MYSQL_TEST)"
 
 mysql-drop-triggers :

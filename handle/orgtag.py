@@ -50,7 +50,7 @@ class OrgtagListHandler(BaseOrgtagHandler,
     @authenticated
     def post(self):
         if not self.moderator:
-            raise HTTPError(405)
+            raise HTTPError(404)
         
         return MangoEntityListHandlerMixin.post(self)
         
@@ -82,7 +82,7 @@ class OrgtagNewHandler(BaseOrgtagHandler):
     @authenticated
     def get(self):
         if not self.moderator:
-            raise HTTPError(403)
+            raise HTTPError(404)
 
         if self.parameters.get("view", None) != "edit":
             self.next_ = "/orgtag"
@@ -119,7 +119,7 @@ class OrgtagHandler(BaseOrgtagHandler,
     @authenticated
     def put(self, entity_id):
         if not self.moderator:
-            raise HTTPError(405)
+            raise HTTPError(404)
 
         old_entity = self._get(entity_id)
         new_entity = self._create(entity_id)
@@ -196,7 +196,7 @@ class OrgtagNoteListHandler(BaseOrgtagHandler, BaseNoteHandler):
     @authenticated
     def post(self, orgtag_id):
         if not self.moderator:
-            raise HTTPError(403)
+            raise HTTPError(404)
 
         orgtag = self._get_tag(orgtag_id)
         note = self._create_note()
@@ -207,7 +207,7 @@ class OrgtagNoteListHandler(BaseOrgtagHandler, BaseNoteHandler):
     @authenticated
     def get(self, orgtag_id): 
         if not self.moderator:
-            raise HTTPError(403)
+            raise HTTPError(404)
 
         orgtag = self._get_tag(orgtag_id)
 
@@ -226,7 +226,7 @@ class OrgtagNoteHandler(BaseOrgtagHandler, BaseNoteHandler):
     @authenticated
     def put(self, orgtag_id, note_id):
         if not self.moderator:
-            raise HTTPError(403)
+            raise HTTPError(404)
 
         orgtag = self._get_tag(orgtag_id)
         note = self._get_note(note_id)
@@ -238,7 +238,7 @@ class OrgtagNoteHandler(BaseOrgtagHandler, BaseNoteHandler):
     @authenticated
     def delete(self, orgtag_id, note_id):
         if not self.moderator:
-            raise HTTPError(403)
+            raise HTTPError(404)
 
         orgtag = self._get_tag(orgtag_id)
         note = self._get_note(note_id)

@@ -644,7 +644,7 @@ class EventNoteListHandler(BaseEventHandler, BaseNoteHandler):
     @authenticated
     def post(self, event_id):
         if not self.moderator:
-            raise HTTPError(403)
+            raise HTTPError(404)
 
         event = self._get_event(event_id)
         note = self._create_note()
@@ -656,7 +656,7 @@ class EventNoteListHandler(BaseEventHandler, BaseNoteHandler):
     @authenticated
     def get(self, event_id):
         if not self.moderator:
-            raise HTTPError(403)
+            raise HTTPError(404)
 
         event = self._get_event(event_id)
         obj = event.obj(
@@ -674,7 +674,7 @@ class EventNoteHandler(BaseEventHandler, BaseNoteHandler):
     @authenticated
     def put(self, event_id, note_id):
         if not self.moderator:
-            raise HTTPError(403)
+            raise HTTPError(404)
 
         event = self._get_event(event_id)
         note = self._get_note(note_id)
@@ -686,7 +686,7 @@ class EventNoteHandler(BaseEventHandler, BaseNoteHandler):
     @authenticated
     def delete(self, event_id, note_id):
         if not self.moderator:
-            raise HTTPError(405)
+            raise HTTPError(404)
 
         event = self._get_event(event_id)
         note = self._get_note(note_id)
@@ -701,7 +701,7 @@ class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
     @authenticated
     def post(self, event_id):
         if not self.moderator:
-            raise HTTPError(405)
+            raise HTTPError(404)
 
         is_json = self.content_type("application/json")
         group = self.get_argument("group", None, json=is_json)
@@ -731,7 +731,7 @@ class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
     @authenticated
     def get(self, event_id):
         if not self.moderator:
-            raise HTTPError(403)
+            raise HTTPError(404)
 
         is_json = self.content_type("application/json")
         group = self.get_argument("group", None, json=is_json)
@@ -823,7 +823,7 @@ class EventOrgListHandler(BaseEventHandler, BaseOrgHandler):
     @authenticated
     def get(self, event_id):
         if not self.moderator:
-            raise HTTPError(403)
+            raise HTTPError(404)
             
         is_json = self.content_type("application/json")
 
@@ -882,7 +882,7 @@ class EventOrgHandler(BaseEventHandler, BaseOrgHandler):
     @authenticated
     def put(self, event_id, org_id):
         if not self.moderator:
-            raise HTTPError(403)
+            raise HTTPError(404)
             
         event = self._get_event(event_id)
         org = self._get_org(org_id)
@@ -894,7 +894,7 @@ class EventOrgHandler(BaseEventHandler, BaseOrgHandler):
     @authenticated
     def delete(self, event_id, org_id):
         if not self.moderator:
-            raise HTTPError(403)
+            raise HTTPError(404)
             
         event = self._get_event(event_id)
         org = self._get_org(org_id)
@@ -909,7 +909,7 @@ class EventDuplicateHandler(BaseEventHandler):
     @authenticated
     def post(self, event_id):
         if not self.moderator:
-            raise HTTPError(403)
+            raise HTTPError(404)
             
         event = self._get_event(event_id)
 

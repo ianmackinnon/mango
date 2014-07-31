@@ -19,7 +19,7 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 import geo
 
 from model import connection_url_app, attach_search
-from model import Medium, Auth, User, Orgtag, Eventtag, Org, Orgalias, Event, Address, Contact, Note
+from model import Medium, Auth, User, Session, Orgtag, Eventtag, Org, Orgalias, Event, Address, Contact, Note
 
 
 
@@ -30,6 +30,13 @@ lorem_markdown = u"ÜunicÖde. Lorem ipsum dolor sit amet\n\nconsectetur adipisi
 
 
 
+def user(auth, name, moderator=False, locked=False):
+    u = User(auth, name, moderator, locked)
+    session = Session(u, "0.0.0.0", "en", "moz")
+    return u
+
+
+
 def main(orm):
     email = orm.query(Medium).filter_by(name=u"Email").one()
 
@@ -37,13 +44,13 @@ def main(orm):
         u"https://www.google.com/accounts/o8/id",
         u"blah1@gmail.com"
         )
-    user_1_mod = User(auth_1, u"Moderator 1", moderator=True)
+    user_1_mod = user(auth_1, u"Moderator 1", moderator=True)
     auth_2 = Auth(
         u"https://www.google.com/accounts/o8/id",
         u"blah2@gmail.com"
         )
-    user_2_lok = User(auth_2, u"Locked 1", moderator=True, locked=True)
-    user_3_non = User(None, u"Non-moderator 1", moderator=False)
+    user_2_lok = user(auth_2, u"Locked 1", moderator=True, locked=True)
+    user_3_non = user(None, u"Non-moderator 1", moderator=False)
     public_1 = {
         "moderation_user": user_1_mod,
         "public": True,
@@ -128,8 +135,8 @@ if __name__ == "__main__":
 
     connection_url = connection_url_app()
     engine = create_engine(connection_url,)
-    Session = sessionmaker(bind=engine, autocommit=False)
-    orm = Session()
+    Session_ = sessionmaker(bind=engine, autocommit=False)
+    orm = Session_()
     attach_search(engine, orm)
 
     main(orm)

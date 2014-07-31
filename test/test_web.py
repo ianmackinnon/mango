@@ -83,6 +83,8 @@ class Http(object):
         "/event/%s/address" % event_id,
         "/organisation/%s/contact" % org_id,
         "/event/%s/contact" % event_id,
+        "/organisation/%s/contact" % org_id,
+        "/event/%s/contact" % org_id,
         ]
 
     html_path_list_moderator = [
@@ -262,7 +264,7 @@ class TestRegistered(unittest.TestCase, Http):
     def test_html_private(self):
         log.info("Registered User / Not-authorised HTML")
         for path in self.html_path_list_moderator:
-            self.get_html_not_authorised(path, cookie=self.cookie)
+            self.get_html_not_found(path, cookie=self.cookie)
 
 
 

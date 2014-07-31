@@ -50,7 +50,7 @@ class EventtagListHandler(BaseEventtagHandler,
     @authenticated
     def post(self):
         if not self.moderator:
-            raise HTTPError(405)
+            raise HTTPError(404)
         
         return MangoEntityListHandlerMixin.post(self)
         
@@ -82,7 +82,7 @@ class EventtagNewHandler(BaseEventtagHandler):
     @authenticated
     def get(self):
         if not self.moderator:
-            raise HTTPError(403)
+            raise HTTPError(404)
 
         if self.parameters.get("view", None) != "edit":
             self.next_ = "/eventtag"
@@ -119,7 +119,7 @@ class EventtagHandler(BaseEventtagHandler,
     @authenticated
     def put(self, entity_id):
         if not self.moderator:
-            raise HTTPError(405)
+            raise HTTPError(404)
 
         old_entity = self._get(entity_id)
         new_entity = self._create(entity_id)
@@ -196,7 +196,7 @@ class EventtagNoteListHandler(BaseEventtagHandler, BaseNoteHandler):
     @authenticated
     def post(self, eventtag_id):
         if not self.moderator:
-            raise HTTPError(403)
+            raise HTTPError(404)
 
         eventtag = self._get_tag(eventtag_id)
         note = self._create_note()
@@ -207,7 +207,7 @@ class EventtagNoteListHandler(BaseEventtagHandler, BaseNoteHandler):
     @authenticated
     def get(self, eventtag_id): 
         if not self.moderator:
-            raise HTTPError(403)
+            raise HTTPError(404)
 
         eventtag = self._get_tag(eventtag_id)
 
@@ -226,7 +226,7 @@ class EventtagNoteHandler(BaseEventtagHandler, BaseNoteHandler):
     @authenticated
     def put(self, eventtag_id, note_id):
         if not self.moderator:
-            raise HTTPError(403)
+            raise HTTPError(404)
 
         eventtag = self._get_tag(eventtag_id)
         note = self._get_note(note_id)
@@ -238,7 +238,7 @@ class EventtagNoteHandler(BaseEventtagHandler, BaseNoteHandler):
     @authenticated
     def delete(self, eventtag_id, note_id):
         if not self.moderator:
-            raise HTTPError(403)
+            raise HTTPError(404)
 
         eventtag = self._get_tag(eventtag_id)
         note = self._get_note(note_id)

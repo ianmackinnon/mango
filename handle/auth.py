@@ -51,6 +51,7 @@ class LoginHandler(BaseHandler):
         self.orm.flush()
         self.start_session(str(session.session_id))
         self.orm.commit()
+        return session
 
 
 
@@ -226,7 +227,6 @@ class AuthLogoutHandler(BaseHandler):
 
 def delete_inactive_users(orm):
     away_time = 60 * 60 * 24 * 30  # 30 Days in seconds
-    away_time = 10
 
     inner_sql = u"""select user_id, unix_timestamp() - max(session.a_time) as away
   from user

@@ -50,7 +50,6 @@ def authenticated(method):
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
         login = self.get_argument_bool("login", None)
-        register = self.get_argument_bool("register", None)
 
         if not (self.current_user or login):
             raise HTTPError(404, "Not found")

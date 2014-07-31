@@ -60,7 +60,7 @@ class NoteNewHandler(BaseNoteHandler):
     @authenticated
     def get(self):
         if not self.moderator:
-            raise HTTPError(403)
+            raise HTTPError(404)
 
         if self.parameters.get("view", None) != "edit":
             self.next_ = "/note"
