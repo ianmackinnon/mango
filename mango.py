@@ -453,12 +453,15 @@ class Application(tornado.web.Application):
             self.cache_namespace(self.database_mtime.isoformat()))
 
         connection_url = connection_url_app()
-        engine = create_engine(connection_url,)
+        engine = create_engine(
+            connection_url,
+            echo=False,
+        )
         self.orm = scoped_session(sessionmaker(
-                bind=engine,
-                autocommit=False,
-                query_cls=SafeQueryClass(),
-                ))
+            bind=engine,
+            autocommit=False,
+            query_cls=SafeQueryClass(),
+        ))
 
         try:
             self.orm.query(Org).first()

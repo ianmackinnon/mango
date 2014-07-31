@@ -179,6 +179,7 @@ class BaseHandler(RequestHandler):
         self.has_javascript = bool(self.get_cookie("j"))
         self.set_parameters()
         self.next_ = self.get_argument("next", None)
+        self.load_map = False
 
     def prepare(self):
         self.start = time.time()
@@ -408,7 +409,9 @@ class BaseHandler(RequestHandler):
             
         scripts1 = ["jquery.min.js", "jquery-ui/jquery-ui.min.js", "tag-it.js", "underscore-min.js", "backbone-min.js", "markdown.js", "jquery.history.js", "jquery.ui.timepicker.js", "markerclusterer.js"]
         scripts2 = ["geobox.js", "mango.js"]
-        scripts3 = ["map.js", "address.js", "tag.js", "event.js", "org.js"]
+        scripts3 = ["address.js", "tag.js", "event.js", "org.js"]
+        if self.load_map:
+            scripts3 = ["map.js"] + scripts3
         stylesheets = ["jquery-ui/jquery-ui.css", "tag-it.css", "jquery.ui.timepicker.css", "style.css"]
         purge(scripts1, self.application.skin.scripts())
         purge(stylesheets, self.application.skin.stylesheets())
@@ -424,40 +427,41 @@ class BaseHandler(RequestHandler):
         mako_template = self.application.lookup.get_template(template_name)
 
         kwargs.update({
-                "url_root": self.url_root,
-                "protocol": self.request.protocol,
-                "static_url": self.static_url,
-                "scripts1": scripts1,
-                "scripts2": scripts2,
-                "scripts3": scripts3,
-                "header": components["header"],
-                "footer": components["footer"],
+            "url_root": self.url_root,
+            "protocol": self.request.protocol,
+            "static_url": self.static_url,
+            "scripts1": scripts1,
+            "scripts2": scripts2,
+            "scripts3": scripts3,
+            "header": components["header"],
+            "footer": components["footer"],
 
-                "geo_in": self.geo_in,
-                "next_": self.next_,
-                "messages": self.messages,
-                "newline": newline,
-                "newline_comma": newline_comma,
-                "nbsp": nbsp,
-                "form_date": form_date,
-                "form_time": form_time,
-                "page_date": page_date,
-                "page_date_format": page_date_format,
-                "page_time": page_time,
-                "page_period": page_period,
-                "markdown_safe": markdown_safe,
-                "convert_links": convert_links,
-                "current_user": self.current_user,
-                "moderator": self.moderator,
-                "contributor": self.contributor,
-                "uri": self.request.uri,
-                "xsrf": self.xsrf_token,
-                "json_dumps": json.dumps,
-                "query_rewrite": self.query_rewrite,
-                "url_rewrite": self.url_rewrite,
-                "parameters": self.parameters,
-                "parameters_json": json.dumps(self.parameters),
-                })
+            "load_map": self.load_map,
+            "geo_in": self.geo_in,
+            "next_": self.next_,
+            "messages": self.messages,
+            "newline": newline,
+            "newline_comma": newline_comma,
+            "nbsp": nbsp,
+            "form_date": form_date,
+            "form_time": form_time,
+            "page_date": page_date,
+            "page_date_format": page_date_format,
+            "page_time": page_time,
+            "page_period": page_period,
+            "markdown_safe": markdown_safe,
+            "convert_links": convert_links,
+            "current_user": self.current_user,
+            "moderator": self.moderator,
+            "contributor": self.contributor,
+            "uri": self.request.uri,
+            "xsrf": self.xsrf_token,
+            "json_dumps": json.dumps,
+            "query_rewrite": self.query_rewrite,
+            "url_rewrite": self.url_rewrite,
+            "parameters": self.parameters,
+            "parameters_json": json.dumps(self.parameters),
+        })
 
         if self.moderator:
             kwargs.update({

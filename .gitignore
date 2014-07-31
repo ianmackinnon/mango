@@ -6,5 +6,6 @@ log/
 static/image/map/marker
 mysql/migrate.bash
 mysql/import.my.sql
+mysql/test.my.sql
 vendor/
 .*.conf

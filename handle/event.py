@@ -79,6 +79,7 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
 
         if not self.accept_type("json"):
             if self.has_javascript:
+                self.load_map = True
                 self.render(
                     'event_list.html',
                     name=name,
@@ -127,6 +128,7 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
         if self.accept_type("json"):
             self.write_json(event_packet)
         else:
+            self.load_map = True
             self.render(
                 'event_list.html',
                 event_packet=event_packet,
@@ -284,6 +286,7 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
         if self.accept_type("json"):
             self.write_json(obj)
         else:
+            self.load_map = True
             self.render(
                 'event.html',
                 obj=obj,
@@ -341,6 +344,7 @@ class EventRevisionListHandler(BaseEventHandler):
         
         version_current_url = (event and event.url) or (not self.moderator and history and history[-1].url)
 
+        self.load_map = True
         self.render(
             'revision-history.html',
             entity=True,
@@ -461,6 +465,7 @@ class EventAddressListHandler(BaseEventHandler, BaseAddressHandler):
             public=self.moderator,
             )
 
+        self.load_map = True
         self.render(
             'address.html',
             address=None,

@@ -25,6 +25,7 @@ class HomeRedirectHandler(BaseHandler):
 
 class HomeHandler(BaseHandler):
     def get(self):
+        self.load_map = True
         self.render('home.html')
 
 
@@ -109,6 +110,7 @@ class HomeOrgListHandler(BaseHandler):
 
 class FairHandler(BaseHandler):
     def get(self):
+        self.load_map = True
         self.render(
             '%s.html' % self.name,
             tag_name=self.tag_name,

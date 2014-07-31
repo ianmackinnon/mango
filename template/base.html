@@ -126,7 +126,9 @@ ${header(title=self.application_title()) | n}
 %for script in scripts1:
 <script type="text/javascript" src="${static_url(script)}"></script>
 %endfor:
+%if load_map:
 <script type="text/javascript" src="${protocol}://maps.google.com/maps/api/js?libraries=geometry&amp;sensor=false"></script>
+%endif
 %for script in scripts2:
 <script type="text/javascript" src="${static_url(script)}"></script>
 %endfor:
@@ -135,6 +137,7 @@ m.urlRoot = "${url_root | n}";
 m.parameters = ${parameters_json | n};
 m.currentUser = !!${int(bool(current_user))};
 m.moderator = !!${int(moderator)};
+m.map = !!${int(load_map)};
 m.xsrf = "${xsrf | n}";
 m.next = "${next_ or "" | n}" || null;
 </script>

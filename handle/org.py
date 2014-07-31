@@ -164,6 +164,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
 
         if not self.accept_type("json"):
             if self.has_javascript:
+                self.load_map = True
                 self.render(
                     'organisation_list.html',
                     name=name,
@@ -214,6 +215,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
         if self.accept_type("json"):
             self.write_json(org_packet)
         else:
+            self.load_map = True
             self.render(
                 'organisation_list.html',
                 org_packet=org_packet,
@@ -435,6 +437,7 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
         if self.accept_type("json"):
             self.write_json(obj)
         else:
+            self.load_map = True
             self.render(
                 'organisation.html',
                 obj=obj,
@@ -492,6 +495,7 @@ class OrgRevisionListHandler(BaseOrgHandler):
         
         version_current_url = (org and org.url) or (not self.moderator and history and history[-1].url)
 
+        self.load_map = True
         self.render(
             'revision-history.html',
             entity=True,
@@ -609,6 +613,7 @@ class OrgAddressListHandler(BaseOrgHandler, BaseAddressHandler):
             public=self.moderator,
             )
 
+        self.load_map = True
         self.render(
             'address.html',
             obj=None,

@@ -249,6 +249,7 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
             if obj:
                 parent_list = obj["org_list"] + obj["event_list"]
                 entity = len(parent_list) == 1 and parent_list[0] or None
+            self.load_map = True
             self.render(
                 'address.html',
                 obj=obj,

@@ -514,7 +514,10 @@ var m = {
     form.find("input[type='submit']").before(throbber);
     var xhr = null;
 
-    options.excludeTagIdList = currentTagList;  // Defined in entity_tag.html script tag.
+    if (typeof currentTagList != "undefined") {
+      // Defined in entity_tag.html script tag.
+      options.excludeTagIdList = currentTagList;
+    }
 
     var change = function (value) {
       if (xhr && xhr.readyState !== 4) {
