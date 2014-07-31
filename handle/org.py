@@ -70,10 +70,16 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
     def _get_random_suggestions(results, count=2):
         suggestions = []
 
+        if not (results and count):
+            return suggestions
+
         for i in xrange(count):
             total = 0
             for name, freq in results:
                 total += freq
+
+            if not total:
+                break
 
             target = random.randrange(total)
             total = 0
