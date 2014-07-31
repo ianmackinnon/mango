@@ -180,6 +180,7 @@ form.mango input[disabled="disabled"]
     float: left;
     width: 490px;
     margin-left: 20px;
+    overflow: hidden;
 }
 
 #mango div.mango-box.third
