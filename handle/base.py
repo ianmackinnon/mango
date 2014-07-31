@@ -9,6 +9,7 @@ import httplib
 import markdown
 import datetime
 import urlparse
+import functools
 from urllib import urlencode
 from collections import namedtuple
 
@@ -43,10 +44,20 @@ def sha1_concat(*parts):
 
 
 
-def authenticated(f):
-    decorated = tornado_authenticated(f)
-    decorated.authenticated = True;
-    return decorated
+def authenticated(method):
+    u"Replaces tornado decorator."
+
+    @functools.wraps(method)
+    def wrapper(self, *args, **kwargs):
+        login = self.get_argument_bool("login", None)
+        register = self.get_argument_bool("register", None)
+
+        if not (self.current_user or login):
+            raise HTTPError(404, "Not found")
+
+        return method(self, *args, **kwargs)
+    wrapper.authenticated = True;
+    return wrapper
 
 
 
@@ -156,6 +167,8 @@ def convert_links(text, quote="\""):
 
 class BaseHandler(RequestHandler):
 
+    _unsupported_method_error = (403, "Method Not Allowed")
+
     def __init__(self, *args, **kwargs):
         self.SUPPORTED_METHODS += ("TOUCH", )
         self.messages = []
@@ -171,13 +184,14 @@ class BaseHandler(RequestHandler):
         self.start = time.time()
 
     def on_finish(self):
-        self.application.log_uri.info("%s, %s, %s, %s, %0.3f" % (
-                str(time.time()),
-                self.request.uri,
-                self.request.remote_ip,
-                repr(self.request.headers.get("User-Agent", "User-Agent")),
-                time.time() - self.start
-                ))
+        if hasattr(self, "start"):
+            self.application.log_uri.info("%s, %s, %s, %s, %0.3f" % (
+                    str(time.time()),
+                    self.request.uri,
+                    self.request.remote_ip,
+                    repr(self.request.headers.get("User-Agent", "User-Agent")),
+                    time.time() - self.start
+                    ))
         self.application.orm.remove()
 
     def initialize(self, **kwargs):
@@ -211,8 +225,9 @@ class BaseHandler(RequestHandler):
         self._transforms = transforms
         self._mango_extra_methods()
         try:
-            if self.request.method not in self.SUPPORTED_METHODS:
-                raise HTTPError(405)
+            if (self.request.method not in self.SUPPORTED_METHODS) or (hasattr(self, "_unsupported_methods") and (True in self._unsupported_methods or self.request.method.lower() in self._unsupported_methods)):
+                code, message = self._unsupported_method_error
+                raise HTTPError(code, message)
             self._mango_check_user()
             self.path_args = [self.decode_argument(arg) for arg in args]
             self.path_kwargs = dict((k, self.decode_argument(v, name=k))

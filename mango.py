@@ -36,6 +36,7 @@ from handle.auth import AuthRegisterHandler, \
     AuthLogoutHandler
 from handle.user import UserHandler, UserListHandler
 from handle.home import \
+    NotFoundHandler, \
     HomeRedirectHandler, \
     HomeHandler, HomeOrgListHandler, HomeTargetListHandler, \
     DseiHandler, DseiOrgListHandler, DseiTargetListHandler, \
@@ -415,6 +416,8 @@ class Application(tornado.web.Application):
             (r"/note/<id>/revision", NoteRevisionListHandler),
             (r"/note/<id>/revision/<id>",
              NoteRevisionHandler),
+
+            (r"/.*", NotFoundHandler),
             ]
         
         self.handlers = self.process_handlers(self.handlers)

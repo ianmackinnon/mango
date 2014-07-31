@@ -46,7 +46,7 @@ ${header(title=self.application_title()) | n}
       <a href="${url_rewrite("/auth/logout", next_=self.logout_url())}">Log out</a>
       %else:
       <a href="${url_rewrite("/auth/register")}">Submit content</a>
-      <a href="${url_rewrite("/auth/login", next_=uri)}">Log in</a>
+      <a href="${url_rewrite("/auth/login", {'login': 1}, next_=uri)}">Log in</a>
       %endif
     </div>
   </nav>

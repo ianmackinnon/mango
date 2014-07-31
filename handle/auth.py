@@ -21,18 +21,26 @@ class AuthRegisterHandler(BaseHandler):
             )
 
 
-class AuthLoginLocalHandler(BaseHandler):
-    def get(self):
-        if not self.application.local_auth:
-            print u"Local authentication is not enabled."
-            raise tornado.web.HTTPError(404, "Not found")
-        if not self.is_local():
-            raise tornado.web.HTTPError(404, "Not found")
-        user_id = self.get_argument_int("user", -1)
-        try:
-            user = self.orm.query(User).filter_by(user_id=user_id).one()
-        except NoResultFound:
-            raise tornado.web.HTTPError(404, "Not found")
+class LoginHandler(BaseHandler):
+    def _accept_authenticated(self):
+        if self.current_user:
+            return self.redirect_next()
+
+    def _batch_tasks(self):
+        delete_inactive_users(self.orm)
+
+    def _check_locked(self, user):
+        if user and user.locked:
+            raise HTTPError(400, "Account locked.")
+
+    def _check_registering(self, user):
+        register = self.get_argument_bool("register", None)
+
+        if not register:
+            self.redirect(self.url_rewrite("/auth/register", next_=self.next_))
+            return True
+
+    def _create_session(self, user):
         session = Session(
                 user,
                 self.request.remote_ip,
@@ -43,29 +51,93 @@ class AuthLoginLocalHandler(BaseHandler):
         self.orm.flush()
         self.start_session(str(session.session_id))
         self.orm.commit()
+
+
+
+class AuthLoginLocalHandler(LoginHandler):
+    def _get_user(self):
+        user_id = self.get_argument_int("user", -1)
+        if user_id == 0:
+            # Create new user
+            return None
+        try:
+            return self.orm.query(User).filter_by(user_id=user_id).one()
+        except NoResultFound as e:
+            raise HTTPError(401, "Authorization Refused")
+
+    def _create_user(self):
+        user_id = self.get_argument_int("user", -1)
+        assert user_id == 0
+        user_name = u"NEW USER"
+        user = User(None, user_name, moderator=False)
+        self.orm.add(user)
+        self.orm.commit()
+        user.name = u"Local %d" % user.user_id
+        self.orm.commit()
+        self.next_ = "/user/%d" % user.user_id
+        return user
+    
+    def get(self):
+        if not self.application.local_auth:
+            print u"Local authentication is not enabled."
+            raise HTTPError(404, "Not found")
+        if not self.is_local():
+            raise HTTPError(404, "Not found")
+
+        self._accept_authenticated()
+
+        self._batch_tasks()
+
+        user = self._get_user()
+        self._check_locked(user)
+        
+        if not user:
+            if self._check_registering(user):
+                return
+            user = self._create_user()
+
+        session = self._create_session(user)
         return self.redirect_next()
 
 
 
-class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
+class AuthLoginGoogleHandler(LoginHandler, tornado.auth.GoogleMixin):
 
     openid_url = u"https://www.google.com/accounts/o8/id"
+
+    def _get_user(self):
+        if not self.auth_user:
+            raise HTTPError(500, "Google authentication failed")
+
+        self.auth_name = self.auth_user["email"]
+        return User.get_from_auth(self.orm, self.openid_url, self.auth_name)
+
+    def _create_user(self):
+        auth = Auth(self.openid_url, self.auth_name)
+        user_name = unicode(self.auth_user["name"])
+        user = User(auth, user_name, moderator=False)
+        self.orm.add(user)
+        self.orm.commit()
+        self.next_ = "/user/%d" % user.user_id
+        return user
     
     @tornado.web.asynchronous
     def get(self):
 
-        delete_inactive_users(self.orm)
-
-        if self.current_user:
-            return self.redirect_next()
+        self._accept_authenticated()
 
         if self.get_argument("openid.mode", None):
             self.get_authenticated_user(self.async_callback(self._on_auth))
             return
 
+        self._batch_tasks()
+
+        register = self.get_argument_bool("register", None)
         login_args = {
             "next": self.next_ or self.application.url_root,
             }
+        if register is not None:
+            login_args["register"] = int(register)
         login_url = self.get_login_url() + "?" + urlencode(login_args)
         self.authenticate_redirect(login_url)
     
@@ -75,65 +147,56 @@ class AuthLoginGoogleHandler(BaseHandler, tornado.auth.GoogleMixin):
         auth_user dict is either empty or contains 'locale', 'first_name', 'last_name', 'name' and 'email'.
         """
 
-        if not auth_user:
-            raise HTTPError(500, "Google authentication failed")
+        self.auth_user = auth_user
 
-        auth_name = auth_user["email"]
-
-        user = User.get_from_auth(self.orm, self.openid_url, auth_name)
+        user = self._get_user()
+        self._check_locked(user)
 
         if not user:
-            auth = Auth(self.openid_url, auth_name)
-            user_name = unicode(auth_user["name"])
-            user = User(auth, user_name, moderator=False)
-            self.orm.add(user)
-            self.orm.commit()
-            self.next_ = "/user/%d" % user.user_id
+            if self._check_registering(user):
+                return
+            user = self._create_user()
 
-        if user and user.locked:
-            raise HTTPError(400, "Account locked.")
-
-        session = Session(
-                user,
-                self.request.remote_ip,
-                self.get_accept_language(),
-                self.get_user_agent(),
-                )
-        self.orm.add(session)
-        self.orm.flush()
-        self.start_session(str(session.session_id))
-        self.orm.commit()
-
+        session = self._create_session(user)
         return self.redirect_next()
 
 
 
-class AuthVisitHandler(BaseHandler):
-    def get(self):
-        if self.current_user:
-            return self.redirect_next()
-        
-        user_name = "NEW USER"
+class AuthVisitHandler(LoginHandler):
+    def _get_user(self):
+        return None
+
+    def _check_locked(self, user):
+        pass
+
+    def _check_registering(self, user):
+        pass
+
+    def _create_user(self):
+        user_name = u"NEW USER"
         user = User(None, user_name, moderator=False)
         self.orm.add(user)
         self.orm.commit()
-        user.name = "Anonymous %d" % user.user_id
+        user.name = u"Anonymous %d" % user.user_id
         self.orm.commit()
         self.next_ = "/user/%d" % user.user_id
+        return user
+    
+    def get(self):
+        self._accept_authenticated()
 
-        session = Session(
-                user,
-                self.request.remote_ip,
-                self.get_accept_language(),
-                self.get_user_agent(),
-                )
-        self.orm.add(session)
-        self.orm.flush()
-        self.start_session(str(session.session_id))
-        self.orm.commit()
+        self._batch_tasks()
 
+        user = self._get_user()
+        self._check_locked(user)
+        
+        if not user:
+            if self._check_registering(user):
+                return
+            user = self._create_user()
+
+        session = self._create_session(user)
         return self.redirect_next()
-
 
 
 

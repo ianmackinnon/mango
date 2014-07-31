@@ -26,6 +26,12 @@ vendor:
 	head -c 32 /dev/urandom | base64 > .xsrf
 	chmod 600 .xsrf
 
+test : mysql-test serve-test
+
+serve-test :
+	python -W all ./mango.py --local=1
+
+
 .mango.conf :
 	@echo "Set your configuration in 'mango.example.conf', then rename it to '.mango.conf, and chmod it to 600.'." && false
 

@@ -181,6 +181,25 @@ class Http(object):
                 html_file.write(html)
                 html_file.close()
             self.fail("Template Error. See '%s'." % error_html)
+
+    @staticmethod
+    def logged_in(response):
+        if not 'set-cookie' in response:
+            return None
+        text = response["set-cookie"]
+        if not text:
+            return None
+        cookies = {}
+        for cookie in text.split("; "):
+            name, value = cookie.split('=', 1)
+            cookies[name] = value
+        return bool(cookies.get('s', None))
+
+    def assertLoggedIn(self, response):
+        self.assertEqual(self.logged_in(response), True)
+
+    def assertNotLoggedIn(self, response):
+        self.assertEqual(self.logged_in(response), False)
                 
 
 
@@ -213,7 +232,7 @@ class TestPublic(unittest.TestCase, Http):
     def test_html_private(self):
         log.info("Public User / Not-authorised HTML")
         for path in self.html_path_list_registered + self.html_path_list_moderator:
-            self.get_html_not_authenticated(path)
+            self.get_html_not_found(path)
 
 
 
@@ -271,6 +290,37 @@ class TestModerator(unittest.TestCase, Http):
             self.mako_error_test(html)
 
 
+
+class TestAuth(unittest.TestCase, Http):
+    @classmethod
+    def setUpClass(cls):
+        cls.longMessage = True
+        cls.http = httplib2.Http(cache=None)
+        cls.http.follow_redirects = False
+        
+    def test_auth_redirection(self):
+        url = host + "/auth/login/local?user=1"
+        response, content = self.http.request(url)
+        self.assertEqual(response.status, 302)
+        self.assertEqual(response["location"], '/')
+        self.assertLoggedIn(response)
+
+        url = host + "/auth/login/local?user=9999"
+        response, content = self.http.request(url)
+        self.assertEqual(response.status, 401)
+        self.assertNotLoggedIn(response)
+
+        url = host + "/auth/login/local?user=0"
+        response, content = self.http.request(url)
+        self.assertEqual(response.status, 302)
+        self.assertEqual(response["location"], '/auth/register')
+        self.assertNotLoggedIn(response)
+
+        url = host + "/auth/login/local?user=0&register=1"
+        response, content = self.http.request(url)
+        self.assertEqual(response.status, 302)
+        self.assertRegexpMatches(response["location"], '/user/[0-9]+$')
+        self.assertLoggedIn(response)
 
 if __name__ == "__main__":
     log.addHandler(logging.StreamHandler())

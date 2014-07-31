@@ -3,9 +3,16 @@
 import json
 
 from sqlalchemy.sql import func
+from tornado.web import HTTPError
 
 from base import BaseHandler
 from model import Org, Orgtag, org_orgtag
+
+
+
+class NotFoundHandler(BaseHandler):
+    _unsupported_method_error = (404, "Not Found")
+    _unsupported_methods = [True]
 
 
 
