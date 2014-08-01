@@ -27,12 +27,8 @@ var m = {
   }),
 
   searchString: function () {
-    if (History.initHtml4 == 'undefined') {
-      var url = History.getState().url;
-    } else {
-      var url = window.location.href;
-    }
-    var search = "";
+    var url = window.History.getState()["hash"];
+
     var index = url.indexOf("?");
     if (index === -1) {
       return "";
@@ -425,7 +421,12 @@ var m = {
       mapView: mapView
     });
     $("#org-search").replaceWith(orgSearchView.$el);
-    orgSearchView.send();
+
+    if (window.location.href.indexOf("#") === -1) {
+      orgSearchView.send();
+    } else {
+      orgSearchView.popstate();
+    }
 
     if (window.History.enabled) {
       History.Adapter.bind(window, "statechange", orgSearchView.popstate);
