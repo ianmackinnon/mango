@@ -34,7 +34,7 @@ title_state = None
       %if moderator:
       <th class="history-column-user">User</th>
       %endif
-      <th class="history-column-date">Date</th>
+      <th class="history-column-date">Date (<span class="tz-utc">UTC</span>)</th>
     </tr>
   </thead>
   <tbody>
@@ -102,7 +102,7 @@ user_link = url_rewrite("/user/%s" % (entity.user_id))
         </a>
       </td>
       %endif
-      <td class="history-column-date">${datetime.datetime.fromtimestamp(entity.date).strftime("%Y/%m/%d %H:%M:%S")}</td>
+      <td class="history-column-date date-utc">${datetime.datetime.fromtimestamp(entity.date).strftime("%Y/%m/%d %H:%M:%S UTC")}</td>
     </tr>
 %endif
     %endfor

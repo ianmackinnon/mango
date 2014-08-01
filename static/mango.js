@@ -983,6 +983,23 @@ var m = {
     });
   },
 
+  convertUtcToLocal: function () {
+    var tz = null;
+    $(".date-utc").each(function(el) {
+      var $el=$(this);
+      var date = new Date($el.text());
+      var dateString = $.datepicker.formatDate('yy-mm-dd', new Date(date));
+      var timeString = ('0'+date.getHours()).slice(-2) + ":" + ('0'+date.getMinutes()).slice(-2) + ":" + ('0'+date.getSeconds()).slice(-2);
+      $el.text(dateString + " " + timeString);
+      var i1 = date.toString().indexOf("(") + 1;
+      var i2 = date.toString().indexOf(")");
+      tz = date.toString().substr(i1, i2 - i1);
+    });
+    if (!_.isNull(tz)) {
+      $(".tz-utc").text(tz);
+    }
+  },
+
   visibility: function () {
     if (!m.currentUser) {
       return;
@@ -1179,6 +1196,12 @@ var m = {
     }],
     [/^\/event-tag\/([1-9][0-9]*)\/note$/, function (eventtagIdString) {
       m.noteMarkdown();
+    }],
+    [/^\/history$/, function () {
+      m.convertUtcToLocal();
+    }],
+    [/revision$/, function () {
+      m.convertUtcToLocal();
     }]
   ],
 
