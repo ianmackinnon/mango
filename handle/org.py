@@ -20,7 +20,7 @@ from address import BaseAddressHandler
 from contact import BaseContactHandler
 
 from model import Org, Note, Address, Orgalias, Event, Orgtag, Contact, \
-    org_orgtag, org_note
+    org_orgtag, org_address, org_note
 
 from model_v import Org_v, Address_v, Contact_v, \
     org_address_v, org_contact_v, \
@@ -1187,6 +1187,13 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
+        addr_query = self.orm.query(func.count(Address.address_id).label("count")) \
+            .join(org_address) \
+            .add_columns(org_address.c.org_id) \
+            .filter(Address.public==True) \
+            .group_by(org_address.c.org_id) \
+            .subquery()
+
         dsei_query = self.orm.query(func.count(Orgtag.orgtag_id) \
                                     .label("count")) \
             .join(org_orgtag) \
@@ -1233,6 +1240,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
         
         org_query = self.orm.query(Org) \
             .outerjoin(act_query, act_query.c.org_id==Org.org_id) \
+            .outerjoin(addr_query, addr_query.c.org_id==Org.org_id) \
             .outerjoin(dsei_query, dsei_query.c.org_id==Org.org_id) \
             .outerjoin(sap_query, sap_query.c.org_id==Org.org_id) \
             .outerjoin(farn_query, farn_query.c.org_id==Org.org_id) \
@@ -1241,6 +1249,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .add_columns(
                 literal_column(exist_clause).label("include"),
                 func.coalesce(act_query.c.count, 0).label("act"),
+                func.coalesce(addr_query.c.count, 0).label("addr"),
                 func.coalesce(dsei_query.c.count, 0).label("dsei"),
                 func.coalesce(sap_query.c.count, 0).label("sap"),
                 func.coalesce(farn_query.c.count, 0).label("farn"),
@@ -1257,6 +1266,8 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "act_exclude_private": 0,
             "act_include_private": [],
             "act_include_pending": [],
+
+            "addr_public": [],
 
             "desc_public": [],
             "desc_private": [],
@@ -1283,10 +1294,13 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "exclude_pending": 0,
             }
 
-        for org, include, act, dsei, sap, farn, sipri, note in org_query:
+        for org, include, act, addr, dsei, sap, farn, sipri, note in org_query:
             if act:
                 if org.public:
-                    if include:
+                    if not addr:
+                        packet["addr_public"] \
+                            .append((org, dsei, sap))
+                    elif include:
                         packet["act_include_public"] += 1
                     else:
                         packet["act_exclude_public"] \

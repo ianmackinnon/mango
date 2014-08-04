@@ -921,6 +921,9 @@ var m = {
       if ($el.hasClass("visibility-button")) {
         return;
       }
+      if ($el.hasClass("change-visibility")) {
+        return;
+      }
       if (!$el.attr("href")) {
         return;
       }

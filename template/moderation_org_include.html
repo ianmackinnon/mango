@@ -35,6 +35,7 @@ else:
 %endif
       <tr>
         <td><a 
+               class="change-visibility"
                href="${url}"
                >${org.name}</a>
 %if hint and tags:
@@ -92,6 +93,24 @@ last_tags = tags
     </div>
   </div>
 </div>
+
+%if packet["addr_public"]:
+<div class="inclusion">
+  <h3>Addresses: Add a public address.</h3>
+
+  <div class="mango-box third">
+    <div class="visibility public">
+      <ul>
+        <li>Have activity tags</li>
+        <li>Lacks a public address</li>
+        <li>Public</li>
+      </ul>
+      <div class="total">${len(packet["addr_public"])}</div>
+    </div>
+    ${self.inclusion_table("addr_public", link="org", hint=False)}
+  </div>
+</div>
+%endif
 
 %if packet["act_exclude_public"] or packet["act_include_private"] or packet["act_include_pending"]:
 <div class="inclusion">
