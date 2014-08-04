@@ -1251,7 +1251,6 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .order_by("((dsei > 0) * 4 + (sap > 0) * 2 + (sipri > 0)) desc",
                       Org.name)
 
-
         packet = {
             "act_include_public": 0,
             "act_exclude_public": [],

@@ -306,16 +306,6 @@ class BaseHandler(RequestHandler):
     def end_session(self):
         self.clear_cookie(self.application.session_cookie_name)
 
-    @staticmethod
-    def geo_in(latitude, longitude, geobox):
-        if not geobox:
-            return True
-        if latitude < geobox["latmin"] or latitude > geobox["latmax"]:
-            return False
-        if longitude < geobox["lonmin"] or longitude > geobox["lonmax"]:
-            return False
-        return True
-
     def query_rewrite(self, options):
         arguments = self.request.arguments.copy()
         arguments.update(options)
@@ -436,7 +426,6 @@ class BaseHandler(RequestHandler):
             "footer": components["footer"],
 
             "load_map": self.load_map,
-            "geo_in": self.geo_in,
             "next_": self.next_,
             "messages": self.messages,
             "newline": newline,
@@ -673,10 +662,11 @@ class BaseHandler(RequestHandler):
     def get_arguments_multi(self, name, delimiter=",", json=False):
         ret = []
         args = self.get_arguments(name, strip=True, json=json)
-        if not args:
-            return ret
         for arg in args:
-            ret += [unicode(value.strip()) for value in arg.split(delimiter)]
+            for value in arg.split(delimiter):
+                value = unicode(value.strip())
+                if value:
+                    ret.append(value)
         return ret
 
     def get_arguments_int(self, name):
@@ -699,61 +689,6 @@ class BaseHandler(RequestHandler):
                 self.get_argument_latlon("latlon", None) or \
                 self.lookup
             )
-
-    def get_geobox(self):
-        geobox = self.get_argument_geobox(default=None)
-        if geobox:
-            return geobox
-        latlon = self.get_argument_latlon("latlon", None)
-        distance = self.get_argument_float("distance", 25)
-        if not latlon:
-            lookup = self.get_argument("lookup", None)
-            if lookup:
-                latlon = geo.geocode(lookup)
-                if not latlon:
-                    self.messages.append(("WARNING", "Could not find address: '%s'." % lookup))
-                    return None
-        if not latlon:
-            return None
-        return Address.geobox(latlon[0], latlon[1], distance)
-
-    def geo_address_query(self):
-        query = self.orm.query(Address)
-        geobox = self.get_geobox()
-        return Address.filter_geobox(query, geobox)
-
-    def filter_geo(self, address_list, limit=10):
-        geobox = self.get_argument_geobox(default=None)
-        latlon = self.get_argument_latlon("latlon", None)
-        if geobox:
-            return Address.filter_geobox(address_list, geobox), geobox, latlon
-
-        # Find geobox around the center that includes at least 10 matches
-        if not latlon:
-            lookup = self.get_argument("lookup", None)
-            if lookup:
-                latlon = geo.geocode(lookup)
-                if not latlon:
-                    self.messages.append(("WARNING", "Could not find address: '%s'." % lookup))
-        if not latlon:
-            return address_list.limit(limit), geobox, latlon
-
-        address_list_2 = Address.order_distance(address_list, latlon)
-        address_list_2 = address_list_2.limit(limit)
-        max_dist = Address.max_distance(
-            self.orm, address_list_2, latlon[0], latlon[1])
-        max_dist *= 1.1
-
-        scale = Address.scale(latlon[0])
-
-        values = (
-            latlon[0] - max_dist,
-            latlon[0] + max_dist,
-            max(latlon[1] - max_dist / max(scale, 0.01), -180),
-            min(latlon[1] + max_dist / max(scale, 0.01), 180),
-            )
-        geobox = dict(zip(["latmin", "latmax", "lonmin", "lonmax"], values))
-        return Address.filter_geobox(address_list, geobox), geobox, latlon
 
     def filter_visibility(self, query, Entity, visibility=None,
                           secondary=False, null_column=False):

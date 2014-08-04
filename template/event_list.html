@@ -80,12 +80,12 @@ return value
 <div class="mango-box right" id="event_list">
 <div class="action-bar">
   <span class="counts">
-    %if event_packet and 0:
+    %if event_packet:
     ${self.mini.counts(
       event_packet["event_list"],
-      event_packet.get("offset", 0),
-      event_packet["event_len"],
-      not lookup and query_rewrite(dict(parameters, **{"offset": event_packet.get("offset", 0) + len(event_packet["event_list"])}))
+      offset,
+      event_packet["event_length"],
+      not lookup and query_rewrite(dict(parameters, **{"offset": (offset or 0) + len(event_packet["event_list"])}))
       )}
     %endif
   </span>
@@ -101,9 +101,9 @@ return value
 </div>
 
 <div class="column">
-  %if event_packet and 0:
+  %if event_packet:
   %for event in event_packet["event_list"]:
-  ${self.mini.event_box(event, geobox=event_packet["geobox"], parameters=parameters) | n}
+  ${self.mini.event_box(event, parameters=parameters) | n}
   %endfor
   %endif
 </div>

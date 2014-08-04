@@ -1312,43 +1312,6 @@ class Address(Base, MangoEntity, NotableEntity):
         return ""
  
     @staticmethod
-    def in_geobox(latitude, longitude, geobox):
-        if latitude > geobox["latmax"]:
-            return False
-        if latitude < geobox["latmin"]:
-            return False
-        if longitude > geobox["lonmax"]:
-            return False
-        if longitude < geobox["lonmin"]:
-            return False
-        return True
-
-    @staticmethod
-    def geobox(latitude, longitude, distance):
-        # Cheap
-        r = 6378.1
-        distance_degrees = 360 * distance / (2 * math.pi * r)
-        distance_degrees_lon = distance_degrees * math.cos(math.radians(latitude))
-        latmin = latitude - distance_degrees
-        latmax = latitude + distance_degrees
-        lonmin = longitude - distance_degrees_lon
-        lonmax = longitude + distance_degrees_lon
-        return {
-            "latmax": latmax, "latmin": latmin,
-            "lonmax": lonmax, "lonmin": lonmin,
-            }
-
-    @staticmethod
-    def filter_geobox(query, geobox):
-        if not geobox:
-            return query
-        return query \
-            .filter(Address.latitude >= geobox["latmin"]) \
-            .filter(Address.latitude <= geobox["latmax"]) \
-            .filter(Address.longitude >= geobox["lonmin"]) \
-            .filter(Address.longitude <= geobox["lonmax"])
-
-    @staticmethod
     def scale(latitude):
         return math.cos(math.radians(latitude))
 

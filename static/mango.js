@@ -176,21 +176,6 @@ var m = {
     }
   },
 
-  "geo": {
-    "in_": function (latitude, longitude, geobox) {
-      if (geobox === null) {
-        return true;
-      }
-      if (latitude > geobox.latmax || latitude < geobox.latmin) {
-        return false;
-      }
-      if (longitude > geobox.lonmax || longitude < geobox.lonmin) {
-        return false;
-      }
-      return true;
-    }
-  },
-
   "timers": {},
   "last_values": {},
 
