@@ -795,6 +795,8 @@
       this.$social = this.options.$social;
       this.mapView = this.options.mapView;
 
+      this.formAction = null;
+
       var data = this.serializeForm(this.options.$form);
       m.log.debug("set serializeForm", data);
 
@@ -921,6 +923,11 @@
 
     submit: function (event) {
       event.preventDefault();
+      var view = this;
+      view.formAction = "submit";
+      var timeout = setTimeout(function () {
+        view.formAction = null;
+      }, 25);
       this.send(false);
     },
 
@@ -1212,9 +1219,14 @@
 
     formChange: function (event) {
       var data = this.serializeForm();
+      var view = this;
       m.log.debug("set formChange", data);
       this.model.set(data);
-      this.send();
+      var timeout = setTimeout(function () {
+        if (view.formAction !== "submit") {
+          view.send();
+        };
+      }, 25);
     },
 
     popstate: function () {
