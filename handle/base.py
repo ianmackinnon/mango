@@ -164,6 +164,56 @@ def convert_links(text, quote="\""):
 
 
 
+def url_rewrite_static(uri, root=None, options=None, parameters=None, next_=None):
+        """
+        Rewrites URLs to:
+            prepend url_root to absolute paths if it's not already there
+            add parameters, optionally overwritten.
+
+        Query parameter precedence:
+            next_
+            options
+            uri query string
+            parameters
+        """
+
+        if options is None:
+            options = {}
+        
+        if parameters is None:
+            parameters = {}
+        
+        if root is None:
+            root = "/"
+        
+        scheme, netloc, path, query, fragment = urlparse.urlsplit(uri)
+
+        if path.startswith("/") and not path.startswith(root):
+            path = root + path[1:]
+
+        arguments = parameters.copy()
+
+        for key, value in urlparse.parse_qs(query, keep_blank_values=False).items():
+            arguments[key] = value
+            if value is None:
+                del arguments[key]
+
+        for key, value in options.items():
+            arguments[key] = value
+            if value is None:
+                del arguments[key]
+
+        if next_:
+            arguments["next"] = url_rewrite_static(next_, root)
+
+        query = urlencode(arguments, True)
+
+        uri = urlparse.urlunsplit((scheme, netloc, path, query, fragment))
+        return uri
+
+
+
+
 class BaseHandler(RequestHandler):
 
     _unsupported_method_error = (403, "Method Not Allowed")
@@ -316,53 +366,10 @@ class BaseHandler(RequestHandler):
         return uri
 
     def url_rewrite(self, uri, options=None, parameters=None, next_=None):
-        """
-        Rewrites URLs to:
-            prepend url_root to absolute paths if it's not already there
-            add parameters, optionally overwritten.
-
-        uri:      an URL without the url root
-        options:  optional parameters to write over self.parameters
-
-        query priority:
-            next_
-            options
-            uri query string
-            parameters
-        """
-
-        if options is None:
-            options = {}
-        
         if parameters is None:
             parameters = self.parameters
-        
-        scheme, netloc, path, query, fragment = urlparse.urlsplit(uri)
 
-        if path.startswith("/") and not path.startswith(self.url_root):
-            path = self.url_root + path[1:]
-
-        arguments = parameters.copy()
-
-        for key, value in urlparse.parse_qs(query, keep_blank_values=False).items():
-            arguments[key] = value
-            if value is None:
-                del arguments[key]
-                continue
-
-        for key, value in options.items():
-            arguments[key] = value
-            if value is None:
-                del arguments[key]
-                continue
-
-        if next_:
-            arguments["next"] = self.url_rewrite(next_, parameters={})
-
-        query = urlencode(arguments, True)
-
-        uri = urlparse.urlunsplit((scheme, netloc, path, query, fragment))
-        return uri
+        return url_rewrite_static(uri, self.url_root, options, parameters, next_)
 
     def redirect_next(self, default_url=None):
         """

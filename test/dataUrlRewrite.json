@@ -1,0 +1,131 @@
+[
+
+  [
+    {
+      "uri": "/index"
+    },
+    "/index"
+  ],
+
+  [
+    {
+      "uri": "http://localhost/index"
+    },
+    "http://localhost/index"
+  ],
+
+  [
+    {
+      "uri": "https://192.168.1.1:8080/index"
+    },
+    "https://192.168.1.1:8080/index"
+  ],
+
+  [
+    {
+      "uri": "/index"
+    },
+    "/index"
+  ],
+
+  [
+    {
+      "uri": "index"
+    },
+    "index"
+  ],
+
+  [
+    {
+      "uri": "/index",
+      "root": null,
+      "options": null,
+      "parameters": null,
+      "next": null
+    },
+    "/index"
+  ],
+
+  [
+    {
+      "uri": "/index",
+      "root": "/path/"
+    },
+    "/path/index"
+  ],
+
+  [
+    {
+      "uri": "/index",
+      "root": "/path/",
+      "options": {
+        "abc": 123
+      }
+    },
+    "/path/index?abc=123"
+  ],
+
+  [
+    {
+      "uri": "/index",
+      "root": "/path/",
+      "options": {
+        "abc": 456
+      },
+      "parameters": {
+        "def": 789,
+        "abc": 123
+      }
+    },
+    "/path/index?abc=456&def=789"
+  ],
+
+  [
+    {
+      "uri": "/index",
+      "root": "/path/",
+      "options": {
+        "next": "/next1"
+      },
+      "parameters": {
+        "next": "/next2"
+      },
+      "next": "/next3"
+    },
+    "/path/index?next=%2Fpath%2Fnext3"
+  ],
+
+  [
+    {
+      "uri": "/index?next=nextU#f",
+      "root": "/path/",
+      "options": {
+        "next": "/next1"
+      },
+      "parameters": {
+        "next": "/next2"
+      },
+      "next": "/next3"
+    },
+    "/path/index?next=%2Fpath%2Fnext3#f"
+  ],
+
+  [
+    {
+      "uri": "/index?a=1=1&b=2&c=&d&e=5",
+      "options": {
+        "a": 4
+      }
+    },
+    "/index?a=4&b=2&e=5"
+  ],
+
+  [
+    {
+      "uri": "/index?tag=abc&tag=def"
+    },
+    "/index?tag=abc&tag=def"
+  ]
+
+]
+

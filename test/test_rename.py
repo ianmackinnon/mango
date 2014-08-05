@@ -23,7 +23,7 @@ class TestTagShortName(unittest.TestCase):
             os.path.dirname(
                 os.path.abspath(__file__)
                 ),
-            u"data_rename.json"
+            u"dataRename.json"
             )
         with codecs.open(path, "r", "utf-8") as json_data:
             cls.known = json.load(json_data)
