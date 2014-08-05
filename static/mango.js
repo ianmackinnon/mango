@@ -988,6 +988,13 @@ var m = {
     }
   },
 
+  addDeleteConfirm: function () {
+    var $deleteForm = $("input[name='_method'][value='delete']").parent()
+    $deleteForm.on("submit", function (e) {
+      return confirm("Really delete?");
+    });
+  },
+
   visibility: function () {
     if (!m.currentUser) {
       return;
@@ -1071,6 +1078,7 @@ var m = {
     }],
 
     [/^\/organisation\/([1-9][0-9]*)$/, function (orgIdString) {
+      m.addDeleteConfirm();
       m.initMap(function (mapView) {
         m.initOrg(mapView);
       });
@@ -1099,6 +1107,7 @@ var m = {
       m.visibility();
     }],
     [/^\/event\/([1-9][0-9]*)$/, function (eventIdString) {
+      m.addDeleteConfirm();
       m.initMap(function (mapView) {
         m.initEvent(mapView);
       });
