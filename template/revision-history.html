@@ -82,16 +82,9 @@ user_link = url_rewrite("/user/%s" % (entity.user_id))
         <a href="${revision_link}">${entity.entity_v_id}</a>
         %endif
       </td>
-      %if moderator:
-      %if entity.user_moderator:
       <td class="history-column-visibility ${self.mini.visibility_public(entity.public)}">
         ${self.mini.visibility_public(entity.public)}
       </td>
-      %else:
-      <td class="history-column-visibility">
-      </td>
-      %endif
-      %endif
       <td class="history-column-content"><div class="ellipsis">${entity_name(entity)}</div></td>
       %if moderator:
       <td class="history-column-user">

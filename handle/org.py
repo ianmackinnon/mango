@@ -24,7 +24,7 @@ from model import Org, Note, Address, Orgalias, Event, Orgtag, Contact, \
 
 from model_v import Org_v, Address_v, Contact_v, \
     org_address_v, org_contact_v, \
-    mango_suggestion_append_approved, mango_suggestion_append_suggestion
+    mango_entity_append_suggestion
 
 from handle.user import \
     get_user_pending_org_address, \
@@ -390,18 +390,10 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
         if self.contributor:
             org_id = org and org.org_id or org_v.org_id
 
-            if org_v:
-                mango_suggestion_append_approved(
-                    self.orm, address_list, Address, org_address_v,
-                    org_id, "org_id", "address_id")
-                mango_suggestion_append_approved(
-                    self.orm, contact_list, Contact, org_contact_v,
-                    org_id, "org_id", "contact_id")
-
-            mango_suggestion_append_suggestion(
+            mango_entity_append_suggestion(
                 self.orm, address_list, get_user_pending_org_address,
                 self.current_user, org_id, "address_id")
-            mango_suggestion_append_suggestion(
+            mango_entity_append_suggestion(
                 self.orm, contact_list, get_user_pending_org_contact,
                 self.current_user, org_id, "contact_id")
 
@@ -567,18 +559,12 @@ class OrgRevisionHandler(BaseOrgHandler):
             public=True,
             )
 
-        ignore_list = []
         fields = (
             ("name", "name"),
             ("description", "markdown"),
             ("end_date", "date"),
             ("public", "public")
             )
-
-        if not self.moderator or not org_v.moderation_user.moderator:
-            ignore_list.append(
-                "public"
-                )
 
         latest_a_time = self._get_org_latest_a_time(org_id)
 
@@ -589,7 +575,6 @@ class OrgRevisionHandler(BaseOrgHandler):
             version_current_url=org and org.url,
             latest_a_time=latest_a_time,
             fields=fields,
-            ignore_list=ignore_list,
             obj=obj,
             obj_v=obj_v,
             )

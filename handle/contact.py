@@ -19,7 +19,7 @@ from model import User, Medium, Contact, Org, Event, \
 
 from model_v import Contact_v, \
     org_contact_v, event_contact_v, \
-    mango_suggestion_append_approved, mango_suggestion_append_suggestion
+    mango_entity_append_suggestion
 
 from handle.user import get_user_pending_contact_event, get_user_pending_contact_org
 
@@ -202,18 +202,10 @@ class ContactHandler(BaseContactHandler, MangoEntityHandlerMixin):
         if self.contributor:
             contact_id = contact and contact.contact_id or contact_v.contact_id
 
-            if contact_v:
-                mango_suggestion_append_approved(
-                    self.orm, org_list, Org, org_contact_v,
-                    contact_id, "contact_id", "org_id")
-                mango_suggestion_append_approved(
-                    self.orm, event_list, Event, event_contact_v,
-                    contact_id, "contact_id", "event_id")
-
-            mango_suggestion_append_suggestion(
+            mango_entity_append_suggestion(
                 self.orm, org_list, get_user_pending_contact_org,
                 self.current_user, contact_id, "org_id")
-            mango_suggestion_append_suggestion(
+            mango_entity_append_suggestion(
                 self.orm, event_list, get_user_pending_contact_event,
                 self.current_user, contact_id, "event_id")
 
@@ -374,7 +366,6 @@ class ContactRevisionHandler(BaseContactHandler):
             medium=contact_v.medium.name,
             )
 
-        ignore_list = []
         fields = (
             ("medium", "name"),
             ("text", "name"),
@@ -382,11 +373,6 @@ class ContactRevisionHandler(BaseContactHandler):
             ("source", "markdown"),
             ("public", "public")
             )
-
-        if not self.moderator or not contact_v.moderation_user.moderator:
-            ignore_list.append(
-                "public"
-                )
 
         latest_a_time = self._get_contact_latest_a_time(contact_id)
 
@@ -397,7 +383,6 @@ class ContactRevisionHandler(BaseContactHandler):
             version_current_url=contact and contact.url,
             latest_a_time=latest_a_time,
             fields=fields,
-            ignore_list=ignore_list,
             obj=obj,
             obj_v=obj_v,
             )

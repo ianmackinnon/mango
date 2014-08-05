@@ -24,7 +24,7 @@ from model import User, Address, Note, Org, Orgtag, Event, \
 from model_v import Address_v, \
     accept_address_org_v, accept_address_event_v, \
     org_address_v, event_address_v, \
-    mango_suggestion_append_approved, mango_suggestion_append_suggestion
+    mango_entity_append_suggestion
 
 from handle.user import get_user_pending_address_event, get_user_pending_address_org
 
@@ -203,18 +203,10 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
         if self.contributor:
             address_id = address and address.address_id or address_v.address_id
 
-            if address_v:
-                mango_suggestion_append_approved(
-                    self.orm, org_list, Org, org_address_v,
-                    address_id, "address_id", "org_id")
-                mango_suggestion_append_approved(
-                    self.orm, event_list, Event, event_address_v,
-                    address_id, "address_id", "event_id")
-
-            mango_suggestion_append_suggestion(
+            mango_entity_append_suggestion(
                 self.orm, org_list, get_user_pending_address_org,
                 self.current_user, address_id, "org_id")
-            mango_suggestion_append_suggestion(
+            mango_entity_append_suggestion(
                 self.orm, event_list, get_user_pending_address_event,
                 self.current_user, address_id, "event_id")
 
@@ -378,17 +370,11 @@ class AddressRevisionHandler(BaseAddressHandler):
             public=True,
             )
 
-        ignore_list = []
         fields = (
             ("postal", "name"),
             ("source", "markdown"),
             ("public", "public")
             )
-
-        if not self.moderator or not address_v.moderation_user.moderator:
-            ignore_list.append(
-                "public"
-                )
 
         latest_a_time = self._get_address_latest_a_time(address_id)
 
@@ -399,7 +385,6 @@ class AddressRevisionHandler(BaseAddressHandler):
             version_current_url=address and address.url,
             latest_a_time=latest_a_time,
             fields=fields,
-            ignore_list=ignore_list,
             obj=obj,
             obj_v=obj_v,
             )

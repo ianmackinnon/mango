@@ -36,19 +36,7 @@ def use_mysql():
 
 
 
-def mango_suggestion_append_approved(orm, source_list, Target, link_v, source_id, source_id_name, target_id_name):
-    # To do: Prevent this from showing deleted, pending and private entities that have been added to a pending entity.
-
-    query = orm.query(Target) \
-        .filter(exists().where(and_(
-            getattr(link_v.c, source_id_name) == source_id,
-            getattr(link_v.c, target_id_name) == getattr(Target, target_id_name)
-        )))
-    for item in query.all():
-        source_list.append(item)
-
-
-def mango_suggestion_append_suggestion(orm, source_list, get_pending, user, source_id, target_id_name):
+def mango_entity_append_suggestion(orm, source_list, get_pending, user, source_id, target_id_name):
     for entity_v in get_pending(orm, user, source_id):
         for i, entity in enumerate(source_list):
             if getattr(entity, target_id_name) == getattr(entity_v, target_id_name):

@@ -283,17 +283,11 @@ class NoteRevisionHandler(BaseNoteHandler):
             public=True,
             )
 
-        ignore_list = []
         fields = (
             ("text", "markdown"),
             ("source", "markdown"),
             ("public", "public")
             )
-
-        if not self.moderator or not note_v.moderation_user.moderator:
-            ignore_list.append(
-                "public"
-                )
 
         latest_a_time = self._get_note_latest_a_time(note_id)
 
@@ -304,7 +298,6 @@ class NoteRevisionHandler(BaseNoteHandler):
             version_current_url=note and note.url,
             latest_a_time=latest_a_time,
             fields=fields,
-            ignore_list=ignore_list,
             obj=obj,
             obj_v=obj_v,
             )

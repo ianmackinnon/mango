@@ -102,8 +102,6 @@ suggestion = (not latest_a_time) or (obj_v.get("date") > latest_a_time)
 <%
 content = obj and obj.get(field_name, None)
 content_v = obj_v.get(field_name, None)
-if field_name in ignore_list:
-    content_v = content
 %>
 ${field_form(field_name, field_type, content_v)}
 <tr>

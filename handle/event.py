@@ -20,7 +20,7 @@ from model import Event, Note, Address, Org, Eventtag, event_eventtag
 
 from model_v import Event_v, Address_v, Contact_v, \
     event_address_v, event_contact_v, \
-    mango_suggestion_append_approved, mango_suggestion_append_suggestion
+    mango_entity_append_suggestion
 
 from handle.user import \
     get_user_pending_event_address, \
@@ -242,18 +242,10 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
         if self.contributor:
             event_id = event and event.event_id or event_v.event_id
 
-            if event_v:
-                mango_suggestion_append_approved(
-                    self.orm, address_list, Address, event_address_v,
-                    event_id, "event_id", "address_id")
-                mango_suggestion_append_approved(
-                    self.orm, contact_list, Contact, event_contact_v,
-                    event_id, "event_id", "contact_id")
-
-            mango_suggestion_append_suggestion(
+            mango_entity_append_suggestion(
                 self.orm, address_list, get_user_pending_event_address,
                 self.current_user, event_id, "address_id")
-            mango_suggestion_append_suggestion(
+            mango_entity_append_suggestion(
                 self.orm, contact_list, get_user_pending_event_contact,
                 self.current_user, event_id, "contact_id")
 
@@ -417,7 +409,6 @@ class EventRevisionHandler(BaseEventHandler):
             public=True,
             )
 
-        ignore_list = []
         fields = (
             ("name", "name"),
             ("start_date", "date"),
@@ -428,11 +419,6 @@ class EventRevisionHandler(BaseEventHandler):
             ("public", "public")
             )
 
-        if not self.moderator or not event_v.moderation_user.moderator:
-            ignore_list.append(
-                "public"
-                )
-
         latest_a_time = self._get_event_latest_a_time(event_id)
 
         self.render(
@@ -442,7 +428,6 @@ class EventRevisionHandler(BaseEventHandler):
             version_current_url=event and event.url,
             latest_a_time=latest_a_time,
             fields=fields,
-            ignore_list=ignore_list,
             obj=obj,
             obj_v=obj_v,
             )
