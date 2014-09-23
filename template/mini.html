@@ -11,8 +11,8 @@ u"○◌◍●"
 %if parameters.get("view", None):
 <input type="hidden" name="view" value="${parameters["view"]}">
 %endif
-%if parameters.get("visibility", None):
-<input type="hidden" name="visibility" value="${parameters["visibility"]}">
+%if parameters.get("visibility", None) or moderator:
+<input type="hidden" name="visibility" value="${parameters.get("visibility", "public")}">
 %endif
 %endif
 </%def>

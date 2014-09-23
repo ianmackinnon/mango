@@ -1953,22 +1953,23 @@ def virtual_org_orgtag_edit(org, orgtag, add=None):
             .filter(filter_search)
 
         has_virtual_tag_others = orm.query(Orgtag) \
+            .filter_by(virtual=None) \
             .join(Org, Orgtag.org_list) \
             .filter(Org.org_id==org.org_id) \
             .filter(filter_search)
+        
 
         if ((add and has_virtual_tag_this.count()) or has_virtual_tag_others.count()):
             if virtual_tag not in org.orgtag_list:
                 # Flag the virtual tag so it doesn't trigger a value error
                 virtual_tag.virtual = False
                 org.orgtag_list.append(virtual_tag)
-                return
         else:
             if virtual_tag in org.orgtag_list:
                 # Flag the virtual tag so it doesn't trigger a value error
                 virtual_tag.virtual = False
                 org.orgtag_list.remove(virtual_tag)
-                return
+
 
 
 
