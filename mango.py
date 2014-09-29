@@ -423,6 +423,7 @@ class Application(tornado.web.Application):
         self.handlers = self.process_handlers(self.handlers)
 
         settings = {
+            # serves /robots.txt and /favicon.ico from static
 #            "static_path": os.path.join(os.path.dirname(__file__), "static"),
             }
 
