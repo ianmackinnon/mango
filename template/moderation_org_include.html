@@ -207,11 +207,11 @@ last_tags = tags
 </div>
 %endif
 
-%if packet["farn_public"] or packet["farn_private"] or packet["farn_pending"]:
+%if packet["israel_public"] or packet["israel_private"] or packet["israel_pending"]:
 <div class="inclusion">
-  <h3>Farnborough 2014: Add activity tags:</h3>
+  <h3>Military exporters to Israel: Add activity tags:</h3>
 
-  <% criterion = "Attending Farnborough 2014." %>
+  <% criterion = "Military exporter to Israel." %>
 
   <div class="mango-box third">
     <div class="visibility public">
@@ -220,9 +220,9 @@ last_tags = tags
         <li>${criterion}</li>
         <li>Public</li>
       </ul>
-      <div class="total">${len(packet["farn_public"])}</div>
+      <div class="total">${len(packet["israel_public"])}</div>
     </div>
-    ${self.inclusion_table("farn_public", hint=True)}
+    ${self.inclusion_table("israel_public", hint=True)}
   </div>
 
   <div class="mango-box third">
@@ -232,9 +232,9 @@ last_tags = tags
         <li>${criterion}</li>
         <li>Private</li>
       </ul>
-      <div class="total">${len(packet["farn_private"])}</div>
+      <div class="total">${len(packet["israel_private"])}</div>
     </div>
-    ${self.inclusion_table("farn_private", hint=True)}
+    ${self.inclusion_table("israel_private", hint=True)}
   </div>
 
   <div class="mango-box third">
@@ -244,9 +244,9 @@ last_tags = tags
         <li>${criterion}</li>
         <li>Pending</li>
       </ul>
-      <div class="total">${len(packet["farn_pending"])}</div>
+      <div class="total">${len(packet["israel_pending"])}</div>
     </div>
-    ${self.inclusion_table("farn_pending", hint=True)}
+    ${self.inclusion_table("israel_pending", hint=True)}
   </div>
 </div>
 %endif

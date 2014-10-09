@@ -1188,11 +1188,11 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
-        farn_query = self.orm.query(func.count(Orgtag.orgtag_id) \
+        israel_query = self.orm.query(func.count(Orgtag.orgtag_id) \
                                      .label("count")) \
             .join(org_orgtag) \
             .add_columns(org_orgtag.c.org_id) \
-            .filter(Orgtag.name_short==u"exhibitor|farnborough-2014") \
+            .filter(Orgtag.name_short==u"market|military-export-applicant-to-israel") \
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
@@ -1228,7 +1228,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .outerjoin(addr_query, addr_query.c.org_id==Org.org_id) \
             .outerjoin(dsei_query, dsei_query.c.org_id==Org.org_id) \
             .outerjoin(sap_query, sap_query.c.org_id==Org.org_id) \
-            .outerjoin(farn_query, farn_query.c.org_id==Org.org_id) \
+            .outerjoin(israel_query, israel_query.c.org_id==Org.org_id) \
             .outerjoin(sipri_query, sipri_query.c.org_id==Org.org_id) \
             .outerjoin(note_query, note_query.c.org_id==Org.org_id) \
             .add_columns(
@@ -1237,7 +1237,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 func.coalesce(addr_query.c.count, 0).label("addr"),
                 func.coalesce(dsei_query.c.count, 0).label("dsei"),
                 func.coalesce(sap_query.c.count, 0).label("sap"),
-                func.coalesce(farn_query.c.count, 0).label("farn"),
+                func.coalesce(israel_query.c.count, 0).label("israel"),
                 func.coalesce(sipri_query.c.count, 0).label("sipri"),
                 func.coalesce(note_query.c.count, 0).label("note"),
                 ) \
@@ -1258,9 +1258,9 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "desc_private": [],
             "desc_pending": [],
 
-            "farn_public": [],
-            "farn_private": [],
-            "farn_pending": [],
+            "israel_public": [],
+            "israel_private": [],
+            "israel_pending": [],
 
             "sipri_public": [],
             "sipri_private": [],
@@ -1279,7 +1279,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "exclude_pending": 0,
             }
 
-        for org, include, act, addr, dsei, sap, farn, sipri, note in org_query:
+        for org, include, act, addr, dsei, sap, israel, sipri, note in org_query:
             if act:
                 if org.public:
                     if not addr:
@@ -1322,15 +1322,15 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 else:
                     packet["note_pending"] \
                         .append((org, dsei, sap))
-            elif farn:
+            elif israel:
                 if org.public:
-                    packet["farn_public"] \
+                    packet["israel_public"] \
                         .append((org, dsei, sap))
                 elif org.public == False:
-                    packet["farn_private"] \
+                    packet["israel_private"] \
                         .append((org, dsei, sap))
                 else:
-                    packet["farn_pending"] \
+                    packet["israel_pending"] \
                         .append((org, dsei, sap))
             elif sipri:
                 if org.public:
