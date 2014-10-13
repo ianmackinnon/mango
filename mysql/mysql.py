@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
 import re
+import os
 import sys
 import getpass
 import logging
@@ -15,8 +15,6 @@ import MySQLdb
 
 
 log = logging.getLogger('mysql')
-
-conf_path = u".mango.conf"
 
 Options = namedtuple(
     "Options",
@@ -45,7 +43,7 @@ section, name))
 
 
 
-def get_conf(path=conf_path):
+def get_conf(path):
     if not os.path.isfile(path):
         log.error("%s: File not found" % path)
         sys.exit(1)
@@ -76,14 +74,14 @@ def get_conf(path=conf_path):
 
 
 
-def connection_url_app(path=conf_path):
+def connection_url_app(path):
     options = get_conf(path)
     return u'mysql://%s:%s@localhost/%s?charset=utf8' % (
         options.app_username, options.app_password, options.database)
-    
 
 
-def connection_url_admin(path=conf_path):
+
+def connection_url_admin(path):
     options = get_conf(path)
     return u'mysql://%s:%s@localhost/%s?charset=utf8' % (
         options.admin_username, options.admin_password, options.database)
@@ -143,6 +141,7 @@ def drop_user(cursor, username):
 def create_user(cursor, privileges, username, password):
     drop_user(cursor, username)
     cursor.execute("grant %s on * to '%s'@'localhost' identified by '%s';" % (privileges, username, password))
+    # cursor.execute("grant reload on *.* to '%s'@'localhost';" % (username))
     log.debug("User %s created with permissions." % username)
 
 
@@ -166,13 +165,24 @@ def mysql_drop(options):
 
 
 
-def mysql_generate_conf(options):
-    sys.stdout.write( \
+def mysql_generate_conf(options, account=None, dump=False):
+    if account == None:
+        account = "admin"
+    assert account in ("admin", "app")
+
+    if dump:
+        sys.stdout.write( \
+"""[client]
+user=%s
+password=%s
+""" % (options[account + "_username"], options[account + "_password"]))
+    else:
+        sys.stdout.write( \
 """[client]
 database=%s
 user=%s
 password=%s
-""" % (options.database, options.admin_username, options.admin_password))
+""" % (options.database, options[account + "_username"], options[account + "_password"]))
 
 
 
@@ -288,7 +298,7 @@ def mysql_source(options, source):
 
 
 
-def main(conf_path, key=None, purge=False, empty=False, drop_triggers=False, generate=False, test=False, source=None):
+def main(conf_path, key=None, purge=False, empty=False, drop_triggers=False, account=None, generate=False, generate_dump=False, test=False, source=None):
     options = get_conf(conf_path)
 
     if key:
@@ -307,8 +317,9 @@ def main(conf_path, key=None, purge=False, empty=False, drop_triggers=False, gen
     if drop_triggers:
         return mysql_drop_triggers(options)
 
-    if generate:
-        return mysql_generate_conf(options)
+    if generate or generate_dump:
+        return mysql_generate_conf(
+            options, account=account, dump=generate_dump)
 
     if test:
         if mysql_test(options):
@@ -334,8 +345,6 @@ Create MySQL database and users.
                       help="Print verbose information for debugging.", default=0)
     parser.add_option("-q", "--quiet", action="count", dest="quiet",
                       help="Suppress warnings.", default=0)
-    parser.add_option("-c", "--configuration", action="store", dest="configuration",
-                      help="Path to configuration in INI format", default=conf_path)
     parser.add_option("-k", "--key", action="store", dest="key",
                       help="Print a configuration key")
     parser.add_option("-t", "--test", action="store_true", dest="test",
@@ -346,16 +355,22 @@ Create MySQL database and users.
                       help="Empty the database.", default=False)
     parser.add_option("-r", "--drop-triggers", action="store_true", dest="drop_triggers",
                       help="Drop all triggers.", default=False)
+    parser.add_option("-a", "--account", action="store", dest="account",
+                      help="Specify account for conf files..", default=None)
     parser.add_option("-g", "--generate", action="store_true", dest="generate",
                       help="Generate MySQL conf to stdout.", default=False)
+    parser.add_option("-G", "--generate-dump", action="store_true", dest="generate_dump",
+                      help="Generate MySQL dump conf to stdout.", default=False)
     parser.add_option("-s", "--source", action="store", dest="source",
                       help="Source SQL.")
 
     (options, args) = parser.parse_args()
 
-    if not len(args) == 0:
+    if not len(args) == 1:
         parser.print_usage()
         sys.exit(1)
+
+    (conf_path, ) = args
 
     verbosity = max(0, min(3, 1 + options.verbose - options.quiet))
 
@@ -364,12 +379,14 @@ Create MySQL database and users.
         )
 
     main(
-        options.configuration,
+        conf_path,
         key=options.key,
         purge=options.purge,
         empty=options.empty,
         drop_triggers=options.drop_triggers,
+        account=options.account,
         generate=options.generate,
+        generate_dump=options.generate_dump,
         test=options.test,
         source=options.source
         )
