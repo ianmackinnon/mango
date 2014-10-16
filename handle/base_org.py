@@ -278,12 +278,13 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                 orgs = OrderedDict()
                 org_packet["marker_list"] = []
                 for org, alias, address in org_alias_address_query:
-                    org_packet["marker_list"].append({
+                    if address and address.latitude:
+                        org_packet["marker_list"].append({
                             "name": org.name,
                             "url": org.url,
-                            "latitude": address and address.latitude,
-                            "longitude": address and address.longitude,
-                            })
+                            "latitude": address.latitude,
+                            "longitude": address.longitude,
+                        })
                     if not org.org_id in orgs:
                         orgs[org.org_id] = {
                             "org": org,

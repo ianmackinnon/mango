@@ -1,0 +1,33 @@
+<%inherit file="base.html"/>
+
+
+
+<%def name="title()"><% return u"Unlocated Addresses" %></%def>
+
+
+
+<%def name="page()">
+
+<h1>Unlocated Addresses</h1>
+
+<p>The following addresses cannot be automatically geolocated using the text in their 'postal' field. Please add a machine-readable version in the 'lookup' field and verify that a pin appears in the map. Usually just a postcode will suffice</p>
+
+<table class="address-not-found">
+  <thead>
+  </thead>
+  <tbody>
+    %for org, address in data:
+    <tr>
+      <td>
+        <a href="${url_rewrite(org["url"], {'view': 'edit'})}">${org["name"]}</a>
+      </td>
+      <td>
+        <a href="${url_rewrite(address["url"], {'view': 'edit'})}">${address["postal"] | n, h, unicode, newline_comma}</a>
+      </td>
+    </tr>
+    %endfor
+  </tbody>
+</table>
+
+</%def>
+

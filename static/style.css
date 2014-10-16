@@ -1401,6 +1401,13 @@ padding: 10px;
 
 
 
+#mango table.address-not-found {
+    width: 100%;
+}
+#mango table.address-not-found td {
+    padding: 8px;
+}
+
 
 
 #mango table.mango-activity {

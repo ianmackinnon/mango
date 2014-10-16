@@ -46,7 +46,8 @@ from handle.note import NoteHandler, NoteNewHandler, NoteListHandler, \
 from handle.address import AddressHandler, \
     AddressRevisionListHandler, AddressRevisionHandler, \
     AddressEntityListHandler, \
-    AddressLookupHandler, AddressNoteListHandler, AddressNoteHandler
+    AddressLookupHandler, AddressNoteListHandler, AddressNoteHandler, \
+    ModerationAddressNotFoundHandler
 from handle.org import OrgHandler, OrgNewHandler, OrgSearchHandler, \
     OrgRevisionListHandler, OrgRevisionHandler, \
     OrgListHandler, \
@@ -326,6 +327,8 @@ class Application(tornado.web.Application):
              ModerationOrgIncludeHandler),
             (r"/moderation/organisation-tag-activity",
              ModerationOrgtagActivityHandler),
+            (r"/moderation/address-not-found",
+             ModerationAddressNotFoundHandler),
 
             (r"/user", UserListHandler),
             (r"/user/<id>", UserHandler),

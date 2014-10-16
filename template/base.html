@@ -57,10 +57,18 @@ ${header(title=self.application_title()) | n}
       %if moderator:
       <a href="${url_rewrite("/user")}">Users</a>
       <a href="${url_rewrite("/history")}">History</a>
-      <a href="${url_rewrite("/moderation/queue")}"${' class="attention"' if has_queue else '' | n}>Queue</a>
-      <a href="${url_rewrite("/moderation/organisation-description")}">Co. Descriptions</a>
-      <a href="${url_rewrite("/moderation/organisation-inclusion")}">Co. Inclusion</a>
-      <a href="${url_rewrite("/moderation/organisation-tag-activity")}">Activity desc.</a>
+      <a href="${url_rewrite("/moderation/queue")}"
+         ${'class="attention"' if has_queue else '' | n}
+         >Queue</a>
+      <a href="${url_rewrite("/moderation/organisation-description")}"
+         >Descriptions</a>
+      <a href="${url_rewrite("/moderation/address-not-found")}"
+         class="attention"' if has_address_not_found else '' | n}
+         >Addresses</a>
+      <a href="${url_rewrite("/moderation/organisation-inclusion")}"
+         >Inclusion</a>
+      <a href="${url_rewrite("/moderation/organisation-tag-activity")}"
+         >Activities</a>
       %endif
       %if current_user:
       %if version_current_url:

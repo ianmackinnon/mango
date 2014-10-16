@@ -513,3 +513,39 @@ class AddressNoteHandler(BaseAddressHandler, BaseNoteHandler):
             address.note_list.remove(note)
             self.orm_commit()
         return self.redirect_next(address.url)
+
+
+
+class ModerationAddressNotFoundHandler(BaseHandler):
+    @authenticated
+    def get(self):
+        if not self.moderator:
+            raise HTTPError(404)
+
+        is_json = self.content_type("application/json")
+
+        query = self.orm.query(Org, Address) \
+                .join(org_address) \
+                .join(Address) \
+                .filter(and_(
+                    Org.public==True,
+                    Address.public==True,
+                    Address.latitude==None,
+                ))
+
+        data = []
+        for org, address in query.all():
+            data.append((
+                org.obj(
+                    public=self.moderator,
+                ),
+                address.obj(
+                    public=self.moderator,
+                )
+            ))
+
+        self.render(
+            'moderation_address_not_found.html',
+            data=data,
+            )
+

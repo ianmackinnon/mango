@@ -8,7 +8,7 @@ var m = {
 
   parameters: null,
 
-  debug: true,
+  debug: false,
 
   log: {
     debug: function () {

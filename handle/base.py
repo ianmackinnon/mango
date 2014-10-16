@@ -26,7 +26,7 @@ import geo
 
 from model import Session, Address, User
 
-from base_moderation import has_pending
+from base_moderation import has_pending, has_address_not_found
 
 
 
@@ -460,7 +460,8 @@ class BaseHandler(RequestHandler):
 
         if self.moderator:
             kwargs.update({
-                "has_queue": has_pending(self.orm)
+                "has_queue": has_pending(self.orm),
+                "has_address_not_found": has_address_not_found(self.orm),
             })
 
         try:

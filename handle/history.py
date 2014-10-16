@@ -12,7 +12,7 @@ class HistoryHandler(BaseHandler):
     def get(self):
         if not self.current_user.moderator:
             raise HTTPError(404)
-        history = get_history(self.orm, limit=100)
+        history = get_history(self.orm, limit=150)
         self.render(
             'history.html',
             history=history,

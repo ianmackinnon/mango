@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
+from sqlalchemy.sql.expression import and_
 
-
-from model import User, Org, Event, Address, Contact
+from model import User, Org, Event, Address, Contact, \
+    org_address
 
 from model_v import Org_v, Event_v, Address_v, Contact_v, \
     org_address_v, event_address_v, \
@@ -58,6 +59,21 @@ def has_pending(orm):
         if f(orm):
             return True
     return False
+
+
+
+def has_address_not_found(orm):
+    return bool(
+        orm.query(Org, Address) \
+        .join(org_address) \
+        .join(Address) \
+        .filter(and_(
+            Org.public==True,
+            Address.public==True,
+            Address.latitude==None,
+        )) \
+        .count()
+    )
 
 
 
