@@ -145,6 +145,8 @@ offset %d
 
 
 def accept_address_org_v(orm, address_id):
+    # Need to clarify the return status of this function
+
     query = orm.query(org_address_v.c.org_id) \
         .filter(and_(
             org_address_v.c.address_id == address_id,
@@ -156,7 +158,7 @@ def accept_address_org_v(orm, address_id):
         (org_id, ) = query.one()
     except NoResultFound as e:
         return False
-    
+
     query = orm.query(org_address) \
         .filter(and_(
             org_address.c.address_id == address_id,
@@ -177,6 +179,7 @@ def accept_address_org_v(orm, address_id):
             "a_time": 0,
             }]
     orm.connection().execute(org_address.insert(), *items)
+    orm.commit()
     return True
         
 
@@ -214,6 +217,7 @@ def accept_address_event_v(orm, address_id):
             "a_time": 0,
             }]
     orm.connection().execute(event_address.insert(), *items)
+    orm.commit()
     return True
         
 def accept_org_address_v(orm, org_id):
@@ -297,6 +301,7 @@ def accept_contact_org_v(orm, contact_id):
             "a_time": 0,
             }]
     orm.connection().execute(org_contact.insert(), *items)
+    orm.commit()
     return True
         
 
@@ -334,6 +339,7 @@ def accept_contact_event_v(orm, contact_id):
             "a_time": 0,
             }]
     orm.connection().execute(event_contact.insert(), *items)
+    orm.commit()
     return True
         
 def accept_org_contact_v(orm, org_id):

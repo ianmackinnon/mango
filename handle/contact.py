@@ -18,6 +18,7 @@ from model import User, Medium, Contact, Org, Event, \
     org_contact, event_contact, detach
 
 from model_v import Contact_v, \
+    accept_contact_org_v, accept_contact_event_v, \
     org_contact_v, event_contact_v, \
     mango_entity_append_suggestion
 
