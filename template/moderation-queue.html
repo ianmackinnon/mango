@@ -10,136 +10,125 @@ return u"Moderation Queue"
 
 <h1>Moderation Queue</h1>
 
-<p>
+<h2>Companies</h2>
 
 <table class="queue">
   <thead>
     <tr>
-      <th>Company</th>
-      <th>Event</th>
+      <th>Type</th>
+      <th></th>
+      <th>Action</th>
+      <th>User</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
-    <tr>
-      <td>
-        <ul>
-          %for org_id, org in queue["org"].items():
-          ${org_list(org_id, org)}
-          %endfor
-        </ul>
-      </td>
+    %for org_id, org in queue["org"].items():
+    ${org_list(org_id, org)}
+    %endfor
+  </tbody>
+</table>
 
-      <td>
-        <ul>
-          %for event_id, event in queue["event"].items():
-          ${event_list(event_id, event)}
-          %endfor
-        </ul>
-      </td>
+<h2>Events</h2>
+
+<table class="queue">
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th></th>
+      <th>Action</th>
+      <th>User</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    %for event_id, event in queue["event"].items():
+    ${event_list(event_id, event)}
+    %endfor
   </tbody>
 </table>
 
 </%def>
 
 
-<%def name="org_list(org_id, org, open=True)">
-<li>
-  org
-  :
-  %if org["url"]:
-  <a href="${url_rewrite(org["url"])}">${org_id}</a>
-  %else:
-  ${org_id}
-  %endif
-  %if org["revision_url"]:
-  :
-  %if open:
-  <a href="${url_rewrite(org["revision_url"])}">moderate</a>
-  %else:
-  review parent first
-  %endif
-  %endif
-  <ul>
-    %for address_id, address in org["address"].items():
-    ${address_list(address_id, address, bool(org["url"]))}
-    %endfor
-    %for contact_id, contact in org["contact"].items():
-    ${contact_list(contact_id, contact, bool(org["url"]))}
-    %endfor
-  </ul>
-</li>
+<%def name="entity_list(type_, entity_id, entity, open=True, indent=0)">
+<tr${' class="mango-queue-subordinate"' if indent else '' | n}>
+  <td class="mango-queue-type">${"&nbsp;" * 2 * indent | n}${type_}</td>
+  <td class="mango-queue-id">
+    %if entity["url"]:
+    <a href="${url_rewrite(entity["url"])}">${entity_id}</a>
+    %else:
+    ${entity_id}
+    %endif
+  </td>
+  <td class="mango-queue-vid">${"&nbsp;" * 2 * indent | n}
+    %if entity["revision_url"]:
+    %if open:
+    <a href="${url_rewrite(entity["revision_url"])}">moderate</a>
+    %else:
+    review parent first
+    %endif
+    %endif
+  </td>
+  <td class="mango-queue-user">
+    %if entity["user"]:
+    ${entity["user"]}
+    %endif
+  </td>
+  <td class="mango-queue-description">
+    %if entity["description"]:
+    ${entity["description"]}
+    %endif
+  </td>
+</tr>
 </%def>
 
 
 
-<%def name="event_list(event_id, event, open=True)">
-<li>
-  event
-  :
-  %if event["url"]:
-  <a href="${url_rewrite(event["url"])}">${event_id}</a>
-  %else:
-  ${event_id}
-  %endif
-  %if event["revision_url"]:
-  :
-  %if open:
-  <a href="${url_rewrite(event["revision_url"])}">moderate</a>
-  %else:
-  review parent first
-  %endif
-  %endif
-  <ul>
-    %for address_id, address in event["address"].items():
-    ${address_list(address_id, address, bool(event["url"]))}
-    %endfor
-    %for contact_id, contact in event["contact"].items():
-    ${contact_list(contact_id, contact, bool(event["url"]))}
-    %endfor
-  </ul>
-</li>
+<%def name="org_list(org_id, org, open=True, indent=0)">
+<%
+entity_list("org", org_id, org, open, indent)
+%>
+
+%for address_id, address in org["address"].items():
+${address_list(address_id, address, bool(org["url"]), indent + 1)}
+%endfor
+
+%for contact_id, contact in org["contact"].items():
+${contact_list(contact_id, contact, bool(org["url"]), indent + 1)}
+%endfor
+
 </%def>
 
 
 
-<%def name="address_list(address_id, address, open=True)">
-<li>
-  address
-  :
-  %if address["url"]:
-  <a href="${url_rewrite(address["url"])}">${address_id}</a>
-  %else:
-  ${address_id}
-  %endif
-  %if address["revision_url"]:
-  :
-  %if open:
-  <a href="${url_rewrite(address["revision_url"])}">moderate</a>
-  %else:
-  review parent first
-  %endif
-  %endif
-</li>
+<%def name="event_list(event_id, event, open=True, indent=0)">
+<%
+entity_list("event", event_id, event, open, indent)
+%>
+
+%for address_id, address in event["address"].items():
+${address_list(address_id, address, bool(event["url"]), indent + 1)}
+%endfor
+
+%for contact_id, contact in event["contact"].items():
+${contact_list(contact_id, contact, bool(event["url"]), indent + 1)}
+%endfor
+
 </%def>
 
 
 
-<%def name="contact_list(contact_id, contact, open=True)">
-<li>
-  contact
-  :
-  %if contact["url"]:
-  <a href="${url_rewrite(contact["url"])}">${contact_id}</a>
-  %else:
-  ${contact_id}
-  %endif
-  %if contact["revision_url"]:
-  :
-  %if open:
-  <a href="${url_rewrite(contact["revision_url"])}">moderate</a>
-  %else:
-  review parent first
-  %endif
-  %endif
-</li>
+<%def name="address_list(*args, **kwargs)">
+<%
+entity_list("address", *args, **kwargs)
+%>
+</%def>
+
+
+
+<%def name="contact_list(*args, **kwargs)">
+<%
+entity_list("contact", *args, **kwargs)
+%>
 </%def>

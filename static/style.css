@@ -1252,28 +1252,31 @@ div.ui-timepicker td a.ui-state-active
 
 #mango table.queue
 {
-    width: 100%
+    border-collapse: separate;
+    width: 100%;
 }
 
-#mango table.queue th,
-#mango table.queue td
+#mango table.queue td,
+#mango table.queue th
 {
-    width: 50%;
     border: 1px solid #ddd;
+    border-right: 0;
+    border-bottom: 0;
+    padding: 4px;
     vertical-align: top;
     line-height: 22px;
-
 }
-
-#mango table.queue ul
+#mango table.queue tr:last-child td
 {
-    margin: 0;
-    padding-left: 12px;
+    border-bottom: 1px solid #ddd;
 }
-#mango table.queue li
+#mango table.queue td:last-child
 {
-    padding: 4px;
-    list-style: none;
+    border-right: 1px solid #ddd;
+}
+#mango table.queue tr.mango-queue-subordinate td
+{
+    border-top: 1px solid white;
 }
 
 /* Register */
