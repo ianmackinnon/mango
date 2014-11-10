@@ -18,7 +18,9 @@ from sqlalchemy.orm.exc import NoResultFound
 from hashlib import md5
 
 from model import connection_url_app, attach_search
-from model import User, Org, Note, Address, Orgtag
+from model import User, Org
+
+from model_v import org_address_v
 
 
 
@@ -59,7 +61,7 @@ def multi_merge(orm, org_id_list):
         sys.exit(1)
 
     for o, org in enumerate(org_list):
-        print o, org.name.encode("utf-8")
+        print "%d %s (%d)" % (o, org.name.encode("utf-8"), org.org_id)
     print
     print "Choose merge target number or non-numeric to exit: ",
 
@@ -77,8 +79,17 @@ def multi_merge(orm, org_id_list):
 
     main = org_list.pop(choice)
 
+
+    engine = orm.connection().engine
     for org in org_list:
         main.merge(org, moderation_user=user)
+
+        sql = "update org_address_v set org_id = %d where org_id = %d" % (main.org_id, org.org_id)
+        engine.execute(sql)
+
+        sql = "update org_contact_v set org_id = %d where org_id = %d" % (main.org_id, org.org_id)
+        engine.execute(sql)
+            
 
 
 

@@ -35,7 +35,7 @@ suggestion = (not latest_a_time) or (obj_v.get("date") > latest_a_time)
   <table class="revision">
     <thead>
       <tr>
-        <th>Current${not obj and " (deleted)" or ""}</th>
+        <th>Current${not obj and " (doesn't exist yet or deleted)" or ""}</th>
         <th>Revision</th>
       </tr>
     </thead>
@@ -74,6 +74,7 @@ suggestion = (not latest_a_time) or (obj_v.get("date") > latest_a_time)
    action="${url_rewrite(action_url)}"
    method="post"
    >
+  <input name="_xsrf" type="hidden" value="${xsrf}">
   <input name="_method" type="hidden" value="touch">
   <table class="revision">
     <tfoot>

@@ -835,7 +835,7 @@ class Org(Base, MangoEntity, NotableEntity):
         return o
 
     def merge(self, other, moderation_user):
-        "Merge other into self."
+        "Merge other into self. Does not re-link pending versions."
         
         session = object_session(self)
         assert session
