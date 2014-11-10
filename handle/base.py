@@ -790,7 +790,8 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
         if self.moderator:
             public = self.get_argument_public("public", json=is_json)
         else:
-            public = True
+            # Suggestions will be created pending
+            public = None
         moderation_user = self.current_user
 
         return public, moderation_user
