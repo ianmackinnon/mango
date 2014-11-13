@@ -39,6 +39,13 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                                   event_v_id,
                                   )
 
+    def _touch_event(self, event_id):
+        return self._touch_entity(Event, "event_id",
+                                "event",
+                                  self._decline_event_v,
+                                event_id,
+                                )
+
     def _create_event(self, id_=None, version=False):
         is_json = self.content_type("application/json")
 
@@ -84,13 +91,14 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
     def _create_event_v(self, event_id):
         return self._create_event(event_id, version=True)
 
-    def _decline_event_v(self, event_id):
+    @staticmethod
+    def _decline_event_v(self, event_id, moderation_user):
         date = datetime.datetime.utcnow().date()
 
         event = Event_v(
             event_id,
-            "DECLINED", date, date,
-            moderation_user=self.current_user, public=None)
+            u"DECLINED", date, date,
+            moderation_user=moderation_user, public=None)
         event.existence = False
 
         detach(event)

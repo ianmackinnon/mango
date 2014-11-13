@@ -193,6 +193,10 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
         return self._get_event_v
 
     @property
+    def _touch(self):
+        return self._touch_event
+
+    @property
     def _after_accept_new(self):
         return self._after_event_accept_new
 

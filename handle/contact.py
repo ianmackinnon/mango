@@ -41,6 +41,13 @@ class BaseContactHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                                   contact_v_id,
                                   )
 
+    def _touch_contact(self, contact_id):
+        return self._touch_entity(Contact, "contact_id",
+                                  "contact",
+                                  self._decline_contact_v,
+                                  contact_id,
+                              )
+
     def _create_contact(self, id_=None, version=False):
         is_json = self.content_type("application/json")
         
@@ -84,12 +91,13 @@ class BaseContactHandler(BaseHandler, MangoBaseEntityHandlerMixin):
     def _create_contact_v(self, contact_id):
         return self._create_contact(contact_id, version=True)
     
-    def _decline_contact_v(self, contact_id):
+    @staticmethod
+    def _decline_contact_v(contact_id, moderation_user):
         contact = Contact_v(
             contact_id,
-            "DECLINED", # medium
-            "DECLINED",
-            moderation_user=self.current_user, public=None)
+            None, # medium
+            u"DECLINED",
+            moderation_user=moderation_user, public=None)
         contact.existence = False
 
         detach(contact)
@@ -165,6 +173,10 @@ class ContactHandler(BaseContactHandler, MangoEntityHandlerMixin):
     @property
     def _get_v(self):
         return self._get_contact_v
+
+    @property
+    def _touch(self):
+        return self._touch_contact
 
     @property
     def _before_set(self):

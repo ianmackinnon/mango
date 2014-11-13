@@ -45,6 +45,13 @@ class BaseAddressHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                                   address_v_id,
                                   )
 
+    def _touch_address(self, address_id):
+        return self._touch_entity(Address, "address_id",
+                                "address",
+                                  self._decline_address_v,
+                                address_id,
+                                )
+
     def _create_address(self, id_=None, version=False):
         is_json = self.content_type("application/json")
         
@@ -80,11 +87,12 @@ class BaseAddressHandler(BaseHandler, MangoBaseEntityHandlerMixin):
     def _create_address_v(self, address_id):
         return self._create_address(address_id, version=True)
     
-    def _decline_address_v(self, address_id):
+    @staticmethod
+    def _decline_address_v(address_id, moderation_user):
         address = Address_v(
             address_id,
-            "DECLINED", "DECLINED",
-            moderation_user=self.current_user, public=None)
+            u"DECLINED", u"DECLINED",
+            moderation_user=moderation_user, public=None)
         address.existence = False
 
         detach(address)
@@ -154,6 +162,10 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
     @property
     def _get_v(self):
         return self._get_address_v
+
+    @property
+    def _touch(self):
+        return self._touch_address
 
     @property
     def _before_set(self):

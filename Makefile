@@ -17,6 +17,8 @@ MYSQLDUMP_CONF_PATH := .$(NAME).mysqldump.conf
 MYSQL_IMPORT = mysql/import.my.sql
 MYSQL_TEST = mysql/test.my.sql
 
+DATE := $(shell date -u '+%Y-%m-%d.%H:%M:%S')
+DUMP_NAME := mango.$(DATE).data-only.my.sql
 
 
 all : .xsrf .mango.conf database
@@ -115,6 +117,10 @@ $(MYSQL_TEST) : $(MYSQL_CONF_PATH) $(MYSQLDUMP_CONF_PATH) mysql/build.mysql.sql 
 	./test/seed_data.py
 	mysqldump --defaults-extra-file=$(MYSQLDUMP_CONF_PATH) $$(./mysql/mysql.py -k database $(CONF_PATH)) > $(TMP)
 	mv $(TMP) $@
+
+mysql-dump : $(MYSQLDUMP_CONF_PATH)
+	mysqldump --defaults-extra-file=$(MYSQLDUMP_CONF_PATH) -c --no-create-info --skip-triggers $$(./mysql/mysql.py -k database $(CONF_PATH)) > /tmp/$(DUMP_NAME)
+	ln -sf /tmp/$(DUMP_NAME) $(MYSQL_IMPORT)
 
 mysql-test : $(MYSQL_CONF_PATH) $(MYSQLDUMP_CONF_PATH) mysql-exist
 # Empty and build the mango database from test data (admin)

@@ -18,6 +18,40 @@ from base_moderation import \
 
     
 class ModerationQueueHandler(BaseHandler):
+    def parent_entity_rows(
+            self,
+            queue,
+            get_pending_parent_entity_id,
+            parent,
+            entity,
+            parent_url,
+            entity_url,
+            child_name_list,
+    ):
+        for row in get_pending_parent_entity_id(self.orm):
+            parent_id, parent_desc, parent_exists = row[:3]
+            entity_id, entity_desc_new, entity_exists, entity_desc_old, user_name = row[3:]
+            if not parent_id in queue[parent]:
+                if not parent_exists:
+                    # parent doesn't exist (may have been declined)
+                    continue
+                queue[parent][parent_id] = {
+                    "url": "/%s/%s" % (parent_url, parent_id),
+                    "revision_url": None,
+                    "description": parent_desc,
+                    "user": None,
+                    } 
+                for child_name in child_name_list:
+                    queue[parent][parent_id][child_name] = {}
+
+            entity_dict = {
+                "url": entity_exists and "/%s/%s" % (entity_url, entity_id),
+                "revision_url": "/%s/%s/revision" % (entity_url, entity_id),
+                "description": entity_desc_old or entity_desc_new,
+                "user": user_name,
+                } 
+            queue[parent][parent_id][entity][entity_id] = entity_dict
+
     @authenticated
     def get(self):
         if not self.moderator:
@@ -39,51 +73,13 @@ class ModerationQueueHandler(BaseHandler):
                 "contact": {},
                 }
 
-        for row in get_pending_org_address_id(self.orm):
-            org_id, org_desc, org_exists = row[:3]
-            address_id, address_desc_new, address_exists, address_desc_old, user_name = row[3:]
-            if not org_id in queue["org"]:
-                if not org_exists:
-                    continue
-                queue["org"][org_id] = {
-                    "url": "/organisation/%s" % org_id,
-                    "revision_url": None,
-                    "description": org_desc,
-                    "user": None,
-                    "address": {},
-                    "contact": {},
-                    }
-            address = {
-                "url": address_exists and "/address/%s" % address_id,
-                "revision_url": "/address/%s/revision" % address_id,
-                "description": address_desc_old or address_desc_new,
-                "user": user_name,
-                } 
-            queue["org"][org_id]["address"][address_id] = address
+        self.parent_entity_rows(queue, get_pending_org_address_id,
+            "org", "address", "organisation", "address", ["address", "contact"]
+        )
 
-        for row in get_pending_org_contact_id(self.orm):
-            org_id, org_desc, org_exists = row[:3]
-            contact_id, contact_desc_new, contact_exists, contact_desc_old, user_name = row[3:]
-            if not org_id in queue["org"]:
-                if not org_exists:
-                    continue
-                queue["org"][org_id] = {
-                    "url": "/organisation/%s" % org_id,
-                    "revision_url": None,
-                    "description": org_desc,
-                    "user": None,
-                    "address": {},
-                    "contact": {},
-                    }
-            contact = {
-                "url": contact_exists and "/contact/%s" % contact_id,
-                "revision_url": "/contact/%s/revision" % contact_id,
-                "description": contact_desc_old or contact_desc_new,
-                "user": user_name,
-                } 
-            queue["org"][org_id]["contact"][contact_id] = contact
-
-        
+        self.parent_entity_rows(queue, get_pending_org_contact_id,
+            "org", "contact", "organisation", "contact", ["address", "contact"]
+        )
 
         for event_id, desc_new, exists, desc_old, user_name in get_pending_event_id(self.orm):
             queue["event"][event_id] = {
@@ -95,50 +91,13 @@ class ModerationQueueHandler(BaseHandler):
                 "contact": {},
                 }
 
-        for row in get_pending_event_address_id(self.orm):
-            event_id, event_desc, event_exists = row[:3]
-            address_id, address_desc_new, address_exists, address_desc_old, user_name = row[3:]
-            if not event_id in queue["event"]:
-                if not event_exists:
-                    continue
-                queue["event"][event_id] = {
-                    "url": "/eventanisation/%s" % event_id,
-                    "revision_url": None,
-                    "description": event_desc,
-                    "user": None,
-                    "address": {},
-                    "contact": {},
-                    }
-            address = {
-                "url": address_exists and "/address/%s" % address_id,
-                "revision_url": "/address/%s/revision" % address_id,
-                "description": address_desc_old or address_desc_new,
-                "user": user_name,
-                } 
-            queue["event"][event_id]["address"][address_id] = address
+        self.parent_entity_rows(queue, get_pending_event_address_id,
+            "event", "address", "event", "address", ["address", "contact"]
+        )
 
-        for row in get_pending_event_contact_id(self.orm):
-            event_id, event_desc, event_exists = row[:3]
-            contact_id, contact_desc_new, contact_exists, contact_desc_old, user_name = row[3:]
-            if not event_id in queue["event"]:
-                if not event_exists:
-                    continue
-                queue["event"][event_id] = {
-                    "url": "/eventanisation/%s" % event_id,
-                    "revision_url": None,
-                    "description": event_desc,
-                    "user": None,
-                    "address": {},
-                    "contact": {},
-                    }
-            contact = {
-                "url": contact_exists and "/contact/%s" % contact_id,
-                "revision_url": "/contact/%s/revision" % contact_id,
-                "description": contact_desc_old or contact_desc_new,
-                "user": user_name,
-                } 
-            queue["event"][event_id]["contact"][contact_id] = contact
-
+        self.parent_entity_rows(queue, get_pending_event_contact_id,
+            "event", "contact", "event", "contact", ["address", "contact"]
+        )
 
         self.render(
             'moderation-queue.html',

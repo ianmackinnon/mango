@@ -764,7 +764,10 @@ class Contact_v(Base, MangoEntity):
         self.existence = True
         #
 
-        self.medium = medium
+        if medium:
+            self.medium = medium
+        else:
+            self.medium_id = 0
 
         self.text = sanitise_name(unicode(text))
         self.description = description and unicode(description)

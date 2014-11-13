@@ -857,7 +857,6 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
         return entity
 
 
-
     def _get_entity_v(self,
                       Entity, entity_id,
                       Entity_v, entity_v_id,
@@ -897,6 +896,49 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
         return entity_v
 
 
+    def _touch_entity(self,
+                      Entity, entity_id,
+                      entity_type,
+                      decline_v,
+                      id_,
+                  ):
+        """
+        Moderators only already checked
+        Return: entity or entity_v, exists
+        """
+
+        query = self.orm.query(Entity) \
+            .filter(getattr(Entity, entity_id) == id_)
+        
+        try:
+            entity = query.one()
+        except NoResultFound:
+            entity = None
+            
+        if entity:
+            entity.a_time = 0;
+            entity.moderation_user = self.current_user
+            return entity, True
+
+        declined_entity_v = decline_v(id_, self.current_user)
+        self.orm.add(declined_entity_v)
+        return declined_entity_v, False
+
+
+    def _touch_pending_child_entities(
+            self, Entity, entity_id_attr, entity_type, declined_parent_id, 
+            get_pending_parent_entity_id, decline_v):
+
+        for row in get_pending_parent_entity_id(self.orm):
+            parent_id, parent_desc, parent_exists = row[:3]
+            entity_id, entity_desc_new, entity_exists, entity_desc_old, user_name = row[3:]
+            if parent_id == declined_parent_id:
+                MangoBaseEntityHandlerMixin._touch_entity(
+                    self, Entity, entity_id_attr, entity_type, decline_v, entity_id)
+
+
+        
+
 
 class MangoEntityHandlerMixin(RequestHandler):
     def _before_delete(self, entity):
@@ -932,17 +974,14 @@ class MangoEntityHandlerMixin(RequestHandler):
         if not self.moderator:
             raise HTTPError(405)
 
-        entity = self._get(entity_id, required=False)
-        if entity:
-            entity.a_time = 0;
-            entity.moderation_user = self.current_user
-            self.orm_commit()
-            return self.redirect_next(entity.url)
-
-        declined_entity_v = self._decline_v(entity_id)
-        self.orm.add(declined_entity_v)
+        (entity_or_v, exists) = self._touch(entity_id)
         self.orm.commit()
-        return self.redirect_next("%s/revision" % declined_entity_v.url)
+
+        if exists:
+            return self.redirect_next(entity_or_v.url)
+        else:
+            return self.redirect_next("%s/revision" % entity_or_v.url)
+        
         
     @authenticated
     def put(self, entity_id):

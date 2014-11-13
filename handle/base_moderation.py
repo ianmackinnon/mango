@@ -58,16 +58,16 @@ def get_pending_contact_id(orm):
 
 
 def has_pending(orm):
+    count = 0
     for f in [get_pending_org_id, get_pending_event_id, get_pending_address_id, get_pending_contact_id]:
-        if f(orm):
-            return True
-    return False
+        pending = f(orm)
+        count += len(pending)
+    return count
 
 
 
 def has_address_not_found(orm):
-    return bool(
-        orm.query(Org, Address) \
+    return orm.query(Org, Address) \
         .join(org_address) \
         .join(Address) \
         .filter(and_(
@@ -76,7 +76,6 @@ def has_address_not_found(orm):
             Address.latitude==None,
         )) \
         .count()
-    )
 
 
 
@@ -104,11 +103,15 @@ def get_pending_parent_entity_id(
     
     results = []
     for parent_id, entity_id, parent_exists, parent_desc in query.all():
-        entity_id, entity_desc_new, entity_exists, entity_desc_old, user_name = entity_id_list[entity_id]
+        entity_id, entity_desc_new, entity_exists, entity_desc_old, user_name = entity_id_list.pop(entity_id)
         results.append((
             parent_id, parent_desc, bool(parent_exists),
             entity_id, entity_desc_new, entity_exists, entity_desc_old, user_name
         ))
+
+    for key, value in entity_id_list.items():
+        # Parent doesn't exist, or isn't of type 'parent'
+        pass
 
     return results
 

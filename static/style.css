@@ -1270,6 +1270,7 @@ div.ui-timepicker td a.ui-state-active
 {
     border-bottom: 1px solid #ddd;
 }
+#mango table.queue th:last-child,
 #mango table.queue td:last-child
 {
     border-right: 1px solid #ddd;

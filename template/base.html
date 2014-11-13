@@ -59,12 +59,12 @@ ${header(title=self.application_title()) | n}
       <a href="${url_rewrite("/history")}">History</a>
       <a href="${url_rewrite("/moderation/queue")}"
          ${'class="attention"' if has_queue else '' | n}
-         >Queue</a>
+         >Queue${" (%d)" % has_queue if has_queue else ''}</a>
       <a href="${url_rewrite("/moderation/organisation-description")}"
          >Descriptions</a>
       <a href="${url_rewrite("/moderation/address-not-found")}"
          ${'class="attention"' if has_address_not_found else '' | n}
-         >Addresses</a>
+         >Address${" (%d)" % has_address_not_found if has_address_not_found else ''}</a>
       <a href="${url_rewrite("/moderation/organisation-inclusion")}"
          >Inclusion</a>
       <a href="${url_rewrite("/moderation/organisation-tag-activity")}"

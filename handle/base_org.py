@@ -37,6 +37,13 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                                   org_v_id,
                                   )
 
+    def _touch_org(self, org_id):
+        return self._touch_entity(Org, "org_id",
+                                  "org",
+                                  self._decline_org_v,
+                                  org_id,
+                              )
+
     def _create_org(self, id_=None, version=False):
         is_json = self.content_type("application/json")
 
@@ -66,11 +73,12 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
     def _create_org_v(self, org_id):
         return self._create_org(org_id, version=True)
     
-    def _decline_org_v(self, org_id):
+    @staticmethod
+    def _decline_org_v(org_id, moderation_user):
         org = Org_v(
             org_id,
-            "DECLINED",
-            moderation_user=self.current_user, public=None)
+            u"DECLINED",
+            moderation_user=moderation_user, public=None)
         org.existence = False
 
         detach(org)

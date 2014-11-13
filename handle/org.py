@@ -11,6 +11,7 @@ from tornado.web import HTTPError
 
 from base import authenticated, sha1_concat, \
     HistoryEntity, \
+    MangoBaseEntityHandlerMixin, \
     MangoEntityHandlerMixin, MangoEntityListHandlerMixin
 from base_note import BaseNoteHandler
 from base_org import BaseOrgHandler
@@ -18,6 +19,10 @@ from base_event import BaseEventHandler
 from orgtag import BaseOrgtagHandler
 from address import BaseAddressHandler
 from contact import BaseContactHandler
+
+from base_moderation import \
+    get_pending_org_address_id, \
+    get_pending_org_contact_id
 
 from model import Org, Note, Address, Orgalias, Event, Orgtag, Contact, \
     org_orgtag, org_address, org_note
@@ -338,8 +343,33 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
         return self._get_org_v
 
     @property
+    def _touch(self):
+        return self._touch_org
+
+    @property
     def _after_accept_new(self):
         return self._after_org_accept_new
+
+    def touch(self, org_id):
+        if not self.moderator:
+            raise HTTPError(405)
+
+        # Decline (touch) pending child entities
+
+        MangoBaseEntityHandlerMixin._touch_pending_child_entities(
+            self, Address, "address_id", "address", org_id,
+            get_pending_org_address_id,
+            BaseAddressHandler._decline_address_v)
+
+        MangoBaseEntityHandlerMixin._touch_pending_child_entities(
+            self, Contact, "contact_id", "contact", org_id,
+            get_pending_org_contact_id,
+            BaseContactHandler._decline_contact_v)
+
+        return MangoEntityHandlerMixin.touch(self, org_id)
+
+        
+
 
     def get(self, org_id):
         note_search, note_order, note_offset = self.get_note_arguments()
