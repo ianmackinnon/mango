@@ -320,9 +320,6 @@ class BaseHandler(RequestHandler):
                     return
         RequestHandler.write_error(self, status_code, **kwargs)
 
-    def get_login_url(self):
-        return self.url_root + "auth/login"
-
     def delete_current_user(self):
         self._current_user = None
 

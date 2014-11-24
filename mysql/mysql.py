@@ -175,14 +175,14 @@ def mysql_generate_conf(options, account=None, dump=False):
 """[client]
 user=%s
 password=%s
-""" % (options[account + "_username"], options[account + "_password"]))
+""" % (getattr(options, account + "_username"), getattr(options, account + "_password")))
     else:
         sys.stdout.write( \
 """[client]
 database=%s
 user=%s
 password=%s
-""" % (options.database, options[account + "_username"], options[account + "_password"]))
+""" % (options.database, getattr(options, account + "_username"), getattr(options, account + "_password")))
 
 
 

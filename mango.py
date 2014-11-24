@@ -425,10 +425,17 @@ class Application(tornado.web.Application):
         
         self.handlers = self.process_handlers(self.handlers)
 
+        google_oauth_key = conf.get(conf_path, u"google-oauth", u"client-id")
+        google_oauth_secret = conf.get(conf_path, u"google-oauth", u"client-secret")
+
         settings = {
             # serves /robots.txt and /favicon.ico from static
 #            "static_path": os.path.join(os.path.dirname(__file__), "static"),
+            "google_oauth": {
+                "key": google_oauth_key,
+                "secret": google_oauth_secret
             }
+        }
 
         # Authentication & Cookies
 

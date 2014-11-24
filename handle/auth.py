@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import re
+import json
 from urllib import urlencode
 
 import tornado.auth
 from tornado.web import HTTPError
+from tornado import httpclient 
 from sqlalchemy.orm.exc import NoResultFound
 
 from base import BaseHandler, authenticated
@@ -34,7 +36,7 @@ class LoginHandler(BaseHandler):
             raise HTTPError(400, "Account locked.")
 
     def _check_registering(self, user):
-        register = self.get_argument_bool("register", None)
+        register = bool(self.get_secure_cookie("register")) or bool(self.get_argument_bool("register", None))
 
         if not register:
             self.redirect(self.url_rewrite("/auth/register", next_=self.next_))
@@ -102,16 +104,11 @@ class AuthLoginLocalHandler(LoginHandler):
 
 
 
-class AuthLoginGoogleHandler(LoginHandler, tornado.auth.GoogleMixin):
+class AuthLoginGoogleHandler(LoginHandler, tornado.auth.GoogleOAuth2Mixin):
 
+    # Only used for our local database, not for actual auth
     openid_url = u"https://www.google.com/accounts/o8/id"
-
-    def _get_user(self):
-        if not self.auth_user:
-            raise HTTPError(500, "Google authentication failed")
-
-        self.auth_name = self.auth_user["email"]
-        return User.get_from_auth(self.orm, self.openid_url, self.auth_name)
+    redirect_path = u"/auth/login/google"
 
     def _create_user(self):
         auth = Auth(self.openid_url, self.auth_name)
@@ -121,45 +118,73 @@ class AuthLoginGoogleHandler(LoginHandler, tornado.auth.GoogleMixin):
         self.orm.commit()
         self.next_ = "/user/%d" % user.user_id
         return user
-    
+
     @tornado.web.asynchronous
+    @tornado.gen.engine
     def get(self):
+        
+        login_url = "%s://%s%s" % (self.request.protocol, self.request.host, self.redirect_path)
 
-        self._accept_authenticated()
+        if self.get_argument('code', False):
+            access_data = yield self.get_authenticated_user(
+                redirect_uri=login_url,
+                code=self.get_argument('code'))
 
-        if self.get_argument("openid.mode", None):
-            self.get_authenticated_user(self.async_callback(self._on_auth))
-            return
+            access_token = str(access_data['access_token'])
+            uri = 'https://www.googleapis.com/oauth2/v1/userinfo?access_token=' + access_token
+            http_client = httpclient.HTTPClient()
+            try:
+                response = http_client.fetch(uri)
+                body = response.body
+                self.auth_user = json.loads(body)
+            except httpclient.HTTPError as e:
+                # HTTPError is raised for non-200 responses; the response
+                # can be found in e.response.
+                raise tornado.web.HTTPError(500, 'Google authentication failed')
+            except Exception as e:
+                # Other errors are possible, such as IOError.
+                raise tornado.web.HTTPError(500, 'Server error')
+            http_client.close()
 
-        self._batch_tasks()
+            register = self.get_secure_cookie("register")
+            self.next_ = self.get_secure_cookie("next")
 
-        register = self.get_argument_bool("register", None)
-        login_args = {
-            "next": self.next_ or self.application.url_root,
-            }
-        if register is not None:
-            login_args["register"] = int(register)
-        login_url = self.get_login_url() + "?" + urlencode(login_args)
-        self.authenticate_redirect(login_url)
-    
-    def _on_auth(self, auth_user):
-        """
-        Called after we receive authorisation information from Google.
-        auth_user dict is either empty or contains 'locale', 'first_name', 'last_name', 'name' and 'email'.
-        """
+            self.clear_cookie("register")
+            self.clear_cookie("next")
 
-        self.auth_user = auth_user
+            if not self.auth_user:
+                raise HTTPError(500, "Google authentication failed")
 
-        user = self._get_user()
-        self._check_locked(user)
+            self.auth_name = self.auth_user["email"]
+            user = User.get_from_auth(self.orm, self.openid_url, self.auth_name)
 
-        if not user:
-            if self._check_registering(user):
-                return
-            user = self._create_user()
+            if not user:
+                if self._check_registering(user):
+                    return
+                user = self._create_user()
 
-        session = self._create_session(user)
-        return self.redirect_next()
+            self._check_locked(user)
+
+            session = self._create_session(user)
+            self.redirect_next()
+
+        else:
+            self._batch_tasks()
+
+            if self.next_:
+                self.set_secure_cookie("next", self.next_);
+
+            register = self.get_argument_bool("register", None)
+            if register is not None:
+                self.set_secure_cookie("register", str(int(register)));
+
+            yield self.authorize_redirect(
+                redirect_uri=login_url,
+                client_id=self.settings['google_oauth']['key'],
+                scope=['profile', 'email'],
+                response_type='code',
+                extra_params={'approval_prompt': 'auto',},
+            )
 
 
 
@@ -213,14 +238,16 @@ class AuthLogoutHandler(BaseHandler):
                     return True
         return False
 
+    @authenticated
     def get(self):
         session = self.get_session()
         if session:
             session.close_commit()
         self.end_session()
         self.clear_cookie("_xsrf")
-        if self.next_ and self.path_is_authenticated(self.next_):
-            self.next_ = self.url_root
+        if self.next_:
+            if (not self.moderator) or self.path_is_authenticated(self.next_):
+                self.next_ = self.url_root
         return self.redirect_next()
 
 
