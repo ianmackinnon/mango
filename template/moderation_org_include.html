@@ -251,6 +251,94 @@ last_tags = tags
 </div>
 %endif
 
+%if packet["bristol_public"] or packet["bristol_private"] or packet["bristol_pending"]:
+<div class="inclusion">
+  <h3>Based in Bristol: Add activity tags:</h3>
+
+  <% criterion = "Based in Bristol." %>
+
+  <div class="mango-box third">
+    <div class="visibility public">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>${criterion}</li>
+        <li>Public</li>
+      </ul>
+      <div class="total">${len(packet["bristol_public"])}</div>
+    </div>
+    ${self.inclusion_table("bristol_public", hint=True)}
+  </div>
+
+  <div class="mango-box third">
+    <div class="visibility private">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>${criterion}</li>
+        <li>Private</li>
+      </ul>
+      <div class="total">${len(packet["bristol_private"])}</div>
+    </div>
+    ${self.inclusion_table("bristol_private", hint=True)}
+  </div>
+
+  <div class="mango-box third">
+    <div class="visibility pending">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>${criterion}</li>
+        <li>Pending</li>
+      </ul>
+      <div class="total">${len(packet["bristol_pending"])}</div>
+    </div>
+    ${self.inclusion_table("bristol_pending", hint=True)}
+  </div>
+</div>
+%endif
+
+%if packet["canterbury_public"] or packet["canterbury_private"] or packet["canterbury_pending"]:
+<div class="inclusion">
+  <h3>Based in Canterbury: Add activity tags:</h3>
+
+  <% criterion = "Based in Canterbury." %>
+
+  <div class="mango-box third">
+    <div class="visibility public">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>${criterion}</li>
+        <li>Public</li>
+      </ul>
+      <div class="total">${len(packet["canterbury_public"])}</div>
+    </div>
+    ${self.inclusion_table("canterbury_public", hint=True)}
+  </div>
+
+  <div class="mango-box third">
+    <div class="visibility private">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>${criterion}</li>
+        <li>Private</li>
+      </ul>
+      <div class="total">${len(packet["canterbury_private"])}</div>
+    </div>
+    ${self.inclusion_table("canterbury_private", hint=True)}
+  </div>
+
+  <div class="mango-box third">
+    <div class="visibility pending">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>${criterion}</li>
+        <li>Pending</li>
+      </ul>
+      <div class="total">${len(packet["canterbury_pending"])}</div>
+    </div>
+    ${self.inclusion_table("canterbury_pending", hint=True)}
+  </div>
+</div>
+%endif
+
 %if packet["sipri_public"] or packet["sipri_private"] or packet["sipri_pending"]:
 <div class="inclusion">
   <h3>Sipri 100: Add activity tags:</h3>

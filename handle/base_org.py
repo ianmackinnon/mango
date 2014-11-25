@@ -246,7 +246,7 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         else:
             org_alias_address_query = org_alias_query \
                 .outerjoin(Org.address_list)
-            
+
 
         org_alias_address_query = org_alias_address_query \
             .add_entity(Address)

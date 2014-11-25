@@ -108,7 +108,6 @@ class AuthLoginGoogleHandler(LoginHandler, tornado.auth.GoogleOAuth2Mixin):
 
     # Only used for our local database, not for actual auth
     openid_url = u"https://www.google.com/accounts/o8/id"
-    redirect_path = u"/auth/login/google"
 
     def _create_user(self):
         auth = Auth(self.openid_url, self.auth_name)
@@ -122,8 +121,8 @@ class AuthLoginGoogleHandler(LoginHandler, tornado.auth.GoogleOAuth2Mixin):
     @tornado.web.asynchronous
     @tornado.gen.engine
     def get(self):
-        
-        login_url = "%s://%s%s" % (self.request.protocol, self.request.host, self.redirect_path)
+        redirect_path = self.url_rewrite(u"/auth/login/google")
+        login_url = "%s://%s%s" % (self.request.protocol, self.request.host, redirect_path)
 
         if self.get_argument('code', False):
             access_data = yield self.get_authenticated_user(

@@ -24,6 +24,8 @@ from base_moderation import \
     get_pending_org_address_id, \
     get_pending_org_contact_id
 
+import geo
+
 from model import Org, Note, Address, Orgalias, Event, Orgtag, Contact, \
     org_orgtag, org_address, org_note
 
@@ -1251,6 +1253,41 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
+        min_radius = 16 # 10 miles
+
+        location = geo.bounds("bristol", min_radius=min_radius)
+        bristol_query = self.orm.query(func.count(Address.address_id) \
+                                       .label("count")) \
+            .join(org_address) \
+            .add_columns(org_address.c.org_id) \
+            .filter(and_(
+                Address.latitude != None,
+                Address.longitude != None,
+                Address.latitude >= location.south,
+                Address.latitude <= location.north,
+                Address.longitude >= location.west,
+                Address.longitude <= location.east,
+            )) \
+            .group_by(org_address.c.org_id) \
+            .subquery()
+
+        location = geo.bounds("canterbury", min_radius=min_radius)
+        canterbury_query = self.orm.query(func.count(Address.address_id) \
+                                       .label("count")) \
+            .join(org_address) \
+            .add_columns(org_address.c.org_id) \
+            .filter(and_(
+                Address.latitude != None,
+                Address.longitude != None,
+                Address.latitude >= location.south,
+                Address.latitude <= location.north,
+                Address.longitude >= location.west,
+                Address.longitude <= location.east,
+            )) \
+            .group_by(org_address.c.org_id) \
+            .subquery()
+
+
         exist_clause = "exists (select 1 from org_include where org_include.org_id = org.org_id)"
         
         org_query = self.orm.query(Org) \
@@ -1259,6 +1296,8 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .outerjoin(dsei_query, dsei_query.c.org_id==Org.org_id) \
             .outerjoin(sap_query, sap_query.c.org_id==Org.org_id) \
             .outerjoin(israel_query, israel_query.c.org_id==Org.org_id) \
+            .outerjoin(bristol_query, bristol_query.c.org_id==Org.org_id) \
+            .outerjoin(canterbury_query, canterbury_query.c.org_id==Org.org_id) \
             .outerjoin(sipri_query, sipri_query.c.org_id==Org.org_id) \
             .outerjoin(note_query, note_query.c.org_id==Org.org_id) \
             .add_columns(
@@ -1268,6 +1307,8 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 func.coalesce(dsei_query.c.count, 0).label("dsei"),
                 func.coalesce(sap_query.c.count, 0).label("sap"),
                 func.coalesce(israel_query.c.count, 0).label("israel"),
+                func.coalesce(bristol_query.c.count, 0).label("bristol"),
+                func.coalesce(canterbury_query.c.count, 0).label("canterbury"),
                 func.coalesce(sipri_query.c.count, 0).label("sipri"),
                 func.coalesce(note_query.c.count, 0).label("note"),
                 ) \
@@ -1292,6 +1333,14 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "israel_private": [],
             "israel_pending": [],
 
+            "bristol_public": [],
+            "bristol_private": [],
+            "bristol_pending": [],
+
+            "canterbury_public": [],
+            "canterbury_private": [],
+            "canterbury_pending": [],
+
             "sipri_public": [],
             "sipri_private": [],
             "sipri_pending": [],
@@ -1309,7 +1358,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "exclude_pending": 0,
             }
 
-        for org, include, act, addr, dsei, sap, israel, sipri, note in org_query:
+        for org, include, act, addr, dsei, sap, israel, bristol, canterbury, sipri, note in org_query:
             if act:
                 if org.public:
                     if not addr:
@@ -1361,6 +1410,26 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                         .append((org, dsei, sap))
                 else:
                     packet["israel_pending"] \
+                        .append((org, dsei, sap))
+            elif bristol:
+                if org.public:
+                    packet["bristol_public"] \
+                        .append((org, dsei, sap))
+                elif org.public == False:
+                    packet["bristol_private"] \
+                        .append((org, dsei, sap))
+                else:
+                    packet["bristol_pending"] \
+                        .append((org, dsei, sap))
+            elif canterbury:
+                if org.public:
+                    packet["canterbury_public"] \
+                        .append((org, dsei, sap))
+                elif org.public == False:
+                    packet["canterbury_private"] \
+                        .append((org, dsei, sap))
+                else:
+                    packet["canterbury_pending"] \
                         .append((org, dsei, sap))
             elif sipri:
                 if org.public:
