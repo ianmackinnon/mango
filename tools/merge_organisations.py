@@ -19,6 +19,7 @@ from hashlib import md5
 
 from model import connection_url_app, attach_search
 from model import User, Org
+from model import log as log_model
 
 from model_v import org_address_v
 
@@ -179,6 +180,7 @@ def main(orm, threshold, c, alpha=None):
 
 if __name__ == "__main__":
     log.addHandler(logging.StreamHandler())
+    log_model.addHandler(logging.StreamHandler())
 
     usage = """%prog [ID]...
 
@@ -202,11 +204,10 @@ ID:   Integer organisation IDs to merge."""
 
     (options, args) = parser.parse_args()
 
-    verbosity = max(0, min(3, 1 + options.verbose - options.quiet))
-    log.setLevel(
-        (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[verbosity]
-        )
+    log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[max(0, min(3, 1 + options.verbose - options.quiet))]
 
+    log.setLevel(log_level)
+    log_model.setLevel(log_level)
 
     connection_url = connection_url_app()
     engine = create_engine(connection_url)

@@ -14,20 +14,21 @@ CONF_EXAMPLE_PATH := $(NAME).example.conf
 MYSQL_CONF_PATH := .$(NAME).mysql.conf
 MYSQLDUMP_CONF_PATH := .$(NAME).mysqldump.conf
 
+SQLITE_DB := $(NAME).db
 MYSQL_IMPORT = mysql/import.my.sql
 MYSQL_TEST = mysql/test.my.sql
 
 DATE := $(shell date -u '+%Y-%m-%d.%H:%M:%S')
-DUMP_NAME := mango.$(DATE).data-only.my.sql
+DUMP_NAME := $(NAME).$(DATE).data-only.my.sql
 
 
-all : .xsrf .mango.conf database
+all : .xsrf $(CONF_PATH) database
 
 clean : purge-database
 
 purge :
 	rm -rf .xsrf
-	rm -rf .mango.conf
+	rm -rf $(CONF_PATH)
 
 database: mysql
 clean-database: clean-mysql
@@ -59,17 +60,17 @@ $(CONF_PATH) :
 
 # SQLite
 
-sqlite : mango.db
+sqlite : $(SQLITE_DB)
 
 clean-sqlite:
-	rm -rf mango.db
+	rm -rf $(SQLITE_DB)
 
 purge-sqlite:
 
-mango.db : model.py sqlite/build.sqlite.sql
-	rm -rf mango.db
-	./model.py mango.db
-	sqlite3 mango.db < sqlite/build.sqlite.sql
+$(SQLITE_DB) : model.py sqlite/build.sqlite.sql
+	rm -rf $(SQLITE_DB)
+	./model.py $(SQLITE_DB)
+	sqlite3 $(SQLITE_DB) < sqlite/build.sqlite.sql
 
 # MySQL
 
