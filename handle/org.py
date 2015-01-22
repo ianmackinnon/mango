@@ -1220,6 +1220,22 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
+        sap_query = self.orm.query(func.count(Orgtag.orgtag_id) \
+                                   .label("count")) \
+            .join(org_orgtag) \
+            .add_columns(org_orgtag.c.org_id) \
+            .filter(Orgtag.name_short.startswith(
+                u"products-and-services|security%")) \
+            .group_by(org_orgtag.c.org_id) \
+            .subquery()
+
+        tag_query = self.orm.query(func.count(Orgtag.orgtag_id) \
+                                   .label("count")) \
+            .join(org_orgtag) \
+            .add_columns(org_orgtag.c.org_id) \
+            .group_by(org_orgtag.c.org_id) \
+            .subquery()
+
         israel_query = self.orm.query(func.count(Orgtag.orgtag_id) \
                                      .label("count")) \
             .join(org_orgtag) \
@@ -1244,49 +1260,26 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .group_by(org_note.c.org_id) \
             .subquery()
 
-        sap_query = self.orm.query(func.count(Orgtag.orgtag_id) \
-                                   .label("count")) \
-            .join(org_orgtag) \
-            .add_columns(org_orgtag.c.org_id) \
-            .filter(Orgtag.name_short.startswith(
-                u"products-and-services|security%")) \
-            .group_by(org_orgtag.c.org_id) \
-            .subquery()
+        def location_subquery(location, min_radius=16):  # 10 miles
+            location = geo.bounds(location, min_radius=min_radius)
+            return self.orm.query(func.count(Address.address_id) \
+                                           .label("count")) \
+                .join(org_address) \
+                .add_columns(org_address.c.org_id) \
+                .filter(and_(
+                    Address.latitude != None,
+                    Address.longitude != None,
+                    Address.latitude >= location.south,
+                    Address.latitude <= location.north,
+                    Address.longitude >= location.west,
+                    Address.longitude <= location.east,
+                )) \
+                .group_by(org_address.c.org_id) \
+                .subquery()
 
-        min_radius = 16 # 10 miles
-
-        location = geo.bounds("bristol", min_radius=min_radius)
-        bristol_query = self.orm.query(func.count(Address.address_id) \
-                                       .label("count")) \
-            .join(org_address) \
-            .add_columns(org_address.c.org_id) \
-            .filter(and_(
-                Address.latitude != None,
-                Address.longitude != None,
-                Address.latitude >= location.south,
-                Address.latitude <= location.north,
-                Address.longitude >= location.west,
-                Address.longitude <= location.east,
-            )) \
-            .group_by(org_address.c.org_id) \
-            .subquery()
-
-        location = geo.bounds("canterbury", min_radius=min_radius)
-        canterbury_query = self.orm.query(func.count(Address.address_id) \
-                                       .label("count")) \
-            .join(org_address) \
-            .add_columns(org_address.c.org_id) \
-            .filter(and_(
-                Address.latitude != None,
-                Address.longitude != None,
-                Address.latitude >= location.south,
-                Address.latitude <= location.north,
-                Address.longitude >= location.west,
-                Address.longitude <= location.east,
-            )) \
-            .group_by(org_address.c.org_id) \
-            .subquery()
-
+        bristol_query = location_subquery("bristol")
+        canterbury_query = location_subquery("canterbury")
+        glasgow_query = location_subquery("glasgow")
 
         exist_clause = "exists (select 1 from org_include where org_include.org_id = org.org_id)"
         
@@ -1295,6 +1288,8 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .outerjoin(addr_query, addr_query.c.org_id==Org.org_id) \
             .outerjoin(dsei_query, dsei_query.c.org_id==Org.org_id) \
             .outerjoin(sap_query, sap_query.c.org_id==Org.org_id) \
+            .outerjoin(tag_query, tag_query.c.org_id==Org.org_id) \
+            .outerjoin(glasgow_query, glasgow_query.c.org_id==Org.org_id) \
             .outerjoin(israel_query, israel_query.c.org_id==Org.org_id) \
             .outerjoin(bristol_query, bristol_query.c.org_id==Org.org_id) \
             .outerjoin(canterbury_query, canterbury_query.c.org_id==Org.org_id) \
@@ -1306,6 +1301,8 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 func.coalesce(addr_query.c.count, 0).label("addr"),
                 func.coalesce(dsei_query.c.count, 0).label("dsei"),
                 func.coalesce(sap_query.c.count, 0).label("sap"),
+                func.coalesce(tag_query.c.count, 0).label("tag"),
+                func.coalesce(glasgow_query.c.count, 0).label("glasgow"),
                 func.coalesce(israel_query.c.count, 0).label("israel"),
                 func.coalesce(bristol_query.c.count, 0).label("bristol"),
                 func.coalesce(canterbury_query.c.count, 0).label("canterbury"),
@@ -1313,7 +1310,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 func.coalesce(note_query.c.count, 0).label("note"),
                 ) \
             .filter(Org.end_date==None) \
-            .order_by("((dsei > 0) * 4 + (sap > 0) * 2 + (sipri > 0)) desc",
+            .order_by("((dsei > 0) * 4 + (sap > 0) * 2 + (sipri > 0)) desc, tag desc",
                       Org.name)
 
         packet = {
@@ -1328,6 +1325,10 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "desc_public": [],
             "desc_private": [],
             "desc_pending": [],
+
+            "glasgow_public": [],
+            "glasgow_private": [],
+            "glasgow_pending": [],
 
             "israel_public": [],
             "israel_private": [],
@@ -1358,106 +1359,116 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "exclude_pending": 0,
             }
 
-        for org, include, act, addr, dsei, sap, israel, bristol, canterbury, sipri, note in org_query:
+        for org, include, act, addr, dsei, sap, tag, glasgow, israel, bristol, canterbury, sipri, note in org_query:
             if act:
                 if org.public:
                     if not addr:
                         packet["addr_public"] \
-                            .append((org, dsei, sap))
+                            .append((org, dsei, sap, tag))
                     elif include:
                         packet["act_include_public"] += 1
                     else:
                         packet["act_exclude_public"] \
-                            .append((org, dsei, sap))
+                            .append((org, dsei, sap, tag))
                 elif org.public == False:
                     if not include:
                         packet["act_exclude_private"] += 1
                     else:
                         packet["act_include_private"] \
-                            .append((org, dsei, sap))
+                            .append((org, dsei, sap, tag))
                 else:
                     if not include:
                         pass # Nothing
                     else:
                         packet["act_include_pending"] \
-                            .append((org, dsei, sap))
+                            .append((org, dsei, sap, tag))
             elif org.description:
                 if org.public:
                     packet["desc_public"] \
-                        .append((org, dsei, sap))
+                        .append((org, dsei, sap, tag))
                 elif org.public == False:
                     packet["desc_private"] \
-                        .append((org, dsei, sap))
+                        .append((org, dsei, sap, tag))
                 else:
                     packet["desc_pending"] \
-                        .append((org, dsei, sap))
+                        .append((org, dsei, sap, tag))
             elif note > 3:
                 if org.public:
                     packet["note_public"] \
-                        .append((org, dsei, sap))
+                        .append((org, dsei, sap, tag))
                 elif org.public == False:
                     packet["note_private"] \
-                        .append((org, dsei, sap))
+                        .append((org, dsei, sap, tag))
                 else:
                     packet["note_pending"] \
-                        .append((org, dsei, sap))
+                        .append((org, dsei, sap, tag))
+            elif glasgow:
+                if org.public:
+                    packet["glasgow_public"] \
+                        .append((org, dsei, sap, tag))
+                elif org.public == False:
+                    packet["glasgow_private"] \
+                        .append((org, dsei, sap, tag))
+                else:
+                    packet["glasgow_pending"] \
+                        .append((org, dsei, sap, tag))
             elif israel:
                 if org.public:
                     packet["israel_public"] \
-                        .append((org, dsei, sap))
+                        .append((org, dsei, sap, tag))
                 elif org.public == False:
                     packet["israel_private"] \
-                        .append((org, dsei, sap))
+                        .append((org, dsei, sap, tag))
                 else:
                     packet["israel_pending"] \
-                        .append((org, dsei, sap))
+                        .append((org, dsei, sap, tag))
             elif bristol:
                 if org.public:
                     packet["bristol_public"] \
-                        .append((org, dsei, sap))
+                        .append((org, dsei, sap, tag))
                 elif org.public == False:
                     packet["bristol_private"] \
-                        .append((org, dsei, sap))
+                        .append((org, dsei, sap, tag))
                 else:
                     packet["bristol_pending"] \
-                        .append((org, dsei, sap))
+                        .append((org, dsei, sap, tag))
             elif canterbury:
                 if org.public:
                     packet["canterbury_public"] \
-                        .append((org, dsei, sap))
+                        .append((org, dsei, sap, tag))
                 elif org.public == False:
                     packet["canterbury_private"] \
-                        .append((org, dsei, sap))
+                        .append((org, dsei, sap, tag))
                 else:
                     packet["canterbury_pending"] \
-                        .append((org, dsei, sap))
+                        .append((org, dsei, sap, tag))
             elif sipri:
                 if org.public:
                     packet["sipri_public"] \
-                        .append((org, dsei, sap))
+                        .append((org, dsei, sap, tag))
                 elif org.public == False:
                     packet["sipri_private"] \
-                        .append((org, dsei, sap))
+                        .append((org, dsei, sap, tag))
                 else:
                     packet["sipri_pending"] \
-                        .append((org, dsei, sap))
+                        .append((org, dsei, sap, tag))
             elif include:
                 if org.public:
                     packet["include_public"] \
-                        .append((org, dsei, sap))
+                        .append((org, dsei, sap, tag))
                 elif org.public == False:
                     packet["include_private"] \
-                        .append((org, dsei, sap))
+                        .append((org, dsei, sap, tag))
                 else:
                     packet["include_pending"] \
-                        .append((org, dsei, sap))
+                        .append((org, dsei, sap, tag))
             else:
                 if org.public:
                     packet["remove_public"] \
-                        .append((org, dsei, sap))
+                        .append((org, dsei, sap, tag))
                 elif org.public == False:
                     packet["remove_private"] \
-                        .append((org, dsei, sap))
+                        .append((org, dsei, sap, tag))
                 else:
                     packet["exclude_pending"] += 1
 

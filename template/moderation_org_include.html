@@ -10,12 +10,14 @@ last_tags = None
 %>
       %for row in packet[key][:200]:
 <%
-(org, dsei, sap) = row
+(org, dsei, sap, tag) = row
 tags = []
 if dsei:
     tags.append("D")
 if sap:
     tags.append("P")
+if tag:
+    tags.append(str(tag))
 
 if link=="tags":
     url=url_rewrite(org.url + '/tag', {
@@ -30,7 +32,7 @@ else:
                      'view':'edit',
                      })
 %>
-%if hint and last_tags and tags != last_tags:
+%if hint and last_tags and (bool(dsei), bool(sap)) != last_tags:
 <tr><td>&nbsp;</td></tr>
 %endif
       <tr>
@@ -44,7 +46,7 @@ ${", ".join(tags)}
 </td>
       </tr>
 <%
-last_tags = tags
+last_tags = (bool(dsei), bool(sap))
 %>
       %endfor
       %if len(packet[key]) > 200:
@@ -203,6 +205,50 @@ last_tags = tags
       <div class="total">${len(packet["desc_pending"])}</div>
     </div>
     ${self.inclusion_table("desc_pending", hint=True)}
+  </div>
+</div>
+%endif
+
+%if packet["glasgow_public"] or packet["glasgow_private"] or packet["glasgow_pending"]:
+<div class="inclusion">
+  <h3>Based in Glasgow: Add activity tags:</h3>
+
+  <% criterion = "Based in Glasgow." %>
+
+  <div class="mango-box third">
+    <div class="visibility public">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>${criterion}</li>
+        <li>Public</li>
+      </ul>
+      <div class="total">${len(packet["glasgow_public"])}</div>
+    </div>
+    ${self.inclusion_table("glasgow_public", hint=True)}
+  </div>
+
+  <div class="mango-box third">
+    <div class="visibility private">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>${criterion}</li>
+        <li>Private</li>
+      </ul>
+      <div class="total">${len(packet["glasgow_private"])}</div>
+    </div>
+    ${self.inclusion_table("glasgow_private", hint=True)}
+  </div>
+
+  <div class="mango-box third">
+    <div class="visibility pending">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>${criterion}</li>
+        <li>Pending</li>
+      </ul>
+      <div class="total">${len(packet["glasgow_pending"])}</div>
+    </div>
+    ${self.inclusion_table("glasgow_pending", hint=True)}
   </div>
 </div>
 %endif
