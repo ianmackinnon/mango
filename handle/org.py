@@ -1277,9 +1277,11 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 .group_by(org_address.c.org_id) \
                 .subquery()
 
+        glasgow_query = location_subquery("glasgow")
+
         bristol_query = location_subquery("bristol")
         canterbury_query = location_subquery("canterbury")
-        glasgow_query = location_subquery("glasgow")
+        liverpool_query = location_subquery("liverpool")
 
         exist_clause = "exists (select 1 from org_include where org_include.org_id = org.org_id)"
         
@@ -1293,6 +1295,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .outerjoin(israel_query, israel_query.c.org_id==Org.org_id) \
             .outerjoin(bristol_query, bristol_query.c.org_id==Org.org_id) \
             .outerjoin(canterbury_query, canterbury_query.c.org_id==Org.org_id) \
+            .outerjoin(liverpool_query, liverpool_query.c.org_id==Org.org_id) \
             .outerjoin(sipri_query, sipri_query.c.org_id==Org.org_id) \
             .outerjoin(note_query, note_query.c.org_id==Org.org_id) \
             .add_columns(
@@ -1306,6 +1309,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 func.coalesce(israel_query.c.count, 0).label("israel"),
                 func.coalesce(bristol_query.c.count, 0).label("bristol"),
                 func.coalesce(canterbury_query.c.count, 0).label("canterbury"),
+                func.coalesce(liverpool_query.c.count, 0).label("liverpool"),
                 func.coalesce(sipri_query.c.count, 0).label("sipri"),
                 func.coalesce(note_query.c.count, 0).label("note"),
                 ) \
@@ -1342,6 +1346,10 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "canterbury_private": [],
             "canterbury_pending": [],
 
+            "liverpool_public": [],
+            "liverpool_private": [],
+            "liverpool_pending": [],
+
             "sipri_public": [],
             "sipri_private": [],
             "sipri_pending": [],
@@ -1359,7 +1367,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "exclude_pending": 0,
             }
 
-        for org, include, act, addr, dsei, sap, tag, glasgow, israel, bristol, canterbury, sipri, note in org_query:
+        for org, include, act, addr, dsei, sap, tag, glasgow, israel, bristol, canterbury, liverpool, sipri, note in org_query:
             if act:
                 if org.public:
                     if not addr:
@@ -1441,6 +1449,16 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                         .append((org, dsei, sap, tag))
                 else:
                     packet["canterbury_pending"] \
+                        .append((org, dsei, sap, tag))
+            elif liverpool:
+                if org.public:
+                    packet["liverpool_public"] \
+                        .append((org, dsei, sap, tag))
+                elif org.public == False:
+                    packet["liverpool_private"] \
+                        .append((org, dsei, sap, tag))
+                else:
+                    packet["liverpool_pending"] \
                         .append((org, dsei, sap, tag))
             elif sipri:
                 if org.public:
