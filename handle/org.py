@@ -1277,9 +1277,6 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 .group_by(org_address.c.org_id) \
                 .subquery()
 
-        glasgow_query = location_subquery("glasgow")
-
-        bristol_query = location_subquery("bristol")
         canterbury_query = location_subquery("canterbury")
         liverpool_query = location_subquery("liverpool")
 
@@ -1291,9 +1288,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .outerjoin(dsei_query, dsei_query.c.org_id==Org.org_id) \
             .outerjoin(sap_query, sap_query.c.org_id==Org.org_id) \
             .outerjoin(tag_query, tag_query.c.org_id==Org.org_id) \
-            .outerjoin(glasgow_query, glasgow_query.c.org_id==Org.org_id) \
             .outerjoin(israel_query, israel_query.c.org_id==Org.org_id) \
-            .outerjoin(bristol_query, bristol_query.c.org_id==Org.org_id) \
             .outerjoin(canterbury_query, canterbury_query.c.org_id==Org.org_id) \
             .outerjoin(liverpool_query, liverpool_query.c.org_id==Org.org_id) \
             .outerjoin(sipri_query, sipri_query.c.org_id==Org.org_id) \
@@ -1305,9 +1300,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 func.coalesce(dsei_query.c.count, 0).label("dsei"),
                 func.coalesce(sap_query.c.count, 0).label("sap"),
                 func.coalesce(tag_query.c.count, 0).label("tag"),
-                func.coalesce(glasgow_query.c.count, 0).label("glasgow"),
                 func.coalesce(israel_query.c.count, 0).label("israel"),
-                func.coalesce(bristol_query.c.count, 0).label("bristol"),
                 func.coalesce(canterbury_query.c.count, 0).label("canterbury"),
                 func.coalesce(liverpool_query.c.count, 0).label("liverpool"),
                 func.coalesce(sipri_query.c.count, 0).label("sipri"),
@@ -1330,17 +1323,9 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "desc_private": [],
             "desc_pending": [],
 
-            "glasgow_public": [],
-            "glasgow_private": [],
-            "glasgow_pending": [],
-
             "israel_public": [],
             "israel_private": [],
             "israel_pending": [],
-
-            "bristol_public": [],
-            "bristol_private": [],
-            "bristol_pending": [],
 
             "canterbury_public": [],
             "canterbury_private": [],
@@ -1367,7 +1352,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "exclude_pending": 0,
             }
 
-        for org, include, act, addr, dsei, sap, tag, glasgow, israel, bristol, canterbury, liverpool, sipri, note in org_query:
+        for org, include, act, addr, dsei, sap, tag, israel, canterbury, liverpool, sipri, note in org_query:
             if act:
                 if org.public:
                     if not addr:
@@ -1410,16 +1395,6 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 else:
                     packet["note_pending"] \
                         .append((org, dsei, sap, tag))
-            elif glasgow:
-                if org.public:
-                    packet["glasgow_public"] \
-                        .append((org, dsei, sap, tag))
-                elif org.public == False:
-                    packet["glasgow_private"] \
-                        .append((org, dsei, sap, tag))
-                else:
-                    packet["glasgow_pending"] \
-                        .append((org, dsei, sap, tag))
             elif israel:
                 if org.public:
                     packet["israel_public"] \
@@ -1429,16 +1404,6 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                         .append((org, dsei, sap, tag))
                 else:
                     packet["israel_pending"] \
-                        .append((org, dsei, sap, tag))
-            elif bristol:
-                if org.public:
-                    packet["bristol_public"] \
-                        .append((org, dsei, sap, tag))
-                elif org.public == False:
-                    packet["bristol_private"] \
-                        .append((org, dsei, sap, tag))
-                else:
-                    packet["bristol_pending"] \
                         .append((org, dsei, sap, tag))
             elif canterbury:
                 if org.public:
