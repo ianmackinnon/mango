@@ -10,11 +10,11 @@ last_tags = None
 %>
       %for row in packet[key][:200]:
 <%
-(org, dsei, sap, tag) = row
+(org, dsei, saptag, tag) = row
 tags = []
 if dsei:
     tags.append("D")
-if sap:
+if saptag:
     tags.append("P")
 if tag:
     tags.append(str(tag))
@@ -32,7 +32,7 @@ else:
                      'view':'edit',
                      })
 %>
-%if hint and last_tags and (bool(dsei), bool(sap)) != last_tags:
+%if hint and last_tags and (bool(dsei), bool(saptag)) != last_tags:
 <tr><td>&nbsp;</td></tr>
 %endif
       <tr>
@@ -46,7 +46,7 @@ ${", ".join(tags)}
 </td>
       </tr>
 <%
-last_tags = (bool(dsei), bool(sap))
+last_tags = (bool(dsei), bool(saptag))
 %>
       %endfor
       %if len(packet[key]) > 200:
@@ -205,6 +205,50 @@ last_tags = (bool(dsei), bool(sap))
       <div class="total">${len(packet["desc_pending"])}</div>
     </div>
     ${self.inclusion_table("desc_pending", hint=True)}
+  </div>
+</div>
+%endif
+
+%if packet["sap2015_public"] or packet["sap2015_private"] or packet["sap2015_pending"]:
+<div class="inclusion">
+  <h3>Exhibitors at Security and Policing 2015: Add activity tags:</h3>
+
+  <% criterion = "Exhibitors at Security and Policing 2015." %>
+
+  <div class="mango-box third">
+    <div class="visibility public">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>${criterion}</li>
+        <li>Public</li>
+      </ul>
+      <div class="total">${len(packet["sap2015_public"])}</div>
+    </div>
+    ${self.inclusion_table("sap2015_public", hint=True)}
+  </div>
+
+  <div class="mango-box third">
+    <div class="visibility private">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>${criterion}</li>
+        <li>Private</li>
+      </ul>
+      <div class="total">${len(packet["sap2015_private"])}</div>
+    </div>
+    ${self.inclusion_table("sap2015_private", hint=True)}
+  </div>
+
+  <div class="mango-box third">
+    <div class="visibility pending">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>${criterion}</li>
+        <li>Pending</li>
+      </ul>
+      <div class="total">${len(packet["sap2015_pending"])}</div>
+    </div>
+    ${self.inclusion_table("sap2015_pending", hint=True)}
   </div>
 </div>
 %endif
