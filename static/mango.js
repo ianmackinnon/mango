@@ -1173,6 +1173,9 @@ var m = {
     [/^\/history$/, function () {
       m.convertUtcToLocal();
     }],
+    [/^\/user\/([1-9][0-9]*)$/, function (userIdString) {
+      m.convertUtcToLocal();
+    }],
     [/revision$/, function () {
       m.convertUtcToLocal();
     }]

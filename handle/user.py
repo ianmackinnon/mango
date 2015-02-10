@@ -347,7 +347,14 @@ class UserListHandler(BaseHandler):
         if not self.current_user.moderator:
             raise HTTPError(404)
 
-        user_list = self.orm.query(User).all()
+        user_list = self.orm.query(User) \
+            .order_by(
+                (User.user_id==-1).desc(),
+                User.moderator.desc(),
+                User.locked.asc(),
+                User.name,
+            ) \
+            .all()
         self.render(
             'user_list.html',
             user_list=user_list
@@ -369,7 +376,7 @@ class UserHandler(BaseHandler):
         history = None
 
         if self.moderator:
-            history = get_history(self.orm, user.user_id)
+            history = get_history(self.orm, user.user_id, limit=150)
         else:
             if user != self.current_user:
                 raise HTTPError(404)

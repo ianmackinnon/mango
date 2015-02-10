@@ -820,7 +820,7 @@ if user:
         </a>
       </td>
       %endif
-      <td class="history-column-date date-utc">${datetime.datetime.fromtimestamp(entity["date"]).strftime("%Y/%m/%d %H:%M:%S UTC")}</td>
+      <td class="history-column-date date-utc">${datetime.datetime.fromtimestamp(entity["date"]).strftime("%Y-%m-%d %H:%M:%S UTC")}</td>
     </tr>
     %endfor
   </tbody>
