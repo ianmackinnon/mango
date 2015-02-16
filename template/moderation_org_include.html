@@ -253,6 +253,50 @@ last_tags = (bool(dsei), bool(saptag))
 </div>
 %endif
 
+%if packet["idex2015_public"] or packet["idex2015_private"] or packet["idex2015_pending"]:
+<div class="inclusion">
+  <h3>Exhibitors at IDEX 2015: Add activity tags:</h3>
+
+  <% criterion = "Exhibitors at IDEX 2015." %>
+
+  <div class="mango-box third">
+    <div class="visibility public">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>${criterion}</li>
+        <li>Public</li>
+      </ul>
+      <div class="total">${len(packet["idex2015_public"])}</div>
+    </div>
+    ${self.inclusion_table("idex2015_public", hint=True)}
+  </div>
+
+  <div class="mango-box third">
+    <div class="visibility private">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>${criterion}</li>
+        <li>Private</li>
+      </ul>
+      <div class="total">${len(packet["idex2015_private"])}</div>
+    </div>
+    ${self.inclusion_table("idex2015_private", hint=True)}
+  </div>
+
+  <div class="mango-box third">
+    <div class="visibility pending">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>${criterion}</li>
+        <li>Pending</li>
+      </ul>
+      <div class="total">${len(packet["idex2015_pending"])}</div>
+    </div>
+    ${self.inclusion_table("idex2015_pending", hint=True)}
+  </div>
+</div>
+%endif
+
 %if packet["israel_public"] or packet["israel_private"] or packet["israel_pending"]:
 <div class="inclusion">
   <h3>Military exporters to Israel: Add activity tags:</h3>

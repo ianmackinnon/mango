@@ -1244,6 +1244,14 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
+        idex2015_query = self.orm.query(func.count(Orgtag.orgtag_id) \
+                                       .label("count")) \
+            .join(org_orgtag) \
+            .add_columns(org_orgtag.c.org_id) \
+            .filter(Orgtag.name_short==u"exhibitor|idex-2015") \
+            .group_by(org_orgtag.c.org_id) \
+            .subquery()
+
         israel_query = self.orm.query(func.count(Orgtag.orgtag_id) \
                                      .label("count")) \
             .join(org_orgtag) \
@@ -1297,6 +1305,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .outerjoin(saptag_query, saptag_query.c.org_id==Org.org_id) \
             .outerjoin(tag_query, tag_query.c.org_id==Org.org_id) \
             .outerjoin(sap2015_query, sap2015_query.c.org_id==Org.org_id) \
+            .outerjoin(idex2015_query, idex2015_query.c.org_id==Org.org_id) \
             .outerjoin(israel_query, israel_query.c.org_id==Org.org_id) \
             .outerjoin(canterbury_query, canterbury_query.c.org_id==Org.org_id) \
             .outerjoin(liverpool_query, liverpool_query.c.org_id==Org.org_id) \
@@ -1310,6 +1319,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 func.coalesce(saptag_query.c.count, 0).label("saptag"),
                 func.coalesce(tag_query.c.count, 0).label("tag"),
                 func.coalesce(sap2015_query.c.count, 0).label("sap2015"),
+                func.coalesce(idex2015_query.c.count, 0).label("idex2015"),
                 func.coalesce(israel_query.c.count, 0).label("israel"),
                 func.coalesce(canterbury_query.c.count, 0).label("canterbury"),
                 func.coalesce(liverpool_query.c.count, 0).label("liverpool"),
@@ -1336,6 +1346,10 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "sap2015_public": [],
             "sap2015_private": [],
             "sap2015_pending": [],
+
+            "idex2015_public": [],
+            "idex2015_private": [],
+            "idex2015_pending": [],
 
             "israel_public": [],
             "israel_private": [],
@@ -1366,7 +1380,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "exclude_pending": 0,
             }
 
-        for org, include, act, addr, dsei, saptag, tag, sap2015, israel, canterbury, liverpool, sipri, note in org_query:
+        for org, include, act, addr, dsei, saptag, tag, sap2015, idex2015, israel, canterbury, liverpool, sipri, note in org_query:
             if act:
                 if org.public:
                     if not addr:
@@ -1418,6 +1432,16 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                         .append((org, dsei, saptag, tag))
                 else:
                     packet["sap2015_pending"] \
+                        .append((org, dsei, saptag, tag))
+            elif idex2015:
+                if org.public:
+                    packet["idex2015_public"] \
+                        .append((org, dsei, saptag, tag))
+                elif org.public == False:
+                    packet["idex2015_private"] \
+                        .append((org, dsei, saptag, tag))
+                else:
+                    packet["idex2015_pending"] \
                         .append((org, dsei, saptag, tag))
             elif israel:
                 if org.public:
