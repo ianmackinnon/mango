@@ -1244,12 +1244,28 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
+        uk_south = 49.87
+        uk_north = 55.81
+        uk_west = -6.38
+        uk_east = 1.77
         idex2015_query = self.orm.query(func.count(Orgtag.orgtag_id) \
                                        .label("count")) \
-            .join(org_orgtag) \
-            .add_columns(org_orgtag.c.org_id) \
+            .join(Org, Orgtag.org_list) \
+            .join(Address, Org.address_list) \
+            .add_columns(Org.org_id) \
             .filter(Orgtag.name_short==u"exhibitor|idex-2015") \
-            .group_by(org_orgtag.c.org_id) \
+            .filter(or_(
+                and_(
+                    Address.latitude != None,
+                    Address.longitude != None,
+                    Address.latitude >= uk_south,
+                    Address.latitude <= uk_north,
+                    Address.longitude >= uk_west,
+                    Address.longitude <= uk_east,
+                ),
+                Address.latitude == None,
+            )) \
+            .group_by(Org.org_id) \
             .subquery()
 
         israel_query = self.orm.query(func.count(Orgtag.orgtag_id) \
