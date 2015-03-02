@@ -568,7 +568,7 @@ last_tags = (bool(dsei), bool(saptag))
 %endif
 
 
-%if packet["include_public"] or packet["remove_private"] or packet["remove_pending"]:
+%if packet.get("include_public", None) or packet.get("remove_private", None) or packet.get("remove_pending", None):
 <div class="inclusion">
   <h3>Probably have the right visibility setting: Add activity tags:</h3>
 
@@ -587,7 +587,7 @@ last_tags = (bool(dsei), bool(saptag))
         <li>Meet inclusion criteria</li>
         <li>Public</li>
       </ul>
-      <div class="total">${len(packet["include_public"])}</div>
+      <div class="total">${len(packet.get("include_public", []))}</div>
     </div>
     ${self.inclusion_table("include_public", hint=True)}
   </div>
@@ -599,7 +599,7 @@ last_tags = (bool(dsei), bool(saptag))
         <li>Do not meet inclusion criteria</li>
         <li>Private</li>
       </ul>
-      <div class="total">${len(packet["remove_private"])}</div>
+      <div class="total">${len(packet.get("remove_private", []))}</div>
     </div>
     ${self.inclusion_table("remove_private", hint=True)}
   </div>
