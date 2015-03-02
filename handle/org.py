@@ -1233,6 +1233,8 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                                    .label("count")) \
             .join(org_orgtag) \
             .add_columns(org_orgtag.c.org_id) \
+            .filter(not_(Orgtag.name_short.startswith(
+                u"products-and-services%"))) \
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
