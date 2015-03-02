@@ -777,12 +777,27 @@ if not parameters:
 
 <%def name="history_table(history, user)">
 <table class="history">
+  <colgroup>
+    <col style="width: 100px">
+    <col style="width: 50px">
+    <col style="width: 50px">
+    <col style="width: 175px">
+    <col style="width: 50px">
+    <col style="width: 175px">
+    <col style="width: 150px">
+    %if user:
+    <col style="width: 150px">
+    %endif
+    <col style="width: 150px">
+  </colgroup>  
   <thead>
     <tr>
       <th class="history-column-type">Type</th>
       <th class="history-column-id">ID</th>
       <th class="history-column-revision">Rev.</th>
       <th class="history-column-content">Content</th>
+      <th class="history-column-parent-id"><abbr title="Parent ID">P. ID</abbr></th>
+      <th class="history-column-parent-content"><abbr title="Parent Content">P. Content</abbr></th>
       %if user:
       <th class="history-column-user">User</th>
       %endif
@@ -797,6 +812,9 @@ url = None
 if entity["existence"]:
     url = url_rewrite("/%s/%d" % (entity["type"], entity["entity_id"]))
 revision_url = url_rewrite("/%s/%d/revision" % (entity["type"], entity["entity_id"]))
+parent_url = None
+if entity["parent_existence"]:
+    parent_url = url_rewrite("/%s/%d" % ("organisation", entity["parent_id"]))
 if user:
     user_link = url_rewrite("/user/%s" % (entity["user_id"]))
 %>
@@ -811,6 +829,16 @@ if user:
       </td>
       <td class="history-column-revision${not entity["existence_v"] and " deleted" or ""}"><a href="${revision_url}">${entity["existence_v"] and entity["entity_v_id"] or "deleted"}</a></td>
       <td class="history-column-content"><div class="ellipsis">${history_entity_name(entity)}</div></td>
+      <td class="history-column-parent-id">
+        %if parent_url:
+        <a href="${parent_url}">${entity["parent_id"]}</a>
+        %endif
+      </td>
+      <td class="history-column-parent-content">
+        %if entity["parent_name"]:
+        ${entity["parent_name"]}
+        %endif
+      </td>
       %if user:
       <td class="history-column-user">
         <a href="${user_link}">
