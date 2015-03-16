@@ -778,12 +778,12 @@ if not parameters:
 <%def name="history_table(history, user)">
 <table class="history">
   <colgroup>
-    <col style="width: 100px">
+    <col style="width: 110px">
     <col style="width: 50px">
     <col style="width: 50px">
-    <col style="width: 175px">
+    <col style="width: 170px">
     <col style="width: 50px">
-    <col style="width: 175px">
+    <col style="width: 170px">
     <col style="width: 150px">
     %if user:
     <col style="width: 150px">
@@ -827,7 +827,11 @@ if user:
         ${entity["entity_id"]}
         %endif
       </td>
+      %if entity["entity_v_id"] == -1:  # It's a many-to-many table
       <td class="history-column-revision${not entity["existence_v"] and " deleted" or ""}"><a href="${revision_url}">${entity["existence_v"] and entity["entity_v_id"] or "deleted"}</a></td>
+      %else:
+      <td>&nbsp</td>
+      %endif;
       <td class="history-column-content"><div class="ellipsis">${history_entity_name(entity)}</div></td>
       <td class="history-column-parent-id">
         %if parent_url:
@@ -841,11 +845,15 @@ if user:
       </td>
       %if user:
       <td class="history-column-user">
+        %if entity["user_name"]:
         <a href="${user_link}">
 	  <img width="24px" height="24px"
 	       src="${protocol}://gravatar.com/avatar/${entity["gravatar_hash"]}?d=identicon&s=24">
 	  ${entity["user_name"]}
         </a>
+        %else:
+        &nbsp;
+        %endif;
       </td>
       %endif
       <td class="history-column-date date-utc">${datetime.datetime.fromtimestamp(entity["date"]).strftime("%Y-%m-%d %H:%M:%S UTC")}</td>

@@ -134,11 +134,58 @@ from
     left outer join org_address on (address.address_id = org_address.address_id)
     left outer join org on (org_address.org_id = org.org_id)
   union
-  select "contact" as type, contact_v.contact_id as entity_id, contact_v_id as entity_v_id, contact_v.a_time, contact.contact_id and 1 as existence, existence as existence_v, contact_v.text as name, null as parent_id, null as parent_existence, null as parent_name, contact_v.moderation_user_id from contact_v left outer join contact using (contact_id)
+  select
+      "contact" as type,
+      contact_v.contact_id as entity_id,
+      contact_v_id as entity_v_id,
+      contact_v.a_time,
+      contact.contact_id and 1 as existence,
+      existence as existence_v,
+      contact_v.text as name,
+      org.org_id as parent_id,
+      org.org_id and 1 as parent_existence,
+      org.name as parent_name,
+      contact_v.moderation_user_id
+    from contact_v
+    left outer join contact using (contact_id)
+    left outer join org_contact on (contact.contact_id = org_contact.contact_id)
+    left outer join org on (org_contact.org_id = org.org_id)
   union
   select "organisation-tag" as type, orgtag_v.orgtag_id as entity_id, orgtag_v_id as entity_v_id, orgtag_v.a_time, orgtag.orgtag_id and 1 as existence, existence as existence_v, orgtag_v.name as name, null as parent_id, null as parent_existence, null as parent_name, orgtag_v.moderation_user_id from orgtag_v left outer join orgtag using (orgtag_id)
   union
+  select
+      "organisation-tag" as type,
+      orgtag.orgtag_id as entity_id,
+      -1 as entity_v_id,
+      org_orgtag.a_time,
+      orgtag.orgtag_id and 1 as existence,
+      null as existence_v,
+      orgtag.name as name,
+      org.org_id as parent_id,
+      org.org_id and 1 as parent_existence,
+      org.name as parent_name,
+      null as moderation_user_id
+    from org_orgtag
+    left outer join orgtag using (orgtag_id)
+    left outer join org using (org_id)
+  union
   select "event-tag" as type, eventtag_v.eventtag_id as entity_id, eventtag_v_id as entity_v_id, eventtag_v.a_time, eventtag.eventtag_id and 1 as existence, existence as existence_v, eventtag_v.name as name, null as parent_id, null as parent_existence, null as parent_name, eventtag_v.moderation_user_id from eventtag_v left outer join eventtag using (eventtag_id)
+  union
+  select
+      "event-tag" as type,
+      eventtag.eventtag_id as entity_id,
+      -1 as entity_v_id,
+      event_eventtag.a_time,
+      eventtag.eventtag_id and 1 as existence,
+      null as existence_v,
+      eventtag.name as name,
+      event.event_id as parent_id,
+      event.event_id and 1 as parent_existence,
+      event.name as parent_name,
+      null as moderation_user_id
+    from event_eventtag
+    left outer join eventtag using (eventtag_id)
+    left outer join event using (event_id)
   union
   select
       "note" as type,
@@ -157,7 +204,7 @@ from
     left outer join org_note on (note.note_id = org_note.note_id)
     left outer join org on (org_note.org_id = org.org_id)
   ) as T 
-join user on (moderation_user_id = user_id)
+left outer join user on (moderation_user_id = user_id)
 left outer join auth using (auth_id)
 %s
 order by a_time desc
