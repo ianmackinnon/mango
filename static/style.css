@@ -27,6 +27,10 @@
     font-weight: normal;
 }
 
+#mango img {
+    display: inline;
+}
+
 #mango a.action,
 #mango input[type="submit"],
 #mango input[type="button"]
