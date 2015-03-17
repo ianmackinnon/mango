@@ -827,7 +827,7 @@ if user:
         ${entity["entity_id"]}
         %endif
       </td>
-      %if entity["entity_v_id"] == -1:  # It's a many-to-many table
+      %if entity["entity_v_id"] != -1:  # It's a many-to-many table
       <td class="history-column-revision${not entity["existence_v"] and " deleted" or ""}"><a href="${revision_url}">${entity["existence_v"] and entity["entity_v_id"] or "deleted"}</a></td>
       %else:
       <td>&nbsp</td>
