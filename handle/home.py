@@ -118,14 +118,14 @@ class FairHandler(BaseHandler):
 
 class DseiHandler(FairHandler):
     name = "dsei"
-    tag_name = "dsei-2013"
+    tag_name = "dsei-2015"
 
 class FarnboroughHandler(FairHandler):
     name = "farnborough"
     tag_name = "farnborough-2014"
 
 class DseiTargetListHandler(HomeTargetListHandler):
-    tag_base = "dsei-2013"
+    tag_base = "dsei-2015"
 
 class FarnboroughTargetListHandler(HomeTargetListHandler):
     tag_base = "farnborough-2014"
