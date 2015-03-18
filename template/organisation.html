@@ -291,6 +291,7 @@ edit = parameters.get("view", None) == "edit"
         "%s%s" % (obj["url"], address["url"]),
         unlink=True,
         parameters=parameters,
+        show_source=(edit and moderator),
         )}
       %endfor
 

@@ -187,7 +187,7 @@ if not parameters:
 
 
 
-<%def name="address_box(address, link_url=False, unlink=False, parameters=None)">\
+<%def name="address_box(address, link_url=False, unlink=False, parameters=None, show_source=False)">\
 <%
 if not parameters:
     parameters = {}
@@ -205,6 +205,13 @@ if not parameters:
 	    <div class="address">
 	      ${visibility_bar(address, inline=True)}
 	      ${address["postal"] | n, h, unicode, newline_comma}
+              <br>
+              %if show_source:
+              <span class="source">
+                (source: 
+                <a href="${address["source"]}">${address["source"]}</a>)
+              </span>
+            %endif
 	    </div>
 	    <div class="actions">
 	    %if current_user and (parameters.get("view", None) == "edit"):
