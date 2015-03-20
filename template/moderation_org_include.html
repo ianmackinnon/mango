@@ -114,7 +114,7 @@ last_tags = (bool(dsei), bool(saptag))
 </div>
 %endif
 
-%if packet["act_exclude_public"] or packet["act_include_private"] or packet["act_include_pending"]:
+%if packet["act_exclude_public"] or packet["act_include_private"] or packet["act_include_pending"] or packet["act_exclude_pending"]:
 <div class="inclusion">
   <h3>Visibility setting does not match tags. Fix visibility setting or remove blocking tags:</h3>
 
@@ -157,12 +157,14 @@ last_tags = (bool(dsei), bool(saptag))
     <div class="visibility pending">
       <ul>
         <li>Have activity tags</li>
-        <li>Meet inclusion criteria</li>
         <li>Pending</li>
       </ul>
       <div class="total">${len(packet["act_include_pending"])}</div>
     </div>
+    <h4>Meet inclusion criteria</h5>
     ${self.inclusion_table("act_include_pending", link="org", hint=True)}
+    <h4>Do not meet inclusion criteria</h5>
+    ${self.inclusion_table("act_exclude_pending", link="org", hint=True)}
   </div>
 </div>
 %endif

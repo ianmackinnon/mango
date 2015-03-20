@@ -1353,6 +1353,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "act_exclude_public": [],
             "act_exclude_private": 0,
             "act_include_private": [],
+            "act_exclude_pending": [],
             "act_include_pending": [],
 
             "addr_public": [],
@@ -1417,7 +1418,8 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                             .append((org, dsei, saptag, tag))
                 else:
                     if not include:
-                        pass # Nothing
+                        packet["act_exclude_pending"] \
+                            .append((org, dsei, saptag, tag))
                     else:
                         packet["act_include_pending"] \
                             .append((org, dsei, saptag, tag))
