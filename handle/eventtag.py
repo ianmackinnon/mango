@@ -62,7 +62,7 @@ class EventtagListHandler(BaseEventtagHandler,
             self.write_json(eventtag_list)
         else:
             self.render(
-                'tag_list.html',
+                'tag-list.html',
                 tag_list=eventtag_list,
                 path=path,
                 search=search,

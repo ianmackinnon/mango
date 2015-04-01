@@ -356,7 +356,7 @@ class UserListHandler(BaseHandler):
             ) \
             .all()
         self.render(
-            'user_list.html',
+            'user-list.html',
             user_list=user_list
             )
 

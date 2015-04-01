@@ -82,7 +82,7 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
             if self.has_javascript:
                 self.load_map = True
                 self.render(
-                    'event_list.html',
+                    'event-list.html',
                     name=name,
                     name_search=name_search,
                     past=past,
@@ -131,7 +131,7 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
         else:
             self.load_map = True
             self.render(
-                'event_list.html',
+                'event-list.html',
                 event_packet=event_packet,
                 name=name,
                 name_search=name_search,
@@ -762,7 +762,7 @@ class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
         path_list = list(path_query)
 
         self.render(
-            'entity_tag.html',
+            'entity-tag.html',
             obj=obj,
             tag_list=eventtag_list,
             path=path,
@@ -859,7 +859,7 @@ class EventOrgListHandler(BaseEventHandler, BaseOrgHandler):
 
         self.next_ = event.url
         self.render(
-            'event_organisation.html',
+            'event-organisation.html',
             obj=obj,
             org_list=org_list,
             org_count=org_count,

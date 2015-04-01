@@ -48,7 +48,7 @@ class NoteListHandler(BaseNoteHandler,
                          for note in note_list.limit(20)]
 
         self.render(
-            'note_list.html',
+            'note-list.html',
             note_list=note_list,
             note_search=note_search,
             note_order=note_order,

@@ -62,7 +62,7 @@ class OrgtagListHandler(BaseOrgtagHandler,
             self.write_json(orgtag_list)
         else:
             self.render(
-                'tag_list.html',
+                'tag-list.html',
                 tag_list=orgtag_list,
                 path=path,
                 search=search,
@@ -280,7 +280,7 @@ class OrgtagActivityHandler(BaseOrgtagHandler):
             orgtag_list.append(obj)
         
         self.render(
-            'moderation_orgtag_activity.html',
+            'moderation-orgtag-activity.html',
             orgtag_list=orgtag_list,
             )
 

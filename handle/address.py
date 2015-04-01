@@ -557,7 +557,7 @@ class ModerationAddressNotFoundHandler(BaseHandler):
             ))
 
         self.render(
-            'moderation_address_not_found.html',
+            'moderation-address-not-found.html',
             data=data,
             )
 

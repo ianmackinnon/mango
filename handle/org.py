@@ -173,7 +173,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
             if self.has_javascript:
                 self.load_map = True
                 self.render(
-                    'organisation_list.html',
+                    'organisation-list.html',
                     name=name,
                     name_search=name_search,
                     tag_name_list=tag_name_list,
@@ -224,7 +224,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
         else:
             self.load_map = True
             self.render(
-                'organisation_list.html',
+                'organisation-list.html',
                 org_packet=org_packet,
                 name=name,
                 name_search=name_search,
@@ -941,7 +941,7 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
         path_list = list(path_query)
 
         self.render(
-            'entity_tag.html',
+            'entity-tag.html',
             obj=obj,
             tag_list=orgtag_list,
             path=path,
@@ -1020,7 +1020,7 @@ class OrgOrgaliasListHandler(BaseOrgHandler, BaseOrgtagHandler):
             self.write_json(obj)
         else:
             self.render(
-                'entity_alias.html',
+                'entity-alias.html',
                 obj=obj,
                 type_title="Company",
                 type_title_plural="Companies",
@@ -1093,7 +1093,7 @@ class OrgEventListHandler(BaseOrgHandler, BaseEventHandler):
 
         self.next_ = org.url
         self.render(
-            'organisation_event.html',
+            'organisation-event.html',
             obj=obj,
             event_list=event_list,
             event_count=event_count,
@@ -1174,7 +1174,7 @@ class ModerationOrgDescHandler(BaseOrgHandler):
                     ))
 
         self.render(
-            'moderation_org_desc.html',
+            'moderation-org-desc.html',
             org_packet=org_packet,
             name=name,
             name_search=name_search,
@@ -1524,6 +1524,6 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                     packet["exclude_pending"] += 1
 
         self.render(
-            'moderation_org_include.html',
+            'moderation-org-include.html',
             packet=packet,
             )
