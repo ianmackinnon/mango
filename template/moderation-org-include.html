@@ -10,9 +10,9 @@ last_tags = None
 %>
       %for row in packet[key][:200]:
 <%
-(org, dsei, saptag, tag) = row
+(org, dseitag, saptag, tag) = row
 tags = []
-if dsei:
+if dseitag:
     tags.append("D")
 if saptag:
     tags.append("P")
@@ -32,7 +32,7 @@ else:
                      'view':'edit',
                      })
 %>
-%if hint and last_tags and (bool(dsei), bool(saptag)) != last_tags:
+%if hint and last_tags and (bool(dseitag), bool(saptag)) != last_tags:
 <tr><td>&nbsp;</td></tr>
 %endif
       <tr>
@@ -46,7 +46,7 @@ ${", ".join(tags)}
 </td>
       </tr>
 <%
-last_tags = (bool(dsei), bool(saptag))
+last_tags = (bool(dseitag), bool(saptag))
 %>
       %endfor
       %if len(packet[key]) > 200:
@@ -211,11 +211,11 @@ last_tags = (bool(dsei), bool(saptag))
 </div>
 %endif
 
-%if packet["sap2015_public"] or packet["sap2015_private"] or packet["sap2015_pending"]:
+%if packet["dsei2015_public"] or packet["dsei2015_private"] or packet["dsei2015_pending"]:
 <div class="inclusion">
-  <h3>Exhibitors at Security and Policing 2015: Add activity tags:</h3>
+  <h3>Exhibitors at DSEI 2015: Add activity tags:</h3>
 
-  <% criterion = "Exhibitors at Security and Policing 2015." %>
+  <% criterion = "Exhibitors at DSEI 2015." %>
 
   <div class="mango-box third">
     <div class="visibility public">
@@ -224,9 +224,9 @@ last_tags = (bool(dsei), bool(saptag))
         <li>${criterion}</li>
         <li>Public</li>
       </ul>
-      <div class="total">${len(packet["sap2015_public"])}</div>
+      <div class="total">${len(packet["dsei2015_public"])}</div>
     </div>
-    ${self.inclusion_table("sap2015_public", hint=True)}
+    ${self.inclusion_table("dsei2015_public", hint=True)}
   </div>
 
   <div class="mango-box third">
@@ -236,9 +236,9 @@ last_tags = (bool(dsei), bool(saptag))
         <li>${criterion}</li>
         <li>Private</li>
       </ul>
-      <div class="total">${len(packet["sap2015_private"])}</div>
+      <div class="total">${len(packet["dsei2015_private"])}</div>
     </div>
-    ${self.inclusion_table("sap2015_private", hint=True)}
+    ${self.inclusion_table("dsei2015_private", hint=True)}
   </div>
 
   <div class="mango-box third">
@@ -248,9 +248,9 @@ last_tags = (bool(dsei), bool(saptag))
         <li>${criterion}</li>
         <li>Pending</li>
       </ul>
-      <div class="total">${len(packet["sap2015_pending"])}</div>
+      <div class="total">${len(packet["dsei2015_pending"])}</div>
     </div>
-    ${self.inclusion_table("sap2015_pending", hint=True)}
+    ${self.inclusion_table("dsei2015_pending", hint=True)}
   </div>
 </div>
 %endif
