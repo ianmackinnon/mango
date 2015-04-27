@@ -1,0 +1,42 @@
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    width="${width}px"
+    height="${height}px"
+>
+<%
+x_lo = None
+x_hi = None
+y_lo = None
+y_hi = None
+
+for result in results:
+    if (x_lo is None or result.longitude < x_lo):
+        x_lo = result.longitude
+    if (x_hi is None or result.longitude > x_hi):
+        x_hi = result.longitude
+    if (y_lo is None or result.latitude < y_lo):
+        y_lo = result.latitude
+    if (y_hi is None or result.latitude > y_hi):
+        y_hi = result.latitude
+y_avg = (y_hi + y_lo) / 2
+g_scale = math.cos(math.radians(y_avg))
+x_scale = width / (x_hi - x_lo)
+y_scale = height / (y_hi - y_lo)
+scale = min(x_scale, y_scale)
+%>
+<g transform=" translate(0, ${height}) scale(1, -1) ">
+%for result in results:
+  <circle
+      cx="${scale * g_scale * (result.longitude - x_lo)}"
+      cy="${scale * (result.latitude - y_lo)}"
+      r="4"
+      caat-org="${result.name}"
+      caat-org-id="${result.org_id}"
+      caat-address-id="${result.address_id}"
+      caat-latitude="${result.latitude}"
+      caat-longitude="${result.longitude}"
+      ></circle>
+%endfor
+</g>
+</svg>
