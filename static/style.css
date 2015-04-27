@@ -152,6 +152,32 @@ form.mango input[disabled="disabled"]
     background: #ffa;
 }
 
+/* Pagination */
+
+#mango .mango-pagination:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+#mango .mango-pagination {
+    margin: 10px;
+}
+#mango .mango-pagination > div {
+    float: left;
+}
+#mango .mango-pagination-back {
+    width: 35%;
+    text-align: right;
+}
+#mango .mango-pagination-results {
+    width: 30%;
+    text-align: center;
+}
+#mango .mango-pagination-forward {
+    width: 35%;
+    text-align: left;
+}
+
 /* page */
 
 #mango-page

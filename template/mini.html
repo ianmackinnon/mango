@@ -781,8 +781,39 @@ if not parameters:
 
 
 
+<%def name="history_pagination(history)">
+<div class="mango-pagination">
+  <div class="mango-pagination-back">
+    %if history["offset"]:
+    <a href="${url_rewrite(uri, {
+      "offset": history["offset"] - history["limit"]
+    })}">&lt; Back</a>
+    %else:
+    &nbsp;
+    %endif
+  </div>
+  <div class="mango-pagination-results">Showing results
+    <span>${history["offset"] + 1}</span>
+    to
+    <span>${history["offset"] + len(history["items"])}</span>
+    of
+    <span>${history["count"]}</span>
+  </div>
+  <div class="mango-pagination-forward">
+    %if history["offset"] + history["limit"] < history["count"]:
+    <a href="${url_rewrite(uri, {
+      "offset": history["offset"] + history["limit"]
+    })}">Forward &gt;</a>
+    %else:
+    &nbsp;
+    %endif
+  </div>
+</div>
+</%def>
+
 
 <%def name="history_table(history, user)">
+${history_pagination(history)}
 <table class="history">
   <colgroup>
     <col style="width: 110px">
@@ -813,7 +844,7 @@ if not parameters:
   </thead>
   <tbody>
 
-    %for entity in history:
+    %for entity in history["items"]:
 <%
 url = None
 if entity["existence"]:
@@ -868,6 +899,7 @@ if user:
     %endfor
   </tbody>
 </table>
+${history_pagination(history)}
 </%def>
 
 

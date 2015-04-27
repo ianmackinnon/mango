@@ -87,7 +87,12 @@ event_contact_v = Table(
     )
 
 
-def get_history(session, user_id=None, limit=20, offset=0):
+def get_history(session, user_id=None, limit=20, offset=None):
+    if offset is None:
+        offset = 0
+    if limit is None:
+        limit = 20
+
     if (user_id):
         user_sql_1 = ""
         user_sql_2 = """
@@ -99,18 +104,7 @@ where user.user_id = %d
 """ 
         user_sql_2 = ""
         
-    sql = """
-select
-  type,
-  entity_id,
-  entity_v_id,
-  existence,
-  existence_v,
-  parent_id,
-  parent_existence,
-  parent_name,
-  a_time as date,
-  T.name%s
+    core_sql = u"""
 from
   (
   select "organisation" as type, org_v.org_id as entity_id, org_v_id as entity_v_id, org_v.a_time, org.org_id and 1 as existence, existence as existence_v, org_v.name as name, null as parent_id, null as parent_existence, null as parent_name, org_v.moderation_user_id from org_v left outer join org using (org_id)
@@ -207,26 +201,57 @@ from
 left outer join user on (moderation_user_id = user_id)
 left outer join auth using (auth_id)
 %s
+""" % (
+        user_sql_2,
+        )
+
+    count_sql = """select count(*)
+%s
+""" % (
+        core_sql,
+    )
+
+    data_sql = u"""
+select
+  type,
+  entity_id,
+  entity_v_id,
+  existence,
+  existence_v,
+  parent_id,
+  parent_existence,
+  parent_name,
+  a_time as date,
+  T.name%s
+  %s  
 order by a_time desc
 limit %d
 offset %d
 """ % (
         user_sql_1,
-        user_sql_2,
+        core_sql,
         limit,
         offset
         )
 
-    results = session.connection().execute(sql)
+    for row in session.connection().execute(count_sql):
+        count = row[0]
 
-    history = []
+    results = session.connection().execute(data_sql)
+
+    history = {
+        "offset": offset,
+        "limit": limit,
+        "count": count,
+        "items": []
+    }
     for row in results:
         row_dict = {}
         for column in row.keys():
             row_dict[column] = getattr(row, column)
         if not user_id and not row_dict.get("gravatar_hash", None):
             row_dict["gravatar_hash"] = gravatar_hash(str(row.user_id))
-        history.append(row_dict)
+        history["items"].append(row_dict)
     return history
 
 

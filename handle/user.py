@@ -372,11 +372,14 @@ class UserHandler(BaseHandler):
         except sqlalchemy.orm.exc.NoResultFound:
             raise HTTPError(404, "%d: No such user" % user_id)
 
+        is_json = self.content_type("application/json")
+        offset = self.get_argument_int("offset", None, json=is_json)
+
         submissions = {}
         history = None
 
         if self.moderator:
-            history = get_history(self.orm, user.user_id, limit=150)
+            history = get_history(self.orm, user.user_id, offset=offset, limit=50)
         else:
             if user != self.current_user:
                 raise HTTPError(404)
