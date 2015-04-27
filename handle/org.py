@@ -1250,13 +1250,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
         uk_north = 55.81
         uk_west = -6.38
         uk_east = 1.77
-        idex2015_query = self.orm.query(func.count(Orgtag.orgtag_id) \
-                                       .label("count")) \
-            .join(Org, Orgtag.org_list) \
-            .join(Address, Org.address_list) \
-            .add_columns(Org.org_id) \
-            .filter(Orgtag.name_short==u"exhibitor|idex-2015") \
-            .filter(or_(
+        in_uk_or_no_address = or_(
                 and_(
                     Address.latitude != None,
                     Address.longitude != None,
@@ -1266,9 +1260,8 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                     Address.longitude <= uk_east,
                 ),
                 Address.latitude == None,
-            )) \
-            .group_by(Org.org_id) \
-            .subquery()
+            )
+        # .filter(in_uk_or_no_address) \
 
         israel_query = self.orm.query(func.count(Orgtag.orgtag_id) \
                                      .label("count")) \
@@ -1312,7 +1305,6 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 .subquery()
 
         canterbury_query = location_subquery("canterbury")
-        liverpool_query = location_subquery("liverpool")
 
         exist_clause = "exists (select 1 from org_include where org_include.org_id = org.org_id)"
         
@@ -1323,10 +1315,8 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .outerjoin(saptag_query, saptag_query.c.org_id==Org.org_id) \
             .outerjoin(tag_query, tag_query.c.org_id==Org.org_id) \
             .outerjoin(dsei2015_query, dsei2015_query.c.org_id==Org.org_id) \
-            .outerjoin(idex2015_query, idex2015_query.c.org_id==Org.org_id) \
             .outerjoin(israel_query, israel_query.c.org_id==Org.org_id) \
             .outerjoin(canterbury_query, canterbury_query.c.org_id==Org.org_id) \
-            .outerjoin(liverpool_query, liverpool_query.c.org_id==Org.org_id) \
             .outerjoin(sipri_query, sipri_query.c.org_id==Org.org_id) \
             .outerjoin(note_query, note_query.c.org_id==Org.org_id) \
             .add_columns(
@@ -1337,10 +1327,8 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 func.coalesce(saptag_query.c.count, 0).label("saptag"),
                 func.coalesce(tag_query.c.count, 0).label("tag"),
                 func.coalesce(dsei2015_query.c.count, 0).label("dsei2015"),
-                func.coalesce(idex2015_query.c.count, 0).label("idex2015"),
                 func.coalesce(israel_query.c.count, 0).label("israel"),
                 func.coalesce(canterbury_query.c.count, 0).label("canterbury"),
-                func.coalesce(liverpool_query.c.count, 0).label("liverpool"),
                 func.coalesce(sipri_query.c.count, 0).label("sipri"),
                 func.coalesce(note_query.c.count, 0).label("note"),
                 ) \
@@ -1366,10 +1354,6 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "dsei2015_private": [],
             "dsei2015_pending": [],
 
-            "idex2015_public": [],
-            "idex2015_private": [],
-            "idex2015_pending": [],
-
             "israel_public": [],
             "israel_private": [],
             "israel_pending": [],
@@ -1377,10 +1361,6 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "canterbury_public": [],
             "canterbury_private": [],
             "canterbury_pending": [],
-
-            "liverpool_public": [],
-            "liverpool_private": [],
-            "liverpool_pending": [],
 
             "sipri_public": [],
             "sipri_private": [],
@@ -1399,7 +1379,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "exclude_pending": 0,
             }
 
-        for org, include, act, addr, dseitag, saptag, tag, dsei2015, idex2015, israel, canterbury, liverpool, sipri, note in org_query:
+        for org, include, act, addr, dseitag, saptag, tag, dsei2015, israel, canterbury, sipri, note in org_query:
             if act:
                 if org.public:
                     if not addr:
@@ -1453,16 +1433,6 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 else:
                     packet["dsei2015_pending"] \
                         .append((org, dseitag, saptag, tag))
-            elif idex2015:
-                if org.public:
-                    packet["idex2015_public"] \
-                        .append((org, dseitag, saptag, tag))
-                elif org.public == False:
-                    packet["idex2015_private"] \
-                        .append((org, dseitag, saptag, tag))
-                else:
-                    packet["idex2015_pending"] \
-                        .append((org, dseitag, saptag, tag))
             elif israel:
                 if org.public:
                     packet["israel_public"] \
@@ -1482,16 +1452,6 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                         .append((org, dseitag, saptag, tag))
                 else:
                     packet["canterbury_pending"] \
-                        .append((org, dseitag, saptag, tag))
-            elif liverpool:
-                if org.public:
-                    packet["liverpool_public"] \
-                        .append((org, dseitag, saptag, tag))
-                elif org.public == False:
-                    packet["liverpool_private"] \
-                        .append((org, dseitag, saptag, tag))
-                else:
-                    packet["liverpool_pending"] \
                         .append((org, dseitag, saptag, tag))
             elif sipri:
                 if org.public:
