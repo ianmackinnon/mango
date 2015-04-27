@@ -1,14 +1,27 @@
 <%inherit file="base.html"/>
 
+
+
+<%!
+    import math
+%>
+
+
 <%def name="title()"><% return u"Company Inclusion" %></%def>
 
-<%def name="inclusion_table(key, link='tags', hint=True)">
+
+
+<%def name="inclusion_table(key, link='tags', hint=True, start=None, end=None, hide_more=None)">
   <table>
     <tbody>
 <%
+if start is None:
+    start = 0
+if end is None:
+    end = max_block_length
 last_tags = None
 %>
-      %for row in packet[key][:200]:
+      %for row in packet[key][start:end + 1]:
 <%
 (org, dseitag, saptag, tag) = row
 tags = []
@@ -49,12 +62,63 @@ ${", ".join(tags)}
 last_tags = (bool(dseitag), bool(saptag))
 %>
       %endfor
-      %if len(packet[key]) > 200:
-      <tr><td>(${len(packet[key]) - 200} more)</td></tr>
+      %if not hide_more and len(packet[key]) > end:
+      <tr><td>&nbsp;</td></tr>
+      <tr><td>(${len(packet[key]) - end} more)</td></tr>
       %endif
     </tbody>
   </table>
 </%def>
+
+
+
+<%def name="inclusion_block_3_col(key, title, link='tags', hint=True)">
+%if packet[key]:
+<div class="inclusion">
+  <h3>${title}: Add activity tags:</h3>
+
+  <% 
+     length = min(len(packet[key]), max_block_length)
+     cut1 = int(math.ceil(length / 3))
+     cut2 = cut1 + int(math.ceil((length - cut1) / 2))
+     %>
+
+  <div class="mango-box third">
+    <div class="visibility pending">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>${title}</li>
+        <li>Pending</li>
+      </ul>
+    </div>
+    ${self.inclusion_table(key, hint=hint,
+                           end=cut1, hide_more=True)}
+  </div>
+
+  <div class="mango-box third">
+    <div class="visibility pending">
+      <ul>
+      </ul>
+    </div>
+    ${self.inclusion_table(key, hint=hint,
+                           start=cut1, end=cut2, hide_more=True)}
+  </div>
+
+  <div class="mango-box third">
+    <div class="visibility pending">
+      <ul>
+      </ul>
+      <div class="total">${len(packet[key])}</div>
+    </div>
+    ${self.inclusion_table(key, hint=hint,
+                           start=cut2)}
+  </div>
+
+</div>
+%endif
+</%def>
+
+
 
 <%def name="page()">
 
@@ -96,16 +160,44 @@ last_tags = (bool(dseitag), bool(saptag))
   </div>
 </div>
 
+%if packet["remove_public"] or packet["remove_private"]:
+<div class="inclusion">
+  <h3>Visibility setting does not match activity tags: Add activity tags or set visibility to pending</h3>
+
+  <div class="mango-box half">
+    <div class="visibility public">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>Public</li>
+      </ul>
+      <div class="total">${len(packet["remove_public"])}</div>
+    </div>
+    ${self.inclusion_table("remove_public", link="org", hint=True)}
+  </div>
+
+  <div class="mango-box half">
+    <div class="visibility private">
+      <ul>
+        <li>Do not have activity tags</li>
+        <li>Private</li>
+      </ul>
+      <div class="total">${len(packet["remove_private"])}</div>
+    </div>
+    ${self.inclusion_table("remove_private", link="org", hint=True)}
+  </div>
+</div>
+%endif
+
 %if packet["addr_public"]:
 <div class="inclusion">
   <h3>Addresses: Add a public address.</h3>
 
-  <div class="mango-box third">
+  <div class="mango-box full">
     <div class="visibility public">
       <ul>
         <li>Have activity tags</li>
-        <li>Lacks a public address</li>
         <li>Public</li>
+        <li>Lacks a public address</li>
       </ul>
       <div class="total">${len(packet["addr_public"])}</div>
     </div>
@@ -114,88 +206,69 @@ last_tags = (bool(dseitag), bool(saptag))
 </div>
 %endif
 
-%if packet["act_exclude_public"] or packet["act_include_private"] or packet["act_include_pending"] or packet["act_exclude_pending"]:
+%if packet["act_exclude_public"] or packet["act_include_private"]:
 <div class="inclusion">
-  <h3>Visibility setting does not match tags. Fix visibility setting or remove blocking tags:</h3>
+  <h3>Visibility setting does not match activity tags: Change visibility setting</h3>
 
-  <div>
-    <p>Note: The following tags block an organisation from the inclusion criteria: <strong>
-    'armed-forces',
-    'bespoke-firearms',
-    'exhibitions',
-    'government',
-    'medical' and
-    'media'.</strong> They should not be applied if the organisation also carries out private military activities.
-    </p>
-  </div>
-  
-  <div class="mango-box third">
+  <div class="mango-box half">
     <div class="visibility public">
       <ul>
         <li>Have activity tags</li>
         <li>Do not meet inclusion criteria</li>
-        <li>Public</li>
+        <li>Public, but <span class="visibility private">should be private</span></li>
       </ul>
       <div class="total">${len(packet["act_exclude_public"])}</div>
     </div>
     ${self.inclusion_table("act_exclude_public", link="org", hint=True)}
   </div>
 
-  <div class="mango-box third">
+  <div class="mango-box half">
     <div class="visibility private">
       <ul>
         <li>Have activity tags</li>
         <li>Meet inclusion criteria</li>
-        <li>Private</li>
+        <li>Private, but <span class="visibility public">should be Public</span></li>
       </ul>
       <div class="total">${len(packet["act_include_private"])}</div>
     </div>
     ${self.inclusion_table("act_include_private", link="org", hint=True)}
   </div>
+</div>
+%endif
 
-  <div class="mango-box third">
+%if packet["act_include_pending"] or packet["act_exclude_pending"]:
+<div class="inclusion">
+  <h3>Visibility setting does not match activity tags: Change visibility setting</h3>
+
+  <div class="mango-box half">
     <div class="visibility pending">
       <ul>
         <li>Have activity tags</li>
-        <li>Pending</li>
+        <li>Meet inclusion criteria</li>
+        <li>Pending, but <span class="visibility public">should be Public</span></li>
       </ul>
       <div class="total">${len(packet["act_include_pending"])}</div>
     </div>
-    <h4>Meet inclusion criteria</h5>
     ${self.inclusion_table("act_include_pending", link="org", hint=True)}
-    <h4>Do not meet inclusion criteria</h5>
+  </div>
+
+  <div class="mango-box half">
+    <div class="visibility pending">
+      <ul>
+        <li>Have activity tags</li>
+        <li>Do not meet inclusion criteria</li>
+        <li>Pending, but <span class="visibility private">should be private</span></li>
+      </ul>
+      <div class="total">${len(packet["act_exclude_pending"])}</div>
+    </div>
     ${self.inclusion_table("act_exclude_pending", link="org", hint=True)}
   </div>
 </div>
 %endif
 
-%if packet["desc_public"] or packet["desc_private"] or packet["desc_pending"]:
+%if packet["desc_pending"]:
 <div class="inclusion">
   <h3>Description: Add activity tags:</h3>
-
-  <div class="mango-box third">
-    <div class="visibility public">
-      <ul>
-        <li>Do not have activity tags</li>
-        <li>Have description</li>
-        <li>Public</li>
-      </ul>
-      <div class="total">${len(packet["desc_public"])}</div>
-    </div>
-    ${self.inclusion_table("desc_public", hint=True)}
-  </div>
-
-  <div class="mango-box third">
-    <div class="visibility private">
-      <ul>
-        <li>Do not have activity tags</li>
-        <li>Have description</li>
-        <li>Private</li>
-      </ul>
-      <div class="total">${len(packet["desc_private"])}</div>
-    </div>
-    ${self.inclusion_table("desc_private", hint=True)}
-  </div>
 
   <div class="mango-box third">
     <div class="visibility pending">
@@ -211,316 +284,12 @@ last_tags = (bool(dseitag), bool(saptag))
 </div>
 %endif
 
-%if packet["dsei2015_public"] or packet["dsei2015_private"] or packet["dsei2015_pending"]:
-<div class="inclusion">
-  <h3>Exhibitors at DSEI 2015: Add activity tags:</h3>
-
-  <% criterion = "Exhibitors at DSEI 2015." %>
-
-  <div class="mango-box third">
-    <div class="visibility public">
-      <ul>
-        <li>Do not have activity tags</li>
-        <li>${criterion}</li>
-        <li>Public</li>
-      </ul>
-      <div class="total">${len(packet["dsei2015_public"])}</div>
-    </div>
-    ${self.inclusion_table("dsei2015_public", hint=True)}
-  </div>
-
-  <div class="mango-box third">
-    <div class="visibility private">
-      <ul>
-        <li>Do not have activity tags</li>
-        <li>${criterion}</li>
-        <li>Private</li>
-      </ul>
-      <div class="total">${len(packet["dsei2015_private"])}</div>
-    </div>
-    ${self.inclusion_table("dsei2015_private", hint=True)}
-  </div>
-
-  <div class="mango-box third">
-    <div class="visibility pending">
-      <ul>
-        <li>Do not have activity tags</li>
-        <li>${criterion}</li>
-        <li>Pending</li>
-      </ul>
-      <div class="total">${len(packet["dsei2015_pending"])}</div>
-    </div>
-    ${self.inclusion_table("dsei2015_pending", hint=True)}
-  </div>
-</div>
-%endif
-
-%if packet["israel_public"] or packet["israel_private"] or packet["israel_pending"]:
-<div class="inclusion">
-  <h3>Military exporters to Israel: Add activity tags:</h3>
-
-  <% criterion = "Military exporter to Israel." %>
-
-  <div class="mango-box third">
-    <div class="visibility public">
-      <ul>
-        <li>Do not have activity tags</li>
-        <li>${criterion}</li>
-        <li>Public</li>
-      </ul>
-      <div class="total">${len(packet["israel_public"])}</div>
-    </div>
-    ${self.inclusion_table("israel_public", hint=True)}
-  </div>
-
-  <div class="mango-box third">
-    <div class="visibility private">
-      <ul>
-        <li>Do not have activity tags</li>
-        <li>${criterion}</li>
-        <li>Private</li>
-      </ul>
-      <div class="total">${len(packet["israel_private"])}</div>
-    </div>
-    ${self.inclusion_table("israel_private", hint=True)}
-  </div>
-
-  <div class="mango-box third">
-    <div class="visibility pending">
-      <ul>
-        <li>Do not have activity tags</li>
-        <li>${criterion}</li>
-        <li>Pending</li>
-      </ul>
-      <div class="total">${len(packet["israel_pending"])}</div>
-    </div>
-    ${self.inclusion_table("israel_pending", hint=True)}
-  </div>
-</div>
-%endif
-
-%if packet["canterbury_public"] or packet["canterbury_private"] or packet["canterbury_pending"]:
-<div class="inclusion">
-  <h3>Based in Canterbury: Add activity tags:</h3>
-
-  <% criterion = "Based in Canterbury." %>
-
-  <div class="mango-box third">
-    <div class="visibility public">
-      <ul>
-        <li>Do not have activity tags</li>
-        <li>${criterion}</li>
-        <li>Public</li>
-      </ul>
-      <div class="total">${len(packet["canterbury_public"])}</div>
-    </div>
-    ${self.inclusion_table("canterbury_public", hint=True)}
-  </div>
-
-  <div class="mango-box third">
-    <div class="visibility private">
-      <ul>
-        <li>Do not have activity tags</li>
-        <li>${criterion}</li>
-        <li>Private</li>
-      </ul>
-      <div class="total">${len(packet["canterbury_private"])}</div>
-    </div>
-    ${self.inclusion_table("canterbury_private", hint=True)}
-  </div>
-
-  <div class="mango-box third">
-    <div class="visibility pending">
-      <ul>
-        <li>Do not have activity tags</li>
-        <li>${criterion}</li>
-        <li>Pending</li>
-      </ul>
-      <div class="total">${len(packet["canterbury_pending"])}</div>
-    </div>
-    ${self.inclusion_table("canterbury_pending", hint=True)}
-  </div>
-</div>
-%endif
-
-%if packet["sipri_public"] or packet["sipri_private"] or packet["sipri_pending"]:
-<div class="inclusion">
-  <h3>Sipri 100: Add activity tags:</h3>
-
-  <% criterion = "In Sipri top 100." %>
-
-  <div class="mango-box third">
-    <div class="visibility public">
-      <ul>
-        <li>Do not have activity tags</li>
-        <li>${criterion}</li>
-        <li>Public</li>
-      </ul>
-      <div class="total">${len(packet["sipri_public"])}</div>
-    </div>
-    ${self.inclusion_table("sipri_public", hint=True)}
-  </div>
-
-  <div class="mango-box third">
-    <div class="visibility private">
-      <ul>
-        <li>Do not have activity tags</li>
-        <li>${criterion}</li>
-        <li>Private</li>
-      </ul>
-      <div class="total">${len(packet["sipri_private"])}</div>
-    </div>
-    ${self.inclusion_table("sipri_private", hint=True)}
-  </div>
-
-  <div class="mango-box third">
-    <div class="visibility pending">
-      <ul>
-        <li>Do not have activity tags</li>
-        <li>${criterion}</li>
-        <li>Pending</li>
-      </ul>
-      <div class="total">${len(packet["sipri_pending"])}</div>
-    </div>
-    ${self.inclusion_table("sipri_pending", hint=True)}
-  </div>
-</div>
-%endif
-
-%if packet["note_public"] or packet["note_private"] or packet["note_pending"]:
-<div class="inclusion">
-  <h3>Has notes: Add activity tags:</h3>
-
-  <% criterion = "Have more than 3 notes." %>
-
-  <div class="mango-box third">
-    <div class="visibility public">
-      <ul>
-        <li>Do not have activity tags</li>
-        <li>${criterion}</li>
-        <li>Public</li>
-      </ul>
-      <div class="total">${len(packet["note_public"])}</div>
-    </div>
-    ${self.inclusion_table("note_public", hint=True)}
-  </div>
-
-  <div class="mango-box third">
-    <div class="visibility private">
-      <ul>
-        <li>Do not have activity tags</li>
-        <li>${criterion}</li>
-        <li>Private</li>
-      </ul>
-      <div class="total">${len(packet["note_private"])}</div>
-    </div>
-    ${self.inclusion_table("note_private", hint=True)}
-  </div>
-
-  <div class="mango-box third">
-    <div class="visibility pending">
-      <ul>
-        <li>Do not have activity tags</li>
-        <li>${criterion}</li>
-        <li>Pending</li>
-      </ul>
-      <div class="total">${len(packet["note_pending"])}</div>
-    </div>
-    ${self.inclusion_table("note_pending", hint=True)}
-  </div>
-</div>
-%endif
-
-%if packet["remove_public"] or packet["include_private"] or packet["include_pending"]:
-<div class="inclusion">
-  <h3>Probably have wrong visibility setting: Add activity tags:</h3>
-
-  <div>
-    <p>Note: Current inclusion criteria is: (DSEi exhibitor <strong>and</strong> Military export applicant) <strong>or</strong> SIPRI top 100</p>
-    <p>Key:
-      <strong>D</strong>: has a DSEI product tag,
-      <strong>P</strong>: has a Security & Policing product tag,
-    </p>
-  </div>
-  
-  <div class="mango-box third">
-    <div class="visibility public">
-      <ul>
-        <li>Do not have activity tags</li>
-        <li>Do not meet inclusion criteria</li>
-        <li>Public</li>
-      </ul>
-      <div class="total">${len(packet["remove_public"])}</div>
-    </div>
-    ${self.inclusion_table("remove_public", hint=True)}
-  </div>
-
-  <div class="mango-box third">
-    <div class="visibility private">
-      <ul>
-        <li>Do not have activity tags</li>
-        <li>Meet inclusion criteria</li>
-        <li>Private</li>
-      </ul>
-      <div class="total">${len(packet["include_private"])}</div>
-    </div>
-    ${self.inclusion_table("include_private", hint=True)}
-  </div>
-
-  <div class="mango-box third">
-    <div class="visibility pending">
-      <ul>
-        <li>Do not have activity tags</li>
-        <li>Meet inclusion criteria</li>
-        <li>Pending</li>
-      </ul>
-      <div class="total">${len(packet["include_pending"])}</div>
-    </div>
-    ${self.inclusion_table("include_pending", hint=True)}
-  </div>
-</div>
-%endif
-
-
-%if packet.get("include_public", None) or packet.get("remove_private", None) or packet.get("remove_pending", None):
-<div class="inclusion">
-  <h3>Probably have the right visibility setting: Add activity tags:</h3>
-
-  <div>
-    <p>Note: Current inclusion criteria is: (DSEi exhibitor <strong>and</strong> Military export applicant) <strong>or</strong> SIPRI top 100</p>
-    <p>Key:
-      <strong>D</strong>: has a DSEI product tag,
-      <strong>P</strong>: has a Security & Policing product tag,
-    </p>
-  </div>
-  
-  <div class="mango-box third">
-    <div class="visibility public">
-      <ul>
-        <li>Do not have activity tags</li>
-        <li>Meet inclusion criteria</li>
-        <li>Public</li>
-      </ul>
-      <div class="total">${len(packet.get("include_public", []))}</div>
-    </div>
-    ${self.inclusion_table("include_public", hint=True)}
-  </div>
-
-  <div class="mango-box third">
-    <div class="visibility private">
-      <ul>
-        <li>Do not have activity tags</li>
-        <li>Do not meet inclusion criteria</li>
-        <li>Private</li>
-      </ul>
-      <div class="total">${len(packet.get("remove_private", []))}</div>
-    </div>
-    ${self.inclusion_table("remove_private", hint=True)}
-  </div>
-</div>
-%endif
-
-
+${self.inclusion_block_3_col("dsei2015_pending", "Exhibitors at DSEI 2015",)}
+${self.inclusion_block_3_col("israel_pending", "Military exporter to Israel",)}
+${self.inclusion_block_3_col("canterbury_pending", "Based in Canterbury",)}
+${self.inclusion_block_3_col("sipri_pending", "Sipri Top 100",)}
+${self.inclusion_block_3_col("note_pending", "Has notes",)}
+${self.inclusion_block_3_col("include_pending", "Match inclusion criteria",)}
 
 
 </%def>

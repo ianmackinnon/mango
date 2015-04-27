@@ -1198,8 +1198,8 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .join(org_orgtag) \
             .add_columns(org_orgtag.c.org_id) \
             .filter(or_(
-                Orgtag.path_short=='activity',
-                Orgtag.path_short=='activity-exclusion',
+                Orgtag.path_short==u'activity',
+                Orgtag.path_short==u'activity-exclusion',
                 )) \
             .group_by(org_orgtag.c.org_id) \
             .subquery()
@@ -1304,7 +1304,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 .group_by(org_address.c.org_id) \
                 .subquery()
 
-        canterbury_query = location_subquery("canterbury")
+        canterbury_query = location_subquery(u"canterbury")
 
         exist_clause = "exists (select 1 from org_include where org_include.org_id = org.org_id)"
         
@@ -1339,43 +1339,24 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
         packet = {
             "act_include_public": 0,
             "act_exclude_public": [],
-            "act_exclude_private": 0,
             "act_include_private": [],
-            "act_exclude_pending": [],
+            "act_exclude_private": 0,
             "act_include_pending": [],
+            "act_exclude_pending": [],
 
             "addr_public": [],
 
-            "desc_public": [],
-            "desc_private": [],
-            "desc_pending": [],
-
-            "dsei2015_public": [],
-            "dsei2015_private": [],
-            "dsei2015_pending": [],
-
-            "israel_public": [],
-            "israel_private": [],
-            "israel_pending": [],
-
-            "canterbury_public": [],
-            "canterbury_private": [],
-            "canterbury_pending": [],
-
-            "sipri_public": [],
-            "sipri_private": [],
-            "sipri_pending": [],
-
-            "note_public": [],
-            "note_private": [],
-            "note_pending": [],
-
-            "include_public": [],
-            "include_private": [],
-            "include_pending": [],
-
             "remove_public": [],
             "remove_private": [],
+
+            "desc_pending": [],
+            "dsei2015_pending": [],
+            "israel_pending": [],
+            "canterbury_pending": [],
+            "sipri_pending": [],
+            "note_pending": [],
+            "include_pending": [],
+
             "exclude_pending": 0,
             }
 
@@ -1403,82 +1384,34 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                     else:
                         packet["act_include_pending"] \
                             .append((org, dseitag, saptag, tag))
-            elif org.description:
-                if org.public:
-                    packet["desc_public"] \
-                        .append((org, dseitag, saptag, tag))
-                elif org.public == False:
-                    packet["desc_private"] \
-                        .append((org, dseitag, saptag, tag))
-                else:
-                    packet["desc_pending"] \
-                        .append((org, dseitag, saptag, tag))
-            elif note > 3:
-                if org.public:
-                    packet["note_public"] \
-                        .append((org, dseitag, saptag, tag))
-                elif org.public == False:
-                    packet["note_private"] \
-                        .append((org, dseitag, saptag, tag))
-                else:
-                    packet["note_pending"] \
-                        .append((org, dseitag, saptag, tag))
-            elif dsei2015:
-                if org.public:
-                    packet["dsei2015_public"] \
-                        .append((org, dseitag, saptag, tag))
-                elif org.public == False:
-                    packet["dsei2015_private"] \
-                        .append((org, dseitag, saptag, tag))
-                else:
-                    packet["dsei2015_pending"] \
-                        .append((org, dseitag, saptag, tag))
-            elif israel:
-                if org.public:
-                    packet["israel_public"] \
-                        .append((org, dseitag, saptag, tag))
-                elif org.public == False:
-                    packet["israel_private"] \
-                        .append((org, dseitag, saptag, tag))
-                else:
-                    packet["israel_pending"] \
-                        .append((org, dseitag, saptag, tag))
-            elif canterbury:
-                if org.public:
-                    packet["canterbury_public"] \
-                        .append((org, dseitag, saptag, tag))
-                elif org.public == False:
-                    packet["canterbury_private"] \
-                        .append((org, dseitag, saptag, tag))
-                else:
-                    packet["canterbury_pending"] \
-                        .append((org, dseitag, saptag, tag))
-            elif sipri:
-                if org.public:
-                    packet["sipri_public"] \
-                        .append((org, dseitag, saptag, tag))
-                elif org.public == False:
-                    packet["sipri_private"] \
-                        .append((org, dseitag, saptag, tag))
-                else:
-                    packet["sipri_pending"] \
-                        .append((org, dseitag, saptag, tag))
-            elif include:
-                if org.public:
-                    packet["include_public"] \
-                        .append((org, dseitag, saptag, tag))
-                elif org.public == False:
-                    packet["include_private"] \
-                        .append((org, dseitag, saptag, tag))
-                else:
-                    packet["include_pending"] \
+            elif org.public:
+                packet["remove_public"] \
+                    .append((org, dseitag, saptag, tag))
+            elif org.public == False:
+                    packet["remove_private"] \
                         .append((org, dseitag, saptag, tag))
             else:
-                if org.public:
-                    packet["remove_public"] \
+                # Pending
+                if org.description:
+                    packet["desc_pending"] \
                         .append((org, dseitag, saptag, tag))
-                elif org.public == False:
-                    packet["remove_private"] \
+                elif note > 3:
+                    packet["note_pending"] \
+                        .append((org, dseitag, saptag, tag))
+                elif dsei2015:
+                    packet["dsei2015_pending"] \
+                        .append((org, dseitag, saptag, tag))
+                elif israel:
+                    packet["israel_pending"] \
+                        .append((org, dseitag, saptag, tag))
+                elif canterbury:
+                    packet["canterbury_pending"] \
+                        .append((org, dseitag, saptag, tag))
+                elif sipri:
+                    packet["sipri_pending"] \
+                        .append((org, dseitag, saptag, tag))
+                elif include:
+                    packet["include_pending"] \
                         .append((org, dseitag, saptag, tag))
                 else:
                     packet["exclude_pending"] += 1
@@ -1486,4 +1419,5 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
         self.render(
             'moderation-org-include.html',
             packet=packet,
+            max_block_length=200
             )

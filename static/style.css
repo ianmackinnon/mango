@@ -192,6 +192,11 @@ form.mango input[disabled="disabled"]
     float: left;
     width: 300px;
 }
+#mango div.mango-box.half
+{
+    float: left;
+    width: 450px;
+}
 
 #mango div.center-box
 {
@@ -1392,6 +1397,14 @@ padding: 10px;
     margin: 0;
     padding: 6px;
     list-style: none;
+}
+#mango div.inclusion .half ul
+{
+    width: 338px;
+}
+#mango div.inclusion .full ul
+{
+    width: 788px;
 }
 #mango div.inclusion li
 {
