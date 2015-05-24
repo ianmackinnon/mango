@@ -14,12 +14,16 @@ import pyelasticsearch
 
 log = logging.getLogger('search')
 setting_path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-elasticsearch_path = "http://localhost:9200/"
+es_path = "http://localhost:9200/"
+es_index = "mango"
+es_doc_type = "org"
+
+logging.getLogger('elasticsearch.trace').setLevel(logging.WARNING)
 
 
 
 def get_search():
-    es = pyelasticsearch.ElasticSearch(elasticsearch_path)
+    es = pyelasticsearch.ElasticSearch(es_path)
     try:
         es.refresh()
     except pyelasticsearch.exceptions.ConnectionError:
@@ -29,7 +33,7 @@ def get_search():
 
 
 def count_org(search):
-    results = search.count(None, index="mango", doc_type="org")
+    results = search.count(None, index=es_index, doc_type=es_doc_type)
     return results["count"]
 
 
@@ -65,7 +69,7 @@ def org_doc(org, alias_list=None):
 
 
 def index_org(es, org, alias_list=None):
-    es.index("mango", "org", org_doc(org, alias_list), id=org.org_id,)
+    es.index(es_index, es_doc_type, org_doc(org, alias_list), id=org.org_id)
 
 
 
@@ -79,17 +83,22 @@ def index_orgalias(es, orgalias, orm, Orgalias):
 
 
 def delete_org(es, org):
-    es.delete("mango", "org", id=org.org_id,)
+    es.delete(es_index, es_doc_type, id=org.org_id)
 
 
 
 def build_org(es, orm, Org, Orgalias):
     log.warning("Bulk adding org : start")
-    org_list = [org_doc(org) for org in orm.query(Org)]
-    if org_list:
-        es.bulk_index("mango", "org", org_list, id_field="org_id",)
-    log.warning("Bulk adding org : end")
 
+    def docs():
+        for org in orm.query(Org):
+            yield es.index_op(org_doc(org), id=org.org_id)
+
+    for chunk in pyelasticsearch.bulk_chunks(
+            docs(), docs_per_chunk=500, bytes_per_chunk=10000):
+        es.bulk(chunk, doc_type=es_doc_type, index=es_index)
+
+    log.warning("Bulk adding org : end")
 
     
 
@@ -104,7 +113,7 @@ def rebuild(es, orm, Org, Orgalias):
 
     settings = json.load(open(settings_path))
 
-    es.create_index("mango", settings)
+    es.create_index(es_index, settings)
 
     build_org(es, orm, Org, Orgalias)
 

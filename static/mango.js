@@ -1,6 +1,6 @@
 "use strict";
 
-/*global window, $, _, Backbone, markdown, google, History */
+/*global window, $, _, Backbone, google, History */
 
 
 
@@ -80,8 +80,8 @@ var m = {
 
   currentUser: null,
 
-  "filter": {
-    "h": function (text) {
+  filter: {
+    h: function (text) {
       return String(text)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -90,28 +90,20 @@ var m = {
         .replace(/'/g, '&apos;');
     },
 
-    "newline": function (text) {
+    newline: function (text) {
       return String(text)
         .replace(/\n/g, '<br />');
     },
 
-    "newline_comma": function (text) {
+    newlineComma: function (text) {
       return String(text)
         .replace(/\n/g, ', ');
     },
 
-    "nbsp": function (text) {
+    nbsp: function (text) {
       return String(text)
         .replace(/[\s]+/g, '&nbsp;')
         .replace(/-/g, '&#8209;');
-    },
-
-    "markdown": function (text) {
-      return !!text ? markdown.toHTML(text) : '';
-    },
-
-    "markdownPlain": function (text) {
-      return $(m.filter.markdown(text)).text();
     },
 
     pageTime: function (time) {
@@ -350,15 +342,17 @@ var m = {
   },
 
   initOrg: function (mapView) {
-    $("div.address-row div.pin").each(function (i) {
-      var $pin = $(this);
-      var $circle = mapView.addMarker(
-        parseFloat($pin.attr("latitude")),
-        parseFloat($pin.attr("longitude"))
-      );
-      $pin.html($circle);
-    });
-    mapView.fit();
+    if (!!mapView) {
+      $("div.address-row div.pin").each(function (i) {
+        var $pin = $(this);
+        var $circle = mapView.addMarker(
+          parseFloat($pin.attr("latitude")),
+          parseFloat($pin.attr("longitude"))
+        );
+        $pin.html($circle);
+      });
+      mapView.fit();
+    }
 
     $("input[name='end_date']").datepicker({
       dateFormat: "yy-mm-dd",
@@ -399,15 +393,17 @@ var m = {
   },
 
   initEvent: function (mapView) {
-    $("div.address-row div.pin").each(function (i) {
-      var $pin = $(this);
-      var $circle = mapView.addMarker(
-        $pin.attr("latitude"),
-        $pin.attr("longitude")
-      );
-      $pin.html($circle);
-    });
-    mapView.fit();
+    if (!!mapView) {
+      $("div.address-row div.pin").each(function (i) {
+        var $pin = $(this);
+        var $circle = mapView.addMarker(
+          $pin.attr("latitude"),
+          $pin.attr("longitude")
+        );
+        $pin.html($circle);
+      });
+      mapView.fit();
+    }
 
     $("input[name='start_date']").datepicker({
       dateFormat: "yy-mm-dd",
@@ -696,40 +692,21 @@ var m = {
     });
   },
 
-  "text_children": function (el) {
-    // http://stackoverflow.com/a/4399718/201665
-    return $(el).find(":not(iframe)").andSelf().contents().filter(function () {
-      return this.nodeType === 3;
-    });
-  },
-
-  "has_link_parent": function (node) {
-    if (!$(node).parent().length) {
-      return false;
-    }
-    if (!$(node).parent()[0].tagName) {
-      return false;
-    }
-    if ($(node).parent()[0].tagName.toLowerCase() === "a") {
-      return true;
-    }
-    return m.has_link_parent($(node).parent()[0]);
-  },
-
-  "convert_inline_links": function (el) {
-    m.text_children(el).replaceWith(function () {
-      if (m.has_link_parent(this)) {
-        return $("<span>" + this.textContent + "</span>");
+  markdownSafe: function (text, convertLinks, callback) {
+    $.ajax(m.urlRoot + "api/markdown-safe", {
+      data: {
+        "text": text,
+        "convertLinks": convertLinks,
+        "_xsrf": m.xsrf
+      },
+      method: "POST",
+      success: function (data, textStatus, jqXHR) {
+        callback(data);
+      },
+      error: function (jqXHR, textStatus, errorThrown) {
+        m.ajaxError(jqXHR, textStatus, errorThrown);
       }
-      var html = this.textContent.replace(
-        /(?:(https?:\/\/)|(www\.))([\S]+\.[^\s<>\"\']+)/g,
-        "<a href='http://$2$3'>$1$2$3</a>"
-      );
-      html = "<span>" + html + "</span>";
-      var node = $(html);
-      return node;
     });
-
   },
 
   noteMarkdown: function () {
@@ -738,13 +715,15 @@ var m = {
     var source = m.get_field(form, "source");
     m.on_change(text.input, "note-form" + "_" + "text", function (value) {
       text.label.attr("status", !!value ? "good" : "bad");
-      $("#note-preview .note-text").html(m.filter.markdown(value));
-      m.convert_inline_links($("#note-preview .note-text"));
+      m.markdownSafe(value, true, function (html) {
+        $("#note-preview .note-text").html(html);
+      });
     }, 500);
     m.on_change(source.input, "note-form" + "_" + "source", function (value) {
       source.label.attr("status", !!value ? "good" : "bad");
-      $("#note-preview .note-source").html(m.filter.markdown(value));
-      m.convert_inline_links($("#note-preview .note-source"));
+      m.markdownSafe(value, true, function (html) {
+        $("#note-preview .note-source").html(html);
+      });
     }, 500);
   },
 
@@ -753,8 +732,9 @@ var m = {
     var text = m.get_field(form, "description");
     var preview = $(".description.markdown-preview");
     var on_change = function (value) {
-      preview.html(m.filter.markdown(value));
-      m.convert_inline_links($(".description.markdown-preview"));
+      m.markdownSafe(value, true, function (html) {
+        preview.html(html);
+      });
     };
     if (text) {
       m.on_change(text.input, "org-form" + "_" + "text", on_change, 500);
@@ -766,6 +746,9 @@ var m = {
     var form = $("#org-form");
     var text = m.get_field(form, "name");
     var $list = $("#mango-similar-org-list");
+    if (!$list.length) {
+      return;
+    }
     var url = m.urlRoot + "organisation/search";
     var on_change = function (value) {
       $list.empty();
@@ -795,8 +778,9 @@ var m = {
     var text = m.get_field(form, "description");
     var preview = $(".description.markdown-preview");
     var on_change = function (value) {
-      preview.html(m.filter.markdown(value));
-      m.convert_inline_links($(".description.markdown-preview"));
+      m.markdownSafe(value, true, function (html) {
+        preview.html(html);
+      });
     };
     if (text) {
       m.on_change(text.input, "event-form" + "_" + "text", on_change, 500);
@@ -1060,9 +1044,7 @@ var m = {
       });
     }],
     [/^\/organisation\/new$/, function () {
-      m.initMap(function (mapView) {
-        m.initOrg(mapView);
-      });
+      m.initOrg(null);
     }],
     [/^\/organisation\/([1-9][0-9]*)\/address$/, function (orgIdString) {
       m.initMap(function (mapView) {
@@ -1089,9 +1071,7 @@ var m = {
       });
     }],
     [/^\/event\/new$/, function () {
-      m.initMap(function (mapView) {
-        m.initEvent(mapView);
-      });
+      m.initEvent(null);
     }],
     [/^\/event\/([1-9][0-9]*)\/address$/, function (eventIdString) {
       m.initMap(function (mapView) {

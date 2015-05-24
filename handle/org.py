@@ -1307,7 +1307,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
         canterbury_query = location_subquery(u"canterbury")
 
         exist_clause = "exists (select 1 from org_include where org_include.org_id = org.org_id)"
-        
+
         org_query = self.orm.query(Org) \
             .outerjoin(act_query, act_query.c.org_id==Org.org_id) \
             .outerjoin(addr_query, addr_query.c.org_id==Org.org_id) \
@@ -1333,8 +1333,11 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 func.coalesce(note_query.c.count, 0).label("note"),
                 ) \
             .filter(Org.end_date==None) \
-            .order_by("((dseitag > 0) * 4 + (saptag > 0) * 2 + (sipri > 0)) desc, tag desc",
-                      Org.name)
+            .order_by(
+                literal_column(u"((dseitag > 0) * 4 + (saptag > 0) * 2 + (sipri > 0))").desc(),
+                literal_column(u"tag").desc(),
+                Org.name,
+            )
 
         packet = {
             "act_include_public": 0,

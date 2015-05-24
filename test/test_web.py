@@ -28,6 +28,8 @@ note_address_id = 3
 address_id = 1
 contact_id = 1
 
+org_search_name = u"random"
+
 org_n_id = 404
 orgtag_n_id = 404
 event_n_id = 404
@@ -47,6 +49,7 @@ class Http(object):
         "/organisation-tag",
         "/event",
         "/event-tag",
+        "/organisation/search?name=%s" % org_search_name
         ]
 
     html_path_list_none = [
@@ -98,6 +101,13 @@ class Http(object):
         "/event/%s/tag" % event_id,
         "/event/%s/note" % event_id,
         "/event-tag/%s/note" % eventtag_id,
+        "/moderation/organisation-tag-activity",
+        "/moderation/address-not-found",
+        "/moderation/organisation-description",
+        "/moderation/organisation-inclusion",
+        "/moderation/queue",
+        "/history",
+        "/user",
         ]
 
     def get_html_title(self, content):
@@ -287,7 +297,9 @@ class TestModerator(unittest.TestCase, Http):
 
     def test_html_public(self):
         log.info("Moderator User / Authorised HTML")
-        for path in self.html_path_list_public + self.html_path_list_registered + self.html_path_list_registered:
+        for path in self.html_path_list_public + \
+                self.html_path_list_registered + \
+                self.html_path_list_moderator:
             html = self.get_html(path, cookie=self.cookie)
             self.mako_error_test(html)
 
@@ -342,5 +354,23 @@ if __name__ == "__main__":
         max(0, min(3, 1 + options.verbose - options.quiet))]
 
     log.setLevel(log_level)
+
+    log.info(u"""
+
+  Testing Mango:
+
+  First run the test server from the application directory to start server with test data. Note: this will delete all data currently in the database.
+
+    make test
+
+  To test any page as a registered user, first visit:
+
+    %s/auth/login/local?user=3
+
+  To test any page as a moderator, first visit:
+
+    %s/auth/login/local?user=1
+
+""" % (host, host))
 
     unittest.main()

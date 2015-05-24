@@ -8,16 +8,18 @@ Mapping Application for NGOs
 
 ### Package dependencies (Ubuntu)
 
-    sudo apt-get install python-setuptools sqlite3 libsqlite3-dev \
+    sudo apt-get install \
+      python python-dev \
+      python-setuptools sqlite3 libsqlite3-dev \
       redis-server mysql-server mysql-client libmysqlclient-dev \
       nodejs npm pylint
 
-If you're using a virtual Python environment, repace 'pip' below with the path to your virtual environment's pip path.
+If you're using a virtual Python environment, replace 'pip' below with the path to your virtual environment's pip path.
 
     sudo pip install \
       Mako tornado sqlalchemy markdown redis pysqlite BeautifulSoup4 \
       python-levenshtein mysql-python python-memcached BeautifulSoup \
-      httplib2 MySQLdb pyelasticsearch geopy
+      httplib2 pyelasticsearch geopy bleach
 
     sudo npm install -g jslint
 

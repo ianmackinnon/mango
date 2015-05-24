@@ -44,7 +44,7 @@ vendor:
 test : mysql-test serve-test
 
 serve-test :
-	python -W all ./mango.py --local=1
+	python -W error ./mango.py --local=1
 
 
 # Configuration

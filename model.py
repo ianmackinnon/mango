@@ -549,8 +549,6 @@ class User(Base):
     user_id = Column(Integer, primary_key=True)
     auth_id = Column(Integer, ForeignKey(Auth.auth_id), nullable=True)
     
-    PrimaryKeyConstraint(auth_id)
-
     name = Column(Unicode(), nullable=False)
 
     moderator = Column(Boolean, nullable=False, default=False)

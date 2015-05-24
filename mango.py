@@ -28,7 +28,8 @@ from sqlalchemy.exc import SQLAlchemyError, OperationalError
 
 import mysql.mysql_init
 
-from handle.base import BaseHandler, authenticated, sha1_concat
+from handle.base import BaseHandler, MarkdownSafeHandler, \
+    authenticated, sha1_concat
 from handle.generate import GenerateMarkerHandler
 from handle.auth import AuthRegisterHandler, \
     AuthLoginLocalHandler, AuthLoginGoogleHandler, \
@@ -420,6 +421,8 @@ class Application(tornado.web.Application):
             (r"/note/<id>/revision/<id>",
              NoteRevisionHandler),
 
+            (r"/api/markdown-safe", MarkdownSafeHandler),
+
             (r"/.*", NotFoundHandler),
             ]
         
@@ -531,7 +534,7 @@ class Application(tornado.web.Application):
             output_encoding='utf-8',
             default_filters=["unicode", "h"],
             )
-
+        
         # HTTP Server
 
         self.forwarding_server_list = forwarding_server_list

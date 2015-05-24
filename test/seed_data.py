@@ -26,7 +26,38 @@ from model import Medium, Auth, User, Session, Orgtag, Eventtag, Org, Orgalias, 
 log = logging.getLogger('seed_data')
 
 
-lorem_markdown = u"ÜunicÖde. Lorem ipsum dolor sit amet\n\nconsectetur adipisicing elit, sed do eiusmod tempor\n\nincididunt ut labore et dolore magna aliqua."
+malicious_markdown = u"""
+Paragraph start
+
+<a href="http://www.google.com">Raw link</a>
+
+<a href="javascript:console.log('x')">Href JS</a>
+
+<a href="javascript:void('x')" onclick="console.log('y')">Onclick JS</a>
+
+Auto link: www.google.com
+
+Script:
+
+<script>
+console.log("malicious");
+</script>
+
+Paragraph ÜunicÖde.
+
+-   UL1
+-   UL2
+-   UL3
+
+Paragraph Lorem ipsum dolor sit amet\n\nconsectetur adipisicing elit, sed do eiusmod tempor\n\nincididunt ut labore et dolore magna aliqua.
+
+1.  OL1
+1.  OL2
+1.  OL3
+
+Paragraph end
+
+"""
 
 
 
@@ -59,7 +90,7 @@ def main(orm):
     orgtag_1 = Orgtag(u"Org Tag 1", **public_1)
     eventtag_1 = Eventtag(u"Event Tag 1", **public_1)
 
-    org_1 = Org(u"RÄndom Incorporated", lorem_markdown, **public_1)
+    org_1 = Org(u"RÄndom Incorporated", malicious_markdown, **public_1)
     orm.add(org_1)
     org_1.orgtag_list.append(orgtag_1)
     org_1_alias_1 = Orgalias(u"Randcorp", org_1, **public_1)

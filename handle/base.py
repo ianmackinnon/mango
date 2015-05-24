@@ -4,6 +4,7 @@ import re
 import json
 import time
 import codecs
+import bleach
 import hashlib
 import httplib
 import markdown
@@ -22,6 +23,11 @@ from mako import exceptions
 
 from tornado.web import authenticated as tornado_authenticated, RequestHandler, HTTPError
 
+# For _execute replacement
+from tornado.concurrent import Future, is_future
+from tornado import gen
+from tornado.web import _has_stream_request_body
+
 import geo
 
 from model import Session, Address, User
@@ -30,9 +36,7 @@ from base_moderation import has_pending, has_address_not_found
 
 
 
-md_safe = markdown.Markdown(
-    safe_mode=True,
-    )
+md = markdown.Markdown()
 
 
 
@@ -78,7 +82,20 @@ def nbsp(text):
 
 
 def markdown_safe(text):
-    return md_safe.convert(text)
+    markdown = md.convert(text)
+    clean = bleach.clean(
+        tags=[
+            "a",
+            "p",
+            "ul",
+            "ol",
+            "li",
+        ],
+        attributes=[
+            "href"
+        ]
+    )
+    return clean
 
 
 
@@ -143,6 +160,8 @@ def convert_links(text, quote="\""):
         if has_link_parent(t):
             continue
         split = re.split("(?:(https?://)|(www\.))([\S]+\.[^\s<>\"\']+)", t)
+        if len(split) == 1:
+            continue
         r = u""
         n = 0
         split = [s or u"" for s in split]
@@ -269,39 +288,91 @@ class BaseHandler(RequestHandler):
                 if self.arg_type_handlers[i]:
                     self.path_args[i] = self.arg_type_handlers[i](value)
             self.path_args = tuple(self.path_args)
-                
+
+    # Copied from tornado.web. Keep updated
+    @gen.coroutine
     def _execute(self, transforms, *args, **kwargs):
         """Executes this request with the given output transforms."""
         self._transforms = transforms
+
+        # mango start
         self._mango_extra_methods()
+        # mango end
+        
         try:
-            if (self.request.method not in self.SUPPORTED_METHODS) or (hasattr(self, "_unsupported_methods") and (True in self._unsupported_methods or self.request.method.lower() in self._unsupported_methods)):
+            # mango start
+            if (self.request.method not in self.SUPPORTED_METHODS) or \
+               (hasattr(self, "_unsupported_methods") and (
+                   True in self._unsupported_methods or \
+                   self.request.method.lower() in self._unsupported_methods
+               )):
                 code, message = self._unsupported_method_error
                 raise HTTPError(code, message)
             self._mango_check_user()
+            # mango end
+            
             self.path_args = [self.decode_argument(arg) for arg in args]
             self.path_kwargs = dict((k, self.decode_argument(v, name=k))
                                     for (k, v) in kwargs.items())
+
+            # mango end
             self._mango_handle_args()
+            # mango start
+            
             # If XSRF cookies are turned on, reject form submissions without
             # the proper cookie
             if self.request.method not in ("GET", "HEAD", "OPTIONS") and \
                     self.application.settings.get("xsrf_cookies"):
                 self.check_xsrf_cookie()
-            self.prepare()
-            if not self._finished:
-                getattr(self, self.request.method.lower())(
-                    *self.path_args, **self.path_kwargs)
-                if self._auto_finish and not self._finished:
-                    self.finish()
+
+            result = self.prepare()
+            if is_future(result):
+                result = yield result
+            if result is not None:
+                raise TypeError("Expected None, got %r" % result)
+            if self._prepared_future is not None:
+                # Tell the Application we've finished with prepare()
+                # and are ready for the body to arrive.
+                self._prepared_future.set_result(None)
+            if self._finished:
+                return
+
+            if _has_stream_request_body(self.__class__):
+                # In streaming mode request.body is a Future that signals
+                # the body has been completely received.  The Future has no
+                # result; the data has been passed to self.data_received
+                # instead.
+                try:
+                    yield self.request.body
+                except iostream.StreamClosedError:
+                    return
+
+            method = getattr(self, self.request.method.lower())
+            result = method(*self.path_args, **self.path_kwargs)
+            if is_future(result):
+                result = yield result
+            if result is not None:
+                raise TypeError("Expected None, got %r" % result)
+            if self._auto_finish and not self._finished:
+                self.finish()
+
+        # mango start - Think this is to catch MySQL errors?
         except IOError as e:
             print 'ioerror'
             raise e
         except AssertionError as e:
             print 'assertionerror'
             raise e
+        # mango end
+        
         except Exception as e:
             self._handle_request_exception(e)
+            if (self._prepared_future is not None and
+                    not self._prepared_future.done()):
+                # In case we failed before setting _prepared_future, do it
+                # now (to unblock the HTTP server).  Note that this is not
+                # in a finally block to avoid GC issues prior to Python 3.4.
+                self._prepared_future.set_result(None)
 
     def write_error(self, status_code, **kwargs):
         if 'exc_info' in kwargs:
@@ -1048,3 +1119,14 @@ class MangoEntityListHandlerMixin(RequestHandler):
         return self.redirect_next(new_entity_v.url)
 
 
+class MarkdownSafeHandler(RequestHandler):
+    def post(self):
+        text = self.get_argument("text", "")
+        convert_links = self.get_argument("convertLinks", None)
+        
+        html_safe = markdown_safe(text)
+
+        if convert_links:
+            html_safe = convert_links(html_safe)
+            
+        self.write(html_safe)
