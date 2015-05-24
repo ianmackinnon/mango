@@ -243,9 +243,9 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
         if page_view == "marker":
             # Just want markers for all matches.
-            event_packet["marker_list"] = []
+            event_packet["markerList"] = []
             for event, address in event_address_query:
-                event_packet["marker_list"].append({
+                event_packet["markerList"].append({
                         "name": event.name,
                         "url": event.url,
                         "latitude": address and address.latitude,
@@ -255,9 +255,9 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
             if event_address_query.count() > max_address_per_page * max_address_pages:
                 # More than 3 pages of addresses. Want markers for all matches, and names of the first 10 matching companies (with offset).
                 events = OrderedDict()
-                event_packet["marker_list"] = []
+                event_packet["markerList"] = []
                 for event, address in event_address_query:
-                    event_packet["marker_list"].append({
+                    event_packet["markerList"].append({
                             "name": event.name,
                             "url": event.url,
                             "latitude": address and address.latitude,
@@ -267,11 +267,11 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                         events[event.event_id] = {
                             "event": event,
                             }
-                event_packet["event_length"] = len(events)
-                event_packet["event_list"] = []
+                event_packet["eventLength"] = len(events)
+                event_packet["eventList"] = []
                 for event_id, data in events.items()[(offset or 0):(offset or 0) + max_event_per_page]:
                     event = data["event"]
-                    event_packet["event_list"].append(event.obj(
+                    event_packet["eventList"].append(event.obj(
                             public=self.moderator,
                             description=False,
                             ))
@@ -286,21 +286,21 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                             "address_list": [],
                             }
                     if address:
-                        events[event.event_id]["address_list"].append(address.obj(
+                        events[event.event_id]["addressList"].append(address.obj(
                                 public=self.moderator,
                                 general=address.general(address.postal),
                                 ))
 
-                event_packet["event_length"] = len(events)
-                event_packet["event_list"] = []
+                event_packet["eventLength"] = len(events)
+                event_packet["eventList"] = []
                 for event_id, data in events.items():
                     event = data["event"]
-                    address_list = data["address_list"]
+                    address_list = data["addressList"]
                     address_list.sort(
                         key=lambda address_obj: address_obj.get("latitude", None),
                         reverse=True
                         )
-                    event_packet["event_list"].append(event.obj(
+                    event_packet["eventList"].append(event.obj(
                             public=self.moderator,
                             description=False,
                             address_list=address_list,
@@ -314,10 +314,10 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                         "event": event,
                         "address_list": [],
                         }
-            event_packet["event_list"] = []
+            event_packet["eventList"] = []
             for event_id, data in events.items():
                 event = data["event"]
-                event_packet["event_list"].append(event.obj(
+                event_packet["eventList"].append(event.obj(
                         public=self.moderator,
                         description=False,
                         ))

@@ -36,10 +36,10 @@ return "Companies"
 <div class="action-bar">
   <div class="counts">
     ${self.mini.counts(
-      org_packet["org_list"],
+      org_packet["orgList"],
       org_packet.get("offset", 0),
       org_packet["org_count"],
-      not lookup and query_rewrite(dict(parameters, **{"offset": org_packet.get("offset", 0) + len(org_packet["org_list"])}))
+      not lookup and query_rewrite(dict(parameters, **{"offset": org_packet.get("offset", 0) + len(org_packet["orgList"])}))
       )}
   </div>
 
@@ -54,7 +54,7 @@ return "Companies"
 </div>
 
 <div class="column">
-  %for org in org_packet["org_list"]:
+  %for org in org_packet["orgList"]:
   ${self.mini.org_box(org) | n}
   %endfor
 </div>

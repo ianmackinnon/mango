@@ -1,8 +1,7 @@
-"use strict";
-
 /*global window, jQuery, _, Backbone, google, m */
 
 (function ($) {
+  "use strict";
 
   // Marker
 
@@ -102,7 +101,7 @@
       this._modelViews = [];
       this.collection.each(function (model) {
         if (!!model.get("latitude") && !view.mapView.contains(
-          model.get("latitude"),
+               model.get("latitude"),
           model.get("longitude")
         )) {
           view._modelViews.push(new AddressViewDot({
@@ -137,8 +136,6 @@
     }
   });
 
-
-
   // Org
 
   window.Org = Backbone.Model.extend({
@@ -146,12 +143,12 @@
 
     parse: function (resp, xhr) {
       this.addressCollection = new window.AddressCollection(
-        resp.address_list,
+        resp.addressList,
         {
           org: this
         }
       );
-      delete resp.address_list;
+      delete resp.addressList;
       return resp;
     }
   });
@@ -216,7 +213,6 @@
     }
   });
 
-
   // OrgCollection
 
   window.OrgCollection = Backbone.Collection.extend({
@@ -245,10 +241,10 @@
       }
 
       this.location = resp.location;
-      this.markerList = resp.marker_list;
-      this.orgLength = resp.org_length;
+      this.markerList = resp.markerList;
+      this.orgLength = resp.orgLength;
       this.hint = resp.hint;
-      return resp.org_list;
+      return resp.orgList;
     }
   });
 
@@ -335,7 +331,6 @@
       return this;
     }
   });
-
 
   // OrgSearch
 
@@ -598,7 +593,7 @@
         return term !== null;
       }).join(" | ");
 
-      document.title = title + " | CAAT Mapping Application"
+      document.title = title + " | CAAT Mapping Application";
     },
 
     toQueryString: function (attributes) {
@@ -675,12 +670,12 @@
     id: "org-search",
     templateName: "org-search.html",
     events: {
-      'submit': 'submit',
-      'change input[name="visibility"]': 'formChange',
-      'change input[name="nameSearch"]': 'formChange',
-      'change input[name="location"]': 'formChange',
-      'change label > input[name="tag"]': 'formChange',
-      'change input[name="tagAll"]': 'formChange'
+      "submit": "submit",
+      "change input[name='visibility']": "formChange",
+      "change input[name='nameSearch']": "formChange",
+      "change input[name='location']": "formChange",
+      "change label > input[name='tag']": "formChange",
+      "change input[name='tagAll']": "formChange"
     },
     limit: 26,  // Number of letters in the alphabet for map markers.
     limitOrg: 20,
@@ -739,8 +734,8 @@
       var tagAllVal = !!tagAll;
       var $input = this.$el.find("input[name='tagAll']");
 
-      if ($input.prop('checked') !== tagAllVal) {
-        $input.prop('checked', tagAllVal);
+      if ($input.prop("checked") !== tagAllVal) {
+        $input.prop("checked", tagAllVal);
       }
     },
 
@@ -852,7 +847,7 @@
     render: function () {
       var hint = null;
       if (this.model.lastResult && this.model.lastResult.hint) {
-        hint = this.model.lastResult.hint
+        hint = this.model.lastResult.hint;
       }
       $(this.el).html(m.template(this.templateName, {
         currentUser: m.currentUser,
@@ -862,7 +857,7 @@
       this.setupTagInput();
 
       var $inputTag = $("input[name='tag']");
-      $inputTag = $inputTag.next().find("input")
+      $inputTag = $inputTag.next().find("input");
       $inputTag.width(400);
 
       this.addThrobber();
@@ -876,8 +871,8 @@
 
       var visibility = this.model.get("visibility") || null;
 
-      if (visibility === 'private' || visibility === 'pending') {
-        visibility = 'all';
+      if (visibility === "private" || visibility === "pending") {
+        visibility = "all";
       }
       if (visibility === this.lastVisibility) {
         return;
@@ -1046,7 +1041,7 @@
         return;
       }
       var text = "";
-      if (country) { 
+      if (country) {
         if (number === 1) {
           text = number + " " + socialTag.role + " applied to export military items to " + country + ".";
         } else {
@@ -1083,13 +1078,12 @@
         if (orgCollection.hint.tag) {
           var $inputTag = $("input[name='tag']");
           $inputTag.attr("placeholder", "Eg. " + orgCollection.hint.tag.join(", "));
-          $inputTag = $inputTag.next().find("input")
+          $inputTag = $inputTag.next().find("input");
           $inputTag.attr("placeholder", "Eg. " + orgCollection.hint.tag.join(", "));
           $inputTag.width(400);
         }
       }
     },
-
 
     renderPages: function (orgCollection, many) {
       var orgSearchView = this;
@@ -1183,9 +1177,11 @@
           };
         };
 
+        var text;
+        var currentPage;
         for (page = 0; page < length / orgSearchView.limit; page += 1) {
-          var text = "page " + (page + 1);
-          var currentPage = orgSearchView.model.get("offset") || 0;
+          text = "page " + (page + 1);
+          currentPage = orgSearchView.model.get("offset") || 0;
           if (page * orgSearchView.limit === currentPage) {
             $pageSpan = $("<span>").text(text);
             $pages.append($("<li>").append($pageSpan));
@@ -1225,7 +1221,7 @@
       var timeout = setTimeout(function () {
         if (view.formAction !== "submit") {
           view.send();
-        };
+        }
       }, 25);
     },
 

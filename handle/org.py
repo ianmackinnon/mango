@@ -306,7 +306,7 @@ class OrgSearchHandler(BaseOrgHandler):
                 if max_alias == source["name"]:
                     max_alias = None
                 org = {
-                    "org_id": source["org_id"],
+                    "orgId": source["org_id"],
                     "name": source["name"],
                     "alias": max_alias,
                     "score": hit["_score"],
@@ -391,18 +391,19 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
             return self.redirect_next()
 
         if org:
+            # We don't need to alter these from now on.
             if self.deep_visible():
-                address_list=org.address_list
-                orgtag_list=org.orgtag_list
-                event_list=org.event_list
-                orgalias_list=org.orgalias_list
-                contact_list=org.contact_list
+                address_list=list(org.address_list)
+                orgtag_list=list(org.orgtag_list)
+                event_list=list(org.event_list)
+                orgalias_list=list(org.orgalias_list)
+                contact_list=list(org.contact_list)
             else:
-                address_list=org.address_list_public
-                orgtag_list=org.orgtag_list_public
-                event_list=org.event_list_public
-                orgalias_list=org.orgalias_list_public
-                contact_list=org.contact_list_public
+                address_list=list(org.address_list_public)
+                orgtag_list=list(org.orgtag_list_public)
+                event_list=list(org.event_list_public)
+                orgalias_list=list(org.orgalias_list_public)
+                contact_list=list(org.contact_list_public)
 
             note_list, note_count = org.note_list_filtered(
                 note_search=note_search,
@@ -425,6 +426,7 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
             mango_entity_append_suggestion(
                 self.orm, address_list, get_user_pending_org_address,
                 self.current_user, org_id, "address_id")
+
             mango_entity_append_suggestion(
                 self.orm, contact_list, get_user_pending_org_contact,
                 self.current_user, org_id, "contact_id")
@@ -950,7 +952,7 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
             type_title="Company",
             type_title_plural="Companies",
             type_url="organisation",
-            type_tag_list="orgtag_list",
+            type_tag_list="orgtagList",
             type_entity_list="org_list",
             type_li_template="org_li",
             type_length="org_len",
@@ -1025,7 +1027,7 @@ class OrgOrgaliasListHandler(BaseOrgHandler, BaseOrgtagHandler):
                 type_title="Company",
                 type_title_plural="Companies",
                 type_url="organisation",
-                type_alias_list="orgalias_list",
+                type_alias_list="orgaliasList",
                 type_li_template="org_li",
                 )
 
@@ -1165,10 +1167,10 @@ class ModerationOrgDescHandler(BaseOrgHandler):
                     "alias": alias and alias.name,
                     }
                 
-        org_packet["org_list"] = []
+        org_packet["orgList"] = []
         for org_id, data in orgs.items():
             org = data["org"]
-            org_packet["org_list"].append(org.obj(
+            org_packet["orgList"].append(org.obj(
                     alias=data["alias"],
                     public=self.moderator,
                     ))

@@ -146,5 +146,24 @@ purge-mysql:
 # Static analysis
 
 lint :
-	jslint --indent=2 --nomen --vars --es5=false \
-	static/address.js static/org.js static/map.js static/mango.js
+# jslint --indent=2 --nomen --vars --es5=false \
+#   static/address.js \
+#   static/org.js \
+#   static/map.js \
+#   static/mango.js \
+# | sed -n '/ Unused /,+2!p' \
+# | sed -n '/ at column /,+2!p' \
+
+	jshint \
+	  static/address.js \
+	  static/org.js \
+	  static/event.js \
+	  static/map.js \
+	  static/mango.js
+
+	jscs -c test/jscs.json -v \
+	  static/address.js \
+	  static/org.js \
+	  static/event.js \
+	  static/map.js \
+	  static/mango.js

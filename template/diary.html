@@ -24,16 +24,16 @@ ${header | n}
         <th>Date</th>
         <th>Event</th>
       </tr>
-      %for event in event_packet["event_list"]:
+      %for event in event_packet["eventList"]:
       <%
-         tag_list = [tag["base_short"] for tag in event["eventtag_list"]]
+         tag_list = [tag["baseShort"] for tag in event["eventtagList"]]
          %>
       %if "weekly" in tag_list or "monthly" in tag_list:
       <% continue %>
       %endif
       <tr>
         <td>
-          ${event["start_date"] | n, page_date_format(format_="%-d %B %Y")}<br/>
+          ${event["startDate"] | n, page_date_format(format_="%-d %B %Y")}<br/>
           %if "caat" in tag_list:
           <img src="${protocol}://www.caat.org.uk/images/iconsandlogos/caat-icon.png" alt="CAAT" title="CAAT Event" /><br/>
           %endif
@@ -51,7 +51,7 @@ ${header | n}
           <p class="eventtimeplace">${event | n, page_period}</p>
           
           %if event.get("address_list", None):
-          %for address in event["address_list"]:
+          %for address in event["addressList"]:
           <p class="eventtimeplace">${address["postal"] | n, h, unicode, newline_comma} (<a href="${url_rewrite(address["url"])}">map</a>)</p>
           %endfor
           %endif
@@ -73,9 +73,9 @@ ${header | n}
         <th>Date</th>
         <th>Event</th>
       </tr>
-      %for event in event_packet["event_list"]:
+      %for event in event_packet["eventList"]:
       <%
-         tag_list = [tag["base_short"] for tag in event["eventtag_list"]]
+         tag_list = [tag["baseShort"] for tag in event["eventtagList"]]
          %>
       %if not ("weekly" in tag_list or "monthly" in tag_list):
       <% continue %>
@@ -105,7 +105,7 @@ ${header | n}
           <p class="eventtimeplace">${event | n, page_period}</p>
 
           %if event.get("address_list", None):
-          %for address in event["address_list"]:
+          %for address in event["addressList"]:
           <p class="eventtimeplace">${address["postal"] | n, h, unicode, newline_comma} (<a href="${url_rewrite(address["url"])}">map</a>)</p>
           %endfor
           %endif

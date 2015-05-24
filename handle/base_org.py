@@ -271,9 +271,9 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
         if page_view == "marker":
             # Just want markers for all matches.
-            org_packet["marker_list"] = []
+            org_packet["markerList"] = []
             for org, alias, address in org_alias_address_query:
-                org_packet["marker_list"].append({
+                org_packet["markerList"].append({
                         "name": org.name,
                         "alias": alias and alias.name,
                         "url": org.url,
@@ -284,10 +284,10 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
             if org_alias_address_query.count() > max_address_per_page * max_address_pages:
                 # More than 3 pages of addresses for the map. Want markers for all matches, and names of the first 10 matching companies (with offset).
                 orgs = OrderedDict()
-                org_packet["marker_list"] = []
+                org_packet["markerList"] = []
                 for org, alias, address in org_alias_address_query:
                     if address and address.latitude:
-                        org_packet["marker_list"].append({
+                        org_packet["markerList"].append({
                             "name": org.name,
                             "url": org.url,
                             "latitude": address.latitude,
@@ -298,11 +298,11 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                             "org": org,
                             "alias": alias and alias.name,
                             }
-                org_packet["org_length"] = len(orgs)
-                org_packet["org_list"] = []
+                org_packet["orgLength"] = len(orgs)
+                org_packet["orgList"] = []
                 for org_id, data in orgs.items()[(offset or 0):(offset or 0) + max_org_per_page]:
                     org = data["org"]
-                    org_packet["org_list"].append(org.obj(
+                    org_packet["orgList"].append(org.obj(
                             alias=data["alias"],
                             public=self.moderator,
                             description=False,
@@ -315,23 +315,23 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                         orgs[org.org_id] = {
                             "org": org,
                             "alias": alias and alias.name,
-                            "address_list": [],
+                            "addressList": [],
                             }
                     if address:
-                        orgs[org.org_id]["address_list"].append(address.obj(
+                        orgs[org.org_id]["addressList"].append(address.obj(
                                 public=self.moderator
                                 ))
 
-                org_packet["org_length"] = len(orgs)
-                org_packet["org_list"] = []
+                org_packet["orgLength"] = len(orgs)
+                org_packet["orgList"] = []
                 for org_id, data in orgs.items():
                     org = data["org"]
-                    address_list = data["address_list"]
+                    address_list = data["addressList"]
                     address_list.sort(
                         key=lambda address_obj: address_obj.get("latitude", None),
                         reverse=True
                         )
-                    org_packet["org_list"].append(org.obj(
+                    org_packet["orgList"].append(org.obj(
                             alias=data["alias"],
                             public=self.moderator,
                             description=False,
@@ -347,10 +347,10 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                         "alias": alias and alias.name,
                         }
 
-            org_packet["org_list"] = []
+            org_packet["orgList"] = []
             for org_id, data in orgs.items():
                 org = data["org"]
-                org_packet["org_list"].append(org.obj(
+                org_packet["orgList"].append(org.obj(
                         alias=data["alias"],
                         public=self.moderator,
                         description=False,

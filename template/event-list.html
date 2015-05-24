@@ -82,10 +82,10 @@ return value
   <span class="counts">
     %if event_packet:
     ${self.mini.counts(
-      event_packet["event_list"],
+      event_packet["eventList"],
       offset,
-      event_packet["event_length"],
-      not lookup and query_rewrite(dict(parameters, **{"offset": (offset or 0) + len(event_packet["event_list"])}))
+      event_packet["eventLength"],
+      not lookup and query_rewrite(dict(parameters, **{"offset": (offset or 0) + len(event_packet["eventList"])}))
       )}
     %endif
   </span>
@@ -102,7 +102,7 @@ return value
 
 <div class="column">
   %if event_packet:
-  %for event in event_packet["event_list"]:
+  %for event in event_packet["eventList"]:
   ${self.mini.event_box(event, parameters=parameters) | n}
   %endfor
   %endif

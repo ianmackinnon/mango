@@ -1,8 +1,7 @@
-"use strict";
-
 /*global window, jQuery, _, Backbone, m */
 
 (function ($) {
+  "use strict";
 
   // Address
 
@@ -21,6 +20,5 @@
       }
     }
   });
-
 
 }(jQuery));

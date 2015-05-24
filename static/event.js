@@ -1,8 +1,7 @@
-"use strict";
-
 /*global window, jQuery, _, Backbone, google, m */
 
 (function ($) {
+  "use strict";
 
   // Marker
 
@@ -138,8 +137,6 @@
     }
   });
 
-
-
   // Event
 
   window.Event = Backbone.Model.extend({
@@ -147,12 +144,12 @@
 
     parse: function (resp, xhr) {
       this.addressCollection = new window.AddressCollection(
-        resp.address_list,
+        resp.addressList,
         {
           event: this
         }
       );
-      delete resp.address_list;
+      delete resp.addressList;
       return resp;
     }
   });
@@ -217,7 +214,6 @@
     }
   });
 
-
   // EventCollection
 
   window.EventCollection = Backbone.Collection.extend({
@@ -246,9 +242,9 @@
       }
 
       this.location = resp.location;
-      this.markerList = resp.marker_list;
-      this.eventLength = resp.event_length;
-      return resp.event_list;
+      this.markerList = resp.markerList;
+      this.eventLength = resp.eventLength;
+      return resp.eventList;
     }
   });
 
@@ -334,7 +330,6 @@
       return this;
     }
   });
-
 
   // EventSearch
 
@@ -599,7 +594,7 @@
         return term !== null;
       }).join(" | ");
 
-      document.title = title + " | CAAT Mapping Application"
+      document.title = title + " | CAAT Mapping Application";
     },
 
     toQueryString: function (attributes) {
@@ -676,13 +671,13 @@
     id: "event-search",
     templateName: "event-search.html",
     events: {
-      'submit': 'submit',
-      'change input[name="visibility"]': 'formChange',
-      'change input[name="nameSearch"]': 'formChange',
-      'change input[name="location"]': 'formChange',
-      'change input[name="past"]': 'formChange',
-      'change label > input[name="tag"]': 'formChange',
-      'change input[name="tagAll"]': 'formChange'
+      "submit": "submit",
+      "change input[name='visibility']": "formChange",
+      "change input[name='nameSearch']": "formChange",
+      "change input[name='location']": "formChange",
+      "change input[name='past']": "formChange",
+      "change label > input[name='tag']": "formChange",
+      "change input[name='tagAll']": "formChange"
     },
     limit: 26,  // Number of letters in the alphabet for map markers.
     limitEvent: 20,
@@ -721,8 +716,8 @@
       var pastVal = !!past;
       var $input = this.$el.find("input[name='past']");
 
-      if ($input.prop('checked') !== pastVal) {
-        $input.prop('checked', pastVal);
+      if ($input.prop("checked") !== pastVal) {
+        $input.prop("checked", pastVal);
       }
     },
 
@@ -757,8 +752,8 @@
       var tagAllVal = !!tagAll;
       var $input = this.$el.find("input[name='tagAll']");
 
-      if ($input.prop('checked') !== tagAllVal) {
-        $input.prop('checked', tagAllVal);
+      if ($input.prop("checked") !== tagAllVal) {
+        $input.prop("checked", tagAllVal);
       }
     },
 
@@ -879,8 +874,8 @@
 
       var visibility = this.model.get("visibility") || null;
 
-      if (visibility === 'private' || visibility === 'pending') {
-        visibility = 'all';
+      if (visibility === "private" || visibility === "pending") {
+        visibility = "all";
       }
       if (visibility === this.lastVisibility) {
         return;
@@ -1127,7 +1122,7 @@
       var timeout = setTimeout(function () {
         if (view.formAction !== "submit") {
           view.send();
-        };
+        }
       }, 25);
     },
 

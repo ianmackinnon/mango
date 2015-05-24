@@ -18,7 +18,7 @@ return obj["name"] + " | Edit events"
   <h3>Current events</h3>
 
   <ul class="tag_list">
-    %for event in obj["event_list"]:
+    %for event in obj["eventList"]:
     ${self.mini.event_li(event,
       link_url="%s/event/%s" % (obj["url"], event["id"]),
       unlink=True,
@@ -46,7 +46,7 @@ return obj["name"] + " | Edit events"
 
   <ul class="tag_list">
     <%
-       event_id_list = [event["id"] for event in obj["event_list"]]
+       event_id_list = [event["id"] for event in obj["eventList"]]
        %>
     %for event in event_list:
     %if event["id"] not in event_id_list:

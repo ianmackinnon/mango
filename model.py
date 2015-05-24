@@ -132,6 +132,14 @@ if __name__ == '__main__':
     set_database()
 
 
+def camel_case(text):
+    parts = re.split("_", text)
+    out = parts.pop(0)
+    for part in parts:
+        out += part[:1].upper()
+        out += part[1:].lower()
+    return out
+
 
 
 def short_name(name, allow_end_pipe=False):
@@ -286,7 +294,7 @@ class MangoEntity(object):
 
         if hasattr(self, "entity_v_id"):
             obj.update({
-                    "v_id": self.entity_v_id_value,
+                    "vId": self.entity_v_id_value,
                     "suggestion": True,
                     })
             
@@ -301,13 +309,14 @@ class MangoEntity(object):
                 value = value.strftime("%Y-%m-%d")
             if name.endswith("_time") and value:
                 value = value.strftime("%H:%M")
-                
-            obj[name] = value
+
+            obj[camel_case(name)] = value
 
         if hasattr(self, "obj_extra"):
             obj.update(self.obj_extra(obj))
 
-        obj.update(kwargs)
+        for name, value in kwargs.items():
+            obj[camel_case(name)] = value
             
         return obj
 

@@ -100,10 +100,10 @@ if org_packet:
   <span class="counts">
     %if org_packet:
     ${self.mini.counts(
-      org_packet["org_list"],
+      org_packet["orgList"],
       offset,
-      org_packet["org_length"],
-      not lookup and query_rewrite(dict(parameters, **{"offset": (offset or 0) + len(org_packet["org_list"])}))
+      org_packet["orgLength"],
+      not lookup and query_rewrite(dict(parameters, **{"offset": (offset or 0) + len(org_packet["orgList"])}))
       )}
     %endif
   </span>
@@ -120,7 +120,7 @@ if org_packet:
 
 <div class="column">
   %if org_packet:
-  %for org in org_packet["org_list"]:
+  %for org in org_packet["orgList"]:
   ${self.mini.org_box(org, parameters=parameters) | n}
   %endfor
   %endif

@@ -14,7 +14,7 @@
     </tr>
   </thead>
   <tbody>
-    %for org in org_packet["org_list"]:
+    %for org in org_packet["orgList"]:
     <tr>
       <td><a href="${url_rewrite(org["url"])}">${org["name"]}</a></td>
       <td>${org["description"] | n, markdown_safe, convert_links}</td>

@@ -771,7 +771,7 @@ class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
             type_title="Event",
             type_title_plural="Events",
             type_url="event",
-            type_tag_list="eventtag_list",
+            type_tag_list="eventtagList",
             type_entity_list="event_list",
             type_li_template="event_li",
             type_length="event_len",

@@ -18,7 +18,7 @@ return obj["name"] + " | Edit companies"
   <h3>Current companies</h3>
 
   <ul class="tag_list">
-    %for org in obj["org_list"]:
+    %for org in obj["orgList"]:
     ${self.mini.org_li(org,
       link_url="%s/organisation/%s" % (obj["url"], org["id"]),
       unlink=True,
@@ -46,7 +46,7 @@ return obj["name"] + " | Edit companies"
 
   <ul class="tag_list">
     <%
-       org_id_list = [org["id"] for org in obj["org_list"]]
+       org_id_list = [org["id"] for org in obj["orgList"]]
        %>
     %for org in org_list:
     %if org["id"] not in org_id_list:

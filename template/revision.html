@@ -101,8 +101,8 @@ suggestion = (not latest_a_time) or (obj_v.get("date") > latest_a_time)
 
 <%def name="field_row(field_name, field_type)">
 <%
-content = obj and obj.get(field_name, None)
-content_v = obj_v.get(field_name, None)
+content = obj and obj.get(camel_case(field_name), None)
+content_v = obj_v.get(camel_case(field_name), None)
 %>
 ${field_form(field_name, field_type, content_v)}
 <tr>

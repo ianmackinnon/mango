@@ -13,11 +13,13 @@ Mapping Application for NGOs
       python-setuptools sqlite3 libsqlite3-dev \
       redis-server mysql-server mysql-client libmysqlclient-dev \
       nodejs npm pylint
+      
+    sudo update-alternatives --install /usr/bin/node nodejs /usr/bin/nodejs 100
 
 If you're using a virtual Python environment, replace 'pip' below with the path to your virtual environment's pip path.
 
-    sudo pip install \
-      Mako tornado sqlalchemy markdown redis pysqlite BeautifulSoup4 \
+    sudo -H pip install --upgrade \
+      pip Mako tornado sqlalchemy markdown redis pysqlite BeautifulSoup4 \
       python-levenshtein mysql-python python-memcached BeautifulSoup \
       httplib2 pyelasticsearch geopy bleach
 
@@ -26,6 +28,12 @@ If you're using a virtual Python environment, replace 'pip' below with the path 
     sudo apt-get install openjdk-7-jre-headless
     # download elasticsearch deb from http://www.elasticsearch.org/download
     sudo dpkg -i elasticsearch-0...
+    
+### Upgrading the CAAT server
+
+    install-compilers
+    pip install --upgrade ...
+    uninstall compilers
 
 
 ### 3rd party static content

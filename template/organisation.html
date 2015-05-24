@@ -90,7 +90,7 @@ edit = parameters.get("view", None) == "edit"
       %endif
 
       <%
-         tag_keys, tag_dict = split_tags(obj["orgtag_list"])
+         tag_keys, tag_dict = split_tags(obj["orgtagList"])
          %>
       %for key in tag_keys:
       <h4>${key or "Other"}</h4>
@@ -137,7 +137,7 @@ edit = parameters.get("view", None) == "edit"
 	<input
            name="end_date"
            placeholder="Format is 'YYYY-MM-DD', eg. '2012-07-24'."
-           value="${obj and obj["end_date"] | n, form_date}"
+           value="${obj and obj["endDate"] | n, form_date}"
            >
       </label>
       <div class="form-hint">
@@ -171,10 +171,10 @@ edit = parameters.get("view", None) == "edit"
     %endif:
 
     <!-- Time Start -->
-    %if obj["end_date"]:
+    %if obj["endDate"]:
     <div class="mango-entity-section">
       <h3>Ceased operation</h3>
-      ${obj["end_date"] | n, page_date}
+      ${obj["endDate"] | n, page_date}
     </div>
     %endif
     <!-- Time End -->
@@ -201,7 +201,7 @@ edit = parameters.get("view", None) == "edit"
 
 
     <!-- Events Start -->
-    %if obj and (edit or not moderator or obj["event_list"]):
+    %if obj and (edit or not moderator or obj["eventList"]):
     <div class="mango-entity-section">
     <div class="action-bar no-border">
       <h3>Events</h3>
@@ -216,9 +216,9 @@ edit = parameters.get("view", None) == "edit"
       %endif
     </div>
 
-    %if obj["event_list"]:
+    %if obj["eventList"]:
     <ul class="event_list">
-      %for event in obj["event_list"]:
+      %for event in obj["eventList"]:
       ${self.mini.event_box(
         event, parameters=parameters,
         )}
@@ -240,7 +240,7 @@ edit = parameters.get("view", None) == "edit"
     <!-- Events End -->
 
     <!-- Contacts Start -->
-    %if obj and (edit or obj["contact_list"]):
+    %if obj and (edit or obj["contactList"]):
     <div class="mango-entity-section">
       <div class="action-bar no-border">
         <h3>Contact</h3>
@@ -256,7 +256,7 @@ edit = parameters.get("view", None) == "edit"
         
       </div>
       
-      %for contact in obj["contact_list"]:
+      %for contact in obj["contactList"]:
       ${self.mini.contact_box(
         contact,
         "%s%s" % (obj["url"], contact["url"]),
@@ -270,7 +270,7 @@ edit = parameters.get("view", None) == "edit"
     <!-- Contacts End -->
 
     <!-- Address Start -->
-    %if obj and (edit or obj["address_list"]):
+    %if obj and (edit or obj["addressList"]):
     <div class="mango-entity-section">
       <div class="action-bar no-border">
         <h3>Addresses</h3>
@@ -285,7 +285,7 @@ edit = parameters.get("view", None) == "edit"
         %endif
       </div>
 
-      %for address in obj["address_list"]:
+      %for address in obj["addressList"]:
       ${self.mini.address_box(
         address,
         "%s%s" % (obj["url"], address["url"]),
@@ -300,7 +300,7 @@ edit = parameters.get("view", None) == "edit"
     <!-- Address End -->
 
     <!-- Alias Start -->
-    %if obj and (edit and moderator or obj["orgalias_list"]):
+    %if obj and (edit and moderator or obj["orgaliasList"]):
     <div class="mango-entity-section">
       <div class="action-bar no-border">
         <h3>Aliases</h3>
@@ -314,9 +314,9 @@ edit = parameters.get("view", None) == "edit"
         %endif
       </div>
 
-      %if obj["orgalias_list"]:
+      %if obj["orgaliasList"]:
       <ul class="alias_list">
-        %for orgalias in obj["orgalias_list"]:
+        %for orgalias in obj["orgaliasList"]:
         ${self.mini.alias_li(
         orgalias, visibility=True, parameters=parameters,
         )}
@@ -333,8 +333,8 @@ edit = parameters.get("view", None) == "edit"
 </div>
 
 <!-- Note Start -->
-%if obj and (edit or obj["note_list"]):
-${self.mini.render_note_section(obj["note_list"],
+%if obj and (edit or obj["noteList"]):
+${self.mini.render_note_section(obj["noteList"],
   obj["url"] + "/note",
   obj["url"],
   note_search,

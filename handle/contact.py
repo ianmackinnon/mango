@@ -249,7 +249,7 @@ class ContactHandler(BaseContactHandler, MangoEntityHandlerMixin):
         else:
             entity = None
             if obj:
-                parent_list = obj["org_list"] + obj["event_list"]
+                parent_list = obj["orgList"] + obj["eventList"]
                 entity = len(parent_list) == 1 and parent_list[0] or None
             self.render(
                 'contact.html',

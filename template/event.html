@@ -85,7 +85,7 @@ edit = parameters.get("view", None) == "edit"
       %endif
 
       <%
-         tag_keys, tag_dict = split_tags(obj["eventtag_list"])
+         tag_keys, tag_dict = split_tags(obj["eventtagList"])
          %>
       %for key in tag_keys:
       <h4>${key or "Other"}</h4>
@@ -135,7 +135,7 @@ edit = parameters.get("view", None) == "edit"
 	<input
            name="start_date"
            placeholder="Format is 'YYYY-MM-DD', eg. '2012-07-24'."
-           value="${obj and obj["start_date"] | n, form_date}"
+           value="${obj and obj["startDate"] | n, form_date}"
            >
       </label>
       <label name="end_date" status="${obj and 'good' or ''}">
@@ -144,25 +144,25 @@ edit = parameters.get("view", None) == "edit"
 	<input
            name="end_date"
            placeholder="Format is 'YYYY-MM-DD', eg. '2012-07-24'."
-           value="${obj and obj["end_date"] | n, form_date}"
+           value="${obj and obj["endDate"] | n, form_date}"
            >
       </label>
-      <label name="start_time" status="${obj and obj["start_time"] and 'good' or ''}">
+      <label name="start_time" status="${obj and obj["startTime"] and 'good' or ''}">
 	<span>Start Time</span>
 	<span class="requirement"></span>
 	<input
            name="start_time"
            placeholder="Format is 'HH:MM', eg. '19:30'. Times in UK time zone."
-           value="${obj and obj["start_time"] | n, form_time}"
+           value="${obj and obj["startTime"] | n, form_time}"
            >
       </label>
-      <label name="end_time" status="${obj and obj["end_time"] and 'good' or ''}">
+      <label name="end_time" status="${obj and obj["endTime"] and 'good' or ''}">
 	<span>End Time</span>
 	<span class="requirement"></span>
 	<input
            name="end_time"
            placeholder="Format is 'HH:MM', eg. '19:30'. Times in UK time zone."
-           value="${obj and obj["end_time"] | n, form_time}"
+           value="${obj and obj["endTime"] | n, form_time}"
            >
       </label>
       <div class="form-hint">
@@ -198,7 +198,7 @@ edit = parameters.get("view", None) == "edit"
     <!-- Time Start -->
     <div class="mango-entity-section">
       <h3>Time</h3>
-      ${obj["start_date"] | n, page_date}
+      ${obj["startDate"] | n, page_date}
     </div>
     <!-- Time End -->
 
@@ -221,7 +221,7 @@ edit = parameters.get("view", None) == "edit"
 
 
     <!-- Organisations Start -->
-    %if obj and (edit or not moderator or obj["org_list"]):
+    %if obj and (edit or not moderator or obj["orgList"]):
     <div class="mango-entity-section">
     <div class="action-bar no-border">
       <h3>Companies</h3>
@@ -236,9 +236,9 @@ edit = parameters.get("view", None) == "edit"
       %endif
     </div>
 
-    %if obj["org_list"]:
+    %if obj["orgList"]:
     <ul class="org_list">
-      %for org in obj["org_list"]:
+      %for org in obj["orgList"]:
       ${self.mini.org_box(
         org, parameters=parameters,
         )}
@@ -251,7 +251,7 @@ edit = parameters.get("view", None) == "edit"
     <!-- Organisations End -->
 
     <!-- Contacts Start -->
-    %if obj and (edit or obj["contact_list"]):
+    %if obj and (edit or obj["contactList"]):
     <div class="mango-entity-section">
       <div class="action-bar no-border">
         <h3>Contact</h3>
@@ -267,7 +267,7 @@ edit = parameters.get("view", None) == "edit"
 
       </div>
 
-      %for contact in obj["contact_list"]:
+      %for contact in obj["contactList"]:
       ${self.mini.contact_box(
         contact,
         "%s%s" % (obj["url"],
@@ -282,7 +282,7 @@ edit = parameters.get("view", None) == "edit"
     <!-- Contacts End -->
 
     <!-- Address Start -->
-    %if obj and (edit or obj["address_list"]):
+    %if obj and (edit or obj["addressList"]):
     <div class="mango-entity-section">
       <div class="action-bar no-border">
         <h3>Addresses</h3>
@@ -297,7 +297,7 @@ edit = parameters.get("view", None) == "edit"
         %endif
       </div>
 
-      %for address in obj["address_list"]:
+      %for address in obj["addressList"]:
       ${self.mini.address_box(
         address,
         "%s%s" % (obj["url"],
@@ -343,8 +343,8 @@ edit = parameters.get("view", None) == "edit"
 </div>
 
 <!-- Note Start -->
-%if obj and (edit and obj["note_list"]):
-${self.mini.render_note_section(obj["note_list"],
+%if obj and (edit and obj["noteList"]):
+${self.mini.render_note_section(obj["noteList"],
   obj["url"] + "/note",
   obj["url"],
   note_search,

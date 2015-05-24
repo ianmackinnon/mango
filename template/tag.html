@@ -77,7 +77,7 @@ if obj:
       %endif
       <label name="name_short">
 	<span>Short Name</span>
-	<input name="name_short" disabled value="${obj and obj["name_short"] or ''}">
+	<input name="name_short" disabled value="${obj and obj["nameShort"] or ''}">
       </label>
       <label name="description" class="textarea">
         <span>Description</span>
@@ -135,7 +135,7 @@ if obj:
 
 %if obj:
 %if "note_list" in obj:
-${self.mini.render_note_section(obj["note_list"],
+${self.mini.render_note_section(obj["noteList"],
     obj["url"] + "/note", obj["url"],
     note_search, note_order, unlink_url=obj["url"],
     add_button=moderator,

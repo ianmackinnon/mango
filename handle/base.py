@@ -30,7 +30,7 @@ from tornado.web import _has_stream_request_body
 
 import geo
 
-from model import Session, Address, User
+from model import Session, Address, User, camel_case
 
 from base_moderation import has_pending, has_address_not_found
 
@@ -84,6 +84,7 @@ def nbsp(text):
 def markdown_safe(text):
     markdown = md.convert(text)
     clean = bleach.clean(
+        markdown,
         tags=[
             "a",
             "p",
@@ -514,6 +515,7 @@ class BaseHandler(RequestHandler):
             "page_period": page_period,
             "markdown_safe": markdown_safe,
             "convert_links": convert_links,
+            "camel_case": camel_case,
             "current_user": self.current_user,
             "moderator": self.moderator,
             "contributor": self.contributor,
@@ -1122,11 +1124,11 @@ class MangoEntityListHandlerMixin(RequestHandler):
 class MarkdownSafeHandler(RequestHandler):
     def post(self):
         text = self.get_argument("text", "")
-        convert_links = self.get_argument("convertLinks", None)
+        autolinks = self.get_argument("convertLinks", None)
         
         html_safe = markdown_safe(text)
 
-        if convert_links:
+        if autolinks:
             html_safe = convert_links(html_safe)
             
         self.write(html_safe)

@@ -1,8 +1,7 @@
-"use strict";
-
-/*global window, jQuery, _, Backbone, m, google */
+/*global window, jQuery, _, Backbone, m, google, MarkerClusterer */
 
 (function ($) {
+  "use strict";
 
   // Map
 
@@ -81,8 +80,8 @@
 
       var map = this.map;
 
-      this.map.mapTypes.set('grey', greyMapType);
-      this.map.setMapTypeId('grey');
+      this.map.mapTypes.set("grey", greyMapType);
+      this.map.setMapTypeId("grey");
 
       return this;
     },
@@ -191,13 +190,13 @@
           map: mapView.map,
           draggable: true
         });
-        google.maps.event.addListener(marker, 'drag', function () {
+        google.maps.event.addListener(marker, "drag", function () {
           splitCallback(marker.getPosition());
         });
         mapView.markers.push(marker);
       };
 
-      google.maps.event.addListener(mapView.map, 'click', function (event) {
+      google.maps.event.addListener(mapView.map, "click", function (event) {
         var pos = event.latLng;
         putMarker(pos.lat(), pos.lng());
         splitCallback(pos);
@@ -265,7 +264,7 @@
       }
 
       if (onClick) {
-        google.maps.event.addListener(marker, 'click', onClick);
+        google.maps.event.addListener(marker, "click", onClick);
       }
       this.dots.push(marker);
     },
