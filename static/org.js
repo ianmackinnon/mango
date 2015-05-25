@@ -3,139 +3,6 @@
 (function ($) {
   "use strict";
 
-  // Marker
-
-  var Marker = Backbone.Model.extend();
-
-  var MarkerViewDot = Backbone.View.extend({
-    initialize: function () {
-      this.mapView = this.options.mapView;
-    },
-
-    render: function () {
-      var view = this;
-
-      var onClick = function (event) {
-        var href = m.urlRewrite(view.model.get("url"), m.parameters);
-        window.document.location.href = href;
-      };
-
-      view.mapView.addDot(
-        this.model.get("latitude"),
-        this.model.get("longitude"),
-        undefined,
-        this.model.get("name"),
-        onClick
-      );
-
-      return this;
-    }
-  });
-
-  // Address
-
-  var AddressViewRow = Backbone.View.extend({
-    tagName: "div",
-    className: "address-row",
-    templateName: "address-row.html",
-
-    initialize: function () {
-      this.mapView = this.options.mapView;
-    },
-
-    render: function () {
-      var view = this;
-
-      $(this.el).html(m.template(this.templateName, {
-        address: this.model.toJSON(),
-        m: m,
-        parameters: m.parameters
-      }));
-
-      var $circle = view.mapView.addMarker(
-        this.model.get("latitude"),
-        this.model.get("longitude")
-      );
-      var $pin = $("<div class='pin'>").append($circle);
-      view.$el.prepend($pin);
-
-      return this;
-    }
-  });
-
-  var AddressViewDot = Backbone.View.extend({
-    initialize: function () {
-      this.mapView = this.options.mapView;
-    },
-
-    render: function () {
-      var view = this;
-
-      var onClick = function (event) {
-        var href = view.model.collection.org.get("url");
-        window.document.location.href = href;
-      };
-
-      view.mapView.addDot(
-        this.model.get("latitude"),
-        this.model.get("longitude"),
-        undefined,
-        this.model.collection.org.get("name"),
-        onClick
-      );
-
-      return this;
-    }
-  });
-
-  var AddressCollectionViewRows = Backbone.View.extend({
-    tagName: "div",
-    className: "org_address_list",
-
-    initialize: function () {
-      var view = this;
-
-      view.mapView = this.options.mapView;
-      view.limit = this.options.limit;
-
-      this._modelViews = [];
-      this.collection.each(function (model) {
-        if (!!model.get("latitude") && !view.mapView.contains(
-               model.get("latitude"),
-          model.get("longitude")
-        )) {
-          view._modelViews.push(new AddressViewDot({
-            model: model,
-            mapView: view.mapView
-          }));
-          return;
-        }
-        if (view.limit.offset <= 0 && view.limit.offset > -view.limit.limit) {
-          view._modelViews.push(new AddressViewRow({
-            model: model,
-            mapView: view.mapView
-          }));
-          view.limit.offset -= 1;
-          return;
-        }
-        view._modelViews.push(new AddressViewDot({
-          model: model,
-          mapView: view.mapView
-        }));
-        view.limit.offset -= 1;
-      });
-    },
-
-    render: function () {
-      var view = this;
-      view.$el.empty();
-      _(this._modelViews).each(function (modelView) {
-        view.$el.append(modelView.render().$el);
-      });
-      return this;
-    }
-  });
-
   // Org
 
   window.Org = Backbone.Model.extend({
@@ -163,51 +30,60 @@
       this.limit = this.options.limit;
     },
 
-    render: function () {
+    render: function (callback) {
       var view = this;
 
-      var $this = m.$template(this.templateName, {
+      m.templator.renderSync(this.templateName, {
         org: this.model.toJSON(),
         m: m,
         parameters: m.parameters,
         note: false
-      });
+      }, function (html) {
+        var $view = $(html);
 
-      var insert = true;
+        var insert = true;
 
-      if (this.limit.offset < -this.limit.limit) {
-        insert = false;
-      }
-
-      var addressCollectionView = new AddressCollectionViewRows({
-        collection: this.model.addressCollection,
-        mapView: this.mapView,
-        limit: this.limit
-      });
-
-      addressCollectionView.render();
-
-      if (!this.model.addressCollection.length) {
-        this.limit.offset -= 1;
-      }
-
-      if (this.limit.offset > 0 || this.limit.offset === 0) {
-        insert = false;
-      }
-
-      if (!insert) {
-        return;
-      }
-
-      $(this.el).empty().append($this);
-
-      var $addressList = this.$el.find(".org_address_list");
-      if ($addressList.length) {
-        if (addressCollectionView.$el.find(".address-row").length) {
-          this.$el.find(".org_address_list")
-            .replaceWith(addressCollectionView.$el);
+        if (view.limit.offset < -view.limit.limit) {
+          insert = false;
         }
-      }
+
+        var addressCollectionView = new AddressCollectionViewRows({
+          collection: view.model.addressCollection,
+          mapView: view.mapView,
+          limit: view.limit,
+          color: undefined,
+          entityName: "org"
+        });
+
+        addressCollectionView.render();
+
+        if (!view.model.addressCollection.length) {
+          view.limit.offset -= 1;
+        }
+
+        if (view.limit.offset > 0 || view.limit.offset === 0) {
+          insert = false;
+        }
+
+        if (!insert) {
+          return;
+        }
+
+        $(view.el).empty().append($view);
+
+        var $addressList = view.$el.find(".org_address_list");
+        if ($addressList.length) {
+          if (addressCollectionView.$el.find(".address-row").length) {
+            view.$el.find(".org_address_list")
+              .replaceWith(addressCollectionView.$el);
+          }
+        }
+
+        if (_.isFunction(callback)) {
+          callback();
+        }
+
+      });
 
       return this;
     }
@@ -254,28 +130,35 @@
 
     initialize: function () {
       var view = this;
-      var limit = null;
+      var limit = {
+        offset: null,  // counter
+        limit: null
+      };
 
       view.mapView = this.options.mapView;
-      view.offset = this.options.offset;
-      view.limit = this.options.limit;
+      view.offset = this.options.offset || 0;
+      view.limit = this.options.limit || 0;
 
       this._modelViews = [];
-      this._addressModelViews = [];
       view.many = null;
-      this.mapView.cluster(this.collection.markerList && this.collection.markerList.length > 1000 && m.parameters.visibility == "all");
+      this.mapView.cluster(
+        this.collection.markerList &&
+          this.collection.markerList.length > 1000 &&
+          m.parameters.visibility == "all");
+
       if (this.collection.markerList) {
+        // ?
         view.many = true;
+        limit.offset = 0;  // Server is handling offsets
+        limit.limit = view.limitOrg;
+
         _.each(this.collection.markerList, function (model) {
           view._modelViews.push(new MarkerViewDot({
             model: new Marker(model),
             mapView: view.mapView
           }));
         });
-        limit = {
-          offset: 0,  // Server is handling offsets
-          limit: view.limitOrg
-        };
+
         this.collection.each(function (model) {
           view._modelViews.push(new window.OrgViewBox({
             model: model,
@@ -283,23 +166,27 @@
             limit: limit
           }));
         });
+
       } else if (this.collection.addressLength() > view.limit * 3) {
         // Just dots if there are more than 3 pages
         view.many = true;
+
         this.collection.each(function (model) {
           model.addressCollection.each(function (addressModel) {
             view._modelViews.push(new AddressViewDot({
               model: addressModel,
-              mapView: view.mapView
+              mapView: view.mapView,
+              entityName: "org"
             }));
           });
         });
+
       } else {
+        // Markers for this page, dots for others
         view.many = false;
-        limit = {
-          offset: view.offset,  // Browser is handling offsets
-          limit: view.limit
-        };
+        limit.offset = view.offset;  // Browser is handling offsets
+        limit.limit = view.limit;
+
         this.collection.each(function (model) {
           view._modelViews.push(new window.OrgViewBox({
             model: model,
@@ -320,14 +207,11 @@
       }
 
       _(this._modelViews).each(function (modelView) {
-        var viewRendered = modelView.render();
-        if (!!viewRendered) {
-          $(view.el).append(viewRendered.$el);
-        }
+        modelView.render(function () {
+          $(view.el).append(modelView.$el);
+        });
       });
-      _(this._addressModelViews).each(function (addressModelView) {
-        addressModelView.render();
-      });
+
       return this;
     }
   });
@@ -355,7 +239,7 @@
       "offset": [parseInt, false, null, 0, null],
       "tag": [m.argumentMulti, m.argumentMulti, m.compareUnsortedList, [], m.multiToString],
       "tagAll": [m.argumentCheckbox, false, null, 0, m.checkboxToString],
-      "visibility": [m.argumentVisibility, false, null, "public", null]
+      "visibility": [m.argumentVisibility, false, m.compareVisibility, "public", null]
     },
 
     defaultParameters: function () {
@@ -401,6 +285,7 @@
             value = null;
           }
         }
+
         attributes[key] = value;
       });
       return attributes;
@@ -416,7 +301,7 @@
       m.log.debug("s2", _.clone(attributes));
 
       _.each(attributes, function (value, key) {
-        var c;
+        var c;  // unused
         if (model.get(key) === undefined) {
           return;
         }
@@ -463,6 +348,7 @@
           !attributes.hasOwnProperty("offset") &&
           !!this.get("offset")
          ) {
+        // We're changing state, so reset offset to 0 like a new page.
         attributes.offset = null;
       }
 
@@ -563,7 +449,7 @@
         },
         error: function (collection, response) {
           if (response.statusText !== "abort") {
-            console.log("error", collection, response);
+            console.error("error", collection, response);
           }
           if (!!callback) {
             model.lastResult = null;
@@ -790,11 +676,10 @@
       this.$social = this.options.$social;
       this.mapView = this.options.mapView;
 
-      this.formAction = null;
+      this.formsAction = null;
 
       var data = this.serializeForm(this.options.$form);
       m.log.debug("set serializeForm", data);
-
       this.model.set(data);
 
       this.activeSearches = 0;
@@ -802,10 +687,13 @@
       var view = this;
 
       this.mapView.addMapListener("idle", function () {
+
         if (!view.mapView.mapReady) {
           // Set map from object.
+          m.log.debug("set mapReady", data);
           view.mapView.mapReady = true;
           view.setMapLocation(view.model.get("location"));
+          m.log.debug("Send map ready");
           view.send();
           return;
         }
@@ -827,11 +715,12 @@
           return;
         }
 
-        var data = {
+        data = {
           location: mapGeobox
         };
         m.log.debug("set mapIdle", data);
         view.model.set(data);
+        m.log.debug("Send map idle");
         view.send();
       });
 
@@ -845,22 +734,37 @@
     },
 
     render: function () {
+      var view = this;
+
       var hint = null;
       if (this.model.lastResult && this.model.lastResult.hint) {
         hint = this.model.lastResult.hint;
       }
-      $(this.el).html(m.template(this.templateName, {
-        currentUser: m.currentUser,
-        orgSearch: this.model.toJSON(),
-        hint: hint
-      }));
-      this.setupTagInput();
 
-      var $inputTag = $("input[name='tag']");
-      $inputTag = $inputTag.next().find("input");
-      $inputTag.width(400);
+      m.templator.load([
+        view.templateName,
+        "visibility-search-input.html",
+        "visibility-bar.html"
+      ], function () {
+        var html = m.templator.render(view.templateName, {
+          currentUser: m.currentUser,
+          orgSearch: view.model.toJSON(),
+          hint: hint
+        });
 
-      this.addThrobber();
+        var $el = $(html);
+        $(view.$el).empty().append($el);
+
+        view.setupTagInput();
+
+        var $inputTag = $("input[name='tag']");
+        $inputTag = $inputTag.next().find("input");
+        $inputTag.width(400);
+
+        view.addThrobber();
+
+      });
+
       return this;
     },
 
@@ -923,6 +827,7 @@
       var timeout = setTimeout(function () {
         view.formAction = null;
       }, 25);
+      m.log.debug("Send submit");
       this.send(false);
     },
 
@@ -1125,8 +1030,9 @@
             var data = {
               offset: offset
             };
-            m.log.debug("set pageclick", data);
+            m.log.debug("set pageclick 1", data);
             orgSearchView.model.set(data);
+            m.log.debug("Send pageclick 1");
             orgSearchView.send();
           };
         };
@@ -1171,8 +1077,9 @@
             var data = {
               offset: page * orgSearchView.limit
             };
-            m.log.debug("set pageclick", data);
+            m.log.debug("set pageclick 2", data);
             orgSearchView.model.set(data);
+            m.log.debug("Send pageclick 2");
             orgSearchView.send();
           };
         };
@@ -1220,6 +1127,7 @@
       this.model.set(data);
       var timeout = setTimeout(function () {
         if (view.formAction !== "submit") {
+          m.log.debug("Send form change");
           view.send();
         }
       }, 25);
@@ -1232,6 +1140,8 @@
       data = _.extend(data, this.model.attributesFromQueryString(search));
       m.log.debug("set popstate", data);
       this.model.set(data);
+
+      m.log.debug("Send popstate");
       this.send();
     }
 

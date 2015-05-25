@@ -156,14 +156,20 @@ lint :
 
 	jshint \
 	  static/address.js \
+	  static/entity.js \
 	  static/org.js \
 	  static/event.js \
 	  static/map.js \
-	  static/mango.js
+	  static/mango.js \
+	  static/geobox.js \
+	  static/tag.js
 
 	jscs -c test/jscs.json -v \
 	  static/address.js \
+	  static/entity.js \
 	  static/org.js \
 	  static/event.js \
 	  static/map.js \
-	  static/mango.js
+	  static/mango.js \
+	  static/geobox.js \
+	  static/tag.js

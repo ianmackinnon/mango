@@ -84,7 +84,7 @@ if (m.moderator && parameters.view == "edit") {
 
   <% if (parameters.visibility && "public" in tag) { %>
   &nbsp;
-  <%=m.template("visibility-bar.html", {obj: tag})%>
+  <%=m.templator.render("visibility-bar.html", {obj: tag})%>
   <% } %>
 
 </li>

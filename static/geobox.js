@@ -1,8 +1,7 @@
-"use strict";
-
 /*global window, jQuery, _, google */
 
 (function ($) {
+  "use strict";
 
   var latitude = function (value) {
     value = parseFloat(value);
@@ -110,7 +109,7 @@
   };
 
   Geobox.prototype.setFromCoordsString = function (string) {
-    if (! _.isString(string)) {
+    if (!_.isString(string)) {
       throw new BadArgumentException();
     }
     var coords = string.split(",");
@@ -150,7 +149,7 @@
     );
   };
 
-  Geobox.prototype.setFromGoogleBounds = function(bounds) {
+  Geobox.prototype.setFromGoogleBounds = function (bounds) {
     if (!(bounds instanceof google.maps.LatLngBounds)) {
       throw new BadArgumentException();
     }
@@ -193,7 +192,7 @@
       north: this.north,
       west: this.west,
       east: this.east
-    }
+    };
   };
 
   Geobox.prototype.coordsDifference = function (g2) {
@@ -217,7 +216,7 @@
       return true;
     }
     return this.coordsDifference(g2);
-  }
+  };
 
   Geobox.prototype.area = function () {
     var radiusOfEarth = 6378.1;

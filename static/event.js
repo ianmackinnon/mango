@@ -3,140 +3,6 @@
 (function ($) {
   "use strict";
 
-  // Marker
-
-  var Marker = Backbone.Model.extend();
-
-  var MarkerViewDot = Backbone.View.extend({
-    initialize: function () {
-      this.mapView = this.options.mapView;
-    },
-
-    render: function () {
-      var view = this;
-
-      var onClick = function (event) {
-        var href = m.urlRoot + view.model.get("url").substr(1);
-        window.document.location.href = href;
-      };
-
-      view.mapView.addDot(
-        this.model.get("latitude"),
-        this.model.get("longitude"),
-        "5577ff",
-        this.model.get("name"),
-        onClick
-      );
-
-      return this;
-    }
-  });
-
-  // Address
-
-  var AddressViewRow = Backbone.View.extend({
-    tagName: "div",
-    className: "address-row",
-    templateName: "address-row.html",
-
-    initialize: function () {
-      this.mapView = this.options.mapView;
-    },
-
-    render: function () {
-      var view = this;
-
-      $(this.el).html(m.template(this.templateName, {
-        address: this.model.toJSON(),
-        m: m,
-        parameters: m.parameters
-      }));
-
-      var $circle = view.mapView.addMarker(
-        this.model.get("latitude"),
-        this.model.get("longitude"),
-        "5577ff"
-      );
-      var $pin = $("<div class='pin'>").append($circle);
-      view.$el.prepend($pin);
-
-      return this;
-    }
-  });
-
-  var AddressViewDot = Backbone.View.extend({
-    initialize: function () {
-      this.mapView = this.options.mapView;
-    },
-
-    render: function () {
-      var view = this;
-
-      var onClick = function (event) {
-        var href = view.model.collection.event.get("url");
-        window.document.location.href = href;
-      };
-
-      view.mapView.addDot(
-        this.model.get("latitude"),
-        this.model.get("longitude"),
-        undefined,
-        this.model.collection.event.get("name"),
-        onClick
-      );
-
-      return this;
-    }
-  });
-
-  var AddressCollectionViewRows = Backbone.View.extend({
-    tagName: "div",
-    className: "event_address_list",
-
-    initialize: function () {
-      var view = this;
-
-      view.mapView = this.options.mapView;
-      view.limit = this.options.limit;
-
-      this._modelViews = [];
-      this.collection.each(function (model) {
-        if (!!model.get("latitude") && !view.mapView.contains(
-          model.get("latitude"),
-          model.get("longitude")
-        )) {
-          view._modelViews.push(new AddressViewDot({
-            model: model,
-            mapView: view.mapView
-          }));
-          return;
-        }
-        if (view.limit.offset <= 0 && view.limit.offset > -view.limit.limit) {
-          view._modelViews.push(new AddressViewRow({
-            model: model,
-            mapView: view.mapView
-          }));
-          view.limit.offset -= 1;
-          return;
-        }
-        view._modelViews.push(new AddressViewDot({
-          model: model,
-          mapView: view.mapView
-        }));
-        view.limit.offset -= 1;
-      });
-    },
-
-    render: function () {
-      var view = this;
-      view.$el.empty();
-      _(this._modelViews).each(function (modelView) {
-        view.$el.append(modelView.render().$el);
-      });
-      return this;
-    }
-  });
-
   // Event
 
   window.Event = Backbone.Model.extend({
@@ -164,51 +30,71 @@
       this.limit = this.options.limit;
     },
 
-    render: function () {
+    render: function (callback) {
       var view = this;
 
-      var $this = m.$template(this.templateName, {
+      m.templator.renderSync(this.templateName, {
         event: this.model.toJSON(),
         m: m,
         parameters: m.parameters,
         note: false
-      });
+      }, function (html) {
+        var $el = $(html);
 
-      var insert = true;
-
-      if (this.limit.offset < -this.limit.limit ) {
-        insert = false;
-      }
-
-      var addressCollectionView = new AddressCollectionViewRows({
-        collection: this.model.addressCollection,
-        mapView: this.mapView,
-        limit: this.limit
-      });
-
-      addressCollectionView.render();
-
-      if (!this.model.addressCollection.length) {
-        this.limit.offset -= 1;
-      }
-
-      if (this.limit.offset > 0 || this.limit.offset === 0) {
-        insert = false;
-      }
-
-      if (!insert) {
-        return;
-      }
-
-      $(this.el).empty().append($this);
-
-      var $addressList = this.$el.find(".event_address_list");
-      if ($addressList.length) {
-        if (addressCollectionView.$el.find(".address-row").length) {
-          this.$el.find(".event_address_list")
-            .replaceWith(addressCollectionView.$el);
+        if (view.model.get("description")) {
+          $eventDescription = $el.find("div.event_description");
+          m.markdownSafe(
+            view.model.get("description"),
+            false,
+            function (html) {
+              $eventDescription.html(html);
+            }
+          );
         }
-      }
+
+        var insert = true;
+
+        if (view.limit.offset < -view.limit.limit) {
+          insert = false;
+        }
+
+        var addressCollectionView = new AddressCollectionViewRows({
+          collection: view.model.addressCollection,
+          mapView: view.mapView,
+          limit: view.limit,
+          color: "5577ff",
+          entityName: "event"
+        });
+
+        addressCollectionView.render();
+
+        if (!view.model.addressCollection.length) {
+          view.limit.offset -= 1;
+        }
+
+        if (view.limit.offset > 0 || view.limit.offset === 0) {
+          insert = false;
+        }
+
+        if (!insert) {
+          return;
+        }
+
+        $(view.el).empty().append($el);
+
+        var $addressList = view.$el.find(".event_address_list");
+        if ($addressList.length) {
+          if (addressCollectionView.$el.find(".address-row").length) {
+            view.$el.find(".event_address_list")
+              .replaceWith(addressCollectionView.$el);
+          }
+        }
+
+        if (_.isFunction(callback)) {
+          callback();
+        }
+
+      });
 
       return this;
     }
@@ -254,27 +140,31 @@
 
     initialize: function () {
       var view = this;
-      var limit = null;
+      var limit = {
+        offset: null,  // counter
+        limit: null
+      };
 
       view.mapView = this.options.mapView;
       view.offset = this.options.offset || 0;
       view.limit = this.options.limit || 0;
 
       this._modelViews = [];
-      this._addressModelViews = [];
       view.many = null;
+
       if (this.collection.markerList) {
+        // ?
         view.many = true;
+        limit.offset = 0;  // Server is handling offsets
+        limit.limit = view.limitEvent;
+
         _.each(this.collection.markerList, function (model) {
           view._modelViews.push(new MarkerViewDot({
             model: new Marker(model),
             mapView: view.mapView
           }));
         });
-        limit = {
-          offset: 0,  // Server is handling offsets
-          limit: view.limitEvent
-        };
+
         this.collection.each(function (model) {
           view._modelViews.push(new window.EventViewBox({
             model: model,
@@ -282,23 +172,27 @@
             limit: limit
           }));
         });
+
       } else if (this.collection.addressLength() > view.limit * 3) {
         // Just dots if there are more than 3 pages
         view.many = true;
+
         this.collection.each(function (model) {
           model.addressCollection.each(function (addressModel) {
             view._modelViews.push(new AddressViewDot({
               model: addressModel,
-              mapView: view.mapView
+              mapView: view.mapView,
+              entityName: "event"
             }));
           });
         });
+
       } else {
+        // Markers for this page, dots for others
         view.many = false;
-        limit = {
-          offset: view.offset,  // Browser is handling offsets
-          limit: view.limit
-        };
+        limit.offset = view.offset;  // Browser is handling offsets
+        limit.limit = view.limit;
+
         this.collection.each(function (model) {
           view._modelViews.push(new window.EventViewBox({
             model: model,
@@ -319,14 +213,11 @@
       }
 
       _(this._modelViews).each(function (modelView) {
-        var viewRendered = modelView.render();
-        if (!!viewRendered) {
-          $(view.el).append(viewRendered.$el);
-        }
+        modelView.render(function () {
+          $(view.el).append(modelView.$el);
+        });
       });
-      _(this._addressModelViews).each(function (addressModelView) {
-        addressModelView.render();
-      });
+
       return this;
     }
   });
@@ -355,7 +246,7 @@
       "offset": [parseInt, false, null, 0, null],
       "tag": [m.argumentMulti, m.argumentMulti, m.compareUnsortedList, [], m.multiToString],
       "tagAll": [m.argumentCheckbox, false, null, 0, m.checkboxToString],
-      "visibility": [m.argumentVisibility, false, null, "public", null]
+      "visibility": [m.argumentVisibility, false, m.compareVisibility, "public", null]
     },
 
     defaultParameters: function () {
@@ -401,6 +292,7 @@
             value = null;
           }
         }
+
         attributes[key] = value;
       });
       return attributes;
@@ -416,7 +308,7 @@
       m.log.debug("s2", _.clone(attributes));
 
       _.each(attributes, function (value, key) {
-        var c;
+        var c;  // unused
         if (model.get(key) === undefined) {
           return;
         }
@@ -463,6 +355,7 @@
           !attributes.hasOwnProperty("offset") &&
           !!this.get("offset")
          ) {
+        // We're changing state, so reset offset to 0 like a new page.
         attributes.offset = null;
       }
 
@@ -563,7 +456,7 @@
         },
         error: function (collection, response) {
           if (response.statusText !== "abort") {
-            console.log("error", collection, response);
+            console.error("error", collection, response);
           }
           if (!!callback) {
             model.lastResult = null;
@@ -741,12 +634,6 @@
 
     },
 
-    changeVisibility: function () {
-      var visibility = this.model.get("visibility") || "public";
-      m.setVisibility(visibility);
-      this.fetchEventtagList();
-    },
-
     changeTagAll: function () {
       var tagAll = this.model.get("tagAll");
       var tagAllVal = !!tagAll;
@@ -755,6 +642,12 @@
       if ($input.prop("checked") !== tagAllVal) {
         $input.prop("checked", tagAllVal);
       }
+    },
+
+    changeVisibility: function () {
+      var visibility = this.model.get("visibility") || "public";
+      m.setVisibility(visibility);
+      this.fetchEventList();
     },
 
     setMapLocation: function (location) {
@@ -817,8 +710,10 @@
 
         if (!view.mapView.mapReady) {
           // Set map from object.
+          m.log.debug("set mapReady", data);
           view.mapView.mapReady = true;
           view.setMapLocation(view.model.get("location"));
+          m.log.debug("Send map ready");
           view.send();
           return;
         }
@@ -840,11 +735,12 @@
           return;
         }
 
-        var data = {
+        data = {
           location: mapGeobox
         };
         m.log.debug("set mapIdle", data);
         view.model.set(data);
+        m.log.debug("Send map idle");
         view.send();
       });
 
@@ -858,12 +754,28 @@
     },
 
     render: function () {
-      $(this.el).html(m.template(this.templateName, {
-        currentUser: m.currentUser,
-        eventSearch: this.model.toJSON()
-      }));
-      this.setupTagInput();
-      this.addThrobber();
+      var view = this;
+
+      m.templator.load([
+        view.templateName,
+        "visibility-search-input.html",
+        "visibility-bar.html"
+      ], function () {
+
+        var html = m.templator.render(view.templateName, {
+          currentUser: m.currentUser,
+          eventSearch: view.model.toJSON()
+        });
+
+        var $el = $(html);
+        $(view.$el).empty().append($el);
+
+        view.setupTagInput();
+
+        view.addThrobber();
+
+      });
+
       return this;
     },
 
@@ -893,6 +805,7 @@
         return;
       }
       var view = this;
+      var limit = 20;
 
       var $input = view.$el.find("input[name='tag']");
       this.tagReady = false;
@@ -925,6 +838,7 @@
       var timeout = setTimeout(function () {
         view.formAction = null;
       }, 25);
+      m.log.debug("Send submit");
       this.send(false);
     },
 
@@ -975,6 +889,7 @@
           offset: eventSearchView.model.get("offset"),
           limit: eventSearchView.limit
         });
+
         var rendered = eventCollectionView.render();
         eventSearchView.$results.replaceWith(rendered.el);
 
@@ -1029,8 +944,9 @@
             var data = {
               offset: offset
             };
-            m.log.debug("set pageclick", data);
+            m.log.debug("set pageclick 1", data);
             eventSearchView.model.set(data);
+            m.log.debug("Send pageclick 1");
             eventSearchView.send();
           };
         };
@@ -1075,15 +991,18 @@
             var data = {
               offset: page * eventSearchView.limit
             };
-            m.log.debug("set pageclick", data);
+            m.log.debug("set pageclick 2", data);
             eventSearchView.model.set(data);
+            m.log.debug("Send pageclick 2");
             eventSearchView.send();
           };
         };
 
+        var text;
+        var currentPage;
         for (page = 0; page < length / eventSearchView.limit; page += 1) {
-          var text = "page " + (page + 1);
-          var currentPage = eventSearchView.model.get("offset") || 0;
+          text = "page " + (page + 1);
+          currentPage = eventSearchView.model.get("offset") || 0;
           if (page * eventSearchView.limit === currentPage) {
             $pageSpan = $("<span>").text(text);
             $pages.append($("<li>").append($pageSpan));
@@ -1121,6 +1040,7 @@
       this.model.set(data);
       var timeout = setTimeout(function () {
         if (view.formAction !== "submit") {
+          m.log.debug("Send form change");
           view.send();
         }
       }, 25);
@@ -1133,6 +1053,8 @@
       data = _.extend(data, this.model.attributesFromQueryString(search));
       m.log.debug("set popstate", data);
       this.model.set(data);
+
+      m.log.debug("Send popstate");
       this.send();
     }
 

@@ -37,45 +37,7 @@ var m = (function () {
       return url.substr(index + 1);
     },
 
-    _templateCache: {},
-
-    template: function (name, data) {
-      var url = m.urlRoot + "static/template/" + name;
-
-      if (!(m._templateCache.hasOwnProperty(name))) {
-        m._templateCache[name] = false;
-      }
-      if (m._templateCache[name] === false) {
-        m._templateCache[name] = true;
-        $.ajax({
-          url: url,
-          async: false,
-          success: function (response) {
-            m._templateCache[name] = response;
-          },
-          error: function (jqXHR, textStatus, errorThrown) {
-            m.ajaxError(jqXHR, textStatus, errorThrown);
-            m._templateCache[name] = null;
-          }
-        });
-      }
-      if (m._templateCache[name] === true) {
-        var interval = setInterval(function () {
-          if (m._templateCache[name] !== true) {
-            clearInterval(interval);
-          }
-        }, 100);
-      }
-      return _.template(m._templateCache[name], data);
-    },
-
-    $template: function (name, data) {
-      var html = m.template(name, data);
-      html = html.replace(/>\s+/gm, ">");
-      html = html.replace(/\s+</gm, "<");
-      var $el = $("<div>").html(html);
-      return $el;
-    },
+    templator: templator,
 
     currentUser: null,
 
@@ -146,9 +108,11 @@ var m = (function () {
           if (showLink) {
             templateParameters.linkUrl = entityUrl + "/tag/" + value.id;
           }
-	  var $tagLi = m.$template("tag-li.html", templateParameters);
-	  $tagList.append($tagLi);
-	  $tagList.append(" ");
+          m.templator.renderSync("tag-li.html", templateParameters, function (html) {
+	    var $tagLi = $(html);
+	    $tagList.append($tagLi);
+	    $tagList.append(" ");
+          });
         });
       },
 
@@ -245,7 +209,7 @@ var m = (function () {
             },
             error: function (collection, response) {
               if (response.statusText !== "abort") {
-                console.log("error", collection, response);
+                console.error("error", collection, response);
               }
             }
           });
@@ -255,7 +219,7 @@ var m = (function () {
         },
         error: function (collection, response) {
           if (response.statusText !== "abort") {
-            console.log("error", collection, response);
+            console.error("error", collection, response);
           }
         }
       });
@@ -368,7 +332,9 @@ var m = (function () {
       $("#org-search").replaceWith(orgSearchView.$el);
 
       if (window.location.href.indexOf("#") === -1) {
-        orgSearchView.send();
+        if (!mapView) {
+          orgSearchView.send();
+        }
       } else {
         orgSearchView.popstate();
       }
@@ -423,7 +389,14 @@ var m = (function () {
         mapView: mapView
       });
       $("#event-search").replaceWith(eventSearchView.$el);
-      eventSearchView.send();
+
+      if (window.location.href.indexOf("#") === -1) {
+        if (!mapView) {
+          eventSearchView.send();
+        }
+      } else {
+        eventSearchView.popstate();
+      }
 
       if (window.History.enabled) {
         History.Adapter.bind(window, "statechange", eventSearchView.popstate);
@@ -438,7 +411,7 @@ var m = (function () {
       if (textStatus === "abort") {
         return;
       }
-      console.log("error", jqXHR, textStatus, errorThrown);
+      console.error("error", jqXHR, textStatus, errorThrown);
     },
 
     initTagSearch: function (id, field, url, callback, options) {
@@ -748,12 +721,16 @@ var m = (function () {
         $.getJSON(url, {name: value}, function (data, textStatus, jqXHR) {
           _.each(data, function (org) {
             org.url = "/organisation/" + org.orgId;
-            $list.append($("<div>").html(m.template("org-box.html", {
+
+            m.templator.renderSync("org-box.html", {
               org: org,
               m: m,
               parameters: m.parameters,
               note: false
-            })));
+            }, function (html) {
+              $list.append($("<div>").html(html));
+            });
+
           });
         });
       };
@@ -812,6 +789,19 @@ var m = (function () {
         return value;
       }
       return null;
+    },
+
+    compareVisibility: function (a, b) {
+      if (a === b) {
+        return false;
+      }
+
+      var equals = [undefined, null, "public"];
+      if (_.contains(equals, a) && _.contains(equals, b)) {
+        return false;
+      }
+
+      return true;
     },
 
     compareUnsortedList: function (a, b) {
@@ -1153,7 +1143,7 @@ var m = (function () {
       m.setParameters();
       var path = window.location.pathname;
       if (path.indexOf(m.urlRoot) !== 0) {
-        console.log("Path does not match url root", path, m.urlRoot);
+        console.warn("Path does not match url root", path, m.urlRoot);
       }
       path = "/" + path.substring(m.urlRoot.length);
       $.each(m.route, function (index, value) {
@@ -1310,6 +1300,7 @@ var m = (function () {
   $(window.document).ready(function () {
     window.document.cookie = "j=1";
     $.ajaxSetup({ "traditional": true });
+    m.templator.setUrl(m.urlRewrite("/static/template/"));
     m.handle();
   });
 

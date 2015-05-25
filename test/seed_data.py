@@ -4,12 +4,12 @@
 import sys
 sys.path.append(".")
 
+import os
 import time
-import datetime
 import json
 import codecs
 import logging
-
+import datetime
 from optparse import OptionParser
 
 from sqlalchemy import create_engine, func
@@ -26,38 +26,11 @@ from model import Medium, Auth, User, Session, Orgtag, Eventtag, Org, Orgalias, 
 log = logging.getLogger('seed_data')
 
 
-malicious_markdown = u"""
-Paragraph start
 
-<a href="http://www.google.com">Raw link</a>
-
-<a href="javascript:console.log('x')">Href JS</a>
-
-<a href="javascript:void('x')" onclick="console.log('y')">Onclick JS</a>
-
-Auto link: www.google.com
-
-Script:
-
-<script>
-console.log("malicious");
-</script>
-
-Paragraph ÜunicÖde.
-
--   UL1
--   UL2
--   UL3
-
-Paragraph Lorem ipsum dolor sit amet\n\nconsectetur adipisicing elit, sed do eiusmod tempor\n\nincididunt ut labore et dolore magna aliqua.
-
-1.  OL1
-1.  OL2
-1.  OL3
-
-Paragraph end
-
-"""
+path = os.path.dirname(os.path.realpath(__file__))
+malicious = os.path.join(path, "malicious.md")
+with codecs.open(malicious, "r", "utf-8") as f:
+    malicious_markdown = f.read()
 
 
 

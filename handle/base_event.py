@@ -283,7 +283,7 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                     if not event.event_id in events:
                         events[event.event_id] = {
                             "event": event,
-                            "address_list": [],
+                            "addressList": [],
                             }
                     if address:
                         events[event.event_id]["addressList"].append(address.obj(
@@ -312,7 +312,7 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                 if not event.event_id in events:
                     events[event.event_id] = {
                         "event": event,
-                        "address_list": [],
+                        "addressList": [],
                         }
             event_packet["eventList"] = []
             for event_id, data in events.items():

@@ -49,7 +49,13 @@ class Http(object):
         "/organisation-tag",
         "/event",
         "/event-tag",
-        "/organisation/search?name=%s" % org_search_name
+        "/organisation/search?name=%s" % org_search_name,
+        "/organisation?json=true",
+        "/event?json=true",
+        "/event?json=true&past=true",
+        "/event?json=true&pageView=map",
+        "/event?json=true&pageView=map&past=true",
+        "/dsei-target",
         ]
 
     html_path_list_none = [

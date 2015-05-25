@@ -471,10 +471,13 @@ class BaseHandler(RequestHandler):
         def purge(a, b):
             if b:
                 a[:] = filter(lambda x: x not in b, a)
-            
+
+        # vendro
         scripts1 = ["jquery.min.js", "jquery-ui/jquery-ui.min.js", "tag-it.js", "underscore-min.js", "backbone-min.js", "markdown.js", "jquery.history.js", "jquery.ui.timepicker.js", "markerclusterer.js"]
-        scripts2 = ["geobox.js", "mango.js"]
-        scripts3 = ["address.js", "tag.js", "event.js", "org.js"]
+        # before page js variables
+        scripts2 = ["geobox.js", "template.js", "mango.js"]
+        # after page js variables
+        scripts3 = ["address.js", "tag.js", "entity.js", "event.js", "org.js"]
         if self.load_map:
             scripts3 = ["map.js"] + scripts3
         stylesheets = ["jquery-ui/jquery-ui.css", "tag-it.css", "jquery.ui.timepicker.css", "style.css"]

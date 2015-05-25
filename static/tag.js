@@ -1,26 +1,25 @@
-"use strict";
-
 /*global window, jQuery, _, Backbone, m */
 
 (function ($) {
+  "use strict";
 
   // Tag
 
   window.Tag = Backbone.Model.extend({
     toAutocomplete: function () {
       return {
-        value: this.get("base_short"),
-        label: this.get("base_short") + " (" + this.get("path") + ")"
+        value: this.get("baseShort"),
+        label: this.get("baseShort") + " (" + this.get("path") + ")"
       };
     }
   });
 
   window.Orgtag = window.Tag.extend({
-    urlRoot: m.urlRoot + "organisation-tag",
+    urlRoot: m.urlRoot + "organisation-tag"
   });
 
   window.Eventtag = window.Tag.extend({
-    urlRoot: m.urlRoot + "event-tag",
+    urlRoot: m.urlRoot + "event-tag"
   });
 
   window.OrgtagCollection = Backbone.Collection.extend({
@@ -29,7 +28,7 @@
 
     parse: function (response) {
       response = _.sortBy(response, function (tag) {
-        return tag["base_short"] + " " + tag["path_short"];
+        return tag.baseShort + " " + tag.pathShort;
       });
       return response;
     }
@@ -41,7 +40,7 @@
 
     parse: function (response) {
       response = _.sortBy(response, function (tag) {
-        return tag["base_short"] + " " + tag["path_short"];
+        return tag.baseShort + " " + tag.pathShort;
       });
       return response;
     }
@@ -53,16 +52,16 @@
     var end = [];     // search matches inside of word
 
     var comparator = function (a, b) {
-      var av = a.get("base_short").split("-").length;
-      var bv = b.get("base_short").split("-").length;
+      var av = a.get("baseShort").split("-").length;
+      var bv = b.get("baseShort").split("-").length;
       if (av < bv) {
         return -1;
       }
       if (av > bv) {
         return 1;
       }
-      av = a.get("base_short") + " " + a.get("path_short");
-      bv = b.get("base_short") + " " + b.get("path_short");
+      av = a.get("baseShort") + " " + a.get("pathShort");
+      bv = b.get("baseShort") + " " + b.get("pathShort");
       if (av < bv) {
         return -1;
       }
@@ -70,15 +69,15 @@
         return 1;
       }
       return 0;
-    }
-    
+    };
+
     tagCollection.each(function (tag) {
-      var index = tag.get("base_short").toLowerCase().indexOf(
+      var index = tag.get("baseShort").toLowerCase().indexOf(
         search.term);
       if (index === 0) {
         start.push(tag);
       } else if (index > 0) {
-        var index2 = tag.get("base_short").toLowerCase().indexOf(
+        var index2 = tag.get("baseShort").toLowerCase().indexOf(
           "-" + search.term);
         if (index2 > 0) {
           middle.push(tag);
@@ -107,6 +106,6 @@
     });
 
     return start;
-  }
+  };
 
 }(jQuery));

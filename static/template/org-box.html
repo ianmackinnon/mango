@@ -1,6 +1,5 @@
-
 <div class="org_name">
-  <%= m.template("visibility-bar.html", {obj: org, inline:true}) %>
+  <%= m.templator.render("visibility-bar.html", {obj: org, inline:true}) %>
   <a
      href="<%= m.urlRewrite(org["url"], parameters) %>"
      ><%=m.filter.h(org["name"])%></a>
@@ -11,8 +10,8 @@
 
 <% if (tag && org.tag_list) { %>
 <ul class="tag_list">
-  <% for (t in org["tag_list"]) { %>
-  <% var tag = org["tag_list"][t]; %>
+  <% for (t in org["tagList"]) { %>
+  <% var tag = org["tagList"][t]; %>
   <li class="orgtag">
     <a
        href="<%= m.urlRewrite(tag["url"], parameters) %>"
@@ -30,6 +29,6 @@
 
 <% if (note && org.note_list) { %>
 <div class="note_len">
-  <%=org["note_list"].length%>
+  <%=org["noteList"].length%>
 </div>
 <% } %>
