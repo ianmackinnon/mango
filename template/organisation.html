@@ -73,7 +73,7 @@ edit = parameters.get("view", None) == "edit"
     <!-- Description Preview End -->
 
     <!-- Tags Start -->
-    %if obj and (edit or obj.get("orgtag_list", None)):
+    %if obj and (edit or obj.get("orgtagList", None)):
     <div class="mango-entity-section">
 
       %if edit and moderator:

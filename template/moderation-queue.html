@@ -62,9 +62,9 @@ return u"Moderation Queue"
     %endif
   </td>
   <td class="mango-queue-vid">${"&nbsp;" * 2 * indent | n}
-    %if entity["revision_url"]:
+    %if entity["revisionUrl"]:
     %if open:
-    <a href="${url_rewrite(entity["revision_url"])}">moderate</a>
+    <a href="${url_rewrite(entity["revisionUrl"])}">moderate</a>
     %else:
     review parent first
     %endif

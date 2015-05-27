@@ -98,6 +98,7 @@ class HttpTest(unittest.TestCase, Http):
 #            "/note/%s" % self.note_address_id,
             "/address/%s" % self.address_id,
             "/contact/%s" % self.contact_id,
+            "/diary",
         ]
 
         self.html_path_list_registered = [

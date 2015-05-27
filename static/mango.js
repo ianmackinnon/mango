@@ -108,7 +108,10 @@ var m = (function () {
           if (showLink) {
             templateParameters.linkUrl = entityUrl + "/tag/" + value.id;
           }
-          m.templator.renderSync("tag-li.html", templateParameters, function (html) {
+          m.templator.load(["tag-li.html", "visibility-bar.html"], function () {
+            var html = m.templator.render("tag-li.html", templateParameters, {
+              compact: true
+            });
 	    var $tagLi = $(html);
 	    $tagList.append($tagLi);
 	    $tagList.append(" ");

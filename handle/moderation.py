@@ -37,7 +37,7 @@ class ModerationQueueHandler(BaseHandler):
                     continue
                 queue[parent][parent_id] = {
                     "url": "/%s/%s" % (parent_url, parent_id),
-                    "revision_url": None,
+                    "revisionUrl": None,
                     "description": parent_desc,
                     "user": None,
                     } 
@@ -46,7 +46,7 @@ class ModerationQueueHandler(BaseHandler):
 
             entity_dict = {
                 "url": entity_exists and "/%s/%s" % (entity_url, entity_id),
-                "revision_url": "/%s/%s/revision" % (entity_url, entity_id),
+                "revisionUrl": "/%s/%s/revision" % (entity_url, entity_id),
                 "description": entity_desc_old or entity_desc_new,
                 "user": user_name,
                 } 
@@ -66,7 +66,7 @@ class ModerationQueueHandler(BaseHandler):
         for org_id, desc_new, exists, desc_old, user_name in get_pending_org_id(self.orm):
             queue["org"][org_id] = {
                 "url": exists and "/organisation/%s" % org_id,
-                "revision_url": "/organisation/%s/revision" % org_id,
+                "revisionUrl": "/organisation/%s/revision" % org_id,
                 "description": desc_old or desc_new,
                 "user": user_name,
                 "address": {},
@@ -84,7 +84,7 @@ class ModerationQueueHandler(BaseHandler):
         for event_id, desc_new, exists, desc_old, user_name in get_pending_event_id(self.orm):
             queue["event"][event_id] = {
                 "url": exists and "/event/%s" % event_id,
-                "revision_url": "/event/%s/revision" % event_id,
+                "revisionUrl": "/event/%s/revision" % event_id,
                 "description": desc_old or desc_new,
                 "user": user_name,
                 "address": {},

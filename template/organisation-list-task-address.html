@@ -38,7 +38,7 @@ return "Companies"
     ${self.mini.counts(
       org_packet["orgList"],
       org_packet.get("offset", 0),
-      org_packet["org_count"],
+      org_packet["orgCount"],
       not lookup and query_rewrite(dict(parameters, **{"offset": org_packet.get("offset", 0) + len(org_packet["orgList"])}))
       )}
   </div>

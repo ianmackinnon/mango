@@ -1,10 +1,3 @@
-<%
-   header, footer = skin_variables(
-   "diary_header", "diary_footer")
-   %> \
-%if header:
-${header | n}
-%else:
 <!DOCTYPE html>
 <html lang="en">
 
@@ -14,7 +7,6 @@ ${header | n}
   </head>
 
   <body>
-    %endif
 
     %if event_packet:
     <table class="eventlist justify" cellspacing="0">
@@ -50,7 +42,7 @@ ${header | n}
 
           <p class="eventtimeplace">${event | n, page_period}</p>
           
-          %if event.get("address_list", None):
+          %if event.get("addressList", None):
           %for address in event["addressList"]:
           <p class="eventtimeplace">${address["postal"] | n, h, unicode, newline_comma} (<a href="${url_rewrite(address["url"])}">map</a>)</p>
           %endfor
@@ -104,7 +96,7 @@ ${header | n}
 
           <p class="eventtimeplace">${event | n, page_period}</p>
 
-          %if event.get("address_list", None):
+          %if event.get("addressList", None):
           %for address in event["addressList"]:
           <p class="eventtimeplace">${address["postal"] | n, h, unicode, newline_comma} (<a href="${url_rewrite(address["url"])}">map</a>)</p>
           %endfor

@@ -80,7 +80,7 @@ if not parameters:
   </ul>
   %endif
 
-  %if "address_list" in org:
+  %if "addressList" in org:
   <div class="org_address_list">
     %for address in org["addressList"]:
     <div class="address-row">
@@ -105,7 +105,7 @@ if not parameters:
   </div>
   %endif
 
-  %if note and "note_list" in org:
+  %if note and "noteList" in org:
   <div class="note_len">
     ${len(org["noteList"])}
   </div>
@@ -135,7 +135,7 @@ if not parameters:
        >${event["name"]}</a>
   </div>
 
-  %if "address_list" in event:
+  %if "addressList" in event:
   <div class="event_address_list">
     %for address in event["addressList"]:
     <div class="address-row">
@@ -175,7 +175,7 @@ if not parameters:
   %endif
 
 
-  %if note and "note_list" in event:
+  %if note and "noteList" in event:
   <div class="note_len">
     ${len(event["noteList"])}
   </div>
@@ -452,7 +452,7 @@ ${tag["base"] | n, h, unicode, nbsp}\
 )\
 %endif
 \
-%if note and tag.get("note_len", False):
+%if note and tag.get("noteLen", False):
 &nbsp;\
 <span class="has-notes">…</span>\
 %endif

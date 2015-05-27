@@ -134,7 +134,7 @@ if obj:
 %endif
 
 %if obj:
-%if "note_list" in obj:
+%if "noteList" in obj:
 ${self.mini.render_note_section(obj["noteList"],
     obj["url"] + "/note", obj["url"],
     note_search, note_order, unlink_url=obj["url"],

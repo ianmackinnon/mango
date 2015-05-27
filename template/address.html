@@ -107,9 +107,9 @@ if entity:
       <input name="longitude" type="hidden"
 	     value="${obj and obj.get("longitude", "") or ""}">
       <input name="manual_latitude" type="hidden"
-	     value="${obj and obj.get("manual_latitude", "") or ""}">
+	     value="${obj and obj.get("manualLatitude", "") or ""}">
       <input name="manual_longitude" type="hidden"
-	     value="${obj and obj.get("manual_latitude", "") or ""}">
+	     value="${obj and obj.get("manualLatitude", "") or ""}">
       <label name="source"
 	     status="${obj and obj.get("source", "") and 'good' or 'bad'}"
 	     class="textarea">
@@ -132,7 +132,7 @@ if entity:
     %endif
   </div>
 
-%if obj and "note_list" in obj:
+%if obj and "noteList" in obj:
 ${self.mini.render_note_section(obj["noteList"],
     obj["url"] + "/note", obj["url"],
     note_search, note_order, unlink_url=obj["url"],
@@ -149,8 +149,8 @@ ${self.mini.render_note_section(obj["noteList"],
     
 %if obj:
 <span 
-   latitude="${obj and (obj.get("manual_latitude", "") or obj.get("latitude", "")) or ""}"
-   longitude="${obj and (obj.get("manual_longitude", "") or obj.get("longitude", "")) or ""}"
+   latitude="${obj and (obj.get("manualLatitude", "") or obj.get("latitude", "")) or ""}"
+   longitude="${obj and (obj.get("manualLongitude", "") or obj.get("longitude", "")) or ""}"
    >
 </span>
 <p>
