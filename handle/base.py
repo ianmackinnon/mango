@@ -128,20 +128,20 @@ def page_time(time):
 
 
 def page_period(obj):
-    s = page_date(obj["start_date"])
-    if obj["start_time"]:
-        s += ", %s" % page_time(obj["start_time"])
-    elif obj["end_time"]:
+    s = page_date(obj["startDate"])
+    if obj["startTime"]:
+        s += ", %s" % page_time(obj["startTime"])
+    elif obj["endTime"]:
         s += ", ??:??"
     s += " "
-    if (obj["end_date"] and obj["end_date"] != obj["start_date"]) or obj["end_time"]:
+    if (obj["endDate"] and obj["endDate"] != obj["startDate"]) or obj["endTime"]:
         s += " -"
-    if obj["end_date"] and obj["end_date"] != obj["start_date"]:
-        s += " %s" % page_date(obj["end_date"])
-    if obj["end_time"]:
-        if obj["end_date"] and obj["end_date"] != obj["start_date"]:
+    if obj["endDate"] and obj["endDate"] != obj["startDate"]:
+        s += " %s" % page_date(obj["endDate"])
+    if obj["endTime"]:
+        if obj["endDate"] and obj["endDate"] != obj["startDate"]:
             s += ","
-        s += " %s" % page_time(obj["end_time"])
+        s += " %s" % page_time(obj["endTime"])
     return s
 
 

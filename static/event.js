@@ -647,7 +647,7 @@
     changeVisibility: function () {
       var visibility = this.model.get("visibility") || "public";
       m.setVisibility(visibility);
-      this.fetchEventList();
+      this.fetchEventtagList();
     },
 
     setMapLocation: function (location) {

@@ -16,7 +16,7 @@ from http_test import Http, log as http_log
 
 log = logging.getLogger('test_mango_web')
 
-host = "http://localhost:8802"
+host = "https://www.caat.org.uk/resources/mapping"
 
 
 class HttpTest(unittest.TestCase, Http):
@@ -24,29 +24,40 @@ class HttpTest(unittest.TestCase, Http):
 
     host = host
 
-    org_id = 1
-    orgtag_id = 1
-    event_id = 1
-    eventtag_id = 1
-    note_org_id = 1
+    org_id = 416          # BAE Systems
+    orgtag_id = 262       # DSEI 2011
+    event_id = 85         # Occupy vs arms trade
+    eventtag_id = 1       # Activity
+    note_org_id = 6136    # BAE
     note_event_id = 2
     note_address_id = 3
-    address_id = 1
-    contact_id = 1
+    address_id = 1        # Address 1
+    contact_id = 189      # BAE
 
-    org_search_name = u"random"
+    org_search_name = u"bae"
 
-    org_n_id = 404
-    orgtag_n_id = 404
-    event_n_id = 404
-    eventtag_n_id = 404
-    note_n_id = 404
-    address_n_id = 404
-    contact_n_id = 404
+    org_n_id = 4040404
+    orgtag_n_id = 4040404
+    event_n_id = 4040404
+    eventtag_n_id = 4040404
+    note_n_id = 4040404
+    address_n_id = 4040404
+    contact_n_id = 4040404
+
+    country_name = "egypt"
+    country_name_n = "eg"
 
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
         Http.__init__(self, self.host)
+
+        self.php_path_list = [
+            "/resources/countries/%s" % self.country_name,
+        ]
+
+        self.php_path_list_none = [
+            "/resources/countries/%s" % self.country_name_n,
+        ]
 
         self.json_path_list = [
             "/organisation",
@@ -83,8 +94,8 @@ class HttpTest(unittest.TestCase, Http):
             "/event-tag/%s" % self.eventtag_id,
             "/note",
             "/note/%s" % self.note_org_id,
-            "/note/%s" % self.note_event_id,
-            "/note/%s" % self.note_address_id,
+#            "/note/%s" % self.note_event_id,
+#            "/note/%s" % self.note_address_id,
             "/address/%s" % self.address_id,
             "/contact/%s" % self.contact_id,
         ]
@@ -121,13 +132,25 @@ class HttpTest(unittest.TestCase, Http):
         ]
         
 
-# Duplicated in test_live
+# Duplicated in test_web
 class TestPublic(HttpTest):
 
     @classmethod
     def setUpClass(cls):
         cls.longMessage = True
         
+    def test_php_public(self):
+        log.info("Public User / PHP")
+        for path in self.php_path_list:
+            html = self.get_html(path, host="https://www.caat.org.uk")
+            self.php_error_test(html)
+
+    def test_php_none(self):
+        log.info("Public User / Non-existant PHP")
+        for path in self.php_path_list_none:
+            html = self.get_html_not_found(path, host="https://www.caat.org.uk")
+            self.php_error_test(html)
+
     def test_json_public(self):
         log.info("Public User / Authorised JSON")
         for path in self.json_path_list:
@@ -152,85 +175,7 @@ class TestPublic(HttpTest):
 
 
 
-class TestRegistered(HttpTest):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.longMessage = True
-        cls.cookie = cls.get_cookies(cls.host + "/auth/login/local?user=3")
-        print cls.cookie
         
-    def test_json_public(self):
-        log.info("Registered User / Authorised JSON")
-        for path in self.json_path_list:
-            data = self.get_json_data(path, cookie=self.cookie)
-            self.assertNotEqual(len(data), 0, msg=path)
-
-    def test_html_public(self):
-        log.info("Registered User / Authorised HTML")
-        for path in self.html_path_list_public + self.html_path_list_registered:
-            html = self.get_html(path, cookie=self.cookie)
-            self.mako_error_test(html)
-
-    def test_html_private(self):
-        log.info("Registered User / Not-authorised HTML")
-        for path in self.html_path_list_moderator:
-            self.get_html_not_found(path, cookie=self.cookie)
-
-
-
-class TestModerator(HttpTest):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.longMessage = True
-        cls.cookie = cls.get_cookies(cls.host + "/auth/login/local?user=1")
-        
-    def test_json_public(self):
-        log.info("Moderator User / Authorised JSON")
-        for path in self.json_path_list:
-            data = self.get_json_data(path, cookie=self.cookie)
-            self.assertNotEqual(len(data), 0, msg=path)
-
-    def test_html_public(self):
-        log.info("Moderator User / Authorised HTML")
-        for path in self.html_path_list_public + \
-                self.html_path_list_registered + \
-                self.html_path_list_moderator:
-            html = self.get_html(path, cookie=self.cookie)
-            self.mako_error_test(html)
-
-
-
-class TestAuth(HttpTest):
-    @classmethod
-    def setUpClass(cls):
-        cls.longMessage = True
-        
-    def test_auth_redirection(self):
-        url = self.host + "/auth/login/local?user=1"
-        response, content = self.http.request(url)
-        self.assertEqual(response.status, 302)
-        self.assertEqual(response["location"], '/')
-        self.assertLoggedIn(response)
-
-        url = self.host + "/auth/login/local?user=9999"
-        response, content = self.http.request(url)
-        self.assertEqual(response.status, 401)
-        self.assertNotLoggedIn(response)
-
-        url = self.host + "/auth/login/local?user=0"
-        response, content = self.http.request(url)
-        self.assertEqual(response.status, 302)
-        self.assertEqual(response["location"], '/auth/register')
-        self.assertNotLoggedIn(response)
-
-        url = self.host + "/auth/login/local?user=0&register=1"
-        response, content = self.http.request(url)
-        self.assertEqual(response.status, 302)
-        self.assertRegexpMatches(response["location"], '/user/[0-9]+$')
-        self.assertLoggedIn(response)
-
 if __name__ == "__main__":
     log.addHandler(logging.StreamHandler())
     http_log.addHandler(logging.StreamHandler())
@@ -271,3 +216,6 @@ if __name__ == "__main__":
 """ % (host, host))
 
     unittest.main()
+
+
+    

@@ -102,6 +102,8 @@ def main(orm):
     event_1_note_1 = Note(u"Event 1 NÖte 1.", u"source", **public_1)
     event_1.note_list.append(event_1_note_1)
 
+    org_1.event_list.append(event_1)
+
     orm.add_all((
             auth_1, user_1_mod, user_2_lok, user_3_non,
             orgtag_1, eventtag_1,
