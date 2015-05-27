@@ -44,7 +44,11 @@ vendor:
 test : mysql-test serve-test
 
 serve-test :
-	python -W error ./mango.py --local=1
+#	Ignore BS4 File/URL warnings
+	python \
+	  -W error \
+	  -W ignore::UserWarning:bs4 \
+	  ./mango.py --local=1
 
 
 # Configuration
