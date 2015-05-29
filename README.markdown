@@ -61,3 +61,15 @@ And follow any instructions
 ## Launch
 
     ./mango.py
+
+
+### Inserting Organisation JSON
+
+Example:
+
+    ./tools/insert_organisations.py /tmp/dsei-2015.json
+
+MySQL
+
+    select count(*) from org_orgtag join orgtag using (orgtag_id) where base_short = "dsei-2015";
+    
