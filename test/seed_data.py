@@ -63,6 +63,9 @@ def main(orm):
     orgtag_1 = Orgtag(u"Org Tag 1", **public_1)
     eventtag_1 = Eventtag(u"Event Tag 1", **public_1)
 
+    orgtag_act_1 = Orgtag(u"Activity | Arms", **public_1)
+    orgtag_exc_1 = Orgtag(u"Activity Exclusion | Fake Arms", **public_1)
+
     org_1 = Org(u"RÄndom Incorporated", malicious_markdown, **public_1)
     orm.add(org_1)
     org_1.orgtag_list.append(orgtag_1)
@@ -106,7 +109,7 @@ def main(orm):
 
     orm.add_all((
             auth_1, user_1_mod, user_2_lok, user_3_non,
-            orgtag_1, eventtag_1,
+            orgtag_1, orgtag_act_1, orgtag_exc_1, eventtag_1,
             org_1, org_1_address_1, org_1_contact_1, org_1_note_1,
             event_1, event_1_address_1,
             ))

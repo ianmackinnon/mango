@@ -49,6 +49,7 @@ class HttpTest(unittest.TestCase, Http):
         Http.__init__(self, self.host)
 
         self.json_path_list = [
+            # ["/url", ["strings that", "should be in result"]],
             "/organisation",
             "/organisation-tag",
             "/event",

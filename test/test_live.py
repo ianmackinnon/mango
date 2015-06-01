@@ -128,6 +128,7 @@ class HttpTest(unittest.TestCase, Http):
             "/moderation/organisation-description",
             "/moderation/organisation-inclusion",
             "/moderation/queue",
+            "/moderation/organisation-tag-activity",
             "/history",
             "/user",
         ]

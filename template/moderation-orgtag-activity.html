@@ -33,7 +33,7 @@
       %if moderator:
       <td class="visibility ${self.mini.visibility_public(obj["public"])}">${"Public" if obj["public"] else "Pending" if obj["public"] is None else "Private"}</td>
       %endif
-      <th class="numeric"><a href="${url_rewrite('/organisation', {'tag':obj['base_short']})}">${obj["count"]}</a></th>
+      <th class="numeric"><a href="${url_rewrite('/organisation', {'tag':obj['baseShort']})}">${obj["count"]}</a></th>
       <td class="mango-cell-activity-desc">
         %if parameters.get("view", None) == "edit":
         <form
