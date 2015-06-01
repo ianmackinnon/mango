@@ -894,9 +894,9 @@
 
     renderSocial: function (orgCollection) {
       var socialTags = {
-        "farnborough-2014": {
-          role: "Farnborough arms exhibitor",  // 's' appended for plurals
-          hashtags: ["FIA2014"]
+        "dsei-2015": {
+          role: "DSEI 2015 arms exhibitor",  // 's' appended for plurals
+          hashtags: ["DSEI", "DSEI2015"]
         }
       };
 
