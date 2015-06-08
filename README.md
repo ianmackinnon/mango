@@ -23,7 +23,7 @@ If you're using a virtual Python environment, replace 'pip' below with the path 
       python-levenshtein mysql-python python-memcached BeautifulSoup \
       httplib2 pyelasticsearch geopy bleach
 
-    sudo npm install -g jslint
+    sudo npm install -g jslint jscs
 
     sudo apt-get install openjdk-7-jre-headless
     # download elasticsearch deb from http://www.elasticsearch.org/download
