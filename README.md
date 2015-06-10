@@ -16,24 +16,33 @@ Mapping Application for NGOs
       
     sudo update-alternatives --install /usr/bin/node nodejs /usr/bin/nodejs 100
 
-If you're using a virtual Python environment, replace 'pip' below with the path to your virtual environment's pip path.
-
-    sudo -H pip install --upgrade \
-      pip Mako tornado sqlalchemy markdown redis pysqlite BeautifulSoup4 \
-      python-levenshtein mysql-python python-memcached BeautifulSoup \
-      httplib2 pyelasticsearch geopy bleach
-
-    sudo npm install -g jslint jscs
-
     sudo apt-get install openjdk-7-jre-headless
     # download elasticsearch deb from http://www.elasticsearch.org/download
     sudo dpkg -i elasticsearch-0...
     
-### Upgrading the CAAT server
+On the CAAT server
 
-    install-compilers
-    pip install --upgrade ...
-    uninstall compilers
+-   Select virtual Python with `source ~ian.mackinnon/bin/python-webapps`
+-   Don't run pip with `sudo`
+-   Install build tools first with `~ian.mackinnon/bin/install-compilers`
+-   Uninstall build tools later with `~ian.mackinnon/bin/uninstall-compilers`
+
+    sudo -H \
+      pip install --upgrade \
+      pip \
+      Mako tornado \
+      BeautifulSoup BeautifulSoup4 \
+      markdown bleach \
+      sqlalchemy pysqlite \
+      mysql-python \
+      redis pyelasticsearch \
+      python-levenshtein \
+      httplib2 geopy
+
+
+### Node
+
+    sudo npm install -g jslint jscs
 
 
 ### 3rd party static content

@@ -2,6 +2,7 @@
 
 import re
 import urllib
+import urllib2
 
 from bs4 import BeautifulSoup
 from tornado.template import Loader
@@ -49,7 +50,7 @@ def load(**kwargs):
     uri = u"%s://www.caat.org.uk/resources/app-skin.php" % protocol
     uri += "?" + urllib.urlencode(data)
 
-    page = urllib.urlopen(uri).read()
+    page = urllib2.urlopen(uri).read()
 
     text = page
     if offsite:
