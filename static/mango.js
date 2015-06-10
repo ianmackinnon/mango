@@ -319,10 +319,11 @@ var m = (function () {
       });
 
       m.orgMarkdown();
-      m.orgSearch();
+      m.initOrgSearchCreate();
     },
 
-    initOrgSearch: function (mapView) {
+    initOrgSearchForm: function (mapView) {
+      console.log("A");
       var orgSearch = new window.OrgSearch();
       var orgSearchView = new window.OrgSearchView({
         model: orgSearch,
@@ -382,7 +383,7 @@ var m = (function () {
       m.eventMarkdown();
     },
 
-    initEventSearch: function (mapView) {
+    initEventSearchForm: function (mapView) {
       var eventSearch = new window.EventSearch();
       var eventSearchView = new window.EventSearchView({
         model: eventSearch,
@@ -708,7 +709,7 @@ var m = (function () {
       }
     },
 
-    orgSearch: function () {
+    initOrgSearchCreate: function () {
       var form = $("#org-form");
       var text = m.getField(form, "name");
       var $list = $("#mango-similar-org-list");
@@ -725,12 +726,14 @@ var m = (function () {
           _.each(data, function (org) {
             org.url = "/organisation/" + org.orgId;
 
-            m.templator.renderSync("org-box.html", {
-              org: org,
-              m: m,
-              parameters: m.parameters,
-              note: false
-            }, function (html) {
+            m.templator.load(["org-box.html", "visibility-bar.html"], function () {
+
+              var html = m.templator.render("org-box.html", {
+                org: org,
+                m: m,
+                parameters: m.parameters,
+                note: false
+              });
               $list.append($("<div>").html(html));
             });
 
@@ -1003,19 +1006,13 @@ var m = (function () {
 
       [/^\/organisation$/, function () {
         m.initMap(function (mapView) {
-          m.initOrgSearch(mapView);
+          m.initOrgSearchForm(mapView);
           m.visibility();
         });
       }],
       [/^\/event$/, function () {
         m.initMap(function (mapView) {
-          m.initEventSearch(mapView);
-          m.visibility();
-        });
-      }],
-      [/^\/task\/address$/, function () {
-        m.initMap(function (mapView) {
-          m.initOrgSearch(mapView);
+          m.initEventSearchForm(mapView);
           m.visibility();
         });
       }],
