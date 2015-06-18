@@ -276,7 +276,25 @@ var m = (function () {
         var url = m.urlRoot + orgUrl;
         $.getJSON(url, function (data) {
           var autocomplete = $inputDisplay.autocomplete({
-            source: data,
+            source: function (request, response) {
+              var autoData = [];
+              var term = request.term.toLowerCase();
+              _.each(data, function (item, i) {
+                if (item.label.toLowerCase().indexOf(term) > -1) {
+                  autoData.push(item);
+                } else if (!!item.alias) {
+                  _.each(item.alias, function (alias, j) {
+                    if (alias.toLowerCase().indexOf(term) > -1) {
+                      autoData.push({
+                        "label": item.label + " (" + alias + ")",
+                        "value": item.value
+                      });
+                    }
+                  });
+                }
+              });
+              response(autoData);
+            },
             minLength: 0,
             focus: function (event, ui) {
               return false;

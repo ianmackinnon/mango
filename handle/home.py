@@ -97,10 +97,15 @@ class HomeOrgListHandler(BaseHandler):
         org_list = []
 
         for org in self.orm.query(Org).filter_by(public=True).all():
-            org_list.append({
-                    "label": org.name,
-                    "value": org.url,
-                    })
+            obj = {
+                "label": org.name,
+                "value": org.url,
+                }
+            if org.orgalias_list_public:
+                obj["alias"] = []
+                for orgalias in org.orgalias_list_public:
+                    obj["alias"].append(orgalias.name)
+            org_list.append(obj)
 
         org_list.sort()
         self.cache.set(cache_key, json.dumps(org_list))
@@ -152,10 +157,15 @@ class FairOrgListHandler(BaseHandler):
 
         if tag:
             for org in tag.org_list_public:
-                org_list.append({
-                        "label": org.name,
-                        "value": org.url,
-                        })
+                obj = {
+                    "label": org.name,
+                    "value": org.url,
+                    }
+                if org.orgalias_list_public:
+                    obj["alias"] = []
+                    for orgalias in org.orgalias_list_public:
+                        obj["alias"].append(orgalias.name)
+                org_list.append(obj)
 
         org_list.sort()
         self.cache.set(self.cache_key, json.dumps(org_list))
