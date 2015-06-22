@@ -1,0 +1,16 @@
+{
+  "pagetitle": "Company Map",
+  "pagecreated": "2012-08-02",
+  "pagedescription": "Company Map",
+  "sidebarLeft": "0",
+  "sidebarRight": "0",
+  "pagetitlehref": "/resources/mapping",
+  
+  "scripts": [
+    "jquery.min.js",
+    "jquery-ui/jquery-ui.min.js"
+  ],
+  "stylesheets": [
+    "jquery-ui/jquery-ui.css"
+  ]
+}

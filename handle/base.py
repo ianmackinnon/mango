@@ -490,6 +490,8 @@ class BaseHandler(RequestHandler):
             stylesheets=stylesheets,
             protocol=self.request.protocol,
             offsite=self.application.offsite,
+            header_function=True,
+            load_nav=True,
             )
 
         mako_template = self.application.lookup.get_template(template_name)

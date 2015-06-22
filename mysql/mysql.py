@@ -7,8 +7,9 @@ import sys
 import getpass
 import logging
 import ConfigParser
-from collections import namedtuple
+from hashlib import sha1
 from optparse import OptionParser
+from collections import namedtuple
 
 import MySQLdb
 
@@ -127,6 +128,25 @@ def admin_cursor(options):
 
 
 
+def app_cursor(options):
+    try:
+        db = MySQLdb.connect(
+            host="localhost",
+            user=options.app_username,
+            passwd=options.app_password,
+            )
+    except MySQLdb.OperationalError as e:
+        log.error("Could not connect with app credentials.")
+        print e
+        sys.exit(1)
+
+    cursor = db.cursor()
+    cursor.execute("use %s;" % options.database)
+
+    return cursor
+
+
+
 def drop_user(cursor, username):
     try:
         cursor.execute("drop user '%s'@'localhost';" % username)
@@ -162,6 +182,32 @@ def mysql_drop(options):
     drop_user(cursor, options.admin_username)
     drop_user(cursor, options.app_username)
     drop_database(cursor, options.database)
+
+
+
+# Checksum
+    
+def database_hash(conf_path):
+    options = get_conf(conf_path)
+    cursor = app_cursor(options)
+
+    hasher = sha1()
+    cursor.execute("show tables;");
+    result = cursor.fetchall()
+    for (table, ) in result:
+        cursor.execute("checksum table %s extended;" % table);
+        result2 = cursor.fetchone()
+        if not result2:
+            break
+        (table_path, checksum, ) = result2
+        
+        hasher.update("%s=%s;" % (table, checksum))
+
+    return hasher.hexdigest()
+
+
+
+# Configuration
 
 
 

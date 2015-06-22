@@ -9,7 +9,6 @@ import redis
 import logging
 import logging.handlers
 import datetime
-import memcache
 
 from mako.template import Template
 from mako.lookup import TemplateLookup
@@ -134,36 +133,9 @@ class DictCache(BaseCache):
 
 
 
-class MemcacheCache(BaseCache):
-    def __init__(self, namespace):
-        self._cache = memcache.Client(["127.0.0.1:11211"])
-        self.set_namespace(namespace)
-        
-    @property
-    def name(self):
-        return "memcache"
-        
-    @property
-    def connected(self):
-        return bool(self._cache.get_stats())
-
-    def get(self, key):
-        value = self._cache.get(self.key(key))
-        return value
-
-    def set(self, key, value, period=DEFAULT_CACHE_PERIOD):
-        if not period:
-            period = 0;
-        self._cache.set(self.key(key), value, time=period)
-
-    def delete(self, key):
-        self._cache.delete(self.key(key))
-
-
-
 class RedisCache(BaseCache):
     def __init__(self, namespace):
-        self._cache = redis.StrictRedis(host='localhost', port=6379, db=0)
+        self._cache = redis.StrictRedis()
         self.set_namespace(namespace)
 
     @property
@@ -469,7 +441,8 @@ class Application(tornado.web.Application):
         connection_url = connection_url_app()
         engine = create_engine(
             connection_url,
-            echo=False,
+            pool_recycle=7200  # Expire connections after 2 hours
+            )                  # (MySQL disconnects unilaterally after 8)
         )
         self.orm = scoped_session(sessionmaker(
             bind=engine,
@@ -485,6 +458,7 @@ class Application(tornado.web.Application):
         attach_search(engine, self.orm)
         self.orm.remove()
             
+        self.cache.state = self.cache.connected and "active" or "inactive"
 
         # Logging
 
@@ -542,15 +516,18 @@ class Application(tornado.web.Application):
         tornado.web.Application.__init__(self, self.handlers, **settings)
 
         sys.stdout.write(u"""%s is running.
-  Address:   http://localhost:%d
-  Database:  %s
-  Cache:     %s (%s)
+  Address:      http://localhost:%d
+  Database:     %s
+  Cache:        %s (%s)
+  Skin:         %s
+  Started:      %s
 """ % (
                 self.title,
                 options.port,
                 database,
-                self.cache.name,
-                self.cache.connected and "active" or "inactive",
+                self.cache.name, self.cache.state,
+                options.skin,
+                datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
                 ))
         sys.stdout.flush()
         

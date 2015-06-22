@@ -7,6 +7,7 @@ var templator = (function () {
 
     _templateUrl: null,
 
+    _functionCache: {},
     _promiseCache: {},
 
     setUrl: function (path) {
@@ -27,6 +28,7 @@ var templator = (function () {
           url: url,
           success: function (response) {
             var f = _.template(response);
+            t._functionCache[name] = f;
             deferred.resolveWith(null, [f]);
           },
           error: function (jqXHR, textStatus, errorThrown) {
@@ -81,8 +83,7 @@ var templator = (function () {
 
     render: function (name, data, options) {
       // Fails if template is not already loaded.
-      var cache = t._promiseCache;
-      var promise = cache[name];
+      var promise = t._promiseCache[name];
       if (!promise) {
         throw new Error("Template '" + name + "' not loaded.");
       }
@@ -90,10 +91,8 @@ var templator = (function () {
       if (state !== "resolved") {
         throw new Error("Template '" + name + "' failed to load: " + state);
       }
-      var html;
-      promise.done(function (f) {
-        html = t.process(name, f, data, options);
-      })
+      var f = t._functionCache[name];
+      var html = t.process(name, f, data, options);
       return html;
     }
   };
