@@ -199,7 +199,6 @@ def detach(entity):
 
 
 def gravatar_hash(plaintext):
-    "Generate a pseudorandom 40 digit hexadecimal hash using SHA1"
     return md5(plaintext).hexdigest()
 
 

@@ -30,7 +30,9 @@ ${header(title=self.application_title()) | n}
            >Events</a
 ><a href="${url_rewrite("/event-tag")}">Tags</a>
       </div>
+      %if current_user:
       <a href="${url_rewrite("/note")}">Notes</a>
+      %endif
     </div>
     <div id="nav-account">
       %if current_user:

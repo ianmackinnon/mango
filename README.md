@@ -3,10 +3,10 @@
 Mapping Application for NGOs
 
 
-## Installation
+## Dependencies
 
 
-### Package dependencies (Ubuntu)
+### Debian/Ubuntu
 
     sudo apt-get install \
       python python-dev \
@@ -19,7 +19,10 @@ Mapping Application for NGOs
     sudo apt-get install openjdk-7-jre-headless
     # download elasticsearch deb from http://www.elasticsearch.org/download
     sudo dpkg -i elasticsearch-0...
+
     
+### Python
+
 On the CAAT server
 
 -   Select virtual Python with `source ~ian.mackinnon/bin/python-webapps`
@@ -43,6 +46,37 @@ On the CAAT server
 ### Node
 
     sudo npm install -g jslint jscs
+
+
+### Services
+
+Requires a Google OAuth 2.0 Client ID
+
+Sign in to Google as `caatdata@gmail.com`.
+
+Go to:
+
+https://console.developers.google.com/project
+
+Create/Edit App:
+
+Name: CAAT Mango
+ID: caat-data-mango
+
+Go to > APIs & Auth > Credentials > Create new Client ID > Web application
+
+Email address: caatdata@gmail.com
+Product Name: CAAT Mapping Application
+
+Authorized JavaScript origins:
+    https://www.caat.org.uk
+    https://www-dev.caat.org.uk
+    http://localhost:8802/
+
+Authorized redirect URIs:
+    https://www.caat.org.uk/resources/mapping/auth/login/google
+    https://www-dev.caat.org.uk/resources/mapping/auth/login/google
+    http://localhost:8802/auth/login/google
 
 
 ### 3rd party static content

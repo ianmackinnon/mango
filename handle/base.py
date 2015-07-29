@@ -21,7 +21,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql.expression import exists, and_, or_
 from mako import exceptions
 
-from tornado.web import authenticated as tornado_authenticated, RequestHandler, HTTPError
+from tornado.web import RequestHandler, HTTPError
+# from tornado.web import authenticated as tornado_authenticated
 
 # For _execute replacement
 from tornado.concurrent import Future, is_future

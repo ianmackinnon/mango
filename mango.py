@@ -213,7 +213,7 @@ class Application(tornado.web.Application):
     sqlite_path = u"mango.db"
     max_age = 86400 * 365 * 10  # 10 years
 
-    session_cookie_name = "s"
+    session_cookie_name = "sm" # Must be unique for domain
 
     def load_cookie_secret(self):
         try:
@@ -400,19 +400,17 @@ class Application(tornado.web.Application):
         
         self.handlers = self.process_handlers(self.handlers)
 
-        google_oauth_key = conf.get(conf_path, u"google-oauth", u"client-id")
-        google_oauth_secret = conf.get(conf_path, u"google-oauth", u"client-secret")
+        settings = dict()
 
-        settings = {
-            # serves /robots.txt and /favicon.ico from static
-#            "static_path": os.path.join(os.path.dirname(__file__), "static"),
-            "google_oauth": {
-                "key": google_oauth_key,
-                "secret": google_oauth_secret
-            }
-        }
-
+        # serves /robots.txt and /favicon.ico from static
+        # settings["static_path"] = os.path.join(os.path.dirname(__file__), "static")
+            
         # Authentication & Cookies
+
+        settings["google_oauth"] = {
+            "key": conf.get(conf_path, 'google-oauth', 'client-id'),
+            "secret": conf.get(conf_path, 'google-oauth', 'client-secret'),
+            }
 
         self.load_cookie_secret()
         settings.update(dict(
@@ -443,7 +441,7 @@ class Application(tornado.web.Application):
             connection_url,
             pool_recycle=7200  # Expire connections after 2 hours
             )                  # (MySQL disconnects unilaterally after 8)
-        )
+
         self.orm = scoped_session(sessionmaker(
             bind=engine,
             autocommit=False,
