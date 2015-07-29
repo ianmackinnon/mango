@@ -341,7 +341,6 @@ var m = (function () {
     },
 
     initOrgSearchForm: function (mapView) {
-      console.log("A");
       var orgSearch = new window.OrgSearch();
       var orgSearchView = new window.OrgSearchView({
         model: orgSearch,
@@ -1178,7 +1177,6 @@ var m = (function () {
   };
 
   function urlRewriteStatic (uri, root, options, parameters, next) {
-
     if (!options) {
       options = {};
     }
@@ -1214,11 +1212,17 @@ var m = (function () {
     }
     var length = uri.indexOf("?");
     var path = a.pathname;
+    if (path.length && path.indexOf("/") !== 0) {
+      // Internet Explorer returns pathname without '/'
+      path = "/" + path;
+    }
+    
     if (length !== -1) {
       path = path.substr(path.length - length);
     } else {
       path = path.substr(path.length - uri.length);
     }
+
     var query = a.search;
     if (query.length) {
       query = query.substr(1);
