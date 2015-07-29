@@ -93,6 +93,7 @@ define("root", default='', help="URL root", type=unicode)
 define("skin", default=u"default", help="skin with the given style", type=unicode)
 define("local", default=False, help="Allow local authentication", type=bool)
 define("offsite", default=None, help="Correct skin-specific links when offsite.", type=bool)
+define("events", default=True, help="Enable events. Default is 1.", type=bool)
 define("log", default=None, help="Log directory. Write permission required. Logging is disabled if this option is not set.", type=unicode)
 
 
@@ -265,6 +266,8 @@ class Application(tornado.web.Application):
         def handle_id(text):
             return int(text)
 
+        self.events = options.events
+
         self.handlers = [
             (r"/", HomeHandler),
             (r"/home", HomeHandler),
@@ -397,6 +400,11 @@ class Application(tornado.web.Application):
 
             (r"/.*", NotFoundHandler),
             ]
+
+        if not self.events:
+            self.handlers = filter(lambda x: "/event" not in x[0], self.handlers)
+        if not self.events:
+            self.handlers = filter(lambda x: "/diary" not in x[0], self.handlers)
         
         self.handlers = self.process_handlers(self.handlers)
 
@@ -518,6 +526,7 @@ class Application(tornado.web.Application):
   Database:     %s
   Cache:        %s (%s)
   Skin:         %s
+  Events:       %s
   Started:      %s
 """ % (
                 self.title,
@@ -525,6 +534,7 @@ class Application(tornado.web.Application):
                 database,
                 self.cache.name, self.cache.state,
                 options.skin,
+                self.events and "Enabled" or "Disabled",
                 datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
                 ))
         sys.stdout.flush()

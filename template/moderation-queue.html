@@ -29,6 +29,7 @@ return u"Moderation Queue"
   </tbody>
 </table>
 
+%if events_enabled:
 <h2>Events</h2>
 
 <table class="queue">
@@ -47,6 +48,7 @@ return u"Moderation Queue"
     %endfor
   </tbody>
 </table>
+%endif
 
 </%def>
 

@@ -200,6 +200,7 @@ edit = parameters.get("view", None) == "edit"
     %endif
 
 
+    %if events_enabled:
     <!-- Events Start -->
     %if obj and (edit or not moderator or obj["eventList"]):
     <div class="mango-entity-section">
@@ -238,6 +239,7 @@ edit = parameters.get("view", None) == "edit"
     </div>
     %endif
     <!-- Events End -->
+    %endif
 
     <!-- Contacts Start -->
     %if obj and (edit or obj["contactList"]):

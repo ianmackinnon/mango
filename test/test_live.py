@@ -18,6 +18,9 @@ log = logging.getLogger('test_mango_web')
 
 host = "https://www.caat.org.uk/resources/mapping"
 
+EVENTS_ENABLED = False
+SESSION_COOKIE = "sm"
+
 
 class HttpTest(unittest.TestCase, Http):
     error_html = "/tmp/mango-error-web.html"
@@ -56,7 +59,7 @@ class HttpTest(unittest.TestCase, Http):
         ]
 
         self.php_path_list_none = [
-            "/resources/countries/%s" % self.country_name_n,
+#            "/resources/countries/%s" % self.country_name_n,
         ]
 
         self.json_path_list = [
@@ -133,6 +136,26 @@ class HttpTest(unittest.TestCase, Http):
             "/user",
         ]
         
+        def removed(list_, matches):
+            out = []
+            for i in range(len(list_) - 1, 0, -1):
+                url = list_[i]
+                for match in matches:
+                    if match in url:
+                        out.append(list_.pop(i))
+            return out
+
+        matches = ["/event", "/diary"]
+        if not EVENTS_ENABLED:
+            removed(self.json_path_list, matches)
+            self.html_path_list_none += \
+                removed(self.html_path_list_public, matches)
+            self.html_path_list_none += \
+                removed(self.html_path_list_registered, matches)
+            self.html_path_list_none += \
+                removed(self.html_path_list_moderator, matches)
+
+
 
 # Duplicated in test_web
 class TestPublic(HttpTest):

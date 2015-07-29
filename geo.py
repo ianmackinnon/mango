@@ -225,10 +225,13 @@ def coords(address, cache=geocode_cache_default):
                 address.encode("utf-8"),
                 region=geocode_default_region,  
                 )
-        except geopy.geocoders.googlev3.GeocoderQueryError as e:
+        except geopy.exc.GeocoderUnavailable as e:
             print e
             return None
-        except geopy.geocoders.googlev3.GeocoderQuotaExceeded as e:
+        except geopy.exc.GeocoderQueryError as e:
+            print e
+            return None
+        except geopy.exc.GeocoderQuotaExceeded as e:
             print e
             wait += 1
             continue

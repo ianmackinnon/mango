@@ -48,7 +48,7 @@ serve-test :
 	python \
 	  -W error \
 	  -W ignore::UserWarning:bs4 \
-	  ./mango.py --local=1
+	  ./mango.py --local=1 --events=0
 
 
 # Configuration

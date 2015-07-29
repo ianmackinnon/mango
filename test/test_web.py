@@ -18,6 +18,9 @@ log = logging.getLogger('test_mango_web')
 
 host = "http://localhost:8802"
 
+EVENTS_ENABLED = False
+SESSION_COOKIE = "sm"
+
 
 class HttpTest(unittest.TestCase, Http):
     error_html = "/tmp/mango-error-web.html"
@@ -121,6 +124,26 @@ class HttpTest(unittest.TestCase, Http):
             "/history",
             "/user",
         ]
+
+        def removed(list_, matches):
+            out = []
+            for i in range(len(list_) - 1, 0, -1):
+                url = list_[i]
+                for match in matches:
+                    if match in url:
+                        out.append(list_.pop(i))
+            return out
+
+        matches = ["/event", "/diary"]
+        if not EVENTS_ENABLED:
+            removed(self.json_path_list, matches)
+            self.html_path_list_none += \
+                removed(self.html_path_list_public, matches)
+            self.html_path_list_none += \
+                removed(self.html_path_list_registered, matches)
+            self.html_path_list_none += \
+                removed(self.html_path_list_moderator, matches)
+                
         
 
 # Duplicated in test_live
@@ -214,24 +237,24 @@ class TestAuth(HttpTest):
         response, content = self.http.request(url)
         self.assertEqual(response.status, 302)
         self.assertEqual(response["location"], '/')
-        self.assertLoggedIn(response)
+        self.assertLoggedIn(response, SESSION_COOKIE)
 
         url = self.host + "/auth/login/local?user=9999"
         response, content = self.http.request(url)
         self.assertEqual(response.status, 401)
-        self.assertNotLoggedIn(response)
+        self.assertNotLoggedIn(response, SESSION_COOKIE)
 
         url = self.host + "/auth/login/local?user=0"
         response, content = self.http.request(url)
         self.assertEqual(response.status, 302)
         self.assertEqual(response["location"], '/auth/register')
-        self.assertNotLoggedIn(response)
+        self.assertNotLoggedIn(response, SESSION_COOKIE)
 
         url = self.host + "/auth/login/local?user=0&register=1"
         response, content = self.http.request(url)
         self.assertEqual(response.status, 302)
         self.assertRegexpMatches(response["location"], '/user/[0-9]+$')
-        self.assertLoggedIn(response)
+        self.assertLoggedIn(response, SESSION_COOKIE)
 
 if __name__ == "__main__":
     log.addHandler(logging.StreamHandler())

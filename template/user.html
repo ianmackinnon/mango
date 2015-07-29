@@ -27,7 +27,11 @@ return user.name
 %if not moderator:
 <div class="user-introduction">
   <h2>Welcome to CAAT's mapping application</h4>
-  <p>You can now submit information about companies and events, which will be reviewed by our moderators.</p>
+<p>You can now submit information about companies\
+%if events_enabled:
+ and events\
+%endif
+, which will be reviewed by our moderators.</p>
   <p>Use the buttons in the top right to change between <strong>Edit</strong> and <strong>Browse</strong> modes (you must be in edit mode to add content).</p>
   <p>Your submissions will be shown here until they have been reviewed. Click on any of them to view or make further changes.</p>
 </div>
@@ -54,6 +58,7 @@ ${self.mini.history_table(history, user=False)}
       %endfor
     </ul>
   </div>
+  %if events_enabled:
   <div class="event">
     <h3>Events</h3>
     <a class="action" href="${url_rewrite("/event/new?view=edit")}">Add a new event</a>
@@ -67,6 +72,7 @@ ${self.mini.history_table(history, user=False)}
       %endfor
     </ul>
   </div>
+  %endif
   <div class="address">
     <h3>Addresses</h3>
     <ul>

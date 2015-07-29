@@ -24,12 +24,14 @@ ${header(title=self.application_title()) | n}
            >Companies</a
 ><a href="${url_rewrite("/organisation-tag")}">Tags</a>
       </div>
+      %if events_enabled:
       <div class="nav-group">
         <a
            href="${url_rewrite("/event")}"
            >Events</a
 ><a href="${url_rewrite("/event-tag")}">Tags</a>
       </div>
+      %endif
       %if current_user:
       <a href="${url_rewrite("/note")}">Notes</a>
       %endif

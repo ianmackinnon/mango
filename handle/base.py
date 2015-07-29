@@ -527,6 +527,7 @@ class BaseHandler(RequestHandler):
             "contributor": self.contributor,
             "uri": self.request.uri,
             "xsrf": self.xsrf_token,
+            "events_enabled": self.application.events,
             "json_dumps": json.dumps,
             "query_rewrite": self.query_rewrite,
             "url_rewrite": self.url_rewrite,

@@ -135,7 +135,7 @@ class Http(object):
             self.fail("PHP error. See '%s'." % self.error_html)
 
     @staticmethod
-    def logged_in(response):
+    def logged_in(response, session_cookie_name):
         if not 'set-cookie' in response:
             return None
         text = response["set-cookie"]
@@ -145,12 +145,12 @@ class Http(object):
         for cookie in text.split("; "):
             name, value = cookie.split('=', 1)
             cookies[name] = value
-        return bool(cookies.get('s', None))
+        return bool(cookies.get(session_cookie_name, None))
 
-    def assertLoggedIn(self, response):
-        self.assertEqual(self.logged_in(response), True)
+    def assertLoggedIn(self, response, session_cookie_name):
+        self.assertEqual(self.logged_in(response, session_cookie_name), True)
 
-    def assertNotLoggedIn(self, response):
-        self.assertEqual(self.logged_in(response), False)
+    def assertNotLoggedIn(self, response, session_cookie_name):
+        self.assertEqual(self.logged_in(response, session_cookie_name), False)
                 
 
