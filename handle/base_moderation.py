@@ -98,14 +98,20 @@ def get_pending_parent_entity_id(
     if not entity_id_list:
         return []
 
-    query = orm.query(getattr(parent_entity_v.c, parent_id), getattr(parent_entity_v.c, entity_id)) \
-        .outerjoin((Parent, getattr(Parent, parent_id) == getattr(parent_entity_v.c, parent_id))) \
-        .add_columns(getattr(Parent, parent_id), getattr(Parent, parent_desc)) \
+    query = orm.query(
+        getattr(parent_entity_v.c, parent_id),
+        getattr(parent_entity_v.c, entity_id)
+    ) \
+        .outerjoin(Parent, getattr(Parent, parent_id) == getattr(parent_entity_v.c, parent_id)) \
+        .add_columns(
+            getattr(Parent, parent_id),
+            getattr(Parent, parent_desc)
+        ) \
         .filter(getattr(parent_entity_v.c, entity_id).in_(entity_id_list.keys())) \
         .distinct()
-    
+
     results = []
-    for parent_id, entity_id, parent_exists, parent_desc in query.all():
+    for j, (parent_id, entity_id, parent_exists, parent_desc) in enumerate(query.all()):
         entity_id, entity_desc_new, entity_exists, entity_desc_old, user_name = entity_id_list.pop(entity_id)
         results.append((
             parent_id, parent_desc, bool(parent_exists),

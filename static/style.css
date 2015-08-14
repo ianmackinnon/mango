@@ -310,9 +310,10 @@ form.mango input[disabled="disabled"]
     border-right: 1px solid #ccc;
 }
 
-#mango nav img
-{
-    margin-left: -6px;
+#mango nav a.mango-has-img {
+    padding-left: 0;
+}
+#mango nav img {
     margin-right: 3px;
 }
 

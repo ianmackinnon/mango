@@ -571,6 +571,45 @@ class BaseHandler(RequestHandler):
         return None
 
 
+    # Entities
+
+    @staticmethod
+    def _get_autoincrement(orm, table):
+        sql_get = u"""
+select auto_increment
+  from information_schema.tables
+  where table_name = '%s'
+  and table_schema = database( );
+""" % table
+        (value, ) = orm.execute(sql_get).fetchone()
+        return value
+
+    @staticmethod
+    def _set_autoincrement(orm, Entity, entity_id, auto_id):
+        entity = Entity._dummy(orm)
+        setattr(entity, entity_id, auto_id)
+        orm.add(entity)
+        # Updating auto_increment is permanent even after rollback
+        orm.flush()
+        orm.rollback()
+
+    def _update_entity_autoincrement(self, Entity, Entity_v, entity_id):
+        # MySQL resets InnoDB auto_increment to the highest ID + 1 on restart,
+        # so we need to update autoincrement in case any pending versions
+        # have a higher ID (ie. if the DB has been reset and the last entity
+        # added was not approved by a moderator yet).
+        # This is still susceptible to race conditions but not by so much.
+        attr_id = getattr(Entity_v, entity_id)
+        auto_id = self._get_autoincrement(self.orm, Entity.__table__)
+        (max_id, ) = self.orm.query(attr_id) \
+            .order_by(attr_id.desc()) \
+            .first()
+        # print Entity.__table__, auto_id, max_id
+        if max_id >= auto_id:
+            self._set_autoincrement(self.orm, Entity, entity_id, max_id)
+        auto_id = self._get_autoincrement(self.orm, Entity.__table__)
+        # print auto_id
+
 
     # Arguments
 
@@ -1102,6 +1141,10 @@ class MangoEntityListHandlerMixin(RequestHandler):
 
     @authenticated
     def post(self):
+        # Fix MySQL autoincrement reset
+        self._update_entity_autoincrement(
+            self.Entity, self.Entity_v, self.entity_id)
+
         new_entity = self._create()
         if self._before_set:
             self._before_set(new_entity)

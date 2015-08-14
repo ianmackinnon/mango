@@ -471,6 +471,10 @@ class EventAddressListHandler(BaseEventHandler, BaseAddressHandler):
                 required = False
         event = self._get_event(event_id, required=required)
 
+        # Fix MySQL autoincrement reset
+        self._update_entity_autoincrement(
+            Address, Address_v, "address_id")
+
         address = self._create_address()
         self._before_address_set(address)
         self.orm.add(address)
@@ -566,6 +570,10 @@ class EventContactListHandler(BaseEventHandler, BaseContactHandler):
             if event_v:
                 required = False
         event = self._get_event(event_id, required=required)
+
+        # Fix MySQL autoincrement reset
+        self._update_entity_autoincrement(
+            Contact, Contact_v, "contact_id")
 
         contact = self._create_contact()
         self._before_contact_set(contact)

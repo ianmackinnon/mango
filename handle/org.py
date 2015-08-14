@@ -648,6 +648,10 @@ class OrgAddressListHandler(BaseOrgHandler, BaseAddressHandler):
                 required = False
         org = self._get_org(org_id, required=required)
 
+        # Fix MySQL autoincrement reset
+        self._update_entity_autoincrement(
+            Address, Address_v, "address_id")
+
         address = self._create_address()
         self._before_address_set(address)
         self.orm.add(address)
@@ -744,6 +748,10 @@ class OrgContactListHandler(BaseOrgHandler, BaseContactHandler):
             if org_v:
                 required = False
         org = self._get_org(org_id, required=required)
+
+        # Fix MySQL autoincrement reset
+        self._update_entity_autoincrement(
+            Contact, Contact_v, "contact_id")
 
         contact = self._create_contact()
         self._before_contact_set(contact)

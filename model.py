@@ -6,6 +6,7 @@ import sys
 import math
 import time
 import logging
+import datetime
 from hashlib import sha1, md5
 from optparse import OptionParser
 from urllib import urlencode
@@ -804,6 +805,10 @@ class Org(Base, MangoEntity, NotableEntity):
     def entity_id(cls):
         return cls.org_id
 
+    @classmethod
+    def _dummy(cls, orm):
+        return cls(u"dummy")
+
     def __init__(self,
                  name, description=None, end_date=None,
                  moderation_user=None, public=None):
@@ -1087,6 +1092,11 @@ class Event(Base, MangoEntity, NotableEntity):
     def entity_id(cls):
         return cls.event_id
 
+    @classmethod
+    def _dummy(cls, orm):
+        return cls(u"dummy",
+                   datetime.date(1970, 1, 1), datetime.date(1970, 1, 1))
+
     def __init__(self,
                  name, start_date, end_date,
                  description=None, start_time=None, end_time=None,
@@ -1235,6 +1245,10 @@ class Address(Base, MangoEntity, NotableEntity):
     @classmethod
     def entity_id(cls):
         return cls.address_id
+
+    @classmethod
+    def _dummy(cls, orm):
+        return cls(u"dummy", u"dummy", u"dummy")
 
     def __init__(self,
                  postal, source,
@@ -1689,6 +1703,10 @@ class Note(Base, MangoEntity):
     def entity_id(cls):
         return cls.note_id
 
+    @classmethod
+    def _dummy(cls, orm):
+        return cls(u"dummy", u"dummy")
+
     def __init__(self,
                  text, source,
                  moderation_user=None, public=None):
@@ -1768,6 +1786,11 @@ class Contact(Base, MangoEntity):
     @classmethod
     def entity_id(cls):
         return cls.contact_id
+
+    @classmethod
+    def _dummy(cls, orm):
+        medium = orm.query(Medium).first()
+        return cls(medium, u"dummy")
 
     def __init__(self,
                  medium,

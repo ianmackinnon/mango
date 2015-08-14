@@ -463,7 +463,7 @@ class Application(tornado.web.Application):
             sys.exit(1)
         attach_search(engine, self.orm)
         self.orm.remove()
-            
+
         self.cache.state = self.cache.connected and "active" or "inactive"
 
         # Logging
