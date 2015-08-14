@@ -18,10 +18,10 @@
 if start is None:
     start = 0
 if end is None:
-    end = max_block_length
+    end = max_block_length + 1
 last_tags = None
 %>
-      %for row in packet[key][start:end + 1]:
+      %for row in packet[key][start:end]:
 <%
 (org, dseitag, saptag, tag) = row
 tags = []
@@ -79,8 +79,8 @@ last_tags = (bool(dseitag), bool(saptag))
 
   <% 
      length = min(len(packet[key]), max_block_length)
-     cut1 = int(math.ceil(length / 3))
-     cut2 = cut1 + int(math.ceil((length - cut1) / 2))
+     cut2 = length - int(math.floor(length / 3))
+     cut1 = cut2 - int(math.floor(cut2 / 2))
      %>
 
   <div class="mango-box third">
@@ -111,7 +111,7 @@ last_tags = (bool(dseitag), bool(saptag))
       <div class="total">${len(packet[key])}</div>
     </div>
     ${self.inclusion_table(key, hint=hint,
-                           start=cut2)}
+                           start=cut2, end=length)}
   </div>
 
 </div>
