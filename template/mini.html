@@ -612,7 +612,10 @@ if not parameters:
 	  %if next_url:
 	  <input name="next" type="hidden" value="${url_rewrite(next_url, parameters={})}">
 	  %endif
-	  <input type="submit" value="Delete">
+	  <input
+             type="submit"
+             value="Delete"
+             onclick="return confirm('Really delete this item?')">
 	</form>
       </div>
       %endif
@@ -700,7 +703,10 @@ if not parameters:
       %if next_:
       <input name="next" type="hidden" value="${url_rewrite(next_)}">
       %endif
-      <input type="submit" value="Delete">
+	  <input
+             type="submit"
+             value="Delete"
+             onclick="return confirm('Really delete this item?')">
     </form>
 
 </%def>

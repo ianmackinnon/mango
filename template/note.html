@@ -130,7 +130,10 @@ elif obj:
     %if next_:
     <input name="next" type="hidden" value="${url_rewrite(next_, parameters={})}">
     %endif
-    <input type="submit" value="Delete">
+    <input
+       type="submit"
+       value="Delete"
+       onclick="return confirm('Really delete this item?')">
   </form>
   %endif
 </div>
