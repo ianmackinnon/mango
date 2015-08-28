@@ -115,4 +115,7 @@ Example:
 MySQL
 
     select count(*) from org_orgtag join orgtag using (orgtag_id) where base_short = "dsei-2015";
+
+    delete org_orgtag from org_orgtag join orgtag using (orgtag_id) where base_short = "dsei-2015";
+
     
