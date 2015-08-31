@@ -549,18 +549,33 @@ class BaseHandler(RequestHandler):
             print self.orm.new or self.orm.dirty or self.orm.deleted
             self.orm.rollback()
 
+    def compare_session(self, session):
+        # Returns falsy if equal, truthy if different
+        return \
+            cmp(session.ip_address, self.request.remote_ip) or \
+            cmp(session.accept_language, self.get_accept_language()) or \
+            cmp(session.user_agent, self.get_user_agent())
+
     def get_session(self):
         session_id = self.get_secure_cookie(self.application.session_cookie_name)
+
         try:
             session = self.orm.query(Session).\
                 filter_by(session_id=session_id).one()
         except NoResultFound:
             self.end_session()
             return None
+
         if session.d_time is not None:
             self.end_session()
             return None
+
+        if self.compare_session(session):
+            self.end_session()
+            return None
+
         session.touch_commit()
+
         return session
 
     # required by tornado auth
