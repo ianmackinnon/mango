@@ -149,7 +149,17 @@ purge-mysql:
 
 # Static analysis
 
-lint :
+lint : lint-py lint-js
+
+lint-py :
+	pylint --rcfile=test/pylintrc \
+	  --disable=duplicate-code \
+	  conf.py geo.py mango.py model.py model_v.py \
+	  handle/*.py \
+	  tools/*.py \
+	  skin/*/*.py
+
+lint-js :
 	jshint \
 	  static/address.js \
 	  static/entity.js \
