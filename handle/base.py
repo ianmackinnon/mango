@@ -93,10 +93,13 @@ def markdown_safe(text):
             "ol",
             "li",
             "em",
+            "img",
             "strong",
         ],
         attributes=[
-            "href"
+            "href",
+            "src",
+            "alt",
         ]
     )
     return clean
