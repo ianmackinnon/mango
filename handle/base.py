@@ -92,6 +92,8 @@ def markdown_safe(text):
             "ul",
             "ol",
             "li",
+            "em",
+            "strong",
         ],
         attributes=[
             "href"
