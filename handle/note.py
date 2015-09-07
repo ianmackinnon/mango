@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from sqlalchemy.orm.exc import NoResultFound
+
 from tornado.web import HTTPError
 
 from base import authenticated, \

@@ -114,6 +114,10 @@ class HomeOrgListHandler(BaseHandler):
 
 
 class FairHandler(BaseHandler):
+    # Override:
+    name = None
+    tag_name = None
+
     def get(self):
         self.load_map = True
         self.render(
@@ -138,6 +142,10 @@ class FarnboroughTargetListHandler(HomeTargetListHandler):
 
 
 class FairOrgListHandler(BaseHandler):
+    # Override:
+    cache_key = None
+    tag_name = None
+
     def get(self):
         value = self.cache.get(self.cache_key)
         if value:

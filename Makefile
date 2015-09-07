@@ -159,6 +159,14 @@ lint-py :
 	  tools/*.py \
 	  skin/*/*.py
 
+lint-py-error :
+	pylint --rcfile=test/pylintrc -E\
+	  --disable=duplicate-code \
+	  conf.py geo.py mango.py model.py model_v.py \
+	  handle/*.py \
+	  tools/*.py \
+	  skin/*/*.py
+
 lint-js :
 	jshint \
 	  static/address.js \

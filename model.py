@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import re
 import sys
 import math
@@ -25,6 +26,8 @@ from sqlalchemy import Boolean, Integer, Float as FloatOrig, Numeric, Date, Time
 from sqlalchemy import Unicode as UnicodeOrig, String as StringOrig
 from sqlalchemy.dialects.mysql import LONGTEXT, DOUBLE, VARCHAR
 from sqlalchemy import event as sqlalchemy_event
+
+from tornado.web import HTTPError
 
 import geo
 
@@ -75,7 +78,7 @@ def set_database():
 
 
 
-def sqlite_connection_url(username, password, database):
+def sqlite_connection_url():
     sqlite_path = conf.get(conf_path, u"sqlite", u"database")
     return 'sqlite:///%s' % sqlite_path
 
@@ -255,6 +258,15 @@ url_directory = {
 class MangoEntity(object):
     content_hints = []
 
+    # Override in child class
+    content = None  
+    a_time = None  
+    public = None  
+    entity_id = None  
+    entity_v_id = None  
+    obj_extra = None  
+    __tablename__ = None
+
     def content_same(self, other, public=True):
         extra = public and ["public"] or []
         for name in self.content + extra:
@@ -272,7 +284,7 @@ class MangoEntity(object):
     def url(self):
         name = url_directory[self.__tablename__]
         if not name:
-            raise HTTPError(500, "No URL space for type '%s'." % type(entity))
+            raise HTTPError(500, "No URL space for type '%s'." % self.__tablename__)
         if not self.entity_id_value:
             return None
         url = "/%s/%d" % (name, self.entity_id_value)
@@ -312,7 +324,7 @@ class MangoEntity(object):
 
             obj[camel_case(name)] = value
 
-        if hasattr(self, "obj_extra"):
+        if getattr(self, "obj_extra", None):
             obj.update(self.obj_extra(obj))
 
         for name, value in kwargs.items():
@@ -1136,13 +1148,13 @@ class Event(Base, MangoEntity, NotableEntity):
         return o
 
     @staticmethod
-    def get(orm, name, moderation_user=None, public=None):
+    def get(orm, name, start_date, end_date, moderation_user=None, public=None):
         name = sanitise_name(name)
         try:
             event = orm.query(Event).filter(Event.name == name).one()
         except NoResultFound:
             event = Event(
-                name,
+                name, start_date, end_date, 
                 moderation_user=moderation_user, public=public,
                 )
             orm.add(event)

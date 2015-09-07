@@ -25,8 +25,6 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm.query import Query
 from sqlalchemy.exc import SQLAlchemyError, OperationalError
 
-import mysql.mysql_init
-
 from handle.base import BaseHandler, MarkdownSafeHandler, \
     authenticated, sha1_concat
 from handle.generate import GenerateMarkerHandler
@@ -108,20 +106,20 @@ conf_path = ".mango.conf"
 
 
 
-class BaseCache(object): 
+class BaseCache(object):
     def set_namespace(self, namespace):
         self._namespace = namespace
         return self._namespace
 
     def key(self, key):
         return self._namespace + ":" + key
-    
+
 
 
 class DictCache(BaseCache):
     def __init__(self, namespace):
         self._cache = {}
-        
+
     def get(self, key):
         return self._cache.get(key, None)
 
@@ -142,7 +140,7 @@ class RedisCache(BaseCache):
     @property
     def name(self):
         return "redis"
-        
+
     @property
     def connected(self):
         try:
@@ -150,7 +148,7 @@ class RedisCache(BaseCache):
         except redis.ConnectionError as e:
             return False
         return True
-        
+
     def get(self, key):
         try:
             value = self._cache.get(self.key(key))
@@ -405,14 +403,14 @@ class Application(tornado.web.Application):
             self.handlers = filter(lambda x: "/event" not in x[0], self.handlers)
         if not self.events:
             self.handlers = filter(lambda x: "/diary" not in x[0], self.handlers)
-        
+
         self.handlers = self.process_handlers(self.handlers)
 
         settings = dict()
 
         # serves /robots.txt and /favicon.ico from static
         # settings["static_path"] = os.path.join(os.path.dirname(__file__), "static")
-            
+
         # Authentication & Cookies
 
         settings["google_oauth"] = {
@@ -440,7 +438,7 @@ class Application(tornado.web.Application):
             self.database_namespace = 'sqlite:///%s' % sqlite_database
             self.database_mtime = datetime.datetime.utcfromtimestamp(
                 os.path.getmtime(sqlite_database))
-            
+
         self.cache = RedisCache(
             self.cache_namespace(self.database_mtime.isoformat()))
 
@@ -507,14 +505,14 @@ class Application(tornado.web.Application):
             sys.exit(1)
 
         self.offsite = options.offsite
-        
+
         self.lookup = TemplateLookup(
             directories=['template'],
             input_encoding='utf-8',
             output_encoding='utf-8',
             default_filters=["unicode", "h"],
             )
-        
+
         # HTTP Server
 
         self.forwarding_server_list = forwarding_server_list
@@ -538,7 +536,7 @@ class Application(tornado.web.Application):
                 datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
                 ))
         sys.stdout.flush()
-        
+
 
 
 def main():

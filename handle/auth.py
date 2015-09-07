@@ -105,6 +105,7 @@ class AuthLoginLocalHandler(LoginHandler):
 
 
 class AuthLoginGoogleHandler(LoginHandler, tornado.auth.GoogleOAuth2Mixin):
+    # pylint: disable=no-value-for-parameter
 
     # Only used for our local database, not for actual auth
     openid_url = u"https://www.google.com/accounts/o8/id"

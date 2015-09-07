@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import re
-import sys
 import json
 import time
 import redis
@@ -17,23 +16,23 @@ from geolocation import GeoLocation
 
 
 
-log = logging.getLogger('geo')
-log.addHandler(logging.StreamHandler())
+LOG = logging.getLogger('geo')
+LOG.addHandler(logging.StreamHandler())
 
 
 
-http = httplib2.Http(cache=None)
-geocoder = geopy.geocoders.GoogleV3()
-redis_server = redis.Redis("localhost")
-wait = 0.0
-attempts = 3
-geocode_cache_default = True
+HTTP = httplib2.Http(cache=None)
+GEOCODER = geopy.geocoders.GoogleV3()
+REDIS_SERVER = redis.Redis("localhost")
+WAIT = 0.0
+ATTEMPTS = 3
+GEOCODE_CACHE_DEFAULT = True
 # https://developers.google.com/maps/documentation/geocoding/#RegionCodes
-geocode_default_region = "uk"
+GEOCODE_DEFAULT_REGION = "uk"
 
 
 
-exclude = [
+EXCLUDE = [
     "po box",
     "p o box",
     "p.o. box",
@@ -67,6 +66,12 @@ class Geobox(object):
         self.name = None
         self.long_name = None
         self.type_ = None
+
+        self.south = None
+        self.north = None
+        self.west = None
+        self.east = None
+
         if "name" in kwargs:
             self.name = kwargs["name"]
         if "long_name" in kwargs:
@@ -76,6 +81,7 @@ class Geobox(object):
         if len(args) == 4:
             self.set_from_coords(*args)
             return
+
         elif len(args) == 1:
             if isinstance(args[0], Geobox):
                 self.set_from_geobox(args[0])
@@ -120,10 +126,11 @@ class Geobox(object):
         self.type_ = other.type_
 
     def set_from_string(self, s):
-        coords = s.split(",")
-        if not len(coords) == 4:
-            raise ValueError("Geobox string must be four comma-separated numbers.")
-        self.set_from_coords(*coords)
+        parts = s.split(",")
+        if not len(parts) == 4:
+            raise ValueError(
+                "Geobox string must be four comma-separated numbers.")
+        self.set_from_coords(*parts)
 
     def to_obj(self):
         obj = {
@@ -148,9 +155,9 @@ class Geobox(object):
             obj.get("west", None),
             obj.get("east", None),
             )
-        geobox.name = obj.get("name", None);
-        geobox.long_name = obj.get("longName", None);
-        geobox.type_ = obj.get("type", None);
+        geobox.name = obj.get("name", None)
+        geobox.long_name = obj.get("longName", None)
+        geobox.type_ = obj.get("type", None)
         return geobox
 
     def to_json(self):
@@ -171,29 +178,31 @@ class Geobox(object):
             self.name and (" '" + self.name[:16] + "'") or "",
             self.south, self.north, self.west, self.east)
 
-    def set_min_radius(bounds, radius=None):
+    def set_min_radius(self, radius=None):
         # Radius in Km
         if radius is None:
             return
-        bbox = GeoLocation.from_degrees(bounds.latitude(), bounds.longitude()).bounding_locations(radius)
-        bounds.south = min(bounds.south, bbox[0].deg_lat)
-        bounds.north = max(bounds.north, bbox[1].deg_lat)
-        bounds.west = min(bounds.west, bbox[0].deg_lon)
-        bounds.east = max(bounds.east, bbox[1].deg_lon)
+        bbox = GeoLocation.from_degrees(
+            self.latitude(), self.longitude()
+        ).bounding_locations(radius)
+        self.south = min(self.south, bbox[0].deg_lat)
+        self.north = max(self.north, bbox[1].deg_lat)
+        self.west = min(self.west, bbox[0].deg_lon)
+        self.east = max(self.east, bbox[1].deg_lon)
 
 
 
 def clean_address(address):
-    address = re.sub("\s+", " ", address)
+    address = re.sub(r"\s+", " ", address)
     address = address.strip()
-    address = re.sub("[^\w\s]+", "", address)
+    address = re.sub(r"[^\w\s]+", "", address)
     address = address.lower()
     return address
 
 
 
-def coords(address, cache=geocode_cache_default):
-    global wait
+def coords(address, cache=GEOCODE_CACHE_DEFAULT):
+    global WAIT
 
     address = clean_address(address)
 
@@ -202,28 +211,31 @@ def coords(address, cache=geocode_cache_default):
     if cache:
         value = None
         try:
-            value = redis_server.get(key)
+            value = REDIS_SERVER.get(key)
         except redis.ConnectionError as e:
-            log.warning("Connection to redis server on localhost failed.")
-            pass
-            
+            LOG.warning("Connection to redis server on localhost failed.")
+
         if value:
             try:
                 return json.loads(value)
             except ValueError:
-                log.debug("Could not decode JSON.")
+                LOG.debug("Could not decode JSON.")
 
-    for attempt in xrange(attempts):
-        if wait:
-            print "Waiting: %.3f" % wait
-            time.sleep(wait)
-        for term in exclude:
+    attempts = ATTEMPTS
+    while attempts:
+        # pylint: disable=unpacking-non-sequence
+        attempts -= 1
+
+        if WAIT:
+            LOG.info("Waiting: %.3f", WAIT)
+            time.sleep(WAIT)
+        for term in EXCLUDE:
             if term in address.lower():
                 return None
         try:
-            result = geocoder.geocode(
+            result = GEOCODER.geocode(
                 address.encode("utf-8"),
-                region=geocode_default_region,  
+                region=GEOCODE_DEFAULT_REGION,
                 )
         except geopy.exc.GeocoderUnavailable as e:
             print e
@@ -233,7 +245,7 @@ def coords(address, cache=geocode_cache_default):
             return None
         except geopy.exc.GeocoderQuotaExceeded as e:
             print e
-            wait += 1
+            WAIT += 1
             continue
         except URLError as e:
             print e
@@ -248,21 +260,20 @@ def coords(address, cache=geocode_cache_default):
 
         value = json.dumps((latitude, longitude))
         try:
-            redis_server.set(key, value)
+            REDIS_SERVER.set(key, value)
         except redis.ConnectionError as e:
-            log.warning("Connection to redis server on localhost failed.")
-            pass
-        wait = max(0, wait - .1)
+            LOG.warning("Connection to redis server on localhost failed.")
+        WAIT = max(0, WAIT - .1)
         break
-        
+
     return (latitude, longitude)
 
 
 
-def bounds(address_full, min_radius=None, cache=geocode_cache_default):
-    global wait
-    bounds = None
-    
+def bounds(address_full, min_radius=None, cache=GEOCODE_CACHE_DEFAULT):
+    global WAIT
+    bounds_ = None
+
     address = clean_address(address_full)
 
     key = "geo:bounds:%s" % md5(address).hexdigest()
@@ -270,32 +281,36 @@ def bounds(address_full, min_radius=None, cache=geocode_cache_default):
     if cache:
         value = None
         try:
-            value = redis_server.get(key)
-        except redis.ConnectionError as e:
-            log.warning("Connection to redis server on localhost failed.")
-            pass
-            
+            value = REDIS_SERVER.get(key)
+        except redis.ConnectionError:
+            LOG.warning("Connection to redis server on localhost failed.")
+
         if value:
             try:
-                bounds = Geobox.from_json(value)
-                bounds.name = address_full
-                bounds.set_min_radius(min_radius)
+                bounds_ = Geobox.from_json(value)
+                bounds_.name = address_full
+                bounds_.set_min_radius(min_radius)
             except ValueError:
-                log.debug("Could not decode Redis value '%s' to Geobox." % value)
+                LOG.debug("Could not decode Redis value '%s' to Geobox.",
+                          value)
 
-    for attempt in xrange(attempts):
-        if wait:
-            log.info("Waiting: %.3f" % wait)
-            time.sleep(wait)
+    attempts = ATTEMPTS
+    while attempts:
+        attempts -= 1
+
+        if WAIT:
+            LOG.info("Waiting: %.3f", WAIT)
+            time.sleep(WAIT)
 
         parameters = urllib.urlencode({
-                "sensor": "false",
-                "address": address,
-                "region": geocode_default_region,
-                })
+            "sensor": "false",
+            "address": address,
+            "region": GEOCODE_DEFAULT_REGION,
+        })
 
-        url = u"http://maps.googleapis.com/maps/api/geocode/json?%s" % parameters
-        response, content = http.request(url)
+        url = (u"http://maps.googleapis.com/maps/api/geocode/json?%s" %
+               parameters)
+        response, content = HTTP.request(url)
 
         if response.status != 200:
             continue
@@ -308,36 +323,36 @@ def bounds(address_full, min_radius=None, cache=geocode_cache_default):
         long_name = None
         type_ = None
         for component in content["results"][0]["address_components"]:
-            type_set = set(["postal_code", "political"]) & set(component["types"])
+            type_set = (set(["postal_code", "political"]) &
+                        set(component["types"]))
             if type_set:
                 long_name = component["long_name"]
                 type_ = type_set.pop()
-                break;
+                break
         geometry = content["results"][0]["geometry"]
         viewport = geometry["viewport"]
-        bounds = Geobox(
-                viewport["southwest"]["lat"],
-                viewport["northeast"]["lat"],
-                viewport["southwest"]["lng"], 
-                viewport["northeast"]["lng"]
-                )
+        bounds_ = Geobox(
+            viewport["southwest"]["lat"],
+            viewport["northeast"]["lat"],
+            viewport["southwest"]["lng"],
+            viewport["northeast"]["lng"]
+        )
 
-        value = bounds
+        value = bounds_
 
-        bounds.long_name = long_name
-        bounds.type_ = type_
+        bounds_.long_name = long_name
+        bounds_.type_ = type_
 
         try:
-            redis_server.set(key, value.to_json())
-        except redis.ConnectionError as e:
-            log.warning("Connection to redis server on localhost failed.")
-            pass
+            REDIS_SERVER.set(key, value.to_json())
+        except redis.ConnectionError:
+            LOG.warning("Connection to redis server on localhost failed.")
 
-        bounds.name = address_full
+        bounds_.name = address_full
 
-        wait = max(0, wait - .1)
+        WAIT = max(0, WAIT - .1)
         break
 
-    if bounds:
-        bounds.set_min_radius(min_radius)
-    return bounds
+    if bounds_:
+        bounds_.set_min_radius(min_radius)
+    return bounds_

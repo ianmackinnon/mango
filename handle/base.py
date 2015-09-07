@@ -25,6 +25,7 @@ from tornado.web import RequestHandler, HTTPError
 # from tornado.web import authenticated as tornado_authenticated
 
 # For _execute replacement
+import iostream
 from tornado.concurrent import Future, is_future
 from tornado import gen
 from tornado.web import _has_stream_request_body
@@ -243,6 +244,7 @@ def url_rewrite_static(uri, root=None, options=None, parameters=None, next_=None
 class BaseHandler(RequestHandler):
 
     _unsupported_method_error = (403, "Method Not Allowed")
+    _unsupported_methods = None
 
     def __init__(self, *args, **kwargs):
         self.SUPPORTED_METHODS += ("TOUCH", )

@@ -16,7 +16,8 @@ from eventtag import BaseEventtagHandler
 from address import BaseAddressHandler
 from contact import BaseContactHandler
 
-from model import Event, Note, Address, Org, Eventtag, event_eventtag
+from model import Event, Note, Address, Contact, \
+    Org, Eventtag, event_eventtag
 
 from model_v import Event_v, Address_v, Contact_v, \
     event_address_v, event_contact_v, \
