@@ -11,12 +11,20 @@ from model import short_name, detach, url_directory
 
 
 class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
-    Tag = None
-    Entity = None
+    # Override:
     tag_id = None
     entity_id = None
+    entity_type = None
     cross_table = None
     tag_type = None
+
+    # Override:
+    def Tag(self, *args, **kwargs):
+        raise NotImplementedError
+
+    # Override:
+    def Entity(self, *args, **kwargs):
+        raise NotImplementedError
 
     def _get_tag(self, tag_id, options=None):
         query = self.orm.query(self.Tag)\
@@ -57,6 +65,9 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         return tag
 
     def _get_entity_arguments(self):
+        # pylint: disable=maybe-no-member
+        # (`self.get_argument` appears to return list)
+
         is_json = self.content_type("application/json")
         name = self.get_argument("name", json=is_json)
         description = self.get_argument("description", None, json=is_json)

@@ -8,8 +8,9 @@ import time
 import json
 import codecs
 import logging
-
 from optparse import OptionParser
+
+import Levenshtein
 
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker, object_session 
@@ -249,6 +250,7 @@ def insert_fast(data, orm, public=None, tag_names=None, dry_run=None, address_ex
         tags.append(tag)
 
     for chunk in data:
+        # pylint: disable=maybe-no-member
         has_address = None
         log.info(("\n%s\n" % chunk["name"]).encode("utf-8"))
         org = select_org(orm, chunk["name"], user, search)

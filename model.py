@@ -234,6 +234,8 @@ def verify_salted_hash(plaintext, salted_hash):
 
 class classproperty(property):
     def __get__(self, cls, owner):
+        # pylint: disable=no-member
+        # (`fget.__get__` is generated)
         return self.fget.__get__(None, owner)()
 
 
@@ -304,7 +306,7 @@ class MangoEntity(object):
             "date": self.a_time,
             }
 
-        if hasattr(self, "entity_v_id"):
+        if getattr(self, "entity_v_id", None):
             obj.update({
                     "vId": self.entity_v_id_value,
                     "suggestion": True,
@@ -325,6 +327,8 @@ class MangoEntity(object):
             obj[camel_case(name)] = value
 
         if getattr(self, "obj_extra", None):
+            # pylint: disable=not-callable
+            # (`self.obj_extra` may be `None`)
             obj.update(self.obj_extra(obj))
 
         for name, value in kwargs.items():
@@ -334,11 +338,13 @@ class MangoEntity(object):
 
     @property
     def entity_id_value(self):
-        return getattr(self, self.entity_id.key, None)
+        return (getattr(self, "entity_id", None) and
+                getattr(self, self.entity_id.key, None))
 
     @property
     def entity_v_id_value(self):
-        return getattr(self, self.entity_v_id.key, None)
+        return (getattr(self, "entity_v_id", None) and
+                getattr(self, self.entity_v_id.key, None))
 
 
 

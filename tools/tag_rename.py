@@ -7,12 +7,11 @@ sys.path.append(".")
 
 import logging
 
-from optparse import OptionParser
+from optparse import OptionParser, OptionError
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
-import mysql.mysql_init
-
+from model import connection_url_app
 from model import Orgtag, Eventtag
 
 
@@ -56,11 +55,6 @@ Bulk rename tag paths.
                       help="Print verbose information for debugging.", default=0)
     parser.add_option("-q", "--quiet", action="count", dest="quiet",
                       help="Suppress warnings.", default=0)
-    parser.add_option("-d", "--database", action="store", dest="database",
-                      help="sqlite or mysql.", default="sqlite")
-    parser.add_option("-c", "--configuration", action="store",
-                      dest="configuration", help=".conf file.",
-                      default=".mango.conf")
     parser.add_option("-n", "--dry-run", action="store_true", dest="dry_run",
                       help="Dry run.", default=None)
 
@@ -80,18 +74,9 @@ Bulk rename tag paths.
     except IndexError as e:
         raise OptionError
 
-    if options.database == "mysql":
-        (database,
-         app_username, app_password,
-         admin_username, admin_password) = mysql.mysql_init.get_conf(
-            options.configuration)
-        connection_url = 'mysql://%s:%s@localhost/%s?charset=utf8' % (
-            admin_username, admin_password, database)
-    else:
-        connection_url = 'sqlite:///mango.db'
-
-    engine = create_engine(connection_url)
-    Session = sessionmaker(bind=engine, autocommit=False)
+    connection_url = connection_url_app()
+    engine = create_engine(connection_url,)
+    Session = sessionmaker(bind=engine, autocommit=False, autoflush=False)
     orm = Session()
 
     tag_rename(orm, Tag, before, after)

@@ -26,8 +26,6 @@ from sqlalchemy.dialects.mysql import LONGTEXT, DOUBLE
 
 from sqlalchemy.sql import select
 
-import mysql.mysql_init
-
 from hashlib import md5
 
 from model import connection_url_app, attach_search

@@ -17,13 +17,12 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from sqlalchemy.sql import select
 
-import mysql.mysql_init
-
 from hashlib import md5
 
+from model import connection_url_app
 from model import User, Event, Eventtag, Org, Orgtag, Orgalias, Note, Address
-
-from model_v import Org_v, Orgalias_v, Orgtag_v, Event_v, Eventtag_v, Address_v, Note_v, use_mysql
+from model_v import Org_v, Orgalias_v, Orgtag_v, Event_v, Eventtag_v, \
+    Address_v, Note_v, use_mysql
 
 
 
@@ -383,27 +382,9 @@ ID:   Integer organisation IDs to merge."""
         (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[verbosity]
         )
 
-    if options.database == "mysql":
-        (database,
-         app_username, app_password,
-         admin_username, admin_password) = mysql.mysql_init.get_conf(
-            options.configuration)
-        connection_url = 'mysql://%s:%s@localhost/%s?charset=utf8' % (
-            admin_username, admin_password, database)
-        use_mysql()
-    else:
-        connection_url = 'sqlite:///mango.db'
-
-    if len(args):
-        main(orm, options.threshold, options.characters, options.alpha)
-        parser.print_usage()
-        sys.exit(0)
-
-    engine = create_engine(
-        connection_url,
-        echo=False,
-        )
-    Session = sessionmaker(bind=engine, autocommit=False)
+    connection_url = connection_url_app()
+    engine = create_engine(connection_url,)
+    Session = sessionmaker(bind=engine, autocommit=False, autoflush=False)
     orm = Session()
 
     audit_cross(orm)

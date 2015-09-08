@@ -4,6 +4,8 @@ import json
 import random
 from collections import OrderedDict
 
+import Levenshtein
+
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import literal_column, or_, and_, not_, distinct
@@ -36,8 +38,6 @@ from model_v import Org_v, Address_v, Contact_v, \
 from handle.user import \
     get_user_pending_org_address, \
     get_user_pending_org_contact
-
-import Levenshtein
 
 
 

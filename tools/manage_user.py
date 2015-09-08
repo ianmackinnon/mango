@@ -11,7 +11,7 @@ from optparse import OptionParser
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
-import mysql.mysql_init
+import mysql.mysql
 
 from model import connection_url_admin
 from model import Auth, User, Session

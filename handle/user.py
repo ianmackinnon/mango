@@ -3,6 +3,7 @@
 from tornado.web import HTTPError
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql.expression import exists, and_, or_
+from sqlalchemy.orm.exc import NoResultFound
 
 from base import BaseHandler, authenticated
 from model import User
@@ -369,7 +370,7 @@ class UserHandler(BaseHandler):
 
         try:
             user = self.orm.query(User).filter_by(user_id=user_id).one()
-        except sqlalchemy.orm.exc.NoResultFound:
+        except NoResultFound:
             raise HTTPError(404, "%d: No such user" % user_id)
 
         is_json = self.content_type("application/json")

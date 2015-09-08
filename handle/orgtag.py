@@ -118,6 +118,9 @@ class OrgtagHandler(BaseOrgtagHandler,
 
     @authenticated
     def put(self, entity_id):
+        # pylint: disable=not-callable
+        # `self._get` and `self._create` are properties
+
         if not self.moderator:
             raise HTTPError(404)
 

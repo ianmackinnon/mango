@@ -8,11 +8,17 @@ import hashlib
 import datetime
 import mimetypes
 import email.utils
-
 from subprocess import Popen, PIPE
+
 from tornado.web import StaticFileHandler, HTTPError
 
+from mako import exceptions
+
 class GenerateHandler(StaticFileHandler):
+    # Override
+    def generate(self, path, abspath):
+        raise NotImplementedError
+
     def initialize(self, path, default_filename=None):
         self.root = os.path.abspath(path) + os.path.sep
         self.default_filename = default_filename
@@ -76,6 +82,7 @@ class GenerateHandler(StaticFileHandler):
             data = file.read()
 
             #---
+            # pylint: disable=no-member
             if not hasattr(self, "etag") or self.etag:
                 hasher = hashlib.sha1()
                 hasher.update(data)

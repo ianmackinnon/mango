@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# pylint: disable=no-value-for-parameter
+
 
 from sqlalchemy import Column, Table
 from sqlalchemy import and_
@@ -290,7 +292,7 @@ def accept_address_org_v(orm, address_id):
             "org_id": org_id,
             "a_time": 0,
             }]
-    orm.connection().execute(org_address.insert(), *items)
+    orm.connection().engine.execute(org_address.insert(), *items)
     orm.commit()
     return True
         

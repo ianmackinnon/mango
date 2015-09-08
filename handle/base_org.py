@@ -127,6 +127,8 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         Returns:      A matching list of tuples like (org_id, orgalias_id) where
                       orgalias_id may be None.
         """
+        # pylint: disable=no-member
+        # (`Orgalias.org` is generated)
 
         org_name_query = self.orm.query(
             Org.name.label("name"),

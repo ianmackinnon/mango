@@ -25,7 +25,7 @@ from tornado.web import RequestHandler, HTTPError
 # from tornado.web import authenticated as tornado_authenticated
 
 # For _execute replacement
-import iostream
+from tornado import iostream
 from tornado.concurrent import Future, is_future
 from tornado import gen
 from tornado.web import _has_stream_request_body
@@ -257,6 +257,7 @@ class BaseHandler(RequestHandler):
         self.set_parameters()
         self.next_ = self.get_argument("next", None)
         self.load_map = False
+        self.json_data = None
 
     def prepare(self):
         self.start = time.time()
@@ -311,7 +312,7 @@ class BaseHandler(RequestHandler):
         try:
             # mango start
             if (self.request.method not in self.SUPPORTED_METHODS) or \
-               (hasattr(self, "_unsupported_methods") and (
+               (getattr(self, "_unsupported_methods", None) and (
                    True in self._unsupported_methods or \
                    self.request.method.lower() in self._unsupported_methods
                )):
@@ -773,7 +774,7 @@ select auto_increment
 
 
     def get_json_data(self):
-        if hasattr(self, "json_data") and self.json_data:
+        if self.json_data:
             return
         if self.request.body:
             try:
@@ -827,14 +828,6 @@ select auto_increment
     def write_json(self, obj):
         self.set_header("Content-Type", "application/json; charset=UTF-8")
         self.write(self.dump_json(obj))
-
-    def has_geo_arguments(self):
-        self.lookup = self.get_argument("lookup", None)
-        return bool(
-            self.get_argument_geobox(default=None) or \
-                self.get_argument_latlon("latlon", None) or \
-                self.lookup
-            )
 
     def filter_visibility(self, query, Entity, visibility=None,
                           secondary=False, null_column=False):
@@ -1078,7 +1071,7 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
         
 
 
-class MangoEntityHandlerMixin(RequestHandler):
+class MangoEntityHandlerMixin(BaseHandler):
     def _before_delete(self, entity):
         pass
 

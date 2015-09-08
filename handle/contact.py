@@ -49,6 +49,9 @@ class BaseContactHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                               )
 
     def _create_contact(self, id_=None, version=False):
+        # pylint: disable=maybe-no-member
+        # (`self.get_argument` appears to return list)
+
         is_json = self.content_type("application/json")
         
         medium_name = self.get_argument("medium", json=is_json)
