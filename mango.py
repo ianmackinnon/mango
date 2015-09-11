@@ -267,7 +267,7 @@ class Application(tornado.web.Application):
         self.events = options.events
 
         self.handlers = [
-            (r"/", HomeHandler),
+            (r"/", HomeRedirectHandler),
             (r"/home", HomeHandler),
             (r"/home-org", HomeOrgListHandler),
             (r"/home-target", HomeTargetListHandler),
