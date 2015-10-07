@@ -218,6 +218,9 @@ def select_org(orm, name, user, search=True):
         return
 
     es = orm.get_bind().search
+    if es is None:
+        log.error("Cannot connect to Elasticsearch.")
+        sys.exit(1)
     org_id = search_org(es, name)
 
     if not org_id:
