@@ -45,11 +45,12 @@ test : mysql-test serve-test
 
 serve-test :
 #	Ignore BS4 File/URL warnings
+#	Ignore httplib2 Google app engine install warning
 	python \
 	  -W error \
 	  -W ignore::UserWarning:bs4 \
+	  -W ignore::ImportWarning:httplib2 \
 	  ./mango.py --local=1 --events=0
-
 
 # Configuration
 

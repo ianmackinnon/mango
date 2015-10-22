@@ -1156,9 +1156,13 @@ class MangoEntityListHandlerMixin(RequestHandler):
 
     @authenticated
     def post(self):
-        # Fix MySQL autoincrement reset
-        self._update_entity_autoincrement(
-            self.Entity, self.Entity_v, self.entity_id)
+        if not (self.moderator or hasattr(self, "Entity_v")):
+            raise HTTPError(405, "Method not allowed.")
+            
+        if hasattr(self, "Entity_v"):
+            # Fix MySQL autoincrement reset
+            self._update_entity_autoincrement(
+                self.Entity, self.Entity_v, self.entity_id)
 
         new_entity = self._create()
         if self._before_set:
