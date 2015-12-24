@@ -17,7 +17,7 @@ from sqlalchemy import Column, Table, and_
 from sqlalchemy import ForeignKey, ForeignKeyConstraint, UniqueConstraint, CheckConstraint, PrimaryKeyConstraint
 from sqlalchemy.orm import sessionmaker, create_session, relationship, backref, object_session
 from sqlalchemy.orm.util import has_identity
-from sqlalchemy.orm.interfaces import MapperExtension 
+from sqlalchemy.orm.interfaces import MapperExtension
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
@@ -46,6 +46,7 @@ String = lambda : StringOrig
 Unicode = lambda : UnicodeOrig
 StringKey = lambda : StringOrig
 UnicodeKey = lambda : UnicodeOrig
+MYSQL_MAX_KEY = 255
 
 conf_path = ".mango.conf"
 
@@ -57,8 +58,12 @@ def use_mysql():
     String = lambda : LONGTEXT(charset="latin1", collation="latin1_swedish_ci")
     Unicode = lambda : LONGTEXT(charset="utf8", collation="utf8_bin")
     # MySQL needs a character limit to use a variable-length column as a key.
-    StringKey = lambda : VARCHAR(length=128, charset="latin1", collation="latin1_swedish_ci")
-    UnicodeKey = lambda : VARCHAR(length=128, charset="utf8", collation="utf8_bin")
+    StringKey = lambda: VARCHAR(
+        length=MYSQL_MAX_KEY,
+        charset="latin1", collation="latin1_swedish_ci")
+    UnicodeKey = lambda: VARCHAR(
+        length=MYSQL_MAX_KEY,
+        charset="utf8", collation="utf8_bin")
 
 
 
@@ -199,7 +204,7 @@ def detach(entity):
     session = object_session(entity)
     if session and not has_identity(entity):
         session.expunge(entity)
-        
+
 
 
 def gravatar_hash(plaintext):
@@ -239,7 +244,7 @@ class classproperty(property):
         return self.fget.__get__(None, owner)()
 
 
-    
+
 url_directory = {
     "org": "organisation",
     "org_v": "organisation",
@@ -261,12 +266,12 @@ class MangoEntity(object):
     content_hints = []
 
     # Override in child class
-    content = None  
-    a_time = None  
-    public = None  
-    entity_id = None  
-    entity_v_id = None  
-    obj_extra = None  
+    content = None
+    a_time = None
+    public = None
+    entity_id = None
+    entity_v_id = None
+    obj_extra = None
     __tablename__ = None
 
     def content_same(self, other, public=True):
@@ -311,7 +316,7 @@ class MangoEntity(object):
                     "vId": self.entity_v_id_value,
                     "suggestion": True,
                     })
-            
+
         if bool(kwargs.pop("public", None)):
             obj["public"] = self.public
 
@@ -333,7 +338,7 @@ class MangoEntity(object):
 
         for name, value in kwargs.items():
             obj[camel_case(name)] = value
-            
+
         return obj
 
     @property
@@ -375,15 +380,15 @@ class NotableEntity(object):
                 "desc":Note.a_time.desc(),
                 "asc":Note.a_time.asc(),
                         }[note_order])
-            
+
 #        if note_offset is not None:
 #            query = query.offset(note_offset)
 
         count = query.count()
 #        query = query.limit(30).all()
         return query, count
-    
-    
+
+
 
 address_note = Table(
     'address_note', Base.metadata,
@@ -522,19 +527,19 @@ note_fts = Table(
 class Auth(Base):
     __tablename__ = 'auth'
     __table_args__ = (
-        UniqueConstraint('url', 'name_hash'),    
+        UniqueConstraint('url', 'name_hash'),
         {
             'sqlite_autoincrement': True,
             "mysql_engine": 'InnoDB',
             }
         )
-    
+
     auth_id = Column(Integer, primary_key=True)
 
     url = Column(StringKey(), nullable=False)
     name_hash = Column(StringKey(), nullable=False)
     gravatar_hash = Column(String(), nullable=False)
-    
+
     def __init__(self, url, name):
         """
         "name" must be a unique value for the specified provider url,
@@ -560,22 +565,22 @@ class Auth(Base):
             orm.add(auth)
 
         return auth
-        
+
 
 
 class User(Base):
     __tablename__ = 'user'
     __table_args__ = (
-        UniqueConstraint('auth_id'),    
+        UniqueConstraint('auth_id'),
         {
             'sqlite_autoincrement': True,
             "mysql_engine": 'InnoDB',
             }
         )
-     
+
     user_id = Column(Integer, primary_key=True)
     auth_id = Column(Integer, ForeignKey(Auth.auth_id), nullable=True)
-    
+
     name = Column(Unicode(), nullable=False)
 
     moderator = Column(Boolean, nullable=False, default=False)
@@ -624,8 +629,8 @@ class User(Base):
 
         return user
 
-        
-      
+
+
 class Session(Base):
     __tablename__ = 'session'
     __table_args__ = {
@@ -643,7 +648,7 @@ class Session(Base):
     ip_address = Column(String(), nullable=False)
     accept_language = Column(String(), nullable=False)
     user_agent = Column(String(), nullable=False)
-    
+
     user = relationship(User, backref='session_list')
 
     def __init__(self, user, ip_address=None, accept_language=None, user_agent=None):
@@ -653,7 +658,7 @@ class Session(Base):
         self.ip_address = ip_address
         self.accept_language = accept_language
         self.user_agent = user_agent
-        
+
     def touch_commit(self):
         "Update the accessed time on the db."
         session = object_session(self)
@@ -700,7 +705,7 @@ class Org(Base, MangoEntity, NotableEntity):
 
     org_id = Column(Integer, primary_key=True)
 
-    name = Column(Unicode(), nullable=False)
+    name = Column(UnicodeKey(), nullable=False, index=True)
     description = Column(Unicode())
     end_date = Column(Date)
 
@@ -709,7 +714,7 @@ class Org(Base, MangoEntity, NotableEntity):
     public = Column(Boolean)
 
     moderation_user = relationship(User, backref='moderation_org_list')
-    
+
     orgalias_list = relationship(
         "Orgalias",
         backref='org',
@@ -811,7 +816,7 @@ class Org(Base, MangoEntity, NotableEntity):
             ),
         passive_deletes=True,
         )
-    
+
     content = [
         "name",
         "description",
@@ -865,7 +870,7 @@ class Org(Base, MangoEntity, NotableEntity):
 
     def merge(self, other, moderation_user):
         "Merge other into self. Does not re-link pending versions."
-        
+
         session = object_session(self)
         assert session
 
@@ -930,7 +935,7 @@ class Orgalias(Base, MangoEntity):
     orgalias_id = Column(Integer, primary_key=True)
 
     org_id = Column(Integer, ForeignKey(Org.org_id), nullable=False)
-    
+
     name = Column(Unicode(), nullable=False)
 
     moderation_user_id = Column(Integer, ForeignKey(User.user_id))
@@ -1009,10 +1014,10 @@ class Event(Base, MangoEntity, NotableEntity):
     a_time = Column(Float(), nullable=False)
     public = Column(Boolean)
 
-    
+
 
     moderation_user = relationship(User, backref='moderation_event_list')
-    
+
     note_list = relationship(
         "Note",
         secondary=event_note,
@@ -1160,7 +1165,7 @@ class Event(Base, MangoEntity, NotableEntity):
             event = orm.query(Event).filter(Event.name == name).one()
         except NoResultFound:
             event = Event(
-                name, start_date, end_date, 
+                name, start_date, end_date,
                 moderation_user=moderation_user, public=public,
                 )
             orm.add(event)
@@ -1204,7 +1209,7 @@ class Address(Base, MangoEntity, NotableEntity):
     latitude = Column(Float())
 
     moderation_user = relationship(User, backref='moderation_address_list')
-    
+
     note_list = relationship(
         "Note",
         secondary=address_note,
@@ -1302,7 +1307,7 @@ class Address(Base, MangoEntity, NotableEntity):
             self.longitude = self.manual_longitude
             self.latitude = self.manual_latitude
             return
-        
+
         if self.lookup:
             coords = geo.coords(self.lookup)
             if coords:
@@ -1348,7 +1353,7 @@ class Address(Base, MangoEntity, NotableEntity):
                 abs(longitude), ("W", "", "E")[cmp(longitude, 0.0) + 1],
                 )
         return ""
- 
+
     @staticmethod
     def scale(latitude):
         return math.cos(math.radians(latitude))
@@ -1413,7 +1418,7 @@ class Orgtag(Base, MangoEntity, NotableEntity):
 
     __tablename__ = 'orgtag'
     __table_args__ = (
-        UniqueConstraint('base_short'),    
+        UniqueConstraint('base_short'),
         {
             'sqlite_autoincrement': True,
             "mysql_engine": 'InnoDB',
@@ -1526,7 +1531,7 @@ class Orgtag(Base, MangoEntity, NotableEntity):
             orm.add(orgtag)
         return orgtag
 
-        
+
 
 class Eventtag(Base, MangoEntity, NotableEntity):
     u"""
@@ -1537,7 +1542,7 @@ class Eventtag(Base, MangoEntity, NotableEntity):
 
     __tablename__ = 'eventtag'
     __table_args__ = (
-        UniqueConstraint('base_short'),    
+        UniqueConstraint('base_short'),
         {
             'sqlite_autoincrement': True,
             "mysql_engine": 'InnoDB',
@@ -1650,7 +1655,7 @@ class Eventtag(Base, MangoEntity, NotableEntity):
             orm.add(eventtag)
         return eventtag
 
-        
+
 
 class Note(Base, MangoEntity):
     __tablename__ = 'note'
@@ -1771,7 +1776,7 @@ class Contact(Base, MangoEntity):
     source = Column(Unicode())
 
     moderation_user = relationship(User, backref='moderation_contact_list')
-    
+
     org_list_public = relationship(
         "Org",
         secondary=org_contact,
@@ -1814,7 +1819,7 @@ class Contact(Base, MangoEntity):
                  medium,
                  text, description=None, source=None,
                  moderation_user=None, public=None):
-        
+
         self.medium = medium
 
         self.text = sanitise_name(unicode(text))
@@ -1923,7 +1928,7 @@ def virtual_org_orgtag_all(org):
 
     for virtual_name, filter_search in virtual_orgtag_list:
         log.debug(u"\nVirtual tag: %s" % (virtual_name))
-        
+
         virtual_tag = orm.query(Orgtag) \
             .filter_by(name=virtual_name) \
             .filter_by(virtual=True) \
@@ -1961,7 +1966,7 @@ def virtual_org_orgtag_all(org):
             else:
                 log.debug(u"  Doesn't have parent tag.")
 
-    
+
 
 def virtual_org_orgtag_edit(org, orgtag, add=None):
     """
@@ -2004,7 +2009,7 @@ def virtual_org_orgtag_edit(org, orgtag, add=None):
             .join(Org, Orgtag.org_list) \
             .filter(Org.org_id==org.org_id) \
             .filter(filter_search)
-        
+
 
         if ((add and has_virtual_tag_this.count()) or has_virtual_tag_others.count()):
             if virtual_tag not in org.orgtag_list:
@@ -2037,8 +2042,3 @@ if __name__ == '__main__':
     Base.metadata.create_all(engine)
 
     database = conf.get(conf_path, u"database", u"database")
-            
-
-    
-
-
