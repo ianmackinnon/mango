@@ -7,6 +7,7 @@ import redis
 import geopy
 import urllib
 import logging
+import socket
 import httplib2
 
 from urllib2 import URLError
@@ -288,71 +289,66 @@ def bounds(address_full, min_radius=None, cache=GEOCODE_CACHE_DEFAULT):
         if value:
             try:
                 bounds_ = Geobox.from_json(value)
-                bounds_.name = address_full
-                bounds_.set_min_radius(min_radius)
             except ValueError:
                 LOG.debug("Could not decode Redis value '%s' to Geobox.",
                           value)
 
-    attempts = ATTEMPTS
-    while attempts:
-        attempts -= 1
+    if not value:
+        for i in range(ATTEMPTS):
+            if WAIT:
+                time.sleep(WAIT)
 
-        if WAIT:
-            LOG.info("Waiting: %.3f", WAIT)
-            time.sleep(WAIT)
+            parameters = urllib.urlencode({
+                "sensor": "false",
+                "address": address,
+                "region": GEOCODE_DEFAULT_REGION,
+            })
 
-        parameters = urllib.urlencode({
-            "sensor": "false",
-            "address": address,
-            "region": GEOCODE_DEFAULT_REGION,
-        })
+            # Force IPv4 address to avoid timeouts
+            host = socket.gethostbyname('maps.googleapis.com')
+            url = (u"http://%s/maps/api/geocode/json?%s" % (
+                   host, parameters))
+            response, content = HTTP.request(url)
 
-        url = (u"http://maps.googleapis.com/maps/api/geocode/json?%s" %
-               parameters)
-        response, content = HTTP.request(url)
+            if response.status != 200:
+                continue
 
-        if response.status != 200:
-            continue
+            content = json.loads(content)
 
-        content = json.loads(content)
+            if content["status"] != "OK":
+                return None
 
-        if content["status"] != "OK":
+            long_name = None
+            type_ = None
+            for component in content["results"][0]["address_components"]:
+                type_set = (set(["postal_code", "political"]) &
+                            set(component["types"]))
+                if type_set:
+                    long_name = component["long_name"]
+                    type_ = type_set.pop()
+                    break
+            geometry = content["results"][0]["geometry"]
+            viewport = geometry["viewport"]
+            bounds_ = Geobox(
+                viewport["southwest"]["lat"],
+                viewport["northeast"]["lat"],
+                viewport["southwest"]["lng"],
+                viewport["northeast"]["lng"]
+            )
+            bounds_.long_name = long_name
+            bounds_.type_ = type_
+            value = bounds_
+
+            try:
+                REDIS_SERVER.set(key, value.to_json())
+            except redis.ConnectionError:
+                LOG.warning("Connection to redis server on localhost failed.")
+
+            WAIT = max(0, WAIT - .1)
+            break
+        else:
             return None
 
-        long_name = None
-        type_ = None
-        for component in content["results"][0]["address_components"]:
-            type_set = (set(["postal_code", "political"]) &
-                        set(component["types"]))
-            if type_set:
-                long_name = component["long_name"]
-                type_ = type_set.pop()
-                break
-        geometry = content["results"][0]["geometry"]
-        viewport = geometry["viewport"]
-        bounds_ = Geobox(
-            viewport["southwest"]["lat"],
-            viewport["northeast"]["lat"],
-            viewport["southwest"]["lng"],
-            viewport["northeast"]["lng"]
-        )
-
-        value = bounds_
-
-        bounds_.long_name = long_name
-        bounds_.type_ = type_
-
-        try:
-            REDIS_SERVER.set(key, value.to_json())
-        except redis.ConnectionError:
-            LOG.warning("Connection to redis server on localhost failed.")
-
-        bounds_.name = address_full
-
-        WAIT = max(0, WAIT - .1)
-        break
-
-    if bounds_:
-        bounds_.set_min_radius(min_radius)
+    bounds_.name = address_full
+    bounds_.set_min_radius(min_radius)
     return bounds_

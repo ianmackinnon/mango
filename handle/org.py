@@ -117,7 +117,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
                 .group_by(Orgtag.orgtag_id) \
                 .order_by(func.count(Org.org_id).desc()) \
                 .limit(10)
-            
+
             results += list(q.all())
 
         return self._get_random_suggestions(results, 2)
@@ -318,8 +318,8 @@ class OrgSearchHandler(BaseOrgHandler):
             return
 
         self.write_json(1)
-        
-        
+
+
 
 
 
@@ -370,7 +370,7 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
 
         return MangoEntityHandlerMixin.touch(self, org_id)
 
-        
+
 
 
     def get(self, org_id):
@@ -473,7 +473,7 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
                 note_offset=note_offset,
                 version_url=version_url,
                 )
-        
+
 
 
 class OrgRevisionListHandler(BaseOrgHandler):
@@ -518,7 +518,7 @@ class OrgRevisionListHandler(BaseOrgHandler):
         if not self.moderator:
             if len(history) == int(bool(org)):
                 raise HTTPError(404)
-        
+
         version_current_url = (org and org.url) or (not self.moderator and history and history[-1].url)
 
         self.load_map = True
@@ -530,7 +530,7 @@ class OrgRevisionListHandler(BaseOrgHandler):
             title_text="Revision History",
             history=history,
             )
-        
+
 
 
 class OrgRevisionHandler(BaseOrgHandler):
@@ -612,7 +612,7 @@ class OrgRevisionHandler(BaseOrgHandler):
             obj=obj,
             obj_v=obj_v,
             )
-        
+
 
 
 class OrgAddressListHandler(BaseOrgHandler, BaseAddressHandler):
@@ -638,7 +638,7 @@ class OrgAddressListHandler(BaseOrgHandler, BaseAddressHandler):
             obj=None,
             entity=obj,
             )
-        
+
     @authenticated
     def post(self, org_id):
         required = True
@@ -739,7 +739,7 @@ class OrgContactListHandler(BaseOrgHandler, BaseContactHandler):
             entity=obj,
             medium_list=self.medium_list,
             )
-        
+
     @authenticated
     def post(self, org_id):
         required = True
@@ -899,7 +899,7 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
                     org.orgtag_list.remove(tag)
             if tag.orgtag_id in tag_id_list and tag not in org.orgtag_list:
                 org.orgtag_list.append(tag)
-                
+
         if group_tag_query:
             self.orm_commit()
 
@@ -1043,7 +1043,7 @@ class OrgOrgaliasListHandler(BaseOrgHandler, BaseOrgtagHandler):
     def post(self, org_id):
         if not self.moderator:
             raise HTTPError(404)
-            
+
         is_json = self.content_type("application/json")
         name = self.get_argument("name", json=is_json)
 
@@ -1061,18 +1061,18 @@ class OrgEventListHandler(BaseOrgHandler, BaseEventHandler):
     def get(self, org_id):
         if not self.moderator:
             raise HTTPError(404)
-            
+
         is_json = self.content_type("application/json")
 
         # org...
 
         org = self._get_org(org_id)
-        
+
         if self.deep_visible():
             event_list=org.event_list
         else:
             event_list=org.event_list_public
-            
+
         public = self.moderator
 
         event_list = [event.obj(public=public) for event in event_list]
@@ -1117,7 +1117,7 @@ class OrgEventHandler(BaseOrgHandler, BaseEventHandler):
     def put(self, org_id, event_id):
         if not self.moderator:
             raise HTTPError(404)
-            
+
         org = self._get_org(org_id)
         event = self._get_event(event_id)
         if event not in org.event_list:
@@ -1129,7 +1129,7 @@ class OrgEventHandler(BaseOrgHandler, BaseEventHandler):
     def delete(self, org_id, event_id):
         if not self.moderator:
             raise HTTPError(404)
-            
+
         org = self._get_org(org_id)
         event = self._get_event(event_id)
         if event in org.event_list:
@@ -1160,13 +1160,13 @@ class ModerationOrgDescHandler(BaseOrgHandler):
         org_alias_query = self.orm.query(Org, Orgalias) \
             .join(name_subquery, Org.org_id==name_subquery.c.org_id) \
             .outerjoin(Orgalias, Orgalias.orgalias_id==name_subquery.c.orgalias_id)
-        
+
 
         org_alias_query = org_alias_query.filter(Org.description != None)
- 
+
         org_packet = {
             }
-        
+
         orgs = OrderedDict()
         for org, alias in org_alias_query:
             if not org.org_id in orgs:
@@ -1174,7 +1174,7 @@ class ModerationOrgDescHandler(BaseOrgHandler):
                     "org": org,
                     "alias": alias and alias.name,
                     }
-                
+
         org_packet["orgList"] = []
         for org_id, data in orgs.items():
             org = data["org"]
@@ -1200,9 +1200,6 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             raise HTTPError(404)
 
         is_json = self.content_type("application/json")
-
-        org_list = self.orm.query(Org) \
-            .limit(10)
 
         act_query = self.orm.query(func.count(Orgtag.orgtag_id).label("count")) \
             .join(org_orgtag) \
