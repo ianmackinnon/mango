@@ -4,10 +4,8 @@ import re
 import json
 import time
 import codecs
-import bleach
 import hashlib
 import httplib
-import markdown
 import datetime
 import urlparse
 import functools
@@ -36,9 +34,9 @@ from model import Session, Address, User, camel_case
 
 from base_moderation import has_pending, has_address_not_found
 
+from handle.markdown_safe import markdown_safe, convert_links
 
 
-md = markdown.Markdown()
 
 
 
@@ -80,30 +78,6 @@ def nbsp(text):
     text = re.sub("[\s]+", "&nbsp;", text)
     text = text.replace("-", "&#8209;")
     return text
-
-
-
-def markdown_safe(text):
-    markdown = md.convert(text)
-    clean = bleach.clean(
-        markdown,
-        tags=[
-            "a",
-            "p",
-            "ul",
-            "ol",
-            "li",
-            "em",
-            "img",
-            "strong",
-        ],
-        attributes=[
-            "href",
-            "src",
-            "alt",
-        ]
-    )
-    return clean
 
 
 
@@ -153,44 +127,6 @@ def page_period(obj):
 
 
 
-def has_link_parent(soup):
-    if not soup.parent:
-        return False
-    if soup.parent.name == "a":
-        return True
-    return has_link_parent(soup.parent)
-
-
-
-def convert_links(text, quote="\""):
-    soup = BeautifulSoup(text, "html.parser")
-    for t in soup.findAll(text=True):
-        if has_link_parent(t):
-            continue
-        split = re.split("(?:(https?://)|(www\.))([\S]+\.[^\s<>\"\']+)", t)
-        if len(split) == 1:
-            continue
-        r = u""
-        n = 0
-        split = [s or u"" for s in split]
-        while split:
-            if n % 2 == 0:
-                r += split[0]
-                split.pop(0)
-            else:
-                r += u"<a href=%shttp://%s%s%s>%s%s%s</a>" % (
-                    quote, split[1], split[2], quote, split[0], split[1], split[2]
-                    )
-                split.pop(0)
-                split.pop(0)
-                split.pop(0)
-            n += 1
-
-        t.replaceWith(BeautifulSoup(r, "html.parser"))
-    return unicode(soup)
-
-
-
 def url_rewrite_static(uri, root=None, options=None, parameters=None, next_=None):
         """
         Rewrites URLs to:
@@ -206,13 +142,13 @@ def url_rewrite_static(uri, root=None, options=None, parameters=None, next_=None
 
         if options is None:
             options = {}
-        
+
         if parameters is None:
             parameters = {}
-        
+
         if root is None:
             root = "/"
-        
+
         scheme, netloc, path, query, fragment = urlparse.urlsplit(uri)
 
         if path.startswith("/") and not path.startswith(root):
@@ -280,7 +216,7 @@ class BaseHandler(RequestHandler):
         method = self.get_argument("_method", None)
         if method and self.request.method.lower() == "post":
             self.request.method = method.upper()
-        
+
     def _mango_check_user(self):
         if self.current_user:
             if self.current_user.locked:
@@ -308,7 +244,7 @@ class BaseHandler(RequestHandler):
         # mango start
         self._mango_extra_methods()
         # mango end
-        
+
         try:
             # mango start
             if (self.request.method not in self.SUPPORTED_METHODS) or \
@@ -320,7 +256,7 @@ class BaseHandler(RequestHandler):
                 raise HTTPError(code, message)
             self._mango_check_user()
             # mango end
-            
+
             self.path_args = [self.decode_argument(arg) for arg in args]
             self.path_kwargs = dict((k, self.decode_argument(v, name=k))
                                     for (k, v) in kwargs.items())
@@ -328,7 +264,7 @@ class BaseHandler(RequestHandler):
             # mango end
             self._mango_handle_args()
             # mango start
-            
+
             # If XSRF cookies are turned on, reject form submissions without
             # the proper cookie
             if self.request.method not in ("GET", "HEAD", "OPTIONS") and \
@@ -374,7 +310,7 @@ class BaseHandler(RequestHandler):
             print 'assertionerror'
             raise e
         # mango end
-        
+
         except Exception as e:
             self._handle_request_exception(e)
             if (self._prepared_future is not None and
@@ -427,7 +363,7 @@ class BaseHandler(RequestHandler):
 
     def start_session(self, value):
         self.set_secure_cookie(self.application.session_cookie_name, value);
-        # Sets a cookie value to the base64 plaintext session_id, 
+        # Sets a cookie value to the base64 plaintext session_id,
         #   but is protected by tornado's _xsrf cookie.
         # Retrieved by BaseHandler.get_current_user()
 
@@ -683,7 +619,7 @@ select auto_increment
             if value.strip() in ['no', 'n', 'false', 'f', '0']:
                 return False
             raise ValueError
-            
+
         return self.get_argument_restricted(
             name,
             helper,
@@ -723,10 +659,10 @@ select auto_increment
     def get_argument_public(self, name="public", default=_ARG_DEFAULT_MANGO, json=False):
         table = {
             "null": None,
-            "true": True, 
+            "true": True,
             "false": False,
             None: None,
-            True: True, 
+            True: True,
             False: False,
             }
         value = self.get_argument_allowed(
@@ -865,11 +801,11 @@ select auto_increment
         view = self.get_argument_view(json=is_json)
         if view:
             self.parameters["view"] = view
-        
+
 
     def deep_visible(self):
         return self.parameters.get("visibility", None) in ["pending", "private", "all"]
-    
+
     def orm_commit(self):
         try:
             self.orm.commit()
@@ -911,7 +847,7 @@ HistoryEntity = namedtuple(
         "url_v",
         ]
     )
-        
+
 
 
 class MangoBaseEntityHandlerMixin(RequestHandler):
@@ -972,16 +908,16 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
 
         query = self.orm.query(Entity) \
             .filter(getattr(Entity, entity_id) == id_)
-        
+
         if not self.moderator:
             query = query \
                 .filter_by(public=True)
-            
+
         try:
             entity = query.one()
         except NoResultFound:
             entity = None
-            
+
         if required and not entity:
             raise HTTPError(404, "%d: No such %s" % (id_, entity_type))
 
@@ -996,7 +932,7 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
                       ):
         if not self.current_user:
             raise HTTPError(404)
-        
+
         entity_v_mod = self.orm.query(Entity_v) \
             .join((User, Entity_v.moderation_user)) \
             .filter(getattr(Entity_v, entity_id) == id_) \
@@ -1005,7 +941,7 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
 
         query = self.orm.query(Entity_v) \
             .filter(getattr(Entity_v, entity_id) == id_)
-        
+
         if not self.moderator:
             query = query \
                 .filter(Entity_v.moderation_user_id==self.current_user.user_id)
@@ -1040,12 +976,12 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
 
         query = self.orm.query(Entity) \
             .filter(getattr(Entity, entity_id) == id_)
-        
+
         try:
             entity = query.one()
         except NoResultFound:
             entity = None
-            
+
         if entity:
             entity.a_time = 0;
             entity.moderation_user = self.current_user
@@ -1057,7 +993,7 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
 
 
     def _touch_pending_child_entities(
-            self, Entity, entity_id_attr, entity_type, declined_parent_id, 
+            self, Entity, entity_id_attr, entity_type, declined_parent_id,
             get_pending_parent_entity_id, decline_v):
 
         for row in get_pending_parent_entity_id(self.orm):
@@ -1068,7 +1004,7 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
                     self, Entity, entity_id_attr, entity_type, decline_v, entity_id)
 
 
-        
+
 
 
 class MangoEntityHandlerMixin(BaseHandler):
@@ -1099,7 +1035,7 @@ class MangoEntityHandlerMixin(BaseHandler):
         self.orm.delete(entity)
         self.orm_commit()
         return self.redirect_next()
-        
+
     @authenticated
     def touch(self, entity_id):
         if not self.moderator:
@@ -1112,13 +1048,13 @@ class MangoEntityHandlerMixin(BaseHandler):
             return self.redirect_next(entity_or_v.url)
         else:
             return self.redirect_next("%s/revision" % entity_or_v.url)
-        
-        
+
+
     @authenticated
     def put(self, entity_id):
         old_entity = self._get(entity_id, required=False)
         pre_entity = self._get_v(entity_id)
-        
+
         if self.moderator:
             new_entity = self._create(id_=entity_id)
         else:
@@ -1158,7 +1094,7 @@ class MangoEntityListHandlerMixin(RequestHandler):
     def post(self):
         if not (self.moderator or hasattr(self, "Entity_v")):
             raise HTTPError(405, "Method not allowed.")
-            
+
         if hasattr(self, "Entity_v"):
             # Fix MySQL autoincrement reset
             self._update_entity_autoincrement(
@@ -1188,16 +1124,3 @@ class MangoEntityListHandlerMixin(RequestHandler):
         self.orm.add(new_entity_v)
         self.orm_commit()
         return self.redirect_next(new_entity_v.url)
-
-
-class MarkdownSafeHandler(RequestHandler):
-    def post(self):
-        text = self.get_argument("text", "")
-        autolinks = self.get_argument("convertLinks", None)
-        
-        html_safe = markdown_safe(text)
-
-        if autolinks:
-            html_safe = convert_links(html_safe)
-            
-        self.write(html_safe)

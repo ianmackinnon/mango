@@ -169,7 +169,7 @@ lint-py-error :
 	  skin/*/*.py
 
 lint-js :
-	jshint \
+	jshint -c test/jshint.json \
 	  static/address.js \
 	  static/entity.js \
 	  static/org.js \

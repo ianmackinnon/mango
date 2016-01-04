@@ -25,9 +25,10 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm.query import Query
 from sqlalchemy.exc import SQLAlchemyError, OperationalError
 
-from handle.base import BaseHandler, MarkdownSafeHandler, \
+from handle.base import BaseHandler, \
     authenticated, sha1_concat
 from handle.generate import GenerateMarkerHandler
+from handle.markdown_safe import MarkdownSafeHandler
 from handle.auth import AuthRegisterHandler, \
     AuthLoginLocalHandler, AuthLoginGoogleHandler, \
     AuthVisitHandler, \
