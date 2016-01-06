@@ -13,14 +13,14 @@ from optparse import OptionParser
 import Levenshtein
 
 from sqlalchemy import create_engine, func
-from sqlalchemy.orm import sessionmaker, object_session 
+from sqlalchemy.orm import sessionmaker, object_session
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
-from sqlalchemy.orm.util import has_identity 
+from sqlalchemy.orm.util import has_identity
 
 import geo
 
 from model import connection_url_app, attach_search, sanitise_name
-from model import User, Org, Orgalias, Note, Address, Orgtag
+from model import User, Org, Orgalias, Note, Address, Orgtag, Contact, Medium
 
 
 
@@ -104,7 +104,7 @@ def closest_names(name, names, orm):
 
     return existing_name
 
-        
+
 
 def get_org(orm, name):
     name = name.lower()
@@ -117,7 +117,7 @@ def get_org(orm, name):
     except MultipleResultsFound:
         log.warning("Multiple results found for name '%s'." % name)
         return query.first()
-        
+
     query = orm.query(Orgalias).filter(func.lower(Orgalias.name)==name)
     try:
         return query.one().org
@@ -246,7 +246,7 @@ def insert_fast(data, orm, public=None, tag_names=None, dry_run=None, address_ex
     tags = []
     for tag_name in tag_names:
         tag = Orgtag.get(orm,
-                         tag_name, 
+                         tag_name,
                          moderation_user=user,
                          public=public,
                          )
@@ -277,12 +277,12 @@ def insert_fast(data, orm, public=None, tag_names=None, dry_run=None, address_ex
 
         if "tag" in chunk:
             for tag_name in chunk["tag"]:
-                tag = Orgtag.get(orm, tag_name, 
+                tag = Orgtag.get(orm, tag_name,
                                  moderation_user=user, public=public,
                                  )
                 if tag not in org.orgtag_list:
                     org.orgtag_list.append(tag)
-            
+
         if "address" in chunk and not (address_exclusive and has_address):
             for address_data in chunk["address"]:
                 if address_data["postal"] in \
@@ -297,6 +297,37 @@ def insert_fast(data, orm, public=None, tag_names=None, dry_run=None, address_ex
                 orm.add(address)
                 org.address_list.append(address)
 
+        if "contact" in chunk:
+            for contact_data in chunk["contact"]:
+                text = sanitise_name(contact_data["text"])
+                match = False
+                for contact in org.contact_list:
+                    if (
+                        contact.text == text and
+                        contact.medium.name == contact_data["medium"]
+                    ):
+                        match = True
+                        break
+                if match:
+                    continue
+
+                try:
+                    medium = orm.query(Medium) \
+                        .filter_by(name=contact_data["medium"]) \
+                        .one()
+                except NoResultFound:
+                    log.warning("%s: No such medium" % contact_data["medium"])
+                    continue
+
+                contact = Contact(
+                    medium, text,
+                    source=contact_data["source"],
+                    moderation_user=user, public=None,
+                )
+                log.debug(contact)
+                orm.add(contact)
+                org.contact_list.append(contact)
+
         if "note" in chunk:
             for note_data in chunk["note"]:
                 if note_data["text"] in [note.text for note in org.note_list]:
@@ -308,7 +339,7 @@ def insert_fast(data, orm, public=None, tag_names=None, dry_run=None, address_ex
                 log.debug(note)
                 orm.add(note)
                 org.note_list.append(note)
-        
+
         if not (orm.new or orm.dirty or orm.deleted):
             log.info("Nothing to commit.")
             continue
@@ -402,4 +433,3 @@ if __name__ == "__main__":
             continue
 
         insert_fast(data, orm, options.public, options.tag, options.dry_run, options.address_exclusive, (not options.no_search), org_id_whitelist)
-
