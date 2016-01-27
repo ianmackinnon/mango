@@ -20,8 +20,11 @@ return obj and obj["name"] or "New Company"
 path_dict = {}
 for tag in tag_list:
     if not tag["path"] in path_dict:
-        path_dict[tag["path"]] = []
-    path_dict[tag["path"]].append(tag)
+        path_dict[tag["path"]] = {
+            "tags": [],
+            "path": tag["pathShort"],
+        }
+    path_dict[tag["path"]]["tags"].append(tag)
 path_keys = sorted(path_dict.keys(), key=lambda key: len(path_dict[key]))
 if None in path_keys:
     path_keys.append(path_keys.pop(path_keys.index(None)))
@@ -93,9 +96,9 @@ edit = parameters.get("view", None) == "edit"
          tag_keys, tag_dict = split_tags(obj["orgtagList"])
          %>
       %for key in tag_keys:
-      <h4>${key or "Other"}</h4>
+      <h4 id="mango-tag-path-${tag_dict[key]["path"] or ""}">${key or "Other"}</h4>
       <ul class="tag_list">
-        %for tag in tag_dict[key]:
+        %for tag in tag_dict[key]["tags"]:
         ${self.mini.tag_li(
           tag,
           visibility=True,
