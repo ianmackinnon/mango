@@ -201,3 +201,16 @@ class FarnboroughTargetListHandler(HomeTargetListHandler):
 class FarnboroughOrgListHandler(FairOrgListHandler):
     cache_key = "farnborough-org"
     tag_name = u"farnborough-2014"
+
+
+
+class SecurityPolicingHandler(FairHandler):
+    name = "security-and-policing"
+    tag_name = u"security-and-policing-2016"
+
+class SecurityPolicingTargetListHandler(HomeTargetListHandler):
+    tag_base = u"security-and-policing-2016"
+
+class SecurityPolicingOrgListHandler(FairOrgListHandler):
+    cache_key = "security-and-policing-org"
+    tag_name = u"security-and-policing-2016"

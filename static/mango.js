@@ -1028,6 +1028,13 @@ var m = (function () {
           m.initHomeMap(mapView, "farnborough-2014");
         });
       }],
+      [/^\/security-and-policing$/, function () {
+        m.initHome("security-and-policing-target",
+                   "security-and-policing-org");
+        m.initMap(function (mapView) {
+          m.initHomeMap(mapView, "security-and-policing-2016");
+        });
+      }],
 
       [/^\/note\/new$/, function () {
         m.noteMarkdown();

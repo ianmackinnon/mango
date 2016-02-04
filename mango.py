@@ -40,7 +40,10 @@ from handle.home import \
     HomeHandler, HomeOrgListHandler, HomeTargetListHandler, \
     DprteHandler, DprteOrgListHandler, DprteTargetListHandler, \
     DseiHandler, DseiOrgListHandler, DseiTargetListHandler, \
-    FarnboroughHandler, FarnboroughOrgListHandler, FarnboroughTargetListHandler
+    FarnboroughHandler, FarnboroughOrgListHandler, \
+    FarnboroughTargetListHandler, \
+    SecurityPolicingHandler, SecurityPolicingOrgListHandler, \
+    SecurityPolicingTargetListHandler
 from handle.note import NoteHandler, NoteNewHandler, NoteListHandler, \
     NoteRevisionListHandler, NoteRevisionHandler
 from handle.address import AddressHandler, \
@@ -282,6 +285,10 @@ class Application(tornado.web.Application):
             (r"/farnborough", FarnboroughHandler),
             (r"/farnborough-org", FarnboroughOrgListHandler),
             (r"/farnborough-target", FarnboroughTargetListHandler),
+            (r"/security-and-policing", SecurityPolicingHandler),
+            (r"/security-and-policing-org", SecurityPolicingOrgListHandler),
+            (r"/security-and-policing-target",
+             SecurityPolicingTargetListHandler),
             (r"/activity-tags", OrgtagActivityHandler),
 
             (r'/static/image/map/marker/(.*)',
