@@ -38,6 +38,7 @@ from handle.home import \
     NotFoundHandler, \
     HomeRedirectHandler, \
     HomeHandler, HomeOrgListHandler, HomeTargetListHandler, \
+    DprteHandler, DprteOrgListHandler, DprteTargetListHandler, \
     DseiHandler, DseiOrgListHandler, DseiTargetListHandler, \
     FarnboroughHandler, FarnboroughOrgListHandler, FarnboroughTargetListHandler
 from handle.note import NoteHandler, NoteNewHandler, NoteListHandler, \
@@ -272,6 +273,9 @@ class Application(tornado.web.Application):
             (r"/home", HomeHandler),
             (r"/home-org", HomeOrgListHandler),
             (r"/home-target", HomeTargetListHandler),
+            (r"/dprte", DprteHandler),
+            (r"/dprte-org", DprteOrgListHandler),
+            (r"/dprte-target", DprteTargetListHandler),
             (r"/dsei", DseiHandler),
             (r"/dsei-org", DseiOrgListHandler),
             (r"/dsei-target", DseiTargetListHandler),

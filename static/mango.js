@@ -5,7 +5,14 @@ var m = (function () {
 
   var m = {
 
+    urlRoot: null,
     parameters: null,
+    currentUser: null,
+    moderator: null,
+    eventsEnabled: null,
+    map: null,
+    xsrf: null,
+    next: null,
 
     debug: false,
 
@@ -183,17 +190,6 @@ var m = (function () {
     },
 
     initHomeMap: function (mapView, tag) {
-      var orgCollection = new window.OrgCollection();
-      var orgCollectionView = new window.OrgCollectionView({
-        collection: orgCollection,
-        mapView: mapView
-      });
-      var eventCollection = new window.EventCollection();
-      var eventCollectionView = new window.EventCollectionView({
-        collection: eventCollection,
-        mapView: mapView
-      });
-
       var data = {
         pageView: "marker"
       };
@@ -201,22 +197,14 @@ var m = (function () {
         data.tag = tag;
       }
 
+      var orgCollection = new window.OrgCollection();
+      var orgCollectionView = new window.OrgCollectionView({
+        collection: orgCollection,
+        mapView: mapView
+      });
       orgCollection.fetch({
         data: data,
         success: function (collection, response) {
-          eventCollection.fetch({
-            data: data,
-            success: function (collection, response) {
-              eventCollectionView.initialize();
-              eventCollectionView.render(true);
-            },
-            error: function (collection, response) {
-              if (response.statusText !== "abort") {
-                console.error("error", collection, response);
-              }
-            }
-          });
-
           orgCollectionView.initialize();
           orgCollectionView.render(true);
         },
@@ -226,6 +214,27 @@ var m = (function () {
           }
         }
       });
+
+      if (m.eventsEnabled) {
+        var eventCollection = new window.EventCollection();
+        var eventCollectionView = new window.EventCollectionView({
+          collection: eventCollection,
+          mapView: mapView
+        });
+
+        eventCollection.fetch({
+          data: data,
+          success: function (collection, response) {
+            eventCollectionView.initialize();
+            eventCollectionView.render(true);
+          },
+          error: function (collection, response) {
+            if (response.statusText !== "abort") {
+              console.error("error", collection, response);
+            }
+          }
+        });
+      }
     },
 
     initHome: function (tagUrl, orgUrl) {
@@ -995,7 +1004,7 @@ var m = (function () {
     },
 
     route: [
-      [/^\/$/, function () {
+      [/^\/(home)?$/, function () {
         m.initHome("home-target", "home-org");
         m.initMap(function (mapView) {
           m.initHomeMap(mapView, null);
@@ -1004,7 +1013,13 @@ var m = (function () {
       [/^\/dsei$/, function () {
         m.initHome("dsei-target", "dsei-org");
         m.initMap(function (mapView) {
-          m.initHomeMap(mapView, "dsei-2013");
+          m.initHomeMap(mapView, "dsei-2015");
+        });
+      }],
+      [/^\/dprte$/, function () {
+        m.initHome("dprte-target", "dprte-org");
+        m.initMap(function (mapView) {
+          m.initHomeMap(mapView, "dprte-2016");
         });
       }],
       [/^\/farnborough$/, function () {
@@ -1160,7 +1175,9 @@ var m = (function () {
       m.setParameters();
       var path = window.location.pathname;
       if (path.indexOf(m.urlRoot) !== 0) {
-        console.warn("Path does not match url root", path, m.urlRoot);
+        if (path.indexOf(m.urlRoot.substr(0, m.urlRoot.length - 1)) !== 0) {
+          console.warn("Path does not match url root", path, m.urlRoot);
+        }
       }
       path = "/" + path.substring(m.urlRoot.length);
       $.each(m.route, function (index, value) {
@@ -1216,7 +1233,7 @@ var m = (function () {
       // Internet Explorer returns pathname without '/'
       path = "/" + path;
     }
-    
+
     if (length !== -1) {
       path = path.substr(path.length - length);
     } else {

@@ -125,22 +125,6 @@ class FairHandler(BaseHandler):
             tag_name=self.tag_name,
             )
 
-class DseiHandler(FairHandler):
-    name = "dsei"
-    tag_name = u"dsei-2015"
-
-class FarnboroughHandler(FairHandler):
-    name = "farnborough"
-    tag_name = u"farnborough-2014"
-
-class DseiTargetListHandler(HomeTargetListHandler):
-    tag_base = u"dsei-2015"
-
-class FarnboroughTargetListHandler(HomeTargetListHandler):
-    tag_base = u"farnborough-2014"
-
-
-
 class FairOrgListHandler(BaseHandler):
     # Override:
     cache_key = None
@@ -179,11 +163,41 @@ class FairOrgListHandler(BaseHandler):
         self.cache.set(self.cache_key, json.dumps(org_list))
         self.write_json(org_list)
 
+
+
+class DseiHandler(FairHandler):
+    name = "dsei"
+    tag_name = u"dsei-2015"
+
+class DseiTargetListHandler(HomeTargetListHandler):
+    tag_base = u"dsei-2015"
+
 class DseiOrgListHandler(FairOrgListHandler):
     cache_key = "dsei-org"
-    tag_name = u"dsei-2013"
+    tag_name = u"dsei-2015"
+
+
+
+class DprteHandler(FairHandler):
+    name = "dprte"
+    tag_name = u"dprte-2016"
+
+class DprteTargetListHandler(HomeTargetListHandler):
+    tag_base = u"dprte-2016"
+
+class DprteOrgListHandler(FairOrgListHandler):
+    cache_key = "dprte-org"
+    tag_name = u"dprte-2016"
+
+
+
+class FarnboroughHandler(FairHandler):
+    name = "farnborough"
+    tag_name = u"farnborough-2014"
+
+class FarnboroughTargetListHandler(HomeTargetListHandler):
+    tag_base = u"farnborough-2014"
 
 class FarnboroughOrgListHandler(FairOrgListHandler):
     cache_key = "farnborough-org"
     tag_name = u"farnborough-2014"
-

@@ -422,7 +422,9 @@ class BaseHandler(RequestHandler):
         # before page js variables
         scripts2 = ["geobox.js", "template.js", "mango.js"]
         # after page js variables
-        scripts3 = ["address.js", "tag.js", "entity.js", "event.js", "org.js"]
+        scripts3 = ["address.js", "tag.js", "entity.js", "org.js"]
+        if self.application.events:
+            scripts3 += ["event.js"]
         if self.load_map:
             scripts3 = ["map.js"] + scripts3
         stylesheets = ["jquery-ui/jquery-ui.css", "tag-it.css", "jquery.ui.timepicker.css", "style.css"]

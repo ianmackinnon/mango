@@ -1,15 +1,18 @@
 <%inherit file="base.html"/>
 
-<%def name="title()"><% return "Find the Arms Trade on your Doorstep" %></%def>
+<%def name="title()"><% return "The Arms Trade on your Doorstep" %></%def>
 
 <%def name="page()">
 
 <style>
 
+@import url(${protocol}://fonts.googleapis.com/css?family=Raleway:500,800);
+
 #mango h1
 {
 margin: 25px 2px;
 text-align: center;
+font-family: 'Raleway', sans-serif;
 }
 
 #mango-map-box
@@ -32,6 +35,7 @@ height: 360px;
 width: 900px;
 margin: auto;
 text-align: center;
+font-family: 'Raleway', sans-serif;
 }
 .mango-dsei:before,
 .mango-dsei:after
@@ -54,7 +58,7 @@ text-align: center;
 .mango-dsei img
 {
 display: inline-block;
-margin-top: 56px;
+margin-top: 34px;
 }
 .mango-dsei img:first-child
 {
@@ -65,6 +69,7 @@ margin-top: 0;
 {
 margin: 4px 0;
 }
+
 
 .mango-dsei-caption
 {
@@ -135,7 +140,7 @@ border-radius: 6px;
 border-bottom-left-radius: 0;
 border-top-left-radius: 0;
 font-size: 13px;
-color: #d06800;
+color: #C6181B;
 background: #eee;
 
 }
@@ -152,16 +157,15 @@ color: #666;
 #mango .mango-dsei-action-box a
 {
 display: block;
-height: 30px;
 width: 238px;
-line-height: 30px;
+line-height: 22px;
 margin: 0 auto;
 margin-bottom: 12px;
 border: 1px solid #ddd;
-padding: 0 4px;
+padding: 4px 4px;
 border-radius: 6px;
 font-size: 13px;
-color: #d06800;
+color: #C6181B;
 background: #eee;
 text-decoration: none;
 }
@@ -198,7 +202,7 @@ overflow-x: hidden;
 
 </style>
 
-<h1>Find the Arms Trade on your Doorstep</h1>
+<h1>Mapping DPRTE</h1>
 
 <div class="mango-dsei">
  
@@ -210,11 +214,21 @@ overflow-x: hidden;
 
   <div class="mango-dsei-column-2">
     <div class="mango-dsei-action-box">
-      <h3>Companies in your area</h3>
+      <h3>Exhibitors from your area</h3>
       <form
          id="mango-dsei-form-location"
          action="${url_root}organisation"
          >
+        <input
+           type="hidden"
+           name="tagAll"
+           value="1"
+           >
+        <input
+           type="hidden"
+           name="tag"
+           value="${tag_name}"
+           >
         <input
            type="text"
            name="location"
@@ -225,24 +239,21 @@ overflow-x: hidden;
     </div>
 
     <div class="mango-dsei-action-box">
-      <h3>Companies by name</h3>
-      <form
-         id="mango-dsei-form-org"
-         >
-        <input
-           id="mango-dsei-input-org-display"
-           type="text"
-           placeholder="Company name"
-           ><input type="submit" value="Choose" disabled>
-      </form>
-    </div>
-
-    <div class="mango-dsei-action-box">
-      <h3>Companies by target market</h3>
+      <h3>Exhibitors by target market</h3>
       <form
          id="mango-dsei-form-country"
          action="${url_root}organisation"
          >
+        <input
+           type="hidden"
+           name="tagAll"
+           value="1"
+           >
+        <input
+           type="hidden"
+           name="tag"
+           value="${tag_name}"
+           >
         <input
            id="mango-dsei-input-country-value"
            type="hidden"
@@ -258,16 +269,23 @@ overflow-x: hidden;
     </div>
 
     <div class="mango-dsei-action-box">
-      <h3>Take action</h3>
-      %if events_enabled:
-      <a href="${url_root}event">Find an event</a>
-      %endif
-      <a target="_blank" href="${protocol}://www.caat.org.uk/resources/mapping/creative-action">Organise a local action</a>
+      <h3>Exhibitors by name</h3>
+      <form
+         id="mango-dsei-form-org"
+         >
+        <input
+           id="mango-dsei-input-org-display"
+           type="text"
+           placeholder="Company name"
+           ><input type="submit" value="Choose" disabled>
+      </form>
     </div>
   </div>
 
 <div class="mango-dsei-column-3">
-  <img src="${url_root}static/image/elbit-protest.jpg" width="240" height="360">
+  <img src="${url_root}static/image/staf-logotype.png">
+  <!-- <img src="${protocol}://www.caat.org.uk/images/pictures/mapping-dsei-2003-crowd-control.jpg" width="240" height="264"> -->
+  <!-- <p class="mango-dsei-caption">'Crowd control' equipment at DSEi in 2003</p> -->
 </div>
 
 </div>
@@ -275,5 +293,3 @@ overflow-x: hidden;
 
 
 </%def>
-
-

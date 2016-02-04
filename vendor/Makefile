@@ -36,8 +36,8 @@ jquery-version-check :
 	@[ "$$(echo $(JQUERY_VERSION_LIST) | wc -w)" -gt 0 ] || (echo "No jQuery UI version" && false)
 	@[ "$$(echo $(JQUERY_VERSION_LIST) | wc -w)" -eq 2 ] || (echo "Too many jQuery UI versions" && false)
 	@[ -n "$$(echo $(JQUERY_UI_THEME_PATH))" ] || (echo "No jQuery UI theme path" && false)
-	echo $(JQUERY_VERSION)
-	echo $(JQUERY_UI_VERSION)
+	@echo "jQuery:     $(JQUERY_VERSION)"
+	@echo "jQuery UI:  $(JQUERY_UI_VERSION)"
 
 ../static/jquery-ui:
 	mkdir -p ../static/jquery-ui
