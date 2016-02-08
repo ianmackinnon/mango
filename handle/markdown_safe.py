@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 
 
 
-md = markdown.Markdown()
+markdown_ = markdown.Markdown()
 
 
 
@@ -30,7 +30,7 @@ def convert_links(text, quote="\""):
     for t in soup.findAll(text=True):
         if has_link_parent(t):
             continue
-        split = re.split("(?:(https?://)|(www\.))([\S]+\.[^\s<>\"\']+)", t)
+        split = re.split(r"(?:(https?://)|(www\.))([\S]+\.[^\s<>\"\']+)", t)
         if len(split) == 1:
             continue
         r = u""
@@ -42,7 +42,8 @@ def convert_links(text, quote="\""):
                 split.pop(0)
             else:
                 r += u"<a href=%shttp://%s%s%s>%s%s%s</a>" % (
-                    quote, split[1], split[2], quote, split[0], split[1], split[2]
+                    quote, split[1], split[2], quote,
+                    split[0], split[1], split[2]
                     )
                 split.pop(0)
                 split.pop(0)
@@ -54,10 +55,10 @@ def convert_links(text, quote="\""):
 
 
 
-def markdown_safe(text):
-    markdown = md.convert(text)
+def markdown_safe(text, autolink=False):
+    html = markdown_.convert(text)
     clean = bleach.clean(
-        markdown,
+        html,
         tags=[
             "a",
             "p",
@@ -74,6 +75,8 @@ def markdown_safe(text):
             "alt",
         ]
     )
+    if autolink:
+        clean = convert_links(clean)
     return clean
 
 
@@ -81,11 +84,8 @@ def markdown_safe(text):
 class MarkdownSafeHandler(tornado.web.RequestHandler):
     def post(self):
         text = self.get_argument("text", "")
-        autolinks = self.get_argument("convertLinks", None)
+        autolink = self.get_argument("convertLinks", None)
 
-        html_safe = markdown_safe(text)
-
-        if autolinks:
-            html_safe = convert_links(html_safe)
+        html_safe = markdown_safe(text, autolink=autolink)
 
         self.write(html_safe)

@@ -17,6 +17,7 @@
     "escape": true
   },
   "requirePaddingNewLinesBeforeLineComments": null,
+  "requireSpacesInsideBrackets": null,
   "requireSpacesInsideArrayBrackets": null,
   "requireSpacesInsideObjectBrackets": null,
   "requireCamelCaseOrUpperCaseIdentifiers": "ignoreProperties",
