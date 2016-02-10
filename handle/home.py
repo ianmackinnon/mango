@@ -18,7 +18,7 @@ class NotFoundHandler(BaseHandler):
 
 class HomeRedirectHandler(BaseHandler):
     def get(self):
-        self.redirect(self.url_root + "dsei")
+        self.redirect(self.url_root + "security-and-policing")
         return
 
 
