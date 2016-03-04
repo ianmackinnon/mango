@@ -25,7 +25,7 @@ for tag in tag_list:
             "path": tag["pathShort"],
         }
     path_dict[tag["path"]]["tags"].append(tag)
-path_keys = sorted(path_dict.keys(), key=lambda key: len(path_dict[key]))
+path_keys = sorted(path_dict.keys(), key=lambda key: (len(path_dict[key]["tags"]), key))
 if None in path_keys:
     path_keys.append(path_keys.pop(path_keys.index(None)))
 
