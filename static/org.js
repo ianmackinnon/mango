@@ -897,6 +897,14 @@
         "dsei-2015": {
           role: "DSEI 2015 arms exhibitor",  // 's' appended for plurals
           hashtags: ["DSEI", "DSEI2015"]
+        },
+        "security-and-policing-2016": {
+          role: "Security & Policing exhibitor",  // 's' appended for plurals
+          hashtags: ["TheyDontMakeUsSafer", "SecurityandPolicing"]
+        },
+        "dprte-2016": {
+          role: "DPRTE 2016 exhibitor",  // 's' appended for plurals
+          hashtags: ["StopCardiffArmsFair", "DPRTE"]
         }
       };
 
