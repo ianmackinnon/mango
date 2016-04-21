@@ -150,14 +150,14 @@ class RedisCache(BaseCache):
     def connected(self):
         try:
             self._cache.ping()
-        except redis.ConnectionError as e:
+        except (redis.ConnectionError, redis.exceptions.ResponseError):
             return False
         return True
 
     def get(self, key):
         try:
             value = self._cache.get(self.key(key))
-        except redis.ConnectionError as e:
+        except (redis.ConnectionError, redis.exceptions.ResponseError):
             value = None
         if value:
             value = unicode(value, "utf-8")
@@ -168,13 +168,13 @@ class RedisCache(BaseCache):
             self._cache.set(self.key(key), unicode(value))
             if period:
                 self._cache.expire(self.key(key), period)
-        except redis.ConnectionError as e:
+        except (redis.ConnectionError, redis.exceptions.ResponseError):
             pass
 
     def delete(self, key):
         try:
             self._cache.delete(self.key(key))
-        except redis.ConnectionError as e:
+        except (redis.ConnectionError, redis.exceptions.ResponseError):
             pass
 
 
