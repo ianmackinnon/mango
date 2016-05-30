@@ -25,7 +25,7 @@ from sqlalchemy.sql import func
 from sqlalchemy import Boolean, Integer, Float as FloatOrig, Numeric, Date, Time
 from sqlalchemy import Unicode as UnicodeOrig, String as StringOrig
 from sqlalchemy.dialects.mysql import LONGTEXT, DOUBLE, VARCHAR
-from sqlalchemy import event as sqlalchemy_event
+from sqlalchemy import event as sqla_event
 
 from tornado.web import HTTPError
 
@@ -1411,9 +1411,9 @@ class TagExtension(MapperExtension):
 
 class Orgtag(Base, MangoEntity, NotableEntity):
     u"""
-    virtual:  None = normal
-              True = virtual
-              False = virtual, currently active in an event
+    is_virtual:  None = normal
+                 True = virtual
+                 False = virtual, currently active in an event
     """
 
     __tablename__ = 'orgtag'
@@ -1439,7 +1439,7 @@ class Orgtag(Base, MangoEntity, NotableEntity):
     path = Column(Unicode())
     path_short = Column(Unicode())
     description = Column(Unicode())
-    virtual = Column(Boolean)
+    is_virtual = Column(Boolean)
 
     moderation_user = relationship(User, backref='moderation_orgtag_list')
 
@@ -1482,7 +1482,7 @@ class Orgtag(Base, MangoEntity, NotableEntity):
         "base_short",
         "path",
         "path_short",
-        "virtual",
+        "is_virtual",
         ]
 
     @classproperty
@@ -1496,7 +1496,7 @@ class Orgtag(Base, MangoEntity, NotableEntity):
                  moderation_user=None, public=None):
         self.name = sanitise_name(name)
         self.description = description and unicode(description) or None
-        self.virtual = None
+        self.is_virtual = None
 
         self.moderation_user = moderation_user
         self.a_time = 0
@@ -1535,9 +1535,9 @@ class Orgtag(Base, MangoEntity, NotableEntity):
 
 class Eventtag(Base, MangoEntity, NotableEntity):
     u"""
-    virtual:  None = normal
-              True = virtual
-              False = virtual, currently active in an event
+    is_virtual:  None = normal
+                 True = virtual
+                 False = virtual, currently active in an event
     """
 
     __tablename__ = 'eventtag'
@@ -1563,7 +1563,7 @@ class Eventtag(Base, MangoEntity, NotableEntity):
     path = Column(Unicode())
     path_short = Column(Unicode())
     description = Column(Unicode())
-    virtual = Column(Boolean)
+    is_virtual = Column(Boolean)
 
     moderation_user = relationship(User, backref='moderation_eventtag_list')
 
@@ -1606,7 +1606,7 @@ class Eventtag(Base, MangoEntity, NotableEntity):
         "base_short",
         "path",
         "path_short",
-        "virtual",
+        "is_virtual",
         ]
 
     @classproperty
@@ -1620,7 +1620,7 @@ class Eventtag(Base, MangoEntity, NotableEntity):
                  moderation_user=None, public=None):
         self.name = sanitise_name(name)
         self.description = description and unicode(description) or None
-        self.virtual = None
+        self.is_virtual = None
 
         self.moderation_user = moderation_user
         self.a_time = 0
@@ -1886,12 +1886,12 @@ def orgalias_after_delete_listener(mapper, connection, target):
         orm = object_session(target)
         search.index_orgalias(connection.engine.search, target, orm, Orgalias)
 
-sqlalchemy_event.listen(Org, "after_insert", org_after_insert_listener)
-sqlalchemy_event.listen(Org, "after_update", org_after_update_listener)
-sqlalchemy_event.listen(Org, "after_delete", org_after_delete_listener)
-sqlalchemy_event.listen(Orgalias, "after_insert", orgalias_after_insert_listener)
-sqlalchemy_event.listen(Orgalias, "after_update", orgalias_after_update_listener)
-sqlalchemy_event.listen(Orgalias, "after_delete", orgalias_after_delete_listener)
+sqla_event.listen(Org, "after_insert", org_after_insert_listener)
+sqla_event.listen(Org, "after_update", org_after_update_listener)
+sqla_event.listen(Org, "after_delete", org_after_delete_listener)
+sqla_event.listen(Orgalias, "after_insert", orgalias_after_insert_listener)
+sqla_event.listen(Orgalias, "after_update", orgalias_after_update_listener)
+sqla_event.listen(Orgalias, "after_delete", orgalias_after_delete_listener)
 
 
 virtual_orgtag_list = [
@@ -1931,7 +1931,7 @@ def virtual_org_orgtag_all(org):
 
         virtual_tag = orm.query(Orgtag) \
             .filter_by(name=virtual_name) \
-            .filter_by(virtual=True) \
+            .filter_by(is_virtual=True) \
             .first()
 
         if not virtual_tag:
@@ -1941,7 +1941,7 @@ def virtual_org_orgtag_all(org):
         has_virtual_tag = orm.query(Orgtag) \
             .join(Org, Orgtag.org_list) \
             .filter(Org.org_id==org.org_id) \
-            .filter(Orgtag.virtual==None) \
+            .filter(Orgtag.is_virtual==None) \
             .filter(filter_search)
 
         log.debug(u"  Has %d child tags." % has_virtual_tag.count())
@@ -1953,7 +1953,7 @@ def virtual_org_orgtag_all(org):
             if virtual_tag not in org.orgtag_list:
                 log.debug(u"  Adding parent tag.")
                 # Flag the virtual tag so it doesn't trigger a value error
-                virtual_tag.virtual = False
+                virtual_tag.is_virtual = False
                 org.orgtag_list.append(virtual_tag)
             else:
                 log.debug(u"  Already has parent tag.")
@@ -1961,7 +1961,7 @@ def virtual_org_orgtag_all(org):
             if virtual_tag in org.orgtag_list:
                 log.debug(u"  Removing parent tag.")
                 # Flag the virtual tag so it doesn't trigger a value error
-                virtual_tag.virtual = False
+                virtual_tag.is_virtual = False
                 org.orgtag_list.remove(virtual_tag)
             else:
                 log.debug(u"  Doesn't have parent tag.")
@@ -1978,13 +1978,13 @@ def virtual_org_orgtag_edit(org, orgtag, add=None):
     if not virtual_orgtag_list:
         return
 
-    if orgtag.virtual:
+    if orgtag.is_virtual:
         log.warning(u"Cannot edit the membership of a virtual tag (%s).", orgtag.name)
         return
 
-    if orgtag.virtual is False:
+    if orgtag.is_virtual is False:
         # We're adding a virtual tag for a parent function call
-        orgtag.virtual = True
+        orgtag.is_virtual = True
         return
 
     orm = object_session(org) or object_session(orgtag)
@@ -1994,7 +1994,7 @@ def virtual_org_orgtag_edit(org, orgtag, add=None):
     for virtual_name, filter_search in virtual_orgtag_list:
         virtual_tag = orm.query(Orgtag) \
             .filter_by(name=virtual_name) \
-            .filter_by(virtual=True) \
+            .filter_by(is_virtual=True) \
             .first()
 
         if not virtual_tag:
@@ -2005,7 +2005,7 @@ def virtual_org_orgtag_edit(org, orgtag, add=None):
             .filter(filter_search)
 
         has_virtual_tag_others = orm.query(Orgtag) \
-            .filter_by(virtual=None) \
+            .filter_by(is_virtual=None) \
             .join(Org, Orgtag.org_list) \
             .filter(Org.org_id==org.org_id) \
             .filter(filter_search)
@@ -2014,12 +2014,12 @@ def virtual_org_orgtag_edit(org, orgtag, add=None):
         if ((add and has_virtual_tag_this.count()) or has_virtual_tag_others.count()):
             if virtual_tag not in org.orgtag_list:
                 # Flag the virtual tag so it doesn't trigger a value error
-                virtual_tag.virtual = False
+                virtual_tag.is_virtual = False
                 org.orgtag_list.append(virtual_tag)
         else:
             if virtual_tag in org.orgtag_list:
                 # Flag the virtual tag so it doesn't trigger a value error
-                virtual_tag.virtual = False
+                virtual_tag.is_virtual = False
                 org.orgtag_list.remove(virtual_tag)
 
 
@@ -2031,14 +2031,33 @@ def org_orgtag_append_listener(org, orgtag, initiator):
 def org_orgtag_remove_listener(org, orgtag, initiator):
     virtual_org_orgtag_edit(org, orgtag, add=False)
 
-sqlalchemy_event.listen(Org.orgtag_list, 'append', org_orgtag_append_listener)
-sqlalchemy_event.listen(Org.orgtag_list, 'remove', org_orgtag_remove_listener)
+sqla_event.listen(Org.orgtag_list, 'append', org_orgtag_append_listener)
+sqla_event.listen(Org.orgtag_list, 'remove', org_orgtag_remove_listener)
 
 
+
+def engine_sql_mode(engine, sql_mode=""):
+    def set_sql_mode(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("SET sql_mode = '%s'" % sql_mode)
+    sqla_event.listen(engine, "first_connect", set_sql_mode, insert=True)
+    sqla_event.listen(engine, "connect", set_sql_mode)
+
+def engine_disable_mode(engine, mode):
+    def set_sql_mode(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("SET sql_mode=(SELECT REPLACE(@@sql_mode,'%s',''))" % mode)
+    sqla_event.listen(engine, "first_connect", set_sql_mode, insert=True)
+    sqla_event.listen(engine, "connect", set_sql_mode)
+
+
+
+# Main again
 
 if __name__ == '__main__':
     connection_url = connection_url_admin()
     engine = create_engine(connection_url)
+    engine_disable_mode(engine, "ONLY_FULL_GROUP_BY")
     Base.metadata.create_all(engine)
 
     database = conf.get(conf_path, u"database", u"database")

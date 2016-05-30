@@ -43,10 +43,10 @@ def create_all_virtual_orgtags(orm, system_user):
             virtual_tag = Orgtag(virtual_name,
                                  moderation_user=system_user,
                                  public=False)
-            virtual_tag.virtual = True
+            virtual_tag.is_virtual = True
             orm.add(virtual_tag)
         else:
-            if virtual_tag.virtual != True:
+            if virtual_tag.is_virtual != True:
                 raise Exception("Tag '%s' already exists but is not virtual." % virtual_tag.name)
 
     orm.commit()
@@ -130,4 +130,3 @@ ORG_ID      List of Org IDs to set, otherwise set all orgs.
 
 if __name__ == "__main__":
     main()
-

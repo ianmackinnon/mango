@@ -115,6 +115,7 @@ mysql-import : $(MYSQL_CONF_PATH) $(MYSQLDUMP_CONF_PATH) mysql-exist clean-mysql
 	./model.py
 	mysql --defaults-extra-file=$(MYSQL_CONF_PATH) < mysql/org_include.mysql.sql
 	mysql --defaults-extra-file=$(MYSQL_CONF_PATH) < mysql/build.mysql.sql
+	sed -i 's/`virtual`/`is_virtual`/g' "$(MYSQL_IMPORT)"
 	mysql --defaults-extra-file=$(MYSQL_CONF_PATH) < "$(MYSQL_IMPORT)"
 	mysql --defaults-extra-file=$(MYSQL_CONF_PATH) < mysql/build_triggers.mysql.sql
 

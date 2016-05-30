@@ -85,7 +85,7 @@ from handle.history import HistoryHandler
 from handle.moderation import ModerationQueueHandler
 
 import conf
-from model import get_database, connection_url_app, attach_search
+from model import get_database, connection_url_app, attach_search, engine_disable_mode
 from model import Org, Orgtag, Orgalias, Event, Eventtag, Address, Note
 from model_v import Org_v, Event_v, Address_v, Note_v
 
@@ -460,6 +460,7 @@ class Application(tornado.web.Application):
             pool_recycle=7200  # Expire connections after 2 hours
             )                  # (MySQL disconnects unilaterally after 8)
 
+        engine_disable_mode(engine, "ONLY_FULL_GROUP_BY")
         self.orm = scoped_session(sessionmaker(
             bind=engine,
             autocommit=False,

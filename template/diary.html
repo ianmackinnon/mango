@@ -27,7 +27,7 @@
         <td>
           ${event["startDate"] | n, page_date_format(format_="%-d %B %Y")}<br/>
           %if "caat" in tag_list:
-          <img src="${protocol}://www.caat.org.uk/images/iconsandlogos/caat-icon.png" alt="CAAT" title="CAAT Event" /><br/>
+          <img src="${url_root}static/image/caat-icon.png" alt="CAAT" title="CAAT Event" /><br/>
           %endif
         </td>
         <td>
@@ -81,7 +81,7 @@
           Monthly<br/>
           %endif
           %if "caat" in tag_list:
-          <img src="${protocol}://www.caat.org.uk/images/iconsandlogos/caat-icon.png" alt="CAAT" title="CAAT Event" /><br/>
+          <img src="${url_root}static/image/caat-icon.png" alt="CAAT" title="CAAT Event" /><br/>
           %endif
         </td>
         <td>

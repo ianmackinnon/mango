@@ -51,9 +51,9 @@ class EventtagListHandler(BaseEventtagHandler,
     def post(self):
         if not self.moderator:
             raise HTTPError(404)
-        
+
         return MangoEntityListHandlerMixin.post(self)
-        
+
     def get(self):
         (eventtag_list, name, name_short, base, base_short,
          path, search, sort) = self._get_tag_search_args()
@@ -128,14 +128,14 @@ class EventtagHandler(BaseEventtagHandler,
         new_entity = self._create(entity_id)
 
         if not old_entity.content_same(new_entity):
-            if old_entity.virtual is not None:
+            if old_entity.is_virtual is not None:
                 if old_entity.name != new_entity.name:
                     raise HTTPError(404, "May not change the name of a virtual tag.")
             old_entity.content_copy(new_entity, self.current_user)
             self.orm_commit()
-        
+
         return self.redirect_next(old_entity.url)
-        
+
     def get(self, eventtag_id):
         note_search = self.get_argument("note_search", None)
         note_order = self.get_argument_order("note_order", None)
@@ -178,7 +178,7 @@ class EventtagHandler(BaseEventtagHandler,
         if self.accept_type("json"):
             self.write_json(obj)
         else:
-            path_list = self._get_path_list() 
+            path_list = self._get_path_list()
             self.render(
                 'tag.html',
                 obj=obj,
@@ -208,7 +208,7 @@ class EventtagNoteListHandler(BaseEventtagHandler, BaseNoteHandler):
         return self.redirect_next(eventtag.url)
 
     @authenticated
-    def get(self, eventtag_id): 
+    def get(self, eventtag_id):
         if not self.moderator:
             raise HTTPError(404)
 
@@ -249,6 +249,3 @@ class EventtagNoteHandler(BaseEventtagHandler, BaseNoteHandler):
             eventtag.note_list.remove(note)
             self.orm_commit()
         return self.redirect_next(eventtag.url)
-
-
-

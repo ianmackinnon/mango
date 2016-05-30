@@ -49,7 +49,7 @@ if obj:
       %if put:
       <input name="_method" type="hidden" value="put">
       %endif
-      %if obj and obj["virtual"] is not None:
+      %if obj and obj["isVirtual"] is not None:
       <h4>Virtual Tag</h4>
       <label name="name">
 	<span>Name (may not be changed for virtual tags)</span>

@@ -75,12 +75,12 @@
           "fields": {
             "fuzzy": {
               "type": "string",
-              "index_analyzer": "fuzzy_analyzer",
+              "analyzer": "fuzzy_analyzer",
               "search_analyzer": "fuzzy_analyzer"
             },
             "straight": {
               "type": "string",
-              "index_analyzer": "straight_analyzer",
+              "analyzer": "straight_analyzer",
               "search_analyzer": "straight_analyzer"
             }
           }

@@ -51,9 +51,9 @@ class OrgtagListHandler(BaseOrgtagHandler,
     def post(self):
         if not self.moderator:
             raise HTTPError(404)
-        
+
         return MangoEntityListHandlerMixin.post(self)
-        
+
     def get(self):
         (orgtag_list, name, name_short, base, base_short,
          path, search, sort) = self._get_tag_search_args()
@@ -128,14 +128,14 @@ class OrgtagHandler(BaseOrgtagHandler,
         new_entity = self._create(entity_id)
 
         if not old_entity.content_same(new_entity):
-            if old_entity.virtual is not None:
+            if old_entity.is_virtual is not None:
                 if old_entity.name != new_entity.name:
                     raise HTTPError(404, "May not change the name of a virtual tag.")
             old_entity.content_copy(new_entity, self.current_user)
             self.orm_commit()
-        
+
         return self.redirect_next(old_entity.url)
-        
+
     def get(self, orgtag_id):
         note_search = self.get_argument("note_search", None)
         note_order = self.get_argument_order("note_order", None)
@@ -178,7 +178,7 @@ class OrgtagHandler(BaseOrgtagHandler,
         if self.accept_type("json"):
             self.write_json(obj)
         else:
-            path_list = self._get_path_list() 
+            path_list = self._get_path_list()
             self.render(
                 'tag.html',
                 obj=obj,
@@ -208,7 +208,7 @@ class OrgtagNoteListHandler(BaseOrgtagHandler, BaseNoteHandler):
         return self.redirect_next(orgtag.url)
 
     @authenticated
-    def get(self, orgtag_id): 
+    def get(self, orgtag_id):
         if not self.moderator:
             raise HTTPError(404)
 
@@ -270,7 +270,7 @@ class OrgtagActivityHandler(BaseOrgtagHandler):
         q2 = self.filter_visibility(q2, Orgtag, visibility='all')
         q2 = q2 \
             .filter(Orgtag.path_short.in_(path_list)) \
-            .filter(Orgtag.virtual==None) \
+            .filter(Orgtag.is_virtual==None) \
             .group_by(Orgtag.orgtag_id) \
             .order_by(Orgtag.path_short, Orgtag.name_short)
 
@@ -281,7 +281,7 @@ class OrgtagActivityHandler(BaseOrgtagHandler):
                 "count": count,
             })
             orgtag_list.append(obj)
-        
+
         self.render(
             'moderation-orgtag-activity.html',
             orgtag_list=orgtag_list,
@@ -295,13 +295,3 @@ class ModerationOrgtagActivityHandler(OrgtagActivityHandler):
         if not self.moderator:
             raise HTTPError(404)
         return OrgtagActivityHandler.get(self)
-
-
-        
-
-        
-
-        
-        
-
-

@@ -1,0 +1,15 @@
+pip
+Mako
+tornado
+BeautifulSoup
+BeautifulSoup4
+markdown
+bleach
+sqlalchemy
+pysqlite
+mysql-python
+redis
+pyelasticsearch
+python-levenshtein
+httplib2
+geopy

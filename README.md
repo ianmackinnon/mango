@@ -8,11 +8,7 @@ Mapping Application for NGOs
 
 ### Debian/Ubuntu
 
-    sudo apt-get install \
-      python python-dev \
-      python-setuptools sqlite3 libsqlite3-dev \
-      redis-server mysql-server mysql-client libmysqlclient-dev \
-      nodejs npm pylint
+    sudo apt-get install $(cat deps.ubuntu.text)
       
     sudo update-alternatives --install /usr/bin/node nodejs /usr/bin/nodejs 100
 
@@ -32,15 +28,8 @@ On the CAAT server
 
     sudo -H \
       pip install --upgrade \
-      pip \
-      Mako tornado \
-      BeautifulSoup BeautifulSoup4 \
-      markdown bleach \
-      sqlalchemy pysqlite \
-      mysql-python \
-      redis pyelasticsearch \
-      python-levenshtein \
-      httplib2 geopy
+      --src=/tmp \
+      -r deps.python.text
 
 
 ### Node

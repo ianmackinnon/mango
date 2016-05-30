@@ -111,7 +111,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
             q = self.orm.query(Orgtag.base_short, func.count(Org.org_id).label("freq")) \
                 .join(org_orgtag, org_orgtag.c.orgtag_id==Orgtag.orgtag_id) \
                 .join(Org, Org.org_id==org_orgtag.c.org_id) \
-                .filter(Orgtag.public==True, Orgtag.virtual==None) \
+                .filter(Orgtag.public==True, Orgtag.is_virtual==None) \
                 .filter(Orgtag.path_short==path_short) \
                 .filter(Org.public==True) \
                 .group_by(Orgtag.orgtag_id) \
@@ -132,7 +132,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
             .join(org_orgtag, org_orgtag.c.org_id==Org.org_id) \
             .join(Orgtag, Orgtag.orgtag_id==org_orgtag.c.orgtag_id) \
             .filter(Org.public==True) \
-            .filter(Orgtag.public==True, Orgtag.virtual==None) \
+            .filter(Orgtag.public==True, Orgtag.is_virtual==None) \
             .group_by(Org.org_id) \
             .order_by(func.count(Orgtag.orgtag_id).desc()) \
             .limit(30)

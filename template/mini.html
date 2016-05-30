@@ -458,7 +458,7 @@ ${tag["base"] | n, h, unicode, nbsp}\
 %endif
 \
 %if moderator and (parameters.get("view", None) == "edit"):
-%if tag["virtual"]:
+%if tag["isVirtual"]:
 &nbsp;\
 <span class="virtual">(virtual)</span>\
 %else:

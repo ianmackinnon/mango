@@ -344,12 +344,12 @@ for each row begin
     insert into orgtag_v (
         orgtag_id,
         moderation_user_id, a_time, public, existence,
-	name, name_short, base, base_short, path, path_short, description, virtual
+	name, name_short, base, base_short, path, path_short, description, is_virtual
         )
         values (
 	new.orgtag_id,
 	new.moderation_user_id, 0, new.public, 1,
-	new.name, new.name_short, new.base, new.base_short, new.path, new.path_short, description, virtual
+	new.name, new.name_short, new.base, new.base_short, new.path, new.path_short, description, is_virtual
 	);
 end $$
 
@@ -359,12 +359,12 @@ for each row begin
     insert into orgtag_v (
         orgtag_id,
         moderation_user_id, a_time, public, existence,
-	name, name_short, base, base_short, path, path_short, description, virtual
+	name, name_short, base, base_short, path, path_short, description, is_virtual
         )
         values (
 	new.orgtag_id,
 	new.moderation_user_id, 0, new.public, 1,
-	new.name, new.name_short, new.base, new.base_short, new.path, new.path_short, description, virtual
+	new.name, new.name_short, new.base, new.base_short, new.path, new.path_short, description, is_virtual
 	);
 end $$
 
@@ -373,12 +373,12 @@ for each row begin
     insert into orgtag_v (
         orgtag_id,
         moderation_user_id, a_time, public, existence,
-	name, name_short, base, base_short, path, path_short, description, virtual
+	name, name_short, base, base_short, path, path_short, description, is_virtual
         )
         values (
 	old.orgtag_id,
 	old.moderation_user_id, 0, old.public, 0,
-	old.name, old.name_short, old.base, old.base_short, old.path, old.path_short, description, virtual
+	old.name, old.name_short, old.base, old.base_short, old.path, old.path_short, description, is_virtual
 	);
 end $$
 
@@ -399,12 +399,12 @@ for each row begin
     insert into eventtag_v (
         eventtag_id,
         moderation_user_id, a_time, public, existence,
-	name, name_short, base, base_short, path, path_short, description, virtual
+	name, name_short, base, base_short, path, path_short, description, is_virtual
         )
         values (
 	new.eventtag_id,
 	new.moderation_user_id, 0, new.public, 1,
-	new.name, new.name_short, new.base, new.base_short, new.path, new.path_short, description, virtual
+	new.name, new.name_short, new.base, new.base_short, new.path, new.path_short, description, is_virtual
 	);
 end $$
 
@@ -414,12 +414,12 @@ for each row begin
     insert into eventtag_v (
         eventtag_id,
         moderation_user_id, a_time, public, existence,
-	name, name_short, base, base_short, path, path_short, description, virtual
+	name, name_short, base, base_short, path, path_short, description, is_virtual
         )
         values (
 	new.eventtag_id,
 	new.moderation_user_id, 0, new.public, 1,
-	new.name, new.name_short, new.base, new.base_short, new.path, new.path_short, description, virtual
+	new.name, new.name_short, new.base, new.base_short, new.path, new.path_short, description, is_virtual
 	);
 end $$
 
@@ -428,12 +428,12 @@ for each row begin
     insert into eventtag_v (
         eventtag_id,
         moderation_user_id, a_time, public, existence,
-	name, name_short, base, base_short, path, path_short, description, virtual
+	name, name_short, base, base_short, path, path_short, description, is_virtual
         )
         values (
 	old.eventtag_id,
 	old.moderation_user_id, 0, old.public, 0,
-	old.name, old.name_short, old.base, old.base_short, old.path, old.path_short, description, virtual
+	old.name, old.name_short, old.base, old.base_short, old.path, old.path_short, description, is_virtual
 	);
 end $$
 
