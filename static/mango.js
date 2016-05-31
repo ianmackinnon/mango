@@ -12,6 +12,7 @@ var m = (function () {
     eventsEnabled: null,
     map: null,
     xsrf: null,
+    cookiePrefix: null,
     next: null,
 
     debug: false,
@@ -25,6 +26,21 @@ var m = (function () {
         //   console.log.apply(console, arguments);
         Function.prototype.apply.call(console.log, console, arguments);
       }
+    },
+
+    setCookie: function (key, value) {
+      var path = m.urlRoot;
+
+      if (m.cookiePrefix) {
+        key = "" + m.cookiePrefix + "-" + key;
+      }
+
+      var cmd = ("" + key + "=" + JSON.stringify(value) +
+                 "; path=" + path);
+
+      console.log("cookie", cmd);
+
+      window.document.cookie = cmd;
     },
 
     ukGeobox: new window.Geobox({
@@ -1344,7 +1360,7 @@ var m = (function () {
   }
 
   $(window.document).ready(function () {
-    window.document.cookie = "j=1";
+    m.setCookie("javascript", 1);
     $.ajaxSetup({ "traditional": true });
     m.templator.setUrl(m.urlRewrite("/static/template/"));
     m.handle();

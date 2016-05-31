@@ -19,7 +19,7 @@ log = logging.getLogger('test_mango_web')
 host = "https://www.caat.org.uk/resources/mapping"
 
 EVENTS_ENABLED = False
-SESSION_COOKIE = "sm"
+SESSION_COOKIE = "mapping-session"
 
 
 class HttpTest(unittest.TestCase, Http):
@@ -135,7 +135,7 @@ class HttpTest(unittest.TestCase, Http):
             "/history",
             "/user",
         ]
-        
+
         def removed(list_, matches):
             out = []
             for i in range(len(list_) - 1, 0, -1):
@@ -163,7 +163,7 @@ class TestPublic(HttpTest):
     @classmethod
     def setUpClass(cls):
         cls.longMessage = True
-        
+
     def test_php_public(self):
         log.info("Public User / PHP")
         for path in self.php_path_list:
@@ -200,7 +200,7 @@ class TestPublic(HttpTest):
 
 
 
-        
+
 if __name__ == "__main__":
     log.addHandler(logging.StreamHandler())
     http_log.addHandler(logging.StreamHandler())
@@ -241,6 +241,3 @@ if __name__ == "__main__":
 """ % (host, host))
 
     unittest.main()
-
-
-    

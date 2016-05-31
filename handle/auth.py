@@ -6,7 +6,7 @@ from urllib import urlencode
 
 import tornado.auth
 from tornado.web import HTTPError
-from tornado import httpclient 
+from tornado import httpclient
 from sqlalchemy.orm.exc import NoResultFound
 
 from base import BaseHandler, authenticated
@@ -36,7 +36,8 @@ class LoginHandler(BaseHandler):
             raise HTTPError(400, "Account locked.")
 
     def _check_registering(self, user):
-        register = bool(self.get_secure_cookie("register")) or bool(self.get_argument_bool("register", None))
+        register = self.app_get_cookie("register") or \
+                   bool(self.get_argument_bool("register", None))
 
         if not register:
             self.redirect(self.url_rewrite("/auth/register", next_=self.next_))
@@ -79,7 +80,7 @@ class AuthLoginLocalHandler(LoginHandler):
         self.orm.commit()
         self.next_ = "/user/%d" % user.user_id
         return user
-    
+
     def get(self):
         if not self.application.local_auth:
             print u"Local authentication is not enabled."
@@ -93,7 +94,7 @@ class AuthLoginLocalHandler(LoginHandler):
 
         user = self._get_user()
         self._check_locked(user)
-        
+
         if not user:
             if self._check_registering(user):
                 return
@@ -146,11 +147,11 @@ class AuthLoginGoogleHandler(LoginHandler, tornado.auth.GoogleOAuth2Mixin):
                 raise tornado.web.HTTPError(500, 'Server error')
             http_client.close()
 
-            register = self.get_secure_cookie("register")
-            self.next_ = self.get_secure_cookie("next")
+            register = self.app_get_cookie("register")
+            self.next_ = self.app_get_cookie("next")
 
-            self.clear_cookie("register")
-            self.clear_cookie("next")
+            self.app_clear_cookie("register")
+            self.app_clear_cookie("next")
 
             if not self.auth_user:
                 raise HTTPError(500, "Google authentication failed")
@@ -172,11 +173,11 @@ class AuthLoginGoogleHandler(LoginHandler, tornado.auth.GoogleOAuth2Mixin):
             self._batch_tasks()
 
             if self.next_:
-                self.set_secure_cookie("next", self.next_);
+                self.app_set_cookie("next", self.next_);
 
             register = self.get_argument_bool("register", None)
             if register is not None:
-                self.set_secure_cookie("register", str(int(register)));
+                self.app_set_cookie("register", register);
 
             yield self.authorize_redirect(
                 redirect_uri=login_url,
@@ -207,7 +208,7 @@ class AuthVisitHandler(LoginHandler):
         self.orm.commit()
         self.next_ = "/user/%d" % user.user_id
         return user
-    
+
     def get(self):
         self._accept_authenticated()
 
@@ -215,7 +216,7 @@ class AuthVisitHandler(LoginHandler):
 
         user = self._get_user()
         self._check_locked(user)
-        
+
         if not user:
             if self._check_registering(user):
                 return
@@ -296,13 +297,10 @@ def delete_inactive_users(orm):
       where q2.user_id = user.user_id
     )
   ;""" % inner_sql
-    
+
     engine = orm.connection().engine
 
     engine.execute("Begin")
     engine.execute(session_sql)
     engine.execute(user_sql)
     engine.execute("Commit")
-
-
-

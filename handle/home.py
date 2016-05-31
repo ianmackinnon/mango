@@ -193,14 +193,14 @@ class DprteOrgListHandler(FairOrgListHandler):
 
 class FarnboroughHandler(FairHandler):
     name = "farnborough"
-    tag_name = u"farnborough-2014"
+    tag_name = u"farnborough-2016"
 
 class FarnboroughTargetListHandler(HomeTargetListHandler):
-    tag_base = u"farnborough-2014"
+    tag_base = u"farnborough-2016"
 
 class FarnboroughOrgListHandler(FairOrgListHandler):
     cache_key = "farnborough-org"
-    tag_name = u"farnborough-2014"
+    tag_name = u"farnborough-2016"
 
 
 

@@ -217,8 +217,6 @@ class Application(tornado.web.Application):
     sqlite_path = u"mango.db"
     max_age = 86400 * 365 * 10  # 10 years
 
-    session_cookie_name = "sm" # Must be unique for domain
-
     def load_cookie_secret(self):
         try:
             self.cookie_secret = open(".xsrf", "r").read().strip()
@@ -437,6 +435,7 @@ class Application(tornado.web.Application):
             ))
 
         self.local_auth = options.local
+        self.cookie_prefix = conf.get(conf_path, u"app", u"cookie-prefix")
 
         # Database & Cache
 

@@ -20,7 +20,7 @@ ${header(title=self.application_title()) | n}
       <a href="${url_rewrite("/security-and-policing")}"
          >Security & Policing 2016</a>
       <!-- <a href="${url_rewrite("/dprte")}">DPRTE 2016</a> -->
-      <!-- <a href="${url_rewrite("/farnborough")}">Farnborough 2014</a> -->
+      <a href="${url_rewrite("/farnborough")}">Farnborough 2016</a>
       %endif
       <div class="nav-group">
         <a
@@ -155,6 +155,7 @@ m.moderator = !!${int(moderator)};
 m.eventsEnabled = !!${int(events_enabled)};
 m.map = !!${int(load_map)};
 m.xsrf = "${xsrf | n}";
+m.cookiePrefix = "${cookie_prefix | n}";
 m.next = "${next_ or "" | n}" || null;
 </script>
 %for script in scripts3:

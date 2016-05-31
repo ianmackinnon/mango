@@ -182,6 +182,54 @@ class BaseHandler(RequestHandler):
     _unsupported_method_error = (403, "Method Not Allowed")
     _unsupported_methods = None
 
+
+    def cookie_name(self, name):
+        return "-".join(filter(None, [
+            self.application.cookie_prefix, name]))
+
+
+    def app_set_cookie(self, key, value, **kwargs):
+        """
+        Uses app prefix and URL root for path.
+        Stringify as JSON. Always set secure.
+        """
+
+        kwargs = dict({
+            "path": self.url_root
+        }.items() + (kwargs or {}).items())
+
+        key = self.cookie_name(key)
+        value = json.dumps(value)
+
+        self.set_secure_cookie(key, value, **kwargs);
+
+
+    def app_get_cookie(self, key, secure=True):
+        "Uses app prefix. Secure by default. Parse JSON."
+
+        key = self.cookie_name(key)
+
+        if secure:
+            value = self.get_secure_cookie(key)
+        else:
+            value = self.get_cookie(key)
+
+        return value and json.loads(value)
+
+
+    def app_clear_cookie(self, key, **kwargs):
+        """
+        Uses app prefix and URL root for path.
+        """
+
+        kwargs = kwargs or {}
+        kwargs.update({
+            "path": self.url_root
+        })
+
+        self.clear_cookie(self.cookie_name(key), **kwargs)
+
+
     def __init__(self, *args, **kwargs):
         self.SUPPORTED_METHODS += ("TOUCH", )
         self.messages = []
@@ -189,7 +237,7 @@ class BaseHandler(RequestHandler):
         RequestHandler.__init__(self, *args, **kwargs)
         self.orm = self.application.orm()
         self.url_root = self.request.headers.get(u"X-Forwarded-Root", "/")
-        self.has_javascript = bool(self.get_cookie("j"))
+        self.has_javascript = self.app_get_cookie("javascript", secure=False)
         self.set_parameters()
         self.next_ = self.get_argument("next", None)
         self.load_map = False
@@ -362,13 +410,13 @@ class BaseHandler(RequestHandler):
         return self.request.headers["User-Agent"]
 
     def start_session(self, value):
-        self.set_secure_cookie(self.application.session_cookie_name, value);
+        self.app_set_cookie("session", value);
         # Sets a cookie value to the base64 plaintext session_id,
         #   but is protected by tornado's _xsrf cookie.
         # Retrieved by BaseHandler.get_current_user()
 
     def end_session(self):
-        self.clear_cookie(self.application.session_cookie_name)
+        self.app_clear_cookie("session")
 
     def query_rewrite(self, options):
         arguments = self.request.arguments.copy()
@@ -473,6 +521,7 @@ class BaseHandler(RequestHandler):
             "contributor": self.contributor,
             "uri": self.request.uri,
             "xsrf": self.xsrf_token,
+            "cookie_prefix": self.application.cookie_prefix,
             "events_enabled": self.application.events,
             "json_dumps": json.dumps,
             "query_rewrite": self.query_rewrite,
@@ -503,7 +552,7 @@ class BaseHandler(RequestHandler):
             cmp(session.user_agent, self.get_user_agent())
 
     def get_session(self):
-        session_id = self.get_secure_cookie(self.application.session_cookie_name)
+        session_id = self.app_get_cookie("session")
 
         try:
             session = self.orm.query(Session).\

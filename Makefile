@@ -144,7 +144,7 @@ mysql-build-triggers : $(MYSQL_CONF_PATH) $(MYSQLDUMP_CONF_PATH)
 
 purge-mysql:
 # Delete the mango database and users (root)
-	./mysql/mysql.py -x $(CONF_PATH)
+	./mysql/mysql.py -p $(CONF_PATH)
 	rm -rf $(MYSQL_CONF_PATH)
 
 

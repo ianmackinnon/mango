@@ -19,7 +19,7 @@ log = logging.getLogger('test_mango_web')
 host = "http://localhost:8802"
 
 EVENTS_ENABLED = False
-SESSION_COOKIE = "sm"
+SESSION_COOKIE = "mango-session"
 
 
 class HttpTest(unittest.TestCase, Http):
@@ -143,8 +143,8 @@ class HttpTest(unittest.TestCase, Http):
                 removed(self.html_path_list_registered, matches)
             self.html_path_list_none += \
                 removed(self.html_path_list_moderator, matches)
-                
-        
+
+
 
 # Duplicated in test_live
 class TestPublic(HttpTest):
@@ -152,7 +152,7 @@ class TestPublic(HttpTest):
     @classmethod
     def setUpClass(cls):
         cls.longMessage = True
-        
+
     def test_json_public(self):
         log.info("Public User / Authorised JSON")
         for path in self.json_path_list:
@@ -183,8 +183,7 @@ class TestRegistered(HttpTest):
     def setUpClass(cls):
         cls.longMessage = True
         cls.cookie = cls.get_cookies(cls.host + "/auth/login/local?user=3")
-        print cls.cookie
-        
+
     def test_json_public(self):
         log.info("Registered User / Authorised JSON")
         for path in self.json_path_list:
@@ -210,7 +209,7 @@ class TestModerator(HttpTest):
     def setUpClass(cls):
         cls.longMessage = True
         cls.cookie = cls.get_cookies(cls.host + "/auth/login/local?user=1")
-        
+
     def test_json_public(self):
         log.info("Moderator User / Authorised JSON")
         for path in self.json_path_list:
@@ -231,7 +230,7 @@ class TestAuth(HttpTest):
     @classmethod
     def setUpClass(cls):
         cls.longMessage = True
-        
+
     def test_auth_redirection(self):
         url = self.host + "/auth/login/local?user=1"
         response, content = self.http.request(url)

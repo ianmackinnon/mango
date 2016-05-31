@@ -902,9 +902,9 @@
           role: "Security & Policing exhibitor",  // 's' appended for plurals
           hashtags: ["TheyDontMakeUsSafer", "SecurityandPolicing"]
         },
-        "dprte-2016": {
-          role: "DPRTE 2016 exhibitor",  // 's' appended for plurals
-          hashtags: ["StopCardiffArmsFair", "DPRTE"]
+        "farnborough-2016": {
+          role: "Farnborough 2016 exhibitor",  // 's' appended for plurals
+          hashtags: ["FIA16"]
         }
       };
 

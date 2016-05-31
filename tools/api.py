@@ -8,6 +8,8 @@ import urllib
 import httplib2
 
 
+SESSION_COOKIE="mango-session"
+
 
 def get_session(h):
     h.follow_redirects = False
@@ -22,7 +24,7 @@ def make_note(text, source):
     headers = {
         'Content-type': 'application/json',
         "Accept": "application/json",
-        "Cookie": "s=%s" % s,
+        "Cookie": "%s=%s" % (SESSION_COOKIE, s),
         }
     h.follow_redirects = True
     h.follow_all_redirects = True
@@ -65,7 +67,7 @@ def update_note(note):
     headers = {
         'Content-type': 'application/json',
         "Accept": "application/json",
-        "Cookie": "s=%s" % s,
+        "Cookie": "%s=%s" % (SESSION_COOKIE, s),
         }
     h.follow_redirects = True
     h.follow_all_redirects = True
@@ -89,7 +91,7 @@ def make_organisation(name):
     headers = {
         'Content-type': 'application/json',
         "Accept": "application/json",
-        "Cookie": "s=%s" % s,
+        "Cookie": "%s=%s" % (SESSION_COOKIE, s),
         }
     h.follow_redirects = True
     h.follow_all_redirects = True
@@ -151,7 +153,7 @@ def update_organisation(organisation):
     headers = {
         'Content-type': 'application/json',
         "Accept": "application/json",
-        "Cookie": "s=%s" % s,
+        "Cookie": "%s=%s" % (SESSION_COOKIE, s),
         }
     h.follow_redirects = True
     h.follow_all_redirects = True
@@ -175,7 +177,7 @@ def make_organisation_tag(name):
     headers = {
         'Content-type': 'application/json',
         "Accept": "application/json",
-        "Cookie": "s=%s" % s,
+        "Cookie": "%s=%s" % (SESSION_COOKIE, s),
         }
     h.follow_redirects = True
     h.follow_all_redirects = True
@@ -217,7 +219,7 @@ def update_organisation_tag(tag):
     headers = {
         'Content-type': 'application/json',
         "Accept": "application/json",
-        "Cookie": "s=%s" % s,
+        "Cookie": "%s=%s" % (SESSION_COOKIE, s),
         }
     h.follow_redirects = True
     h.follow_all_redirects = True
@@ -241,7 +243,7 @@ def update_address(address):
     headers = {
         'Content-type': 'application/json',
         "Accept": "application/json",
-        "Cookie": "s=%s" % s,
+        "Cookie": "%s=%s" % (SESSION_COOKIE, s),
         }
     h.follow_redirects = True
     h.follow_all_redirects = True
@@ -303,7 +305,7 @@ def organisation_add_address(organisation, postal, source):
     headers = {
         'Content-type': 'application/json',
         "Accept": "application/json",
-        "Cookie": "s=%s" % s,
+        "Cookie": "%s=%s" % (SESSION_COOKIE, s),
         }
     h.follow_redirects = True
     h.follow_all_redirects = True
@@ -322,4 +324,3 @@ def organisation_add_address(organisation, postal, source):
 
 h = httplib2.Http(cache=None)
 s = get_session(h)
-
