@@ -195,7 +195,7 @@ class BaseHandler(RequestHandler):
         """
 
         kwargs = dict({
-            "path": self.url_root
+            "path": self.url_root_dir()
         }.items() + (kwargs or {}).items())
 
         key = self.cookie_name(key)
@@ -426,6 +426,14 @@ class BaseHandler(RequestHandler):
             uri = self.url_root + uri[1:]
         uri += "?" + urlencode(arguments, True)
         return uri
+
+    def url_root_dir(self):
+        u"""
+        Return the root path without a trailing slash.
+        """
+        if self.url_root == "/":
+            return self.url_root
+        return self.url_root.rstrip("/")
 
     def url_rewrite(self, uri, options=None, parameters=None, next_=None):
         if parameters is None:

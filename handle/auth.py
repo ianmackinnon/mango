@@ -126,7 +126,28 @@ class AuthLoginGoogleHandler(LoginHandler, tornado.auth.GoogleOAuth2Mixin):
         redirect_path = self.url_rewrite(u"/auth/login/google")
         login_url = "%s://%s%s" % (self.request.protocol, self.request.host, redirect_path)
 
-        if self.get_argument('code', False):
+        if not self.get_argument('code', False):
+            # Step 1. Send request to Google
+
+            self._batch_tasks()
+
+            if self.next_:
+                self.app_set_cookie("next", self.next_);
+
+            register = self.get_argument_bool("register", None)
+            if register is not None:
+                self.app_set_cookie("register", register);
+
+            yield self.authorize_redirect(
+                redirect_uri=login_url,
+                client_id=self.settings['google_oauth']['key'],
+                scope=['profile', 'email'],
+                response_type='code',
+                extra_params={'approval_prompt': 'auto',},
+            )
+        else:
+            # Step 2. Recieving response from Google
+
             access_data = yield self.get_authenticated_user(
                 redirect_uri=login_url,
                 code=self.get_argument('code'))
@@ -167,25 +188,8 @@ class AuthLoginGoogleHandler(LoginHandler, tornado.auth.GoogleOAuth2Mixin):
             self._check_locked(user)
 
             session = self._create_session(user)
+
             self.redirect_next()
-
-        else:
-            self._batch_tasks()
-
-            if self.next_:
-                self.app_set_cookie("next", self.next_);
-
-            register = self.get_argument_bool("register", None)
-            if register is not None:
-                self.app_set_cookie("register", register);
-
-            yield self.authorize_redirect(
-                redirect_uri=login_url,
-                client_id=self.settings['google_oauth']['key'],
-                scope=['profile', 'email'],
-                response_type='code',
-                extra_params={'approval_prompt': 'auto',},
-            )
 
 
 
