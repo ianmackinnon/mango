@@ -24,6 +24,7 @@ from tornado.web import RequestHandler, HTTPError
 
 # For _execute replacement
 from tornado import iostream
+import tornado.web
 from tornado.concurrent import Future, is_future
 from tornado import gen
 from tornado.web import _has_stream_request_body
@@ -247,15 +248,24 @@ class BaseHandler(RequestHandler):
         self.start = time.time()
 
     def on_finish(self):
-        if hasattr(self, "start"):
-            self.application.log_uri.info("%s, %s, %s, %s, %0.3f" % (
-                    str(time.time()),
-                    self.request.uri,
-                    self.request.remote_ip,
-                    repr(self.request.headers.get("User-Agent", "User-Agent")),
-                    time.time() - self.start
-                    ))
-        self.application.orm.remove()
+        if not hasattr(self, "start"):
+            return
+        now = time.time()
+        duration = now - self.start
+        self.application.log_uri.info("%s, %s, %s, %s, %0.3f" % (
+                str(now),
+                self.request.uri,
+                self.request.remote_ip,
+                repr(self.request.headers.get("User-Agent", "User-Agent")),
+                duration
+                ))
+
+        if self.application.orm:
+            self.application.orm.remove()
+
+        if self.application.response_log is not None:
+            response = [now, self._status_code, duration]
+            self.application.response_log.append(response)
 
     def initialize(self, **kwargs):
         self.arg_type_handlers = kwargs.get("types", [])
@@ -883,6 +893,124 @@ select auto_increment
     @property
     def cache(self):
         return self.application.cache
+
+
+
+class DefaultHandler(BaseHandler):
+    pass
+
+class ServerStatusHandler(tornado.web.RequestHandler):
+    @staticmethod
+    def median_sorted(data):
+        if not data:
+            return
+        if len(data) == 1:
+            return data[0]
+        if len(data) % 2:
+            return (data[len(data) / 2 - 1] +
+                data[len(data) / 2]) / 2
+        else:
+            return data[len(data) / 2]
+
+    @staticmethod
+    def quartiles(data):
+        u"""
+        Accepts an unsorted list of floats.
+        """
+        if not data:
+            return
+        sample = sorted(data)
+
+        if len(data) == 1:
+            median = data[0]
+            q1 = data[0]
+            q3 = data[0]
+        else:
+            median = ServerStatusHandler.median_sorted(sample)
+            if len(data) % 2:
+                q1 = (
+                    ServerStatusHandler.median_sorted(
+                        sample[:len(data) / 2]) +
+                    ServerStatusHandler.median_sorted(
+                        sample[:len(data) / 2 + 1])
+                ) / 2
+                q3 = (
+                    ServerStatusHandler.median_sorted(
+                        sample[len(data) / 2:]) +
+                    ServerStatusHandler.median_sorted(
+                        sample[len(data) / 2 + 1:])
+                ) / 2
+            else:
+                q1 = ServerStatusHandler.median_sorted(
+                    sample[:len(data) / 2])
+                q3 = ServerStatusHandler.median_sorted(
+                    sample[len(data) / 2:])
+
+        return {
+            "q1": median if q1 is None else q1,
+            "median": median,
+            "q3": median if q3 is None else q3
+        }
+
+    def get(self):
+        if self.application.response_log is None:
+            raise HTTPError(404)
+
+        response = {
+            "1": 0,
+            "2": 0,
+            "3": 0,
+            "4": 0,
+            "5": 0,
+        }
+        duration = {
+            "min": 0,
+            "q1": 0,
+            "median": 0,
+            "q3": 0,
+            "max": 0,
+        }
+
+        self.application.trim_response_log()
+
+        min_ = None
+        max_ = None
+
+        for (timestamp, status_code, duration_) in self.application.response_log:
+            if min_ is None:
+                min_ = duration_
+                max_ = duration_
+            else:
+                min_ = min(min_, duration_)
+                max_ = max(max_, duration_)
+
+            k = str(status_code)[0]
+            response[k] += 1
+
+        if min_ is not None:
+            duration["min"] = min_
+            duration["max"] = max_
+            try:
+                duration.update(self.quartiles([
+                    v[2] for v in self.application.response_log]))
+            except TypeError:
+                sys.stderr.write("Failed quartiles: %s" % repr([v[2] for v in self.application.response_log]))
+                sys.stderr.flush()
+                raise
+
+        label = self.application.title
+
+        if self.application.label:
+            label = self.application.label
+
+        data = {
+            "label": label,
+            "response": response,
+            "duration": duration,
+        }
+
+        self.set_header("Content-Type", "application/json; charset=UTF-8")
+        self.write(json.dumps(data))
 
 
 

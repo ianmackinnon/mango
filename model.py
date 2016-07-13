@@ -67,28 +67,6 @@ def use_mysql():
 
 
 
-def get_database():
-    database = conf.get(conf_path, u"database", u"database")
-    if not database in [u'mysql', u'sqlite']:
-        log.error("""Value for database/database in configuration file '%s' is '%s'. Valid values are 'sqlite' or 'mysql'.""" % (database, conf_path))
-        sys.exit(1)
-    return database
-
-
-
-def set_database():
-    database = get_database()
-    if database == "mysql":
-        use_mysql()
-
-
-
-def sqlite_connection_url():
-    sqlite_path = conf.get(conf_path, u"sqlite", u"database")
-    return 'sqlite:///%s' % sqlite_path
-
-
-
 def mysql_connection_url(username, password, database):
     return 'mysql://%s:%s@localhost/%s?charset=utf8' % (
         username, password, database)
@@ -96,26 +74,18 @@ def mysql_connection_url(username, password, database):
 
 
 def connection_url_admin():
-    database = conf.get(conf_path, u"database", u"database")
-    if database == "sqlite":
-        return sqlite_connection_url()
-    if database == "mysql":
-        username = conf.get(conf_path, u"mysql-admin", u"username")
-        password = conf.get(conf_path, u"mysql-admin", u"password")
-        database = conf.get(conf_path, u"mysql", u"database")
-        return mysql_connection_url(username, password, database)
+    username = conf.get(conf_path, u"mysql-admin", u"username")
+    password = conf.get(conf_path, u"mysql-admin", u"password")
+    database = conf.get(conf_path, u"mysql", u"database")
+    return mysql_connection_url(username, password, database)
 
 
 
 def connection_url_app():
-    database = conf.get(conf_path, u"database", u"database")
-    if database == "sqlite":
-        return sqlite_connection_url()
-    if database == "mysql":
-        username = conf.get(conf_path, u"mysql-app", u"username")
-        password = conf.get(conf_path, u"mysql-app", u"password")
-        database = conf.get(conf_path, u"mysql", u"database")
-        return mysql_connection_url(username, password, database)
+    username = conf.get(conf_path, u"mysql-app", u"username")
+    password = conf.get(conf_path, u"mysql-app", u"password")
+    database = conf.get(conf_path, u"mysql", u"database")
+    return mysql_connection_url(username, password, database)
 
 
 
@@ -138,7 +108,7 @@ if __name__ == '__main__':
     log.setLevel(log_level)
     search.log.setLevel(log_level)
 
-    set_database()
+    use_mysql()
 
 
 def camel_case(text):
@@ -529,7 +499,6 @@ class Auth(Base):
     __table_args__ = (
         UniqueConstraint('url', 'name_hash'),
         {
-            'sqlite_autoincrement': True,
             "mysql_engine": 'InnoDB',
             }
         )
@@ -573,7 +542,6 @@ class User(Base):
     __table_args__ = (
         UniqueConstraint('auth_id'),
         {
-            'sqlite_autoincrement': True,
             "mysql_engine": 'InnoDB',
             }
         )
@@ -634,7 +602,6 @@ class User(Base):
 class Session(Base):
     __tablename__ = 'session'
     __table_args__ = {
-        'sqlite_autoincrement': True,
         "mysql_engine": 'InnoDB',
         }
 
@@ -678,7 +645,6 @@ class Session(Base):
 class Medium(Base):
     __tablename__ = 'medium'
     __table_args__ = {
-        'sqlite_autoincrement': True,
         "mysql_engine": 'InnoDB',
         }
 
@@ -699,7 +665,6 @@ class Medium(Base):
 class Org(Base, MangoEntity, NotableEntity):
     __tablename__ = 'org'
     __table_args__ = {
-        'sqlite_autoincrement': True,
         "mysql_engine": 'InnoDB',
         }
 
@@ -928,7 +893,6 @@ class Org(Base, MangoEntity, NotableEntity):
 class Orgalias(Base, MangoEntity):
     __tablename__ = 'orgalias'
     __table_args__ = {
-        'sqlite_autoincrement': True,
         "mysql_engine": 'InnoDB',
         }
 
@@ -994,7 +958,6 @@ class Event(Base, MangoEntity, NotableEntity):
     __table_args__ = (
         CheckConstraint("end_time > start_time or end_date > start_date"),
         {
-            'sqlite_autoincrement': True,
             "mysql_engine": 'InnoDB',
             },
         )
@@ -1189,7 +1152,6 @@ class AddressExtension(MapperExtension):
 class Address(Base, MangoEntity, NotableEntity):
     __tablename__ = 'address'
     __table_args__ = {
-        'sqlite_autoincrement': True,
         "mysql_engine": 'InnoDB',
         }
     __mapper_args__ = {'extension': AddressExtension()}
@@ -1420,7 +1382,6 @@ class Orgtag(Base, MangoEntity, NotableEntity):
     __table_args__ = (
         UniqueConstraint('base_short'),
         {
-            'sqlite_autoincrement': True,
             "mysql_engine": 'InnoDB',
             }
         )
@@ -1544,7 +1505,6 @@ class Eventtag(Base, MangoEntity, NotableEntity):
     __table_args__ = (
         UniqueConstraint('base_short'),
         {
-            'sqlite_autoincrement': True,
             "mysql_engine": 'InnoDB',
             }
         )
@@ -1660,7 +1620,6 @@ class Eventtag(Base, MangoEntity, NotableEntity):
 class Note(Base, MangoEntity):
     __tablename__ = 'note'
     __table_args__ = {
-        'sqlite_autoincrement': True,
         "mysql_engine": 'InnoDB',
         }
 
@@ -1759,7 +1718,6 @@ class Note(Base, MangoEntity):
 class Contact(Base, MangoEntity):
     __tablename__ = 'contact'
     __table_args__ = {
-        'sqlite_autoincrement': True,
         "mysql_engine": 'InnoDB',
         }
 
@@ -1849,7 +1807,7 @@ class Contact(Base, MangoEntity):
 
 
 
-def attach_search(engine, orm, enabled=True):
+def attach_search(engine, orm, enabled=True, verify=True):
     engine.search = None
     if not enabled:
         return
@@ -1857,7 +1815,8 @@ def attach_search(engine, orm, enabled=True):
     if not engine.search:
         return
 
-    search.verify(engine.search, orm, Org, Orgalias)
+    if verify:
+        search.verify(engine.search, orm, Org, Orgalias)
 
 def org_after_insert_listener(mapper, connection, target):
     if connection.engine.search:
@@ -2036,6 +1995,8 @@ sqla_event.listen(Org.orgtag_list, 'remove', org_orgtag_remove_listener)
 
 
 
+# Main again
+
 def engine_sql_mode(engine, sql_mode=""):
     def set_sql_mode(dbapi_connection, connection_record):
         cursor = dbapi_connection.cursor()
@@ -2051,13 +2012,8 @@ def engine_disable_mode(engine, mode):
     sqla_event.listen(engine, "connect", set_sql_mode)
 
 
-
-# Main again
-
 if __name__ == '__main__':
     connection_url = connection_url_admin()
     engine = create_engine(connection_url)
     engine_disable_mode(engine, "ONLY_FULL_GROUP_BY")
     Base.metadata.create_all(engine)
-
-    database = conf.get(conf_path, u"database", u"database")

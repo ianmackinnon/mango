@@ -4,8 +4,10 @@
 import os
 import re
 import sys
+import time
 import errno
 import redis
+import bisect
 import logging
 import logging.handlers
 import datetime
@@ -26,6 +28,7 @@ from sqlalchemy.orm.query import Query
 from sqlalchemy.exc import SQLAlchemyError, OperationalError
 
 from handle.base import BaseHandler, \
+    DefaultHandler, ServerStatusHandler, \
     authenticated, sha1_concat
 from handle.generate import GenerateMarkerHandler
 from handle.markdown_safe import MarkdownSafeHandler
@@ -85,7 +88,7 @@ from handle.history import HistoryHandler
 from handle.moderation import ModerationQueueHandler
 
 import conf
-from model import get_database, connection_url_app, attach_search, engine_disable_mode
+from model import connection_url_app, attach_search, engine_disable_mode
 from model import Org, Orgtag, Orgalias, Event, Eventtag, Address, Note
 from model_v import Org_v, Event_v, Address_v, Note_v
 
@@ -97,7 +100,10 @@ define("skin", default=u"default", help="skin with the given style", type=unicod
 define("local", default=False, help="Allow local authentication", type=bool)
 define("offsite", default=None, help="Correct skin-specific links when offsite.", type=bool)
 define("events", default=True, help="Enable events. Default is 1.", type=bool)
+define("verify_search", default=True, help="Verify Elasticsearch data on startup. Default is 1.", type=bool)
 define("log", default=None, help="Log directory. Write permission required. Logging is disabled if this option is not set.", type=unicode)
+define("status", default=True, help="Enable stats on /server-stats")
+define("label", default=None, help="Label to include in stats")
 
 
 
@@ -211,11 +217,12 @@ def url_type_id(text):
 
 
 class Application(tornado.web.Application):
-
     name = u"mango"
     title = u"Mapping Application for NGOs (Mango)"
     sqlite_path = u"mango.db"
     max_age = 86400 * 365 * 10  # 10 years
+
+    RESPONSE_LOG_DURATION = 5 * 60  # Seconds
 
     def load_cookie_secret(self):
         try:
@@ -263,7 +270,24 @@ class Application(tornado.web.Application):
         namespace = self.cache_namespace(offset)
         self.cache.set_namespace(namespace)
 
+    def init_response_log(self):
+        self.response_log = []
+        tornado.ioloop.PeriodicCallback(
+            self.trim_response_log,
+            self.RESPONSE_LOG_DURATION * 1000
+        ).start()
+
+    @tornado.gen.coroutine
+    def trim_response_log(self):
+        start = time.time() - self.RESPONSE_LOG_DURATION
+        row = [start, None, None]
+        index = bisect.bisect(self.response_log, row)
+        self.response_log = self.response_log[index:]
+
     def __init__(self):
+        self.response_log = None
+        self.cache_log = None
+
         def handle_id(text):
             return int(text)
 
@@ -271,6 +295,7 @@ class Application(tornado.web.Application):
 
         self.handlers = [
             (r"/", HomeHandler),
+
             (r"/home", HomeHandler),
             (r"/home-org", HomeOrgListHandler),
             (r"/home-target", HomeTargetListHandler),
@@ -409,6 +434,12 @@ class Application(tornado.web.Application):
             (r"/.*", NotFoundHandler),
             ]
 
+        self.label = options.label
+
+        if options.status:
+            self.handlers.insert(1, (r"/server-status", ServerStatusHandler))
+            self.init_response_log()
+
         if not self.events:
             self.handlers = filter(lambda x: "/event" not in x[0], self.handlers)
         if not self.events:
@@ -426,6 +457,7 @@ class Application(tornado.web.Application):
         settings["google_oauth"] = {
             "key": conf.get(conf_path, 'google-oauth', 'client-id'),
             "secret": conf.get(conf_path, 'google-oauth', 'client-secret'),
+            "default_handler_class": DefaultHandler,
             }
 
         self.load_cookie_secret()
@@ -439,16 +471,9 @@ class Application(tornado.web.Application):
 
         # Database & Cache
 
-        database = get_database()
-        if database == "mysql":
-            mysql_database = conf.get(conf_path, u"mysql", u"database")
-            self.database_namespace = 'mysql://%s' % mysql_database
-            self.database_mtime = datetime.datetime.utcnow()
-        elif database == "sqlite":
-            sqlite_database = self.sqlite_path
-            self.database_namespace = 'sqlite:///%s' % sqlite_database
-            self.database_mtime = datetime.datetime.utcfromtimestamp(
-                os.path.getmtime(sqlite_database))
+        mysql_database = conf.get(conf_path, u"mysql", u"database")
+        self.database_namespace = 'mysql://%s' % mysql_database
+        self.database_mtime = datetime.datetime.utcnow()
 
         self.cache = RedisCache(
             self.cache_namespace(self.database_mtime.isoformat()))
@@ -471,7 +496,8 @@ class Application(tornado.web.Application):
         except OperationalError as e:
             sys.stderr.write("Cannot connect to database %s.\n" % database)
             sys.exit(1)
-        attach_search(engine, self.orm)
+        print options.verify_search
+        attach_search(engine, self.orm, verify=options.verify_search)
         self.orm.remove()
 
         self.cache.state = self.cache.connected and "active" or "inactive"
@@ -532,6 +558,7 @@ class Application(tornado.web.Application):
         tornado.web.Application.__init__(self, self.handlers, **settings)
 
         sys.stdout.write(u"""%s is running.
+  Label:        %s
   Address:      http://localhost:%d
   Database:     %s
   Cache:        %s (%s)
@@ -540,8 +567,9 @@ class Application(tornado.web.Application):
   Started:      %s
 """ % (
                 self.title,
+                self.label,
                 options.port,
-                database,
+                "mysql",
                 self.cache.name, self.cache.state,
                 options.skin,
                 self.events and "Enabled" or "Disabled",

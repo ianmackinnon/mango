@@ -46,6 +46,7 @@ def verify_org(es, orm, Org, Orgalias):
 
 
 def verify(es, orm, Org, Orgalias):
+    print "VERIFY"
     try:
         if verify_org(es, orm, Org, Orgalias):
             return
@@ -65,7 +66,7 @@ def org_doc(org, alias_list=None):
         "public": org.public,
         "alias": [org.name] + alias_list,
         }
-    
+
 
 
 def index_org(es, org, alias_list=None):
@@ -100,7 +101,7 @@ def build_org(es, orm, Org, Orgalias):
 
     log.warning("Bulk adding org : end")
 
-    
+
 
 def rebuild(es, orm, Org, Orgalias):
     settings_path = os.path.join(setting_path, u"mango.json")
@@ -116,6 +117,3 @@ def rebuild(es, orm, Org, Orgalias):
     es.create_index(es_index, settings)
 
     build_org(es, orm, Org, Orgalias)
-
-    
-
