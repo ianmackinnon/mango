@@ -29,16 +29,16 @@ with open(os.path.join(
 
 def caat_fix_links(page, protocol=DEFAULT_PROTOCOL, host=DEFAULT_HOST):
     soup = BeautifulSoup(page, "lxml")
-    
+
     regex = re.compile("^[/]")
     for link in soup.findAll(href=regex):
         link["href"] = "%s://%s%s" % (protocol, host, link["href"])
     for link in soup.findAll(src=regex):
         link["src"] = "%s://%s%s" % (protocol, host, link["src"])
-        
+
     text = unicode(soup)
     return text
-    
+
 
 
 def load(**kwargs):
@@ -67,7 +67,7 @@ def load(**kwargs):
             url_root=url_root,
             ).decode("utf-8")
 
-    uri = u"%s://%s/resources/app-skin.php" % (protocol, host)
+    uri = u"%s://%s/resources/app-skin" % (protocol, host)
     uri += "?" + urllib.urlencode(PAGE_DATA)
 
     page = urllib2.urlopen(uri).read()
@@ -108,7 +108,6 @@ def load(**kwargs):
 
 def scripts():
     return PAGE_DATA.get("scripts", None)
-    
+
 def stylesheets():
     return PAGE_DATA.get("stylesheets", None)
-    
