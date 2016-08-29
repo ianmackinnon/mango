@@ -1009,6 +1009,7 @@ class ServerStatusHandler(tornado.web.RequestHandler):
             "duration": duration,
         }
 
+        self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Content-Type", "application/json; charset=UTF-8")
         self.write(json.dumps(data))
 
