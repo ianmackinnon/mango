@@ -72,7 +72,7 @@ def load(**kwargs):
 
     page = urllib2.urlopen(uri).read()
 
-    text = page
+    text = page.decode("utf-8")
     if offsite:
         text = caat_fix_links(page, protocol=protocol, host=host)
     text = text.replace("</head>", "%s</head>" % head)
