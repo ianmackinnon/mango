@@ -1,4 +1,5 @@
 SHELL := /bin/bash
+THIS_FILE := $(lastword $(MAKEFILE_LIST))
 .PHONY : all clean purge \
 	database clean-database purge-database \
 	vendor \
@@ -82,7 +83,7 @@ mysql-import : $(MYSQL_CONF_PATH) $(MYSQLDUMP_CONF_PATH) mysql-exist clean-mysql
 	mysql --defaults-extra-file=$(MYSQL_CONF_PATH) < mysql/build_triggers.mysql.sql
 
 $(MYSQL_TEST) : $(MYSQL_CONF_PATH) $(MYSQLDUMP_CONF_PATH) mysql/build.mysql.sql mysql/build_triggers.mysql.sql mysql/seed.mysql.sql model.py ./test/seed_data.py 
-	make mysql
+	@$(MAKE) -f $(THIS_FILE) mysql
 	./test/seed_data.py
 	mysqldump --defaults-extra-file=$(MYSQLDUMP_CONF_PATH) $$(./mysql/mysql.py -k database $(CONF_PATH)) > $(TMP)
 	mv $(TMP) $@
@@ -94,7 +95,7 @@ mysql-dump : $(MYSQLDUMP_CONF_PATH)
 mysql-test : $(MYSQL_CONF_PATH) $(MYSQLDUMP_CONF_PATH) mysql-exist
 # Empty and build the mango database from test data (admin)
 	-find $(MYSQL_TEST) -mtime +5 -exec rm {} \;
-	make $(MYSQL_TEST)
+	@$(MAKE) -f $(THIS_FILE) $(MYSQL_TEST)
 	mysql --defaults-extra-file=$(MYSQL_CONF_PATH) < "$(MYSQL_TEST)"
 
 mysql-drop-triggers :

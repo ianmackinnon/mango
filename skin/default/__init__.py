@@ -17,12 +17,14 @@ def load(**kwargs):
     return {
         "header": header,
         "footer": footer,
-        }
-    
+    }
+
 
 
 def scripts():
-    None
+    "Scripts that will be provided by the host site"
+    return None
 
 def stylesheets():
-    None
+    "Stylesheets that will be provided by the host site"
+    return None

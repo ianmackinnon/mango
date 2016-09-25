@@ -3,15 +3,15 @@
 import re
 import json
 import time
-import redis
-import geopy
 import urllib
 import logging
 import socket
-import httplib2
-
-from urllib2 import URLError
 from hashlib import md5
+from urllib2 import URLError
+
+import redis
+import geopy
+import httplib2
 
 from geolocation import GeoLocation
 
@@ -80,7 +80,8 @@ class Geobox(object):
         if "type" in kwargs:
             self.type_ = kwargs["type"]
         if len(args) == 4:
-            self.set_from_coords(*args)
+            (south, north, west, east) = args
+            self.set_from_coords(south, north, west, east)
             return
 
         elif len(args) == 1:
@@ -128,7 +129,7 @@ class Geobox(object):
 
     def set_from_string(self, s):
         parts = s.split(",")
-        if not len(parts) == 4:
+        if len(parts) != 4:
             raise ValueError(
                 "Geobox string must be four comma-separated numbers.")
         self.set_from_coords(*parts)
@@ -203,6 +204,7 @@ def clean_address(address):
 
 
 def coords(address, cache=GEOCODE_CACHE_DEFAULT):
+    # pylint: disable=too-many-return-statements
     global WAIT
 
     address = clean_address(address)
@@ -294,7 +296,7 @@ def bounds(address_full, min_radius=None, cache=GEOCODE_CACHE_DEFAULT):
                           value)
 
     if not value:
-        for i in range(ATTEMPTS):
+        for _i in range(ATTEMPTS):
             if WAIT:
                 time.sleep(WAIT)
 
@@ -307,7 +309,7 @@ def bounds(address_full, min_radius=None, cache=GEOCODE_CACHE_DEFAULT):
             # Force IPv4 address to avoid timeouts
             host = socket.gethostbyname('maps.googleapis.com')
             url = (u"http://%s/maps/api/geocode/json?%s" % (
-                   host, parameters))
+                host, parameters))
             response, content = HTTP.request(url)
 
             if response.status != 200:

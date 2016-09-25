@@ -62,8 +62,6 @@ var m = (function () {
 
     templator: templator,
 
-    currentUser: null,
-
     filter: {
       h: function (text) {
         return String(text)
@@ -874,6 +872,7 @@ var m = (function () {
     },
 
     compareGeobox: function (a, b) {
+      // Compare two geobox objects
       // a = old, b = new
       // return true if they differ, false otherwise.
       if (!a && !b) {
@@ -882,7 +881,7 @@ var m = (function () {
       if (!a || !b) {
         return true;
       }
-      // if new has the same name but lacks coords don't remove the coords
+      // If new has the same name but lacks coords don't remove the coords
       if (!!a.name && a.name === b.name && a.hasCoords() && !b.hasCoords()) {
         return false;
       }

@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# pylint: disable=invalid-name
+# Allow using lambdas for MySQL global column types
+# and lowercase association table names for SQLAlchemy declarative
+
 import os
 import re
 import sys
@@ -10,19 +14,17 @@ import logging
 import datetime
 from hashlib import sha1, md5
 from optparse import OptionParser
-from urllib import urlencode
 
-from sqlalchemy import create_engine, MetaData
-from sqlalchemy import Column, Table, and_, text
-from sqlalchemy import ForeignKey, ForeignKeyConstraint, UniqueConstraint, CheckConstraint, PrimaryKeyConstraint
-from sqlalchemy.orm import sessionmaker, create_session, relationship, backref, object_session
+from sqlalchemy import create_engine
+from sqlalchemy import Column, Table, text
+from sqlalchemy import ForeignKey, UniqueConstraint, CheckConstraint
+from sqlalchemy.orm import relationship, object_session
 from sqlalchemy.orm.util import has_identity
-from sqlalchemy.orm.interfaces import MapperExtension
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 
-from sqlalchemy import Boolean, Integer, Float as FloatOrig, Numeric, Date, Time
+from sqlalchemy import Boolean, Integer, Float as FloatOrig, Date, Time
 from sqlalchemy import Unicode as UnicodeOrig, String as StringOrig
 from sqlalchemy.dialects.mysql import LONGTEXT, DOUBLE, VARCHAR
 from sqlalchemy import event as sqla_event
@@ -32,31 +34,30 @@ from tornado.web import HTTPError
 import geo
 
 import conf
-from mysql import mysql
 from search import search
 
 
 
-log = logging.getLogger('model')
+LOG = logging.getLogger('model')
 
 Base = declarative_base()
 
-Float = lambda : FloatOrig
-String = lambda : StringOrig
-Unicode = lambda : UnicodeOrig
-StringKey = lambda : StringOrig
-UnicodeKey = lambda : UnicodeOrig
+Float = lambda: FloatOrig
+String = lambda: StringOrig
+Unicode = lambda: UnicodeOrig
+StringKey = lambda: StringOrig
+UnicodeKey = lambda: UnicodeOrig
 MYSQL_MAX_KEY = 255
 
-conf_path = ".mango.conf"
+CONF_PATH = ".mango.conf"
 
 
 
 def use_mysql():
     global Float, String, Unicode, StringKey, UnicodeKey
-    Float = lambda : DOUBLE()
-    String = lambda : LONGTEXT(charset="latin1", collation="latin1_swedish_ci")
-    Unicode = lambda : LONGTEXT(charset="utf8", collation="utf8_bin")
+    Float = DOUBLE
+    String = lambda: LONGTEXT(charset="latin1", collation="latin1_swedish_ci")
+    Unicode = lambda: LONGTEXT(charset="utf8", collation="utf8_bin")
     # MySQL needs a character limit to use a variable-length column as a key.
     StringKey = lambda: VARCHAR(
         length=MYSQL_MAX_KEY,
@@ -74,45 +75,54 @@ def mysql_connection_url(username, password, database):
 
 
 def connection_url_admin():
-    username = conf.get(conf_path, u"mysql-admin", u"username")
-    password = conf.get(conf_path, u"mysql-admin", u"password")
-    database = conf.get(conf_path, u"mysql", u"database")
+    username = conf.get(CONF_PATH, u"mysql-admin", u"username")
+    password = conf.get(CONF_PATH, u"mysql-admin", u"password")
+    database = conf.get(CONF_PATH, u"mysql", u"database")
     return mysql_connection_url(username, password, database)
 
 
 
 def connection_url_app():
-    username = conf.get(conf_path, u"mysql-app", u"username")
-    password = conf.get(conf_path, u"mysql-app", u"password")
-    database = conf.get(conf_path, u"mysql", u"database")
+    username = conf.get(CONF_PATH, u"mysql-app", u"username")
+    password = conf.get(CONF_PATH, u"mysql-app", u"password")
+    database = conf.get(CONF_PATH, u"mysql", u"database")
     return mysql_connection_url(username, password, database)
 
 
 
-if __name__ == '__main__':
-    log.addHandler(logging.StreamHandler())
+def main_1():
+    LOG.addHandler(logging.StreamHandler())
     search.log.addHandler(logging.StreamHandler())
 
     usage = """%%prog"""
 
     parser = OptionParser(usage=usage)
-    parser.add_option("-v", "--verbose", action="count", dest="verbose",
-                      help="Print verbose information for debugging.", default=0)
-    parser.add_option("-q", "--quiet", action="count", dest="quiet",
-                      help="Suppress warnings.", default=0)
+    parser.add_option("-v", "--verbose", dest="verbose",
+                      action="count", default=0,
+                      help="Print verbose information for debugging.")
+    parser.add_option("-q", "--quiet", dest="quiet",
+                      action="count", default=0,
+                      help="Suppress warnings.")
 
     (options, args) = parser.parse_args()
     args = [arg.decode(sys.getfilesystemencoding()) for arg in args]
 
-    log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[max(0, min(3, 1 + options.verbose - options.quiet))]
-    log.setLevel(log_level)
-    search.log.setLevel(log_level)
+    level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG)[
+        max(0, min(3, 1 + options.verbose - options.quiet))]
+    LOG.setLevel(level)
+    search.log.setLevel(level)
 
     use_mysql()
 
 
-def camel_case(text):
-    parts = re.split("_", text)
+
+if __name__ == '__main__':
+    main_1()
+
+
+
+def camel_case(text_):
+    parts = re.split("_", text_)
     out = parts.pop(0)
     for part in parts:
         out += part[:1].upper()
@@ -130,43 +140,46 @@ def short_name(name, allow_end_pipe=False):
     if not name:
         return name
     short = name.lower()
-    short = re.compile(u"[-_/]", re.U).sub(" ", short)
-    short = re.compile(u"[^\w\s\|]", re.U).sub("", short)
-    short = re.compile(u"[\s]+", re.U).sub(" ", short)
+    short = re.compile(r"[-_/]", re.U).sub(" ", short)
+    short = re.compile(r"[^\w\s\|]", re.U).sub("", short)
+    short = re.compile(r"[\s]+", re.U).sub(" ", short)
     short = short.strip()
-    short = re.compile(u"[\s]*\|[\s]*", re.U).sub("|", short)
-    short = re.compile(u"\|+", re.U).sub("|", short)
+    short = re.compile(r"[\s]*\|[\s]*", re.U).sub("|", short)
+    short = re.compile(r"\|+", re.U).sub("|", short)
     if not allow_end_pipe:
-        short = re.compile(u"(^\||\|$)", re.U).sub("", short)
-    short = re.compile(u"[\s]", re.U).sub("-", short)
+        short = re.compile(r"(^\||\|$)", re.U).sub("", short)
+    short = re.compile(r"[\s]", re.U).sub("-", short)
     return short
 
 
 
 def sanitise_name(name):
-    return re.sub(u"[\s]+", u" ", name).strip()
+    return re.sub(r"[\s]+", u" ", name).strip()
 
 
 
 def sanitise_address(address, allow_commas=True):
     if not address:
         return address
-    address = re.sub("(\r|\n)+", "\n", address)
-    address = re.sub("(^|\n)[\s,]+", "\n", address)
-    address = re.sub("[\s,]+($|\n)", "\n", address)
-    if (not allow_commas) or (not "\n" in address):
-        address = re.sub("(,|\n)+", "\n", address)
-        address = re.sub("(^|\n)[\s,]+", "\n", address)
-        address = re.sub("[\s,]+($|\n)", "\n", address)
-    address = re.sub("[ \t]+", " ", address).strip()
+    address = re.sub(r"(\r|\n)+", "\n", address)
+    address = re.sub(r"(^|\n)[\s,]+", "\n", address)
+    address = re.sub(r"[\s,]+($|\n)", "\n", address)
+    if (not allow_commas) or ("\n" not in address):
+        address = re.sub(r"(,|\n)+", "\n", address)
+        address = re.sub(r"(^|\n)[\s,]+", "\n", address)
+        address = re.sub(r"[\s,]+($|\n)", "\n", address)
+    address = re.sub(r"[ \t]+", " ", address).strip()
     return address
 
 
 
 def assert_session_is_fresh(session):
-    assert not session.new, "Session has new objects: %s" % repr(session.new)
-    assert not session.dirty, "Session has dirty objects: %s" % repr(session.dirty)
-    assert not session.deleted, "Session has deleted objects: %s" % repr(session.deleted)
+    assert not session.new, \
+        "Session has new objects: %s" % repr(session.new)
+    assert not session.dirty, \
+        "Session has dirty objects: %s" % repr(session.dirty)
+    assert not session.deleted, \
+        "Session has deleted objects: %s" % repr(session.deleted)
 
 
 
@@ -208,6 +221,8 @@ def verify_salted_hash(plaintext, salted_hash):
 
 
 class classproperty(property):
+    # pylint: disable=invalid-name
+    # Allow lowercase class name for a decorator
     def __get__(self, cls, owner):
         # pylint: disable=no-member
         # (`fget.__get__` is generated)
@@ -215,7 +230,7 @@ class classproperty(property):
 
 
 
-url_directory = {
+URL_DIRECTORY = {
     "org": "organisation",
     "org_v": "organisation",
     "orgtag": "organisation-tag",
@@ -244,6 +259,9 @@ class MangoEntity(object):
     obj_extra = None
     __tablename__ = None
 
+    def __init__(self):
+        self.moderation_user = None
+
     def content_same(self, other, public=True):
         extra = public and ["public"] or []
         for name in self.content + extra:
@@ -259,9 +277,10 @@ class MangoEntity(object):
 
     @property
     def url(self):
-        name = url_directory[self.__tablename__]
+        name = URL_DIRECTORY[self.__tablename__]
         if not name:
-            raise HTTPError(500, "No URL space for type '%s'." % self.__tablename__)
+            raise HTTPError(
+                500, "No URL space for type '%s'." % self.__tablename__)
         if not self.entity_id_value:
             return None
         url = "/%s/%d" % (name, self.entity_id_value)
@@ -283,15 +302,15 @@ class MangoEntity(object):
 
         if getattr(self, "entity_v_id", None):
             obj.update({
-                    "vId": self.entity_v_id_value,
-                    "suggestion": True,
-                    })
+                "vId": self.entity_v_id_value,
+                "suggestion": True,
+            })
 
         if bool(kwargs.pop("public", None)):
             obj["public"] = self.public
 
         for name in self.content + self.content_hints:
-            if kwargs.pop(name, None) == False:
+            if kwargs.pop(name, None) is False:
                 continue
             value = getattr(self, name)
             if name.endswith("_date") and value:
@@ -331,14 +350,20 @@ class NotableEntity(object):
         return object_session(self) \
             .query(Note).with_parent(self, "note_list")
 
-    def note_list_filtered(self,
-                           note_search=None, note_order=None,
-                           all_visible=None,
-                           note_offset=None):
+    def note_list_filtered(
+            self,
+            note_search=None,
+            note_order=None,
+            all_visible=None,
+            note_offset=None,
+            note_limit=None
+    ):
         query = self.note_list_query
         if not all_visible:
+            # pylint: disable=singleton-comparison
+            # Cannot use `is` in SQLAlchemy filters
             query = query \
-                .filter(Note.public==True)
+                .filter(Note.public == True)
         if note_search:
             query = query \
                 .join((note_fts, note_fts.c.docid == Note.note_id)) \
@@ -349,24 +374,28 @@ class NotableEntity(object):
             .order_by({
                 "desc":Note.a_time.desc(),
                 "asc":Note.a_time.asc(),
-                        }[note_order])
+            }[note_order])
 
-#        if note_offset is not None:
-#            query = query.offset(note_offset)
+        if note_offset is not None:
+            query = query.offset(note_offset)
 
         count = query.count()
-#        query = query.limit(30).all()
+
+        if note_limit is not None:
+            query = query.limit(note_limit)
+
         return query, count
 
 
 
 address_note = Table(
     'address_note', Base.metadata,
-    Column('address_id', Integer, ForeignKey('address.address_id'), primary_key=True),
+    Column('address_id', Integer, ForeignKey('address.address_id'),
+           primary_key=True),
     Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
     Column('a_time', Float(), nullable=False, server_default=text("0")),
     mysql_engine='InnoDB',
-   )
+)
 
 
 
@@ -376,7 +405,7 @@ org_note = Table(
     Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
     Column('a_time', Float(), nullable=False, server_default=text("0")),
     mysql_engine='InnoDB',
-    )
+)
 
 
 
@@ -386,13 +415,14 @@ event_note = Table(
     Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
     Column('a_time', Float(), nullable=False, server_default=text("0")),
     mysql_engine='InnoDB',
-    )
+)
 
 
 
 orgtag_note = Table(
     'orgtag_note', Base.metadata,
-    Column('orgtag_id', Integer, ForeignKey('orgtag.orgtag_id'), primary_key=True),
+    Column('orgtag_id', Integer, ForeignKey('orgtag.orgtag_id'),
+           primary_key=True),
     Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
     Column('a_time', Float(), nullable=False, server_default=text("0")),
     mysql_engine='InnoDB',
@@ -402,51 +432,56 @@ orgtag_note = Table(
 
 eventtag_note = Table(
     'eventtag_note', Base.metadata,
-    Column('eventtag_id', Integer, ForeignKey('eventtag.eventtag_id'), primary_key=True),
+    Column('eventtag_id', Integer, ForeignKey('eventtag.eventtag_id'),
+           primary_key=True),
     Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
     Column('a_time', Float(), nullable=False, server_default=text("0")),
     mysql_engine='InnoDB',
-    )
+)
 
 
 
 org_address = Table(
     'org_address', Base.metadata,
     Column('org_id', Integer, ForeignKey('org.org_id'), primary_key=True),
-    Column('address_id', Integer, ForeignKey('address.address_id'), primary_key=True),
+    Column('address_id', Integer, ForeignKey('address.address_id'),
+           primary_key=True),
     Column('a_time', Float(), nullable=False, server_default=text("0")),
     mysql_engine='InnoDB',
-    )
+)
 
 
 
 event_address = Table(
     'event_address', Base.metadata,
     Column('event_id', Integer, ForeignKey('event.event_id'), primary_key=True),
-    Column('address_id', Integer, ForeignKey('address.address_id'), primary_key=True),
+    Column('address_id', Integer, ForeignKey('address.address_id'),
+           primary_key=True),
     Column('a_time', Float(), nullable=False, server_default=text("0")),
     mysql_engine='InnoDB',
-    )
+)
 
 
 
 org_orgtag = Table(
     'org_orgtag', Base.metadata,
     Column('org_id', Integer, ForeignKey('org.org_id'), primary_key=True),
-    Column('orgtag_id', Integer, ForeignKey('orgtag.orgtag_id'), primary_key=True),
+    Column('orgtag_id', Integer, ForeignKey('orgtag.orgtag_id'),
+           primary_key=True),
     Column('a_time', Float(), nullable=False, server_default=text("0")),
     mysql_engine='InnoDB',
-    )
+)
 
 
 
 event_eventtag = Table(
     'event_eventtag', Base.metadata,
     Column('event_id', Integer, ForeignKey('event.event_id'), primary_key=True),
-    Column('eventtag_id', Integer, ForeignKey('eventtag.eventtag_id'), primary_key=True),
+    Column('eventtag_id', Integer, ForeignKey('eventtag.eventtag_id'),
+           primary_key=True),
     Column('a_time', Float(), nullable=False, server_default=text("0")),
     mysql_engine='InnoDB',
-    )
+)
 
 
 
@@ -456,27 +491,29 @@ org_event = Table(
     Column('event_id', Integer, ForeignKey('event.event_id'), primary_key=True),
     Column('a_time', Float(), nullable=False, server_default=text("0")),
     mysql_engine='InnoDB',
-    )
+)
 
 
 
 org_contact = Table(
     'org_contact', Base.metadata,
     Column('org_id', Integer, ForeignKey('org.org_id'), primary_key=True),
-    Column('contact_id', Integer, ForeignKey('contact.contact_id'), primary_key=True),
+    Column('contact_id', Integer, ForeignKey('contact.contact_id'),
+           primary_key=True),
     Column('a_time', Float(), nullable=False, server_default=text("0")),
     mysql_engine='InnoDB',
-    )
+)
 
 
 
 event_contact = Table(
     'event_contact', Base.metadata,
     Column('event_id', Integer, ForeignKey('event.event_id'), primary_key=True),
-    Column('contact_id', Integer, ForeignKey('contact.contact_id'), primary_key=True),
+    Column('contact_id', Integer, ForeignKey('contact.contact_id'),
+           primary_key=True),
     Column('a_time', Float(), nullable=False, server_default=text("0")),
     mysql_engine='InnoDB',
-    )
+)
 
 
 
@@ -567,7 +604,8 @@ class User(Base):
         return verify_hash(auth_name, self.auth.name_hash)
 
     def gravatar_hash(self):
-        return self.auth and self.auth.gravatar_hash or gravatar_hash(str(self.user_id))
+        return self.auth.gravatar_hash if self.auth \
+            else gravatar_hash(str(self.user_id))
 
     @staticmethod
     def get_from_auth(session, auth_url, auth_name):
@@ -577,8 +615,8 @@ class User(Base):
                 filter_by(url=auth_url).\
                 filter_by(name_hash=auth_name_hash).\
                 one()
-        except NoResultFound as e:
-            user = None;
+        except NoResultFound:
+            user = None
         return user
 
     @staticmethod
@@ -618,7 +656,8 @@ class Session(Base):
 
     user = relationship(User, backref='session_list')
 
-    def __init__(self, user, ip_address=None, accept_language=None, user_agent=None):
+    def __init__(self, user,
+                 ip_address=None, accept_language=None, user_agent=None):
         self.user = user
         self.c_time = time.time()
         self.a_time = time.time()
@@ -794,12 +833,14 @@ class Org(Base, MangoEntity, NotableEntity):
         return cls.org_id
 
     @classmethod
-    def _dummy(cls, orm):
+    def _dummy(cls, _orm):
         return cls(u"dummy")
 
     def __init__(self,
                  name, description=None, end_date=None,
                  moderation_user=None, public=None):
+        super(Org, self).__init__()
+
         self.name = sanitise_name(name)
 
         self.description = description and unicode(description) or None
@@ -817,7 +858,7 @@ class Org(Base, MangoEntity, NotableEntity):
             )
 
     def pprint(self, indent=""):
-        o = u"";
+        o = u""
         o += u"%sOrg: %s %s\n" % (indent, self.org_id, self.name)
         for orgalias in self.orgalias_list:
             o += orgalias.pprint(indent + "  ")
@@ -830,7 +871,8 @@ class Org(Base, MangoEntity, NotableEntity):
         for note in self.note_list:
             o += note.pprint(indent + "  ")
         for event in self.event_list:
-            o += u"%sEvent: %s %s...\n" % (indent + "  ", event.event_id, event.name)
+            o += u"%sEvent: %s %s...\n" % (
+                indent + "  ", event.event_id, event.name)
         return o
 
     def merge(self, other, moderation_user):
@@ -840,8 +882,6 @@ class Org(Base, MangoEntity, NotableEntity):
         assert session
 
         print "[", self.org_id, other.org_id, len(other.orgalias_list), "]"
-
-        orgalias = Orgalias.get(session, other.name, self, moderation_user, other.public)
 
         self.orgalias_list = list(set(self.orgalias_list + other.orgalias_list))
         self.note_list = list(set(self.note_list + other.note_list))
@@ -858,6 +898,11 @@ class Org(Base, MangoEntity, NotableEntity):
 
         for alias in self.orgalias_list:
             print alias.orgalias_id, alias.org_id, alias.name
+
+        orgalias = Orgalias.get(
+            session, other.name, self, moderation_user, other.public)
+
+        session.add(orgalias)
 
         session.delete(other)
 
@@ -918,6 +963,8 @@ class Orgalias(Base, MangoEntity):
         return cls.orgalias_id
 
     def __init__(self, name, org, moderation_user=None, public=None):
+        super(Orgalias, self).__init__()
+
         self.name = sanitise_name(name)
         self.org = org
 
@@ -933,7 +980,7 @@ class Orgalias(Base, MangoEntity):
             )
 
     def pprint(self, indent=""):
-        o = u"";
+        o = u""
         o += u"%sOrgalias: %s %s\n" % (indent, self.orgalias_id, self.name)
         return o
 
@@ -965,10 +1012,11 @@ class Event(Base, MangoEntity, NotableEntity):
 
     name = Column(Unicode(), nullable=False)
     start_date = Column(Date, nullable=False)
-    end_date = Column(Date,
-                      CheckConstraint("end_date >= start_date"),
-                      nullable=False,
-                      )
+    end_date = Column(
+        Date,
+        CheckConstraint("end_date >= start_date"),
+        nullable=False,
+    )
     description = Column(Unicode())
     start_time = Column(Time)
     end_time = Column(Time)
@@ -1079,7 +1127,7 @@ class Event(Base, MangoEntity, NotableEntity):
         return cls.event_id
 
     @classmethod
-    def _dummy(cls, orm):
+    def _dummy(cls, _orm):
         return cls(u"dummy",
                    datetime.date(1970, 1, 1), datetime.date(1970, 1, 1))
 
@@ -1087,6 +1135,8 @@ class Event(Base, MangoEntity, NotableEntity):
                  name, start_date, end_date,
                  description=None, start_time=None, end_time=None,
                  moderation_user=None, public=None):
+        super(Event, self).__init__()
+
         self.name = sanitise_name(name)
         self.start_date = start_date
         self.end_date = end_date
@@ -1107,7 +1157,7 @@ class Event(Base, MangoEntity, NotableEntity):
             )
 
     def pprint(self, indent=""):
-        o = u"";
+        o = u""
         o += u"%sEvent: %s %s\n" % (indent, self.event_id, self.name)
         for contact in self.contact_list:
             o += contact.pprint(indent + "  ")
@@ -1136,25 +1186,11 @@ class Event(Base, MangoEntity, NotableEntity):
 
 
 
-class AddressExtension(MapperExtension):
-    def _sanitise(self, instance):
-        instance.postal = sanitise_address(instance.postal)
-        instance.lookup = sanitise_address(instance.lookup)
-
-    def before_insert(self, mapper, connection, instance):
-        self._sanitise(instance)
-
-    def before_update(self, mapper, connection, instance):
-        self._sanitise(instance)
-
-
-
 class Address(Base, MangoEntity, NotableEntity):
     __tablename__ = 'address'
     __table_args__ = {
         "mysql_engine": 'InnoDB',
         }
-    __mapper_args__ = {'extension': AddressExtension()}
 
     address_id = Column(Integer, primary_key=True)
 
@@ -1232,7 +1268,7 @@ class Address(Base, MangoEntity, NotableEntity):
         return cls.address_id
 
     @classmethod
-    def _dummy(cls, orm):
+    def _dummy(cls, _orm):
         return cls(u"dummy", u"dummy", u"dummy")
 
     def __init__(self,
@@ -1241,6 +1277,7 @@ class Address(Base, MangoEntity, NotableEntity):
                  manual_longitude=None, manual_latitude=None,
                  longitude=None, latitude=None,
                  moderation_user=None, public=None):
+        super(Address, self).__init__()
 
         self.postal = postal
         self.source = source
@@ -1265,7 +1302,10 @@ class Address(Base, MangoEntity, NotableEntity):
             )
 
     def geocode(self):
-        if self.manual_longitude is not None and self.manual_latitude is not None:
+        if (
+                self.manual_longitude is not None and
+                self.manual_latitude is not None
+        ):
             self.longitude = self.manual_longitude
             self.latitude = self.manual_latitude
             return
@@ -1280,8 +1320,9 @@ class Address(Base, MangoEntity, NotableEntity):
                 (self.latitude, self.longitude) = coords
 
     def pprint(self, indent=""):
-        o = u"";
-        o += u"%sAddress: %s %s\n" % (indent, self.address_id, self.postal.split("\n")[0])
+        o = u""
+        o += u"%sAddress: %s %s\n" % (
+            indent, self.address_id, self.postal.split("\n")[0])
         for note in self.note_list:
             o += note.pprint(indent + "  ")
         return o
@@ -1298,7 +1339,7 @@ class Address(Base, MangoEntity, NotableEntity):
     def general(address):
         parts = Address.parts(address)
         for part in reversed(parts):
-            if re.search("[\d]", part):
+            if re.search(r"[\d]", part):
                 continue
             return part
         return address
@@ -1351,26 +1392,6 @@ class Address(Base, MangoEntity, NotableEntity):
 
 
 
-class TagExtension(MapperExtension):
-    def _set_name(self, instance):
-        parts = instance.name.rsplit("|", 1)
-        if len(parts) == 2:
-            instance.path, instance.base = [part.strip() for part in parts]
-        else:
-            instance.path = None
-            instance.base = instance.name
-        instance.name_short = short_name(instance.name)
-        instance.base_short = short_name(instance.base)
-        instance.path_short = short_name(instance.path)
-
-    def before_insert(self, mapper, connection, instance):
-        self._set_name(instance)
-
-    def before_update(self, mapper, connection, instance):
-        self._set_name(instance)
-
-
-
 class Orgtag(Base, MangoEntity, NotableEntity):
     u"""
     is_virtual:  None = normal
@@ -1385,7 +1406,6 @@ class Orgtag(Base, MangoEntity, NotableEntity):
             "mysql_engine": 'InnoDB',
             }
         )
-    __mapper_args__ = {'extension': TagExtension()}
 
     orgtag_id = Column(Integer, primary_key=True)
 
@@ -1455,6 +1475,8 @@ class Orgtag(Base, MangoEntity, NotableEntity):
                  name,
                  description=None,
                  moderation_user=None, public=None):
+        super(Orgtag, self).__init__()
+
         self.name = sanitise_name(name)
         self.description = description and unicode(description) or None
         self.is_virtual = None
@@ -1471,7 +1493,7 @@ class Orgtag(Base, MangoEntity, NotableEntity):
             )
 
     def pprint(self, indent=""):
-        o = u"";
+        o = u""
         o += u"%sOrgtag: %s %s\n" % (indent, self.orgtag_id, self.name)
         for note in self.note_list:
             o += note.pprint(indent + "  ")
@@ -1481,7 +1503,7 @@ class Orgtag(Base, MangoEntity, NotableEntity):
     def get(orm, name, moderation_user=None, public=None):
         try:
             orgtag = orm.query(Orgtag) \
-                .filter(Orgtag.name==name) \
+                .filter(Orgtag.name == name) \
                 .one()
         except NoResultFound:
             orgtag = Orgtag(
@@ -1508,7 +1530,6 @@ class Eventtag(Base, MangoEntity, NotableEntity):
             "mysql_engine": 'InnoDB',
             }
         )
-    __mapper_args__ = {'extension': TagExtension()}
 
     eventtag_id = Column(Integer, primary_key=True)
 
@@ -1578,6 +1599,8 @@ class Eventtag(Base, MangoEntity, NotableEntity):
                  name,
                  description=None,
                  moderation_user=None, public=None):
+        super(Eventtag, self).__init__()
+
         self.name = sanitise_name(name)
         self.description = description and unicode(description) or None
         self.is_virtual = None
@@ -1594,7 +1617,7 @@ class Eventtag(Base, MangoEntity, NotableEntity):
             )
 
     def pprint(self, indent=""):
-        o = u"";
+        o = u""
         o += u"%sEventtag: %s %s\n" % (indent, self.eventtag_id, self.name)
         for note in self.note_list:
             o += note.pprint(indent + "  ")
@@ -1604,7 +1627,7 @@ class Eventtag(Base, MangoEntity, NotableEntity):
     def get(orm, name, moderation_user=None, public=None):
         try:
             eventtag = orm.query(Eventtag) \
-                .filter(Eventtag.name==name) \
+                .filter(Eventtag.name == name) \
                 .one()
         except NoResultFound:
             eventtag = Eventtag(
@@ -1686,14 +1709,16 @@ class Note(Base, MangoEntity):
         return cls.note_id
 
     @classmethod
-    def _dummy(cls, orm):
+    def _dummy(cls, _orm):
         return cls(u"dummy", u"dummy")
 
     def __init__(self,
-                 text, source,
+                 text_, source,
                  moderation_user=None, public=None):
 
-        self.text = text
+        super(Note, self).__init__()
+
+        self.text = text_
         self.source = source
 
         self.moderation_user = moderation_user
@@ -1709,8 +1734,9 @@ class Note(Base, MangoEntity):
             )
 
     def pprint(self, indent=""):
-        o = u"";
-        o += u"%sNote: %s %s\n" % (indent, self.note_id, self.text.split("\n")[0][:32])
+        o = u""
+        o += u"%sNote: %s %s\n" % (
+            indent, self.note_id, self.text.split("\n")[0][:32])
         return o
 
 
@@ -1775,12 +1801,14 @@ class Contact(Base, MangoEntity):
 
     def __init__(self,
                  medium,
-                 text, description=None, source=None,
+                 text_, description=None, source=None,
                  moderation_user=None, public=None):
+
+        super(Contact, self).__init__()
 
         self.medium = medium
 
-        self.text = sanitise_name(unicode(text))
+        self.text = sanitise_name(unicode(text_))
         self.description = description and unicode(description)
         self.source = source and unicode(source)
 
@@ -1797,8 +1825,9 @@ class Contact(Base, MangoEntity):
             )
 
     def pprint(self, indent=""):
-        o = u"";
-        o += u"%sContact: %s %s:%s\n" % (indent, self.contact_id, self.medium.name, self.text[:32])
+        o = u""
+        o += u"%sContact: %s %s:%s\n" % (
+            indent, self.contact_id, self.medium.name, self.text[:32])
         return o
 
     @property
@@ -1818,42 +1847,9 @@ def attach_search(engine, orm, enabled=True, verify=True):
     if verify:
         search.verify(engine.search, orm, Org, Orgalias)
 
-def org_after_insert_listener(mapper, connection, target):
-    if connection.engine.search:
-        search.index_org(connection.engine.search, target)
-
-def org_after_update_listener(mapper, connection, target):
-    if connection.engine.search:
-        search.index_org(connection.engine.search, target)
-
-def org_after_delete_listener(mapper, connection, target):
-    if connection.engine.search:
-        search.delete_org(connection.engine.search, target)
-
-def orgalias_after_insert_listener(mapper, connection, target):
-    if connection.engine.search:
-        orm = object_session(target)
-        search.index_orgalias(connection.engine.search, target, orm, Orgalias)
-
-def orgalias_after_update_listener(mapper, connection, target):
-    if connection.engine.search:
-        orm = object_session(target)
-        search.index_orgalias(connection.engine.search, target, orm, Orgalias)
-
-def orgalias_after_delete_listener(mapper, connection, target):
-    if connection.engine.search:
-        orm = object_session(target)
-        search.index_orgalias(connection.engine.search, target, orm, Orgalias)
-
-sqla_event.listen(Org, "after_insert", org_after_insert_listener)
-sqla_event.listen(Org, "after_update", org_after_update_listener)
-sqla_event.listen(Org, "after_delete", org_after_delete_listener)
-sqla_event.listen(Orgalias, "after_insert", orgalias_after_insert_listener)
-sqla_event.listen(Orgalias, "after_update", orgalias_after_update_listener)
-sqla_event.listen(Orgalias, "after_delete", orgalias_after_delete_listener)
 
 
-virtual_orgtag_list = [
+VIRTUAL_ORGTAG_LIST = [
     (
         u"Market | Military export applicant",
         Orgtag.name_short.like(
@@ -1871,22 +1867,25 @@ virtual_orgtag_list = [
     ),
     (
         u"Activity | Military",
-        Orgtag.path_short==u"activity",
+        Orgtag.path_short == u"activity",
     ),
 ]
 
 
 
 def virtual_org_orgtag_all(org):
-    if not virtual_orgtag_list:
+    # pylint: disable=singleton-comparison
+    # Cannot use `is` in SQLAlchemy filters
+
+    if not VIRTUAL_ORGTAG_LIST:
         return
 
     orm = object_session(org)
     if not orm:
         raise Exception("Neither org or orgtag attached to session.")
 
-    for virtual_name, filter_search in virtual_orgtag_list:
-        log.debug(u"\nVirtual tag: %s" % (virtual_name))
+    for virtual_name, filter_search in VIRTUAL_ORGTAG_LIST:
+        LOG.debug(u"\nVirtual tag: %s", virtual_name)
 
         virtual_tag = orm.query(Orgtag) \
             .filter_by(name=virtual_name) \
@@ -1894,36 +1893,36 @@ def virtual_org_orgtag_all(org):
             .first()
 
         if not virtual_tag:
-            log.debug(u"  Virtual tag does not exist.")
+            LOG.debug(u"  Virtual tag does not exist.")
             continue
 
         has_virtual_tag = orm.query(Orgtag) \
             .join(Org, Orgtag.org_list) \
-            .filter(Org.org_id==org.org_id) \
-            .filter(Orgtag.is_virtual==None) \
+            .filter(Org.org_id == org.org_id) \
+            .filter(Orgtag.is_virtual == None) \
             .filter(filter_search)
 
-        log.debug(u"  Has %d child tags." % has_virtual_tag.count())
-        if log.level == logging.DEBUG:
+        LOG.debug(u"  Has %d child tags.", has_virtual_tag.count())
+        if LOG.level == logging.DEBUG:
             for child_tag in has_virtual_tag:
-                log.debug(u"    %s" % child_tag.name_short)
+                LOG.debug(u"    %s", child_tag.name_short)
 
         if has_virtual_tag.count():
             if virtual_tag not in org.orgtag_list:
-                log.debug(u"  Adding parent tag.")
+                LOG.debug(u"  Adding parent tag.")
                 # Flag the virtual tag so it doesn't trigger a value error
                 virtual_tag.is_virtual = False
                 org.orgtag_list.append(virtual_tag)
             else:
-                log.debug(u"  Already has parent tag.")
+                LOG.debug(u"  Already has parent tag.")
         else:
             if virtual_tag in org.orgtag_list:
-                log.debug(u"  Removing parent tag.")
+                LOG.debug(u"  Removing parent tag.")
                 # Flag the virtual tag so it doesn't trigger a value error
                 virtual_tag.is_virtual = False
                 org.orgtag_list.remove(virtual_tag)
             else:
-                log.debug(u"  Doesn't have parent tag.")
+                LOG.debug(u"  Doesn't have parent tag.")
 
 
 
@@ -1934,11 +1933,12 @@ def virtual_org_orgtag_edit(org, orgtag, add=None):
       after the orgtag is removed.
     """
 
-    if not virtual_orgtag_list:
+    if not VIRTUAL_ORGTAG_LIST:
         return
 
     if orgtag.is_virtual:
-        log.warning(u"Cannot edit the membership of a virtual tag (%s).", orgtag.name)
+        LOG.warning(u"Cannot edit the membership of a virtual tag (%s).",
+                    orgtag.name)
         return
 
     if orgtag.is_virtual is False:
@@ -1950,7 +1950,7 @@ def virtual_org_orgtag_edit(org, orgtag, add=None):
     if not orm:
         raise Exception("Neither org or orgtag attached to session.")
 
-    for virtual_name, filter_search in virtual_orgtag_list:
+    for virtual_name, filter_search in VIRTUAL_ORGTAG_LIST:
         virtual_tag = orm.query(Orgtag) \
             .filter_by(name=virtual_name) \
             .filter_by(is_virtual=True) \
@@ -1960,17 +1960,20 @@ def virtual_org_orgtag_edit(org, orgtag, add=None):
             continue
 
         has_virtual_tag_this = orm.query(Orgtag) \
-            .filter(Orgtag.orgtag_id==orgtag.orgtag_id) \
+            .filter(Orgtag.orgtag_id == orgtag.orgtag_id) \
             .filter(filter_search)
 
         has_virtual_tag_others = orm.query(Orgtag) \
             .filter_by(is_virtual=None) \
             .join(Org, Orgtag.org_list) \
-            .filter(Org.org_id==org.org_id) \
+            .filter(Org.org_id == org.org_id) \
             .filter(filter_search)
 
 
-        if ((add and has_virtual_tag_this.count()) or has_virtual_tag_others.count()):
+        if (
+                (add and has_virtual_tag_this.count()) or
+                has_virtual_tag_others.count()
+        ):
             if virtual_tag not in org.orgtag_list:
                 # Flag the virtual tag so it doesn't trigger a value error
                 virtual_tag.is_virtual = False
@@ -1984,36 +1987,104 @@ def virtual_org_orgtag_edit(org, orgtag, add=None):
 
 
 
-def org_orgtag_append_listener(org, orgtag, initiator):
+def org_after_insert_listener(_mapper, connection, target):
+    if connection.engine.search:
+        search.index_org(connection.engine.search, target)
+
+def org_after_update_listener(_mapper, connection, target):
+    if connection.engine.search:
+        search.index_org(connection.engine.search, target)
+
+def org_after_delete_listener(_mapper, connection, target):
+    if connection.engine.search:
+        search.delete_org(connection.engine.search, target)
+
+def orgalias_after_insert_listener(_mapper, connection, target):
+    if connection.engine.search:
+        orm = object_session(target)
+        search.index_orgalias(connection.engine.search, target, orm, Orgalias)
+
+def orgalias_after_update_listener(_mapper, connection, target):
+    if connection.engine.search:
+        orm = object_session(target)
+        search.index_orgalias(connection.engine.search, target, orm, Orgalias)
+
+def orgalias_after_delete_listener(_mapper, connection, target):
+    if connection.engine.search:
+        orm = object_session(target)
+        search.index_orgalias(connection.engine.search, target, orm, Orgalias)
+
+def address_sanitise_listener(_mapper, _connection, address):
+    address.postal = sanitise_address(address.postal)
+    address.lookup = sanitise_address(address.lookup)
+
+
+def tag_set_name_listener(_mapper, _connection, tag):
+    parts = tag.name.rsplit("|", 1)
+    if len(parts) == 2:
+        tag.path, tag.base = [part.strip() for part in parts]
+    else:
+        tag.path = None
+        tag.base = tag.name
+    tag.name_short = short_name(tag.name)
+    tag.base_short = short_name(tag.base)
+    tag.path_short = short_name(tag.path)
+
+def org_orgtag_append_listener(org, orgtag, _initiator):
     virtual_org_orgtag_edit(org, orgtag, add=True)
 
-def org_orgtag_remove_listener(org, orgtag, initiator):
+def org_orgtag_remove_listener(org, orgtag, _initiator):
     virtual_org_orgtag_edit(org, orgtag, add=False)
+
+
+sqla_event.listen(Org, "after_insert", org_after_insert_listener)
+sqla_event.listen(Org, "after_update", org_after_update_listener)
+sqla_event.listen(Org, "after_delete", org_after_delete_listener)
+
+sqla_event.listen(Orgalias, "after_insert", orgalias_after_insert_listener)
+sqla_event.listen(Orgalias, "after_update", orgalias_after_update_listener)
+sqla_event.listen(Orgalias, "after_delete", orgalias_after_delete_listener)
+
+sqla_event.listen(Address, 'before_insert', address_sanitise_listener)
+sqla_event.listen(Address, 'before_update', address_sanitise_listener)
+
+sqla_event.listen(Orgtag, 'before_insert', tag_set_name_listener)
+sqla_event.listen(Orgtag, 'before_update', tag_set_name_listener)
+sqla_event.listen(Eventtag, 'before_insert', tag_set_name_listener)
+sqla_event.listen(Eventtag, 'before_update', tag_set_name_listener)
 
 sqla_event.listen(Org.orgtag_list, 'append', org_orgtag_append_listener)
 sqla_event.listen(Org.orgtag_list, 'remove', org_orgtag_remove_listener)
 
 
 
+
 # Main again
 
 def engine_sql_mode(engine, sql_mode=""):
-    def set_sql_mode(dbapi_connection, connection_record):
+    def set_sql_mode(dbapi_connection, _connection_record):
         cursor = dbapi_connection.cursor()
         cursor.execute("SET sql_mode = '%s'" % sql_mode)
     sqla_event.listen(engine, "first_connect", set_sql_mode, insert=True)
     sqla_event.listen(engine, "connect", set_sql_mode)
 
 def engine_disable_mode(engine, mode):
-    def set_sql_mode(dbapi_connection, connection_record):
+    def set_sql_mode(dbapi_connection, _connection_record):
         cursor = dbapi_connection.cursor()
-        cursor.execute("SET sql_mode=(SELECT REPLACE(@@sql_mode,'%s',''))" % mode)
+        cursor.execute(
+            "SET sql_mode=(SELECT REPLACE(@@sql_mode,'%s',''))" % mode)
     sqla_event.listen(engine, "first_connect", set_sql_mode, insert=True)
     sqla_event.listen(engine, "connect", set_sql_mode)
 
 
-if __name__ == '__main__':
+
+def main_2():
     connection_url = connection_url_admin()
     engine = create_engine(connection_url)
     engine_disable_mode(engine, "ONLY_FULL_GROUP_BY")
     Base.metadata.create_all(engine)
+
+
+
+if __name__ == '__main__':
+    main_2()

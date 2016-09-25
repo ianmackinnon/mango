@@ -2,15 +2,15 @@
 
 import re
 import json
-from urllib import urlencode
 
 import tornado.auth
 from tornado.web import HTTPError
 from tornado import httpclient
 from sqlalchemy.orm.exc import NoResultFound
 
-from base import BaseHandler, authenticated
 from model import User, Auth, Session
+
+from handle.base import BaseHandler, authenticated
 
 
 
@@ -31,13 +31,14 @@ class LoginHandler(BaseHandler):
     def _batch_tasks(self):
         delete_inactive_users(self.orm)
 
-    def _check_locked(self, user):
+    @staticmethod
+    def _check_locked(user):
         if user and user.locked:
             raise HTTPError(400, "Account locked.")
 
-    def _check_registering(self, user):
+    def _check_registering(self, _user):
         register = self.app_get_cookie("register") or \
-                   bool(self.get_argument_bool("register", None))
+            bool(self.get_argument_bool("register", None))
 
         if not register:
             self.redirect(self.url_rewrite("/auth/register", next_=self.next_))
@@ -45,11 +46,11 @@ class LoginHandler(BaseHandler):
 
     def _create_session(self, user):
         session = Session(
-                user,
-                self.request.remote_ip,
-                self.get_accept_language(),
-                self.get_user_agent(),
-                )
+            user,
+            self.request.remote_ip,
+            self.get_accept_language(),
+            self.get_user_agent(),
+        )
         self.orm.add(session)
         self.orm.flush()
         self.start_session(str(session.session_id))
@@ -66,7 +67,7 @@ class AuthLoginLocalHandler(LoginHandler):
             return None
         try:
             return self.orm.query(User).filter_by(user_id=user_id).one()
-        except NoResultFound as e:
+        except NoResultFound:
             raise HTTPError(401, "Authorization Refused")
 
     def _create_user(self):
@@ -100,7 +101,7 @@ class AuthLoginLocalHandler(LoginHandler):
                 return
             user = self._create_user()
 
-        session = self._create_session(user)
+        self._create_session(user)
         return self.redirect_next()
 
 
@@ -111,9 +112,9 @@ class AuthLoginGoogleHandler(LoginHandler, tornado.auth.GoogleOAuth2Mixin):
     # Only used for our local database, not for actual auth
     openid_url = u"https://www.google.com/accounts/o8/id"
 
-    def _create_user(self):
-        auth = Auth(self.openid_url, self.auth_name)
-        user_name = unicode(self.auth_user["name"])
+    def _create_user(self, auth_user, auth_name):
+        auth = Auth(self.openid_url, auth_name)
+        user_name = unicode(auth_user["name"])
         user = User(auth, user_name, moderator=False)
         self.orm.add(user)
         self.orm.commit()
@@ -124,7 +125,8 @@ class AuthLoginGoogleHandler(LoginHandler, tornado.auth.GoogleOAuth2Mixin):
     @tornado.gen.engine
     def get(self):
         redirect_path = self.url_rewrite(u"/auth/login/google")
-        login_url = "%s://%s%s" % (self.request.protocol, self.request.host, redirect_path)
+        login_url = "%s://%s%s" % (
+            self.request.protocol, self.request.host, redirect_path)
 
         if not self.get_argument('code', False):
             # Step 1. Send request to Google
@@ -132,11 +134,11 @@ class AuthLoginGoogleHandler(LoginHandler, tornado.auth.GoogleOAuth2Mixin):
             self._batch_tasks()
 
             if self.next_:
-                self.app_set_cookie("next", self.next_);
+                self.app_set_cookie("next", self.next_)
 
             register = self.get_argument_bool("register", None)
             if register is not None:
-                self.app_set_cookie("register", register);
+                self.app_set_cookie("register", register)
 
             yield self.authorize_redirect(
                 redirect_uri=login_url,
@@ -153,17 +155,20 @@ class AuthLoginGoogleHandler(LoginHandler, tornado.auth.GoogleOAuth2Mixin):
                 code=self.get_argument('code'))
 
             access_token = str(access_data['access_token'])
-            uri = 'https://www.googleapis.com/oauth2/v1/userinfo?access_token=' + access_token
+            uri = (
+                "https://www.googleapis.com/oauth2/v1/userinfo?access_token=" +
+                access_token
+            )
             http_client = httpclient.HTTPClient()
             try:
                 response = http_client.fetch(uri)
                 body = response.body
-                self.auth_user = json.loads(body)
-            except httpclient.HTTPError as e:
+                auth_user = json.loads(body)
+            except httpclient.HTTPError:
                 # HTTPError is raised for non-200 responses; the response
                 # can be found in e.response.
                 raise tornado.web.HTTPError(500, 'Google authentication failed')
-            except Exception as e:
+            except Exception:
                 # Other errors are possible, such as IOError.
                 raise tornado.web.HTTPError(500, 'Server error')
             http_client.close()
@@ -174,35 +179,26 @@ class AuthLoginGoogleHandler(LoginHandler, tornado.auth.GoogleOAuth2Mixin):
             self.app_clear_cookie("register")
             self.app_clear_cookie("next")
 
-            if not self.auth_user:
+            if not auth_user:
                 raise HTTPError(500, "Google authentication failed")
 
-            self.auth_name = self.auth_user["email"]
-            user = User.get_from_auth(self.orm, self.openid_url, self.auth_name)
+            auth_name = auth_user["email"]
+            user = User.get_from_auth(self.orm, self.openid_url, auth_name)
 
             if not user:
                 if self._check_registering(user):
                     return
-                user = self._create_user()
+                user = self._create_user(auth_user, auth_name)
 
             self._check_locked(user)
 
-            session = self._create_session(user)
+            self._create_session(user)
 
             self.redirect_next()
 
 
 
 class AuthVisitHandler(LoginHandler):
-    def _get_user(self):
-        return None
-
-    def _check_locked(self, user):
-        pass
-
-    def _check_registering(self, user):
-        pass
-
     def _create_user(self):
         user_name = u"NEW USER"
         user = User(None, user_name, moderator=False)
@@ -218,15 +214,9 @@ class AuthVisitHandler(LoginHandler):
 
         self._batch_tasks()
 
-        user = self._get_user()
-        self._check_locked(user)
+        user = self._create_user()
 
-        if not user:
-            if self._check_registering(user):
-                return
-            user = self._create_user()
-
-        session = self._create_session(user)
+        self._create_session(user)
         return self.redirect_next()
 
 
@@ -238,8 +228,10 @@ class AuthLogoutHandler(BaseHandler):
         for row in self.application.handlers:
             key, value = row[:2]
             if re.match(key, path) and hasattr(value, "get"):
-                if hasattr(value.get, "authenticated") and \
-                        value.get.authenticated == True:
+                if (
+                        hasattr(value.get, "authenticated") and \
+                        value.get.authenticated is True
+                ):
                     return True
         return False
 
@@ -260,7 +252,9 @@ class AuthLogoutHandler(BaseHandler):
 def delete_inactive_users(orm):
     away_time = 60 * 60 * 24 * 30  # 30 Days in seconds
 
-    inner_sql = u"""select user_id, unix_timestamp() - max(session.a_time) as away
+    inner_sql = u"""select
+    user_id,
+    unix_timestamp() - max(session.a_time) as away
   from user
   left outer join session using (user_id)
   where auth_id is null

@@ -16,13 +16,14 @@ DEFAULT_HOST = u"www.caat.org.uk"
 DEFAULT_DOMAIN = u"caat.org.uk"
 MAX_TITLE_LENGTH = 5
 
-re_title = re.compile('(<title>).*?(</title>)', re.IGNORECASE | re.DOTALL)
 
 
+PAGE_PATH = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)),
+    "page.json"
+)
 
-with open(os.path.join(
-        os.path.dirname(os.path.realpath(__file__)),
-        "page.json")) as handle:
+with open(PAGE_PATH) as handle:
     PAGE_DATA = json.load(handle)
 
 
@@ -50,7 +51,7 @@ def load(**kwargs):
     host = kwargs.get("host", DEFAULT_HOST)
     offsite = kwargs.get("offsite", None)
     title_list = kwargs.get("title_list", None) or []
-    stylesheets = kwargs.get("stylesheets", None)
+    stylesheets_ = kwargs.get("stylesheets", None)
     header_function = kwargs.get("header_function", None)
     load_nav = kwargs.get("load_nav", None)
 
@@ -59,7 +60,7 @@ def load(**kwargs):
 
     head = loader.load("head.html").generate(
         static_url=static_url,
-        stylesheets=stylesheets,
+        stylesheets=stylesheets_,
         ).decode("utf-8")
 
     if load_nav:
@@ -86,7 +87,10 @@ def load(**kwargs):
     def header(title=None):
         if title is None:
             return header_html
-        return re_title.sub(r"\g<1>" + title + r"\g<2>", header_html)
+        return re.compile(
+            '(<title>).*?(</title>)',
+            re.IGNORECASE | re.DOTALL
+        ).sub(r"\g<1>" + title + r"\g<2>", header_html)
 
     components = {
         "header": header,
@@ -107,7 +111,9 @@ def load(**kwargs):
 
 
 def scripts():
+    "Scripts that will be provided by the host site"
     return PAGE_DATA.get("scripts", None)
 
 def stylesheets():
+    "Stylesheets that will be provided by the host site"
     return PAGE_DATA.get("stylesheets", None)

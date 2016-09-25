@@ -1,13 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
 import sys
-import json
 import logging
 import unittest
-import httplib2
-import lxml.html
 from optparse import OptionParser
 
 from http_test import Http, log as http_log

@@ -6,20 +6,19 @@ import re
 import sys
 import time
 import errno
-import redis
 import bisect
 import logging
 import logging.handlers
 import datetime
 
-from mako.template import Template
+import redis
+
 from mako.lookup import TemplateLookup
 
 import tornado.httpserver
 import tornado.ioloop
 import tornado.options
 import tornado.web
-from tornado import escape
 from tornado.options import define, options
 
 from sqlalchemy import create_engine, __version__ as sqlalchemy_version
@@ -27,9 +26,9 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm.query import Query
 from sqlalchemy.exc import SQLAlchemyError, OperationalError
 
-from handle.base import BaseHandler, \
+from handle.base import \
     DefaultHandler, ServerStatusHandler, \
-    authenticated, sha1_concat
+    sha1_concat
 from handle.generate import GenerateMarkerHandler
 from handle.markdown_safe import MarkdownSafeHandler
 from handle.auth import AuthRegisterHandler, \
@@ -39,7 +38,6 @@ from handle.auth import AuthRegisterHandler, \
 from handle.user import UserHandler, UserListHandler
 from handle.home import \
     NotFoundHandler, \
-    HomeRedirectHandler, \
     HomeHandler, HomeOrgListHandler, HomeTargetListHandler, \
     DprteHandler, DprteOrgListHandler, DprteTargetListHandler, \
     DseiHandler, DseiOrgListHandler, DseiTargetListHandler, \
@@ -88,65 +86,54 @@ from handle.history import HistoryHandler
 from handle.moderation import ModerationQueueHandler
 
 import conf
+
 from model import connection_url_app, attach_search, engine_disable_mode
-from model import Org, Orgtag, Orgalias, Event, Eventtag, Address, Note
-from model_v import Org_v, Event_v, Address_v, Note_v
+from model import Org
 
 
 
-define("port", default=8802, help="Run on the given port", type=int)
-define("root", default='', help="URL root", type=unicode)
-define("skin", default=u"default", help="skin with the given style", type=unicode)
-define("local", default=False, help="Allow local authentication", type=bool)
-define("offsite", default=None, help="Correct skin-specific links when offsite.", type=bool)
-define("events", default=True, help="Enable events. Default is 1.", type=bool)
-define("verify_search", default=True, help="Verify Elasticsearch data on startup. Default is 1.", type=bool)
-define("log", default=None, help="Log directory. Write permission required. Logging is disabled if this option is not set.", type=unicode)
+define("port", type=int, default=8802, help="Run on the given port")
+define("root", default='', help="URL root")
+define("skin", default=u"default", help="skin with the given style")
+define("local", type=bool, default=False, help="Allow local authentication")
+define("offsite", type=bool, default=None,
+       help="Correct skin-specific links when offsite.")
+define("events", type=bool, default=True, help="Enable events. Default is 1.")
+define("verify_search", type=bool, default=True,
+       help="Verify Elasticsearch data on startup. Default is 1.")
+define("log", default=None,
+       help="Log directory. Write permission required. Logging is disabled "
+       "if this option is not set.")
 define("status", default=True, help="Enable stats on /server-stats")
 define("label", default=None, help="Label to include in stats")
 
 
 
-forwarding_server_list = [
+FORWARDING_SERVER_LIST = [
     "127.0.0.1",
     ]
 
 DEFAULT_CACHE_PERIOD = 60 * 60 * 8  # 8 hours
 
-conf_path = ".mango.conf"
+CONF_PATH = ".mango.conf"
 
 
 
-class BaseCache(object):
+class RedisCache(object):
+    def __init__(self, namespace):
+        super(RedisCache, self).__init__()
+        self._cache = redis.StrictRedis()
+        self.set_namespace(namespace)
+
     def set_namespace(self, namespace):
         self._namespace = namespace
         return self._namespace
 
+    def get_namespace(self):
+        return self._namespace
+
     def key(self, key):
         return self._namespace + ":" + key
-
-
-
-class DictCache(BaseCache):
-    def __init__(self, namespace):
-        self._cache = {}
-
-    def get(self, key):
-        return self._cache.get(key, None)
-
-    def set(self, key, value, period=None):
-        # Does not support expiration
-        self._cache[key] = value
-
-    def delete(self, key):
-        del self._cache[key]
-
-
-
-class RedisCache(BaseCache):
-    def __init__(self, namespace):
-        self._cache = redis.StrictRedis()
-        self.set_namespace(namespace)
 
     @property
     def name(self):
@@ -186,6 +173,9 @@ class RedisCache(BaseCache):
 
 
 def SafeQueryClass(retry=3):
+    # pylint: disable=invalid-name
+    # Allow `SafeQueryClass` factory function.
+
     class SafeQuery(Query):
         def __init__(self, entities, session=None):
             Query.__init__(self, entities, session)
@@ -227,19 +217,21 @@ class Application(tornado.web.Application):
     def load_cookie_secret(self):
         try:
             self.cookie_secret = open(".xsrf", "r").read().strip()
-        except IOError as e:
+        except IOError:
             sys.stderr.write(
                 "Could not open XSRF key. Run 'make .xsrf' to generate one.\n"
                 )
             sys.exit(1)
 
     def cache_namespace(self, offset=""):
-        return sha1_concat(
+        hash_ = sha1_concat(
             sys.version,
             sqlalchemy_version,
             self.database_namespace,
-            offset,
+            str(offset),
             )
+        namespace = "%s:%s" % (self.name, hash_[:7])
+        return namespace
 
     url_parsers = {
         "id": ("[1-9][0-9]*", url_type_id),
@@ -251,14 +243,14 @@ class Application(tornado.web.Application):
         regex_handlers = []
         for handler in handlers:
             regex, handler, kwargs = (handler + (None, ))[:3]
-            regex = re.split("(<\w+>)", regex)
+            regex = re.split(r"(<\w+>)", regex)
             for i in range(1, len(regex), 2):
                 type_ = regex[i][1:-1]
                 url_regex, url_type = Application.url_parsers[type_]
                 regex[i] = r"(%s)" % url_regex
                 if not kwargs:
                     kwargs = {}
-                if not "types" in kwargs:
+                if "types" not in kwargs:
                     kwargs["types"] = []
                 kwargs["types"].append(url_type)
             regex = "".join(regex)
@@ -287,9 +279,6 @@ class Application(tornado.web.Application):
     def __init__(self):
         self.response_log = None
         self.cache_log = None
-
-        def handle_id(text):
-            return int(text)
 
         self.events = options.events
 
@@ -441,22 +430,19 @@ class Application(tornado.web.Application):
             self.init_response_log()
 
         if not self.events:
-            self.handlers = filter(lambda x: "/event" not in x[0], self.handlers)
-        if not self.events:
-            self.handlers = filter(lambda x: "/diary" not in x[0], self.handlers)
+            self.handlers = [v for v in self.handlers if (
+                "/event" not in v[0] and
+                "/diary" not in v[0])]
 
         self.handlers = self.process_handlers(self.handlers)
 
         settings = dict()
 
-        # serves /robots.txt and /favicon.ico from static
-        # settings["static_path"] = os.path.join(os.path.dirname(__file__), "static")
-
         # Authentication & Cookies
 
         settings["google_oauth"] = {
-            "key": conf.get(conf_path, 'google-oauth', 'client-id'),
-            "secret": conf.get(conf_path, 'google-oauth', 'client-secret'),
+            "key": conf.get(CONF_PATH, 'google-oauth', 'client-id'),
+            "secret": conf.get(CONF_PATH, 'google-oauth', 'client-secret'),
             "default_handler_class": DefaultHandler,
             }
 
@@ -467,16 +453,15 @@ class Application(tornado.web.Application):
             ))
 
         self.local_auth = options.local
-        self.cookie_prefix = conf.get(conf_path, u"app", u"cookie-prefix")
+        self.cookie_prefix = conf.get(CONF_PATH, u"app", u"cookie-prefix")
 
         # Database & Cache
 
-        mysql_database = conf.get(conf_path, u"mysql", u"database")
+        mysql_database = conf.get(CONF_PATH, u"mysql", u"database")
         self.database_namespace = 'mysql://%s' % mysql_database
-        self.database_mtime = datetime.datetime.utcnow()
 
         self.cache = RedisCache(
-            self.cache_namespace(self.database_mtime.isoformat()))
+            self.cache_namespace(datetime.datetime.utcnow().isoformat()))
 
         connection_url = connection_url_app()
         engine = create_engine(
@@ -494,9 +479,10 @@ class Application(tornado.web.Application):
         try:
             self.orm.query(Org).first()
         except OperationalError as e:
-            sys.stderr.write("Cannot connect to database %s.\n" % database)
+            sys.stderr.write(
+                "Cannot connect to MySQL database %s.\n" % mysql_database)
             sys.exit(1)
-        print options.verify_search
+
         attach_search(engine, self.orm, verify=options.verify_search)
         self.orm.remove()
 
@@ -553,30 +539,26 @@ class Application(tornado.web.Application):
 
         # HTTP Server
 
-        self.forwarding_server_list = forwarding_server_list
+        self.forwarding_server_list = FORWARDING_SERVER_LIST
 
         tornado.web.Application.__init__(self, self.handlers, **settings)
 
-        sys.stdout.write(u"""%s is running.
-  Label:        %s
-  Address:      http://localhost:%d
-  Database:     %s
-  Cache:        %s (%s)
-  Skin:         %s
-  Events:       %s
-  Started:      %s
-""" % (
-                self.title,
-                self.label,
-                options.port,
-                "mysql",
-                self.cache.name, self.cache.state,
-                options.skin,
-                self.events and "Enabled" or "Disabled",
-                datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-                ))
-        sys.stdout.flush()
+        stats = {
+            "Label": self.label,
+            "Address": "http://localhost:%d" % options.port,
+            "Database": "MySQL: %s" % mysql_database,
+            "Cache": "%s (%s) %s" % (self.cache.name, self.cache.state,
+                                     self.cache.get_namespace()),
+            "Skin": options.skin,
+            "Events": self.events and "Enabled" or "Disabled",
+            "Started": datetime.datetime.utcnow() \
+            .strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
 
+        sys.stdout.write(u"%s is running.\n" % self.title)
+        for key, value in stats.items():
+            sys.stdout.write(u"  %-20s %s\n" % (key + ":", value))
+        sys.stdout.flush()
 
 
 def main():

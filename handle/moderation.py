@@ -1,22 +1,19 @@
 # -*- coding: utf-8 -*-
 
-from sqlalchemy import or_
 from tornado.web import HTTPError
 
-from base import BaseHandler, authenticated
+from handle.base import BaseHandler, authenticated
 
-from base_moderation import \
+from handle.base_moderation import \
     get_pending_org_id, \
     get_pending_event_id, \
-    get_pending_address_id, \
-    get_pending_contact_id, \
     get_pending_org_address_id, \
     get_pending_org_contact_id, \
     get_pending_event_address_id, \
     get_pending_event_contact_id
 
 
-    
+
 class ModerationQueueHandler(BaseHandler):
     def parent_entity_rows(
             self,
@@ -29,9 +26,10 @@ class ModerationQueueHandler(BaseHandler):
             child_name_list,
     ):
         for row in get_pending_parent_entity_id(self.orm):
-            parent_id, parent_desc, parent_exists = row[:3]
-            entity_id, entity_desc_new, entity_exists, entity_desc_old, user_name = row[3:]
-            if not parent_id in queue[parent]:
+            (parent_id, parent_desc, parent_exists) = row[:3]
+            (entity_id, entity_desc_new, entity_exists,
+             entity_desc_old, user_name) = row[3:]
+            if parent_id not in queue[parent]:
                 if not parent_exists:
                     # parent doesn't exist (may have been declined)
                     continue
@@ -40,7 +38,7 @@ class ModerationQueueHandler(BaseHandler):
                     "revisionUrl": None,
                     "description": parent_desc,
                     "user": None,
-                    } 
+                    }
                 for child_name in child_name_list:
                     queue[parent][parent_id][child_name] = {}
 
@@ -49,7 +47,7 @@ class ModerationQueueHandler(BaseHandler):
                 "revisionUrl": "/%s/%s/revision" % (entity_url, entity_id),
                 "description": entity_desc_old or entity_desc_new,
                 "user": user_name,
-                } 
+                }
             queue[parent][parent_id][entity][entity_id] = entity_dict
 
     @authenticated
@@ -63,7 +61,8 @@ class ModerationQueueHandler(BaseHandler):
         }
 
 
-        for org_id, desc_new, exists, desc_old, user_name in get_pending_org_id(self.orm):
+        for (org_id, desc_new, exists,
+             desc_old, user_name) in get_pending_org_id(self.orm):
             queue["org"][org_id] = {
                 "url": exists and "/organisation/%s" % org_id,
                 "revisionUrl": "/organisation/%s/revision" % org_id,
@@ -73,15 +72,18 @@ class ModerationQueueHandler(BaseHandler):
                 "contact": {},
                 }
 
-        self.parent_entity_rows(queue, get_pending_org_address_id,
+        self.parent_entity_rows(
+            queue, get_pending_org_address_id,
             "org", "address", "organisation", "address", ["address", "contact"]
         )
 
-        self.parent_entity_rows(queue, get_pending_org_contact_id,
+        self.parent_entity_rows(
+            queue, get_pending_org_contact_id,
             "org", "contact", "organisation", "contact", ["address", "contact"]
         )
 
-        for event_id, desc_new, exists, desc_old, user_name in get_pending_event_id(self.orm):
+        for (event_id, desc_new, exists,
+             desc_old, user_name) in get_pending_event_id(self.orm):
             queue["event"][event_id] = {
                 "url": exists and "/event/%s" % event_id,
                 "revisionUrl": "/event/%s/revision" % event_id,
@@ -91,11 +93,13 @@ class ModerationQueueHandler(BaseHandler):
                 "contact": {},
                 }
 
-        self.parent_entity_rows(queue, get_pending_event_address_id,
+        self.parent_entity_rows(
+            queue, get_pending_event_address_id,
             "event", "address", "event", "address", ["address", "contact"]
         )
 
-        self.parent_entity_rows(queue, get_pending_event_contact_id,
+        self.parent_entity_rows(
+            queue, get_pending_event_contact_id,
             "event", "contact", "event", "contact", ["address", "contact"]
         )
 
@@ -103,4 +107,3 @@ class ModerationQueueHandler(BaseHandler):
             'moderation-queue.html',
             queue=queue,
             )
-

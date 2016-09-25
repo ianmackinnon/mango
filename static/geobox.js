@@ -133,13 +133,13 @@
     }
 
     if (obj.hasOwnProperty("name")) {
-      this.name = obj.name;  // toString
+      this.name = obj.name;  // `toString`
     }
     if (obj.hasOwnProperty("longName")) {
-      this.longName = obj.longName;  // toString
+      this.longName = obj.longName;  // `toString`
     }
     if (obj.hasOwnProperty("type")) {
-      this.type = obj.type;  // toString
+      this.type = obj.type;  // `toString`
     }
     return this.setFromCoords(
       obj.south,
@@ -220,6 +220,7 @@
 
   Geobox.prototype.area = function () {
     var radiusOfEarth = 6378.1;
+    // Constants:
     // var circumferenceOfEarth = 40075;
     // var areaOfEarth = 510072000;
 

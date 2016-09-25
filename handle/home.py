@@ -3,10 +3,10 @@
 import json
 
 from sqlalchemy.sql import func
-from tornado.web import HTTPError
 
-from base import BaseHandler
 from model import Org, Orgtag, org_orgtag
+
+from handle.base import BaseHandler
 
 
 
@@ -34,7 +34,7 @@ class HomeTargetListHandler(BaseHandler):
     tag_base = None
 
     def get(self):
-        visibility=self.parameters.get("visibility", None)
+        visibility = self.parameters.get("visibility", None)
 
         cache_key = "country-tag-%s-%s" % (self.tag_base or "home", visibility)
 
@@ -55,17 +55,20 @@ class HomeTargetListHandler(BaseHandler):
             q1 = q1 \
                 .join(org_orgtag) \
                 .join(Orgtag) \
-                .filter(Orgtag.base_short==self.tag_base)
+                .filter(Orgtag.base_short == self.tag_base)
         q1 = q1 \
             .subquery()
 
         q2 = self.orm.query(func.substr(Orgtag.base, 30), Orgtag.base_short) \
-            .join(org_orgtag, Orgtag.orgtag_id==org_orgtag.c.orgtag_id) \
-            .join(q1, q1.c.org_id==org_orgtag.c.org_id) \
+            .join(org_orgtag, Orgtag.orgtag_id == org_orgtag.c.orgtag_id) \
+            .join(q1, q1.c.org_id == org_orgtag.c.org_id) \
             .add_columns(func.count(q1.c.org_id)) \
-            .filter(Orgtag.path_short==u"market") \
-            .filter(Orgtag.base_short.startswith(u"military-export-applicant-to-%")) \
-            .filter(~Orgtag.base_short.startswith(u"military-export-applicant-to-%-in-____")) \
+            .filter(
+                Orgtag.path_short == u"market",
+                Orgtag.base_short.startswith(u"military-export-applicant-to-%"),
+                ~Orgtag.base_short.startswith(
+                    u"military-export-applicant-to-%-in-____"),
+            ) \
             .group_by(Orgtag.orgtag_id) \
             .order_by(Orgtag.base)
 
@@ -142,7 +145,7 @@ class FairOrgListHandler(BaseHandler):
             return
 
         tag = self.orm.query(Orgtag) \
-            .filter(Orgtag.base_short==self.tag_name) \
+            .filter(Orgtag.base_short == self.tag_name) \
             .first()
 
         org_list = []

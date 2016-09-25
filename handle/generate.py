@@ -54,7 +54,7 @@ class GenerateHandler(StaticFileHandler):
 
         self.set_header("Last-Modified", modified)
 
-        mime_type, encoding = mimetypes.guess_type(abspath)
+        mime_type, _encoding = mimetypes.guess_type(abspath)
         if mime_type:
             self.set_header("Content-Type", mime_type)
 
@@ -78,16 +78,13 @@ class GenerateHandler(StaticFileHandler):
                 self.set_status(304)
                 return
 
-        with open(abspath, "rb") as file:
-            data = file.read()
+        with open(abspath, "rb") as fp:
+            data = fp.read()
 
-            #---
-            # pylint: disable=no-member
             if not hasattr(self, "etag") or self.etag:
                 hasher = hashlib.sha1()
                 hasher.update(data)
                 self.set_header("Etag", '"%s"' % hasher.hexdigest())
-            #---
 
             if include_body:
                 self.write(data)
@@ -101,10 +98,10 @@ class GenerateMarkerHandler(GenerateHandler):
 
     cluster_sizes = [
         (53, 26),
-        (56, 27), 
+        (56, 27),
         (66, 31),
-        (78, 37), 
-        (90, 42), 
+        (78, 37),
+        (90, 42),
         ]
 
     def compute_etag(self):
@@ -114,29 +111,32 @@ class GenerateMarkerHandler(GenerateHandler):
         return 60 * 60 * 24 * 30  # 30 days
 
     def render(self, template_name, **kwargs):
+        # pylint: disable=broad-except
+        # Want to catch any error with template
+
         mako_template = self.application.lookup.get_template(template_name)
         try:
             return mako_template.render(**kwargs)
-        except:
+        except Exception:
             self.write(exceptions.html_error_template().render())
 
     def generate(self, path, abspath):
         if not path.endswith(".png"):
             raise HTTPError(404)
 
-        if path.startswith("circle-"): 
+        if path.startswith("circle-"):
             template = 'map-marker-circle.svg'
             path = path[:-4]
             form = path[7:].split("-")
-        elif path.startswith("dot-"): 
+        elif path.startswith("dot-"):
             template = 'map-marker-dot.svg'
             path = path[:-4]
             form = path[4:].split("-")
-        elif path.startswith("pin-"): 
+        elif path.startswith("pin-"):
             template = 'map-marker-pin.svg'
             path = path[:-4]
             form = path[4:].split("-")
-        elif path.startswith("cluster-"): 
+        elif path.startswith("cluster-"):
             template = 'map-marker-cluster.svg'
             path = path[:-4]
             form = None
@@ -156,27 +156,30 @@ class GenerateMarkerHandler(GenerateHandler):
                     raise HTTPError(404)
                 if not re.match("[0-9a-fA-F]{6}$", fill):
                     raise HTTPError(404)
-                svg = self.render(template,
-                                  text=text,
-                                  fill="#" + fill,
-                                  )
+                svg = self.render(
+                    template,
+                    text=text,
+                    fill="#" + fill,
+                )
             elif len(form) == 1:
                 (fill, ) = form
                 if not re.match("[0-9a-fA-F]{6}$", fill):
                     raise HTTPError(404)
-                svg = self.render(template,
-                                  text="",
-                                  fill="#" + fill,
-                                  )
+                svg = self.render(
+                    template,
+                    text="",
+                    fill="#" + fill,
+                )
             else:
                 raise HTTPError(404)
         else:
             # cluster
-            svg = self.render(template,
-                              width=width,
-                              offset=float(width)/2,
-                              radius=float(diameter)/2,
-                              fill="#ee6666",
+            svg = self.render(
+                template,
+                width=width,
+                offset=float(width)/2,
+                radius=float(diameter)/2,
+                fill="#ee6666",
             )
 
         # Using stdout, because convert does odd things with a question
@@ -184,6 +187,6 @@ class GenerateMarkerHandler(GenerateHandler):
         f = open(abspath, "wb")
         cmd = ["convert", "-background", "none", "svg:-", "png:-"]
         process = Popen(cmd, stdin=PIPE, stdout=f, stderr=PIPE)
-        (stdout, stderr) = process.communicate(svg)
+        (_stdout, _stderr) = process.communicate(svg)
         f.close()
         return

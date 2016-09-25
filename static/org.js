@@ -131,7 +131,7 @@
     initialize: function () {
       var view = this;
       var limit = {
-        offset: null,  // counter
+        offset: null,  // Counter
         limit: null
       };
 
@@ -217,7 +217,6 @@
   });
 
   // OrgSearch
-
   //   more than 26 results: results get paged
   //   more than 3 pages of results, don't show any results
   //   location area is too big, search whole world
@@ -232,7 +231,9 @@
   };
 
   window.OrgSearch = Backbone.Model.extend({
+    // Parameter list is in the following order:
     // constructor, multiConstructor, compare, default, toString
+
     expectedParameters: {
       "nameSearch": [null, false, m.compareLowercase, "", null],
       "location": [geoboxFactory, false, m.compareGeobox, m.ukGeobox, geoboxToString],
@@ -301,7 +302,7 @@
       m.log.debug("s2", _.clone(attributes));
 
       _.each(attributes, function (value, key) {
-        var c;  // unused
+        var c;  // Unused
         if (model.get(key) === undefined) {
           return;
         }

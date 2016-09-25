@@ -4,14 +4,14 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from tornado.web import HTTPError
 
-from base import authenticated, \
-    HistoryEntity, \
-    MangoEntityHandlerMixin, MangoEntityListHandlerMixin
-from base_note import BaseNoteHandler
-
 from model import Note
 
 from model_v import Note_v
+
+from handle.base import authenticated, \
+    HistoryEntity, \
+    MangoEntityHandlerMixin, MangoEntityListHandlerMixin
+from handle.base_note import BaseNoteHandler
 
 
 
@@ -34,7 +34,7 @@ class NoteListHandler(BaseNoteHandler,
     def post(self):
         if not self.moderator:
             raise HTTPError(405)
-        return MangoEntityListHandlerMixin.post(self);
+        return MangoEntityListHandlerMixin.post(self)
 
     def get(self):
         note_list = self.orm.query(Note)
@@ -90,19 +90,19 @@ class NoteHandler(BaseNoteHandler, MangoEntityHandlerMixin):
     def put(self, entity_id):
         if not self.moderator:
             raise HTTPError(405)
-        return MangoEntityHandlerMixin.put(self, entity_id);
+        return MangoEntityHandlerMixin.put(self, entity_id)
 
     @authenticated
     def touch(self, entity_id):
         if not self.moderator:
             raise HTTPError(405)
-        return MangoEntityHandlerMixin.touch(self, entity_id);
+        return MangoEntityHandlerMixin.touch(self, entity_id)
 
     @authenticated
     def delete(self, entity_id):
         if not self.moderator:
             raise HTTPError(405)
-        return MangoEntityHandlerMixin.delete(self, entity_id);
+        return MangoEntityHandlerMixin.delete(self, entity_id)
 
     def get(self, note_id):
         public = self.moderator
@@ -120,13 +120,13 @@ class NoteHandler(BaseNoteHandler, MangoEntityHandlerMixin):
             return self.redirect_next()
 
         if self.deep_visible():
-            address_list=note.address_list
-            orgtag_list=note.orgtag_list
-            org_list=note.org_list
+            address_list = note.address_list
+            orgtag_list = note.orgtag_list
+            org_list = note.org_list
         else:
-            address_list=note.address_list_public
-            orgtag_list=note.orgtag_list_public
-            org_list=note.org_list_public
+            address_list = note.address_list_public
+            orgtag_list = note.orgtag_list_public
+            org_list = note.org_list_public
 
         address_list = [address.obj(public=public) for address in address_list]
         orgtag_list = [orgtag.obj(public=public) for orgtag in orgtag_list]
@@ -147,9 +147,9 @@ class NoteHandler(BaseNoteHandler, MangoEntityHandlerMixin):
             linked=(address_list + orgtag_list + org_list or []),
             )
 
-        version_url=None
+        version_url = None
         if self.moderator and self._count_note_history(note_id) > 1:
-            version_url="%s/revision" % note.url
+            version_url = "%s/revision" % note.url
 
         if self.accept_type("json"):
             self.write_json(obj)
@@ -208,8 +208,11 @@ class NoteRevisionListHandler(BaseNoteHandler):
         if not self.moderator:
             if len(history) == int(bool(note)):
                 raise HTTPError(404)
-        
-        version_current_url = (note and note.url) or (not self.moderator and history and history[-1].url)
+
+        version_current_url = (
+            (note and note.url) or
+            (not self.moderator and history and history[-1].url)
+        )
 
         self.render(
             'revision-history.html',
@@ -218,8 +221,8 @@ class NoteRevisionListHandler(BaseNoteHandler):
             latest_a_time=note and note.a_time,
             title_text="Revision History",
             history=history,
-            )
-        
+        )
+
 
 
 class NoteRevisionHandler(BaseNoteHandler):
@@ -231,7 +234,8 @@ class NoteRevisionHandler(BaseNoteHandler):
         try:
             note_v = query.one()
         except NoResultFound:
-            raise HTTPError(404, "%d:%d: No such note revision" % (note_id, note_v_id))
+            raise HTTPError(
+                404, "%d:%d: No such note revision" % (note_id, note_v_id))
 
         query = self.orm.query(Note) \
             .filter_by(note_id=note_id)
@@ -303,6 +307,3 @@ class NoteRevisionHandler(BaseNoteHandler):
             obj=obj,
             obj_v=obj_v,
             )
-        
-
-

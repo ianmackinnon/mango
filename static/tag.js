@@ -47,9 +47,9 @@
   });
 
   window.tagCollectionSearch = function (tagCollection, search, limit) {
-    var start = [];   // search matches start of string
-    var middle = [];  // search matches start of word
-    var end = [];     // search matches inside of word
+    var start = [];   // Search matches start of string
+    var middle = [];  // Search matches start of word
+    var end = [];     // Search matches inside of word
 
     var comparator = function (a, b) {
       var av = a.get("baseShort").split("-").length;

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import re
+import sys
 import json
 import time
-import codecs
 import hashlib
 import httplib
 import datetime
@@ -12,8 +12,7 @@ import functools
 from urllib import urlencode
 from collections import namedtuple
 
-from bs4 import BeautifulSoup
-from sqlalchemy import and_, or_, not_
+from sqlalchemy import and_, or_
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql.expression import exists, and_, or_
@@ -25,19 +24,16 @@ from tornado.web import RequestHandler, HTTPError
 # For _execute replacement
 from tornado import iostream
 import tornado.web
-from tornado.concurrent import Future, is_future
+from tornado.concurrent import is_future
 from tornado import gen
 from tornado.web import _has_stream_request_body
 
 import geo
 
-from model import Session, Address, User, camel_case
+from model import Session, User, camel_case
 
-from base_moderation import has_pending, has_address_not_found
-
+from handle.base_moderation import has_pending, has_address_not_found
 from handle.markdown_safe import markdown_safe, convert_links
-
-
 
 
 
@@ -60,7 +56,7 @@ def authenticated(method):
             raise HTTPError(404, "Not found")
 
         return method(self, *args, **kwargs)
-    wrapper.authenticated = True;
+    wrapper.authenticated = True
     return wrapper
 
 
@@ -76,7 +72,7 @@ def newline_comma(text):
 
 
 def nbsp(text):
-    text = re.sub("[\s]+", "&nbsp;", text)
+    text = re.sub(r"[\s]+", "&nbsp;", text)
     text = text.replace("-", "&#8209;")
     return text
 
@@ -87,25 +83,28 @@ def form_date(date):
 
 
 
-def form_time(time):
-    return time and str(time) or ""
+def form_time(time_):
+    return time_ and str(time_) or ""
 
 
 
 def page_date(date, format_="%a %d %b %Y"):
-    return date and datetime.datetime.strptime(date, "%Y-%m-%d").date().strftime(format_) or ""
+    if not date:
+        return ""
+    return datetime.datetime.strptime(date, "%Y-%m-%d") \
+        .date().strftime(format_)
 
 
 
 def page_date_format(format_="%a %d %b %Y"):
-    def filter(date):
+    def filter_(date):
         return page_date(date, format_)
-    return filter
+    return filter_
 
 
 
-def page_time(time):
-    return time and str(time) or ""
+def page_time(time_):
+    return time_ and str(time_) or ""
 
 
 
@@ -116,7 +115,10 @@ def page_period(obj):
     elif obj["endTime"]:
         s += ", ??:??"
     s += " "
-    if (obj["endDate"] and obj["endDate"] != obj["startDate"]) or obj["endTime"]:
+    if (
+            (obj["endDate"] and obj["endDate"] != obj["startDate"]) or
+            obj["endTime"]
+    ):
         s += " -"
     if obj["endDate"] and obj["endDate"] != obj["startDate"]:
         s += " %s" % page_date(obj["endDate"])
@@ -128,57 +130,62 @@ def page_period(obj):
 
 
 
-def url_rewrite_static(uri, root=None, options=None, parameters=None, next_=None):
-        """
-        Rewrites URLs to:
-            prepend url_root to absolute paths if it's not already there
-            add parameters, optionally overwritten.
+def url_rewrite_static(
+        uri,
+        root=None, options=None, parameters=None, next_=None
+):
+    """
+    Rewrites URLs to:
+        prepend url_root to absolute paths if it's not already there
+        add parameters, optionally overwritten.
 
-        Query parameter precedence:
-            next_
-            options
-            uri query string
-            parameters
-        """
+    Query parameter precedence:
+        next_
+        options
+        uri query string
+        parameters
+    """
 
-        if options is None:
-            options = {}
+    if options is None:
+        options = {}
 
-        if parameters is None:
-            parameters = {}
+    if parameters is None:
+        parameters = {}
 
-        if root is None:
-            root = "/"
+    if root is None:
+        root = "/"
 
-        scheme, netloc, path, query, fragment = urlparse.urlsplit(uri)
+    scheme, netloc, path, query, fragment = urlparse.urlsplit(uri)
 
-        if path.startswith("/") and not path.startswith(root):
-            path = root + path[1:]
+    if path.startswith("/") and not path.startswith(root):
+        path = root + path[1:]
 
-        arguments = parameters.copy()
+    arguments = parameters.copy()
 
-        for key, value in urlparse.parse_qs(query, keep_blank_values=False).items():
-            arguments[key] = value
-            if value is None:
-                del arguments[key]
+    for key, value in urlparse.parse_qs(query, keep_blank_values=False).items():
+        arguments[key] = value
+        if value is None:
+            del arguments[key]
 
-        for key, value in options.items():
-            arguments[key] = value
-            if value is None:
-                del arguments[key]
+    for key, value in options.items():
+        arguments[key] = value
+        if value is None:
+            del arguments[key]
 
-        if next_:
-            arguments["next"] = url_rewrite_static(next_, root)
+    if next_:
+        arguments["next"] = url_rewrite_static(next_, root)
 
-        query = urlencode(arguments, True)
+    query = urlencode(arguments, True)
 
-        uri = urlparse.urlunsplit((scheme, netloc, path, query, fragment))
-        return uri
+    uri = urlparse.urlunsplit((scheme, netloc, path, query, fragment))
+    return uri
 
 
 
 
 class BaseHandler(RequestHandler):
+    # pylint: disable=dangerous-default-value
+    # Using list type for argument default value
 
     _unsupported_method_error = (403, "Method Not Allowed")
     _unsupported_methods = None
@@ -202,7 +209,7 @@ class BaseHandler(RequestHandler):
         key = self.cookie_name(key)
         value = json.dumps(value)
 
-        self.set_secure_cookie(key, value, **kwargs);
+        self.set_secure_cookie(key, value, **kwargs)
 
 
     def app_get_cookie(self, key, secure=True):
@@ -232,6 +239,8 @@ class BaseHandler(RequestHandler):
 
 
     def __init__(self, *args, **kwargs):
+        # pylint: disable=invalid-name
+        # Accessing `self.SUPPORTED_METHODS` from Tornado base classes.
         self.SUPPORTED_METHODS += ("TOUCH", )
         self.messages = []
         self.scripts = []
@@ -243,6 +252,7 @@ class BaseHandler(RequestHandler):
         self.next_ = self.get_argument("next", None)
         self.load_map = False
         self.json_data = None
+        self.start = None
 
     def prepare(self):
         self.start = time.time()
@@ -252,13 +262,14 @@ class BaseHandler(RequestHandler):
             return
         now = time.time()
         duration = now - self.start
-        self.application.log_uri.info("%s, %s, %s, %s, %0.3f" % (
-                str(now),
-                self.request.uri,
-                self.request.remote_ip,
-                repr(self.request.headers.get("User-Agent", "User-Agent")),
-                duration
-                ))
+        self.application.log_uri.info(
+            "%s, %s, %s, %s, %0.3f",
+            str(now),
+            self.request.uri,
+            self.request.remote_ip,
+            repr(self.request.headers.get("User-Agent", "User-Agent")),
+            duration
+        )
 
         if self.application.orm:
             self.application.orm.remove()
@@ -278,22 +289,26 @@ class BaseHandler(RequestHandler):
     def _mango_check_user(self):
         if self.current_user:
             if self.current_user.locked:
-                self.delete_current_user()
                 self.end_session()
                 raise HTTPError(400, "User account is locked.")
 
     def _mango_handle_args(self):
+        # pylint: disable=redefined-variable-type
+        # Converting `self.path_args` from list to tuple.
         if self.arg_type_handlers:
             if len(self.path_args) != len(self.arg_type_handlers):
                 raise HTTPError(500, "Bad args/type handlers combination")
 
             self.path_args = list(self.path_args)
-            for i, (value, type_handler) in enumerate(zip(self.path_args, self.arg_type_handlers)):
+            for i, (value, _type_handler) in enumerate(
+                    zip(self.path_args, self.arg_type_handlers)):
                 if self.arg_type_handlers[i]:
                     self.path_args[i] = self.arg_type_handlers[i](value)
             self.path_args = tuple(self.path_args)
 
     # Copied from tornado.web. Keep updated
+    # pylint: disable=bad-continuation,broad-except
+    # Accept code from tornado that doesn't pass lint
     @gen.coroutine
     def _execute(self, transforms, *args, **kwargs):
         """Executes this request with the given output transforms."""
@@ -395,9 +410,6 @@ class BaseHandler(RequestHandler):
                     return
         RequestHandler.write_error(self, status_code, **kwargs)
 
-    def delete_current_user(self):
-        self._current_user = None
-
     def content_type(self, name):
         if "Content-Type" in self.request.headers:
             return self.request.headers["Content-Type"].lower() == name.lower()
@@ -420,7 +432,7 @@ class BaseHandler(RequestHandler):
         return self.request.headers["User-Agent"]
 
     def start_session(self, value):
-        self.app_set_cookie("session", value);
+        self.app_set_cookie("session", value)
         # Sets a cookie value to the base64 plaintext session_id,
         #   but is protected by tornado's _xsrf cookie.
         # Retrieved by BaseHandler.get_current_user()
@@ -449,7 +461,8 @@ class BaseHandler(RequestHandler):
         if parameters is None:
             parameters = self.parameters
 
-        return url_rewrite_static(uri, self.url_root, options, parameters, next_)
+        return url_rewrite_static(
+            uri, self.url_root, options, parameters, next_)
 
     def redirect_next(self, default_url=None):
         """
@@ -470,21 +483,22 @@ class BaseHandler(RequestHandler):
                 ))
 
     def static_url(self, path, include_host=None):
-
-
         return self.url_root[:-1] + "/static/" + path
 
-
-        url = RequestHandler.static_url(self, path, include_host)
-        return self.url_root[:-1] + url
-
     def render(self, template_name, **kwargs):
+        # pylint: disable=broad-except
+        # Want to catch any error with template
+
         def purge(a, b):
             if b:
-                a[:] = filter(lambda x: x not in b, a)
+                a[:] = [v for v in a if v not in b]
 
         # vendro
-        scripts1 = ["jquery.min.js", "jquery-ui/jquery-ui.min.js", "tag-it.js", "underscore-min.js", "backbone-min.js", "markdown.js", "jquery.history.js", "jquery.ui.timepicker.js", "markerclusterer.js"]
+        scripts1 = [
+            "jquery.min.js", "jquery-ui/jquery-ui.min.js", "tag-it.js",
+            "underscore-min.js", "backbone-min.js", "markdown.js",
+            "jquery.history.js", "jquery.ui.timepicker.js", "markerclusterer.js"
+        ]
         # before page js variables
         scripts2 = ["geobox.js", "template.js", "mango.js"]
         # after page js variables
@@ -493,7 +507,10 @@ class BaseHandler(RequestHandler):
             scripts3 += ["event.js"]
         if self.load_map:
             scripts3 = ["map.js"] + scripts3
-        stylesheets = ["jquery-ui/jquery-ui.css", "tag-it.css", "jquery.ui.timepicker.css", "style.css"]
+        stylesheets = [
+            "jquery-ui/jquery-ui.css", "tag-it.css", "jquery.ui.timepicker.css",
+            "style.css"
+        ]
         purge(scripts1, self.application.skin.scripts())
         purge(stylesheets, self.application.skin.stylesheets())
 
@@ -556,7 +573,7 @@ class BaseHandler(RequestHandler):
 
         try:
             self.write(mako_template.render(**kwargs))
-        except:
+        except Exception:
             self.write(exceptions.html_error_template().render())
         if self.orm.new or self.orm.dirty or self.orm.deleted:
             print self.orm.new or self.orm.dirty or self.orm.deleted
@@ -614,6 +631,10 @@ select auto_increment
 
     @staticmethod
     def _set_autoincrement(orm, Entity, entity_id, auto_id):
+        # pylint: disable=invalid-name,protected-access
+        # Allow `Entity_v` and `Entity` abstract class names.
+        # Allow accessing internal entity functions.
+
         entity = Entity._dummy(orm)
         setattr(entity, entity_id, auto_id)
         orm.add(entity)
@@ -622,11 +643,15 @@ select auto_increment
         orm.rollback()
 
     def _update_entity_autoincrement(self, Entity, Entity_v, entity_id):
+        # pylint: disable=invalid-name
+        # Allow `Entity_v` and `Entity` abstract class names.
+
         # MySQL resets InnoDB auto_increment to the highest ID + 1 on restart,
         # so we need to update autoincrement in case any pending versions
         # have a higher ID (ie. if the DB has been reset and the last entity
         # added was not approved by a moderator yet).
         # This is still susceptible to race conditions but not by so much.
+
         attr_id = getattr(Entity_v, entity_id)
         auto_id = self._get_autoincrement(self.orm, Entity.__table__)
         (max_id, ) = self.orm.query(attr_id) \
@@ -644,8 +669,8 @@ select auto_increment
     _ARG_DEFAULT_MANGO = []
 
     def get_argument_restricted(self, name, fn, message,
-                                default=_ARG_DEFAULT_MANGO, json=False):
-        value = self.get_argument(name, default, json)
+                                default=_ARG_DEFAULT_MANGO, is_json=False):
+        value = self.get_argument(name, default, is_json=is_json)
         if value == "":
             value = default
 
@@ -660,27 +685,30 @@ select auto_increment
             raise HTTPError(400, repr(value) + " " + message)
         return value
 
-    def get_argument_allowed(self, name, allowed, default=_ARG_DEFAULT_MANGO, json=False):
+    def get_argument_allowed(self, name, allowed,
+                             default=_ARG_DEFAULT_MANGO, is_json=False):
         def test(value, allowed):
-            if not value in allowed:
+            if value not in allowed:
                 raise ValueError
             return value
         return self.get_argument_restricted(
             name,
             lambda value: test(value, allowed),
-            "'%s' value is not in the allowed set (%s)." % (name, [repr(v) for v in allowed]),
+            "'%s' value is not in the allowed set (%s)." % (
+                name, [repr(v) for v in allowed]),
             default,
-            json)
+            is_json)
 
-    def get_argument_int(self, name, default=_ARG_DEFAULT_MANGO, json=False):
+    def get_argument_int(self, name, default=_ARG_DEFAULT_MANGO, is_json=False):
         return self.get_argument_restricted(
             name,
-            lambda value: int(value),
+            int,
             "Value must be an integer number",
             default,
-            json)
+            is_json)
 
-    def get_argument_bool(self, name, default=_ARG_DEFAULT_MANGO, json=False):
+    def get_argument_bool(self, name, default=_ARG_DEFAULT_MANGO,
+                          is_json=False):
         def helper(value):
             value = value.strip().lower()
             if value.strip() in ['yes', 'y', 'true', 't', '1']:
@@ -694,38 +722,43 @@ select auto_increment
             helper,
             "Value must be a boolean, eg. True, y, 1, f, no, 0, etc.",
             default,
-            json)
+            is_json)
 
-    def get_argument_float(self, name, default=_ARG_DEFAULT_MANGO, json=False):
+    def get_argument_float(self, name, default=_ARG_DEFAULT_MANGO,
+                           is_json=False):
         return self.get_argument_restricted(
             name,
-            lambda value: float(value),
+            float,
             "Value must be a floating point number",
             default,
-            json)
+            is_json)
 
-    def get_argument_date(self, name, default=_ARG_DEFAULT_MANGO, json=False):
+    def get_argument_date(self, name, default=_ARG_DEFAULT_MANGO,
+                          is_json=False):
         return self.get_argument_restricted(
             name,
             lambda value: datetime.datetime.strptime(value, "%Y-%m-%d").date(),
             "Value must be in the format 'YYYY-MM-DD', eg. 2012-02-17",
             default,
-            json)
+            is_json)
 
-    def get_argument_time(self, name, default=_ARG_DEFAULT_MANGO, json=False):
+    def get_argument_time(self, name, default=_ARG_DEFAULT_MANGO,
+                          is_json=False):
         return self.get_argument_restricted(
             name,
             lambda value: datetime.datetime.strptime(value, "%H:%M").time(),
             "Value must be in the 24-hour format 'HH:MM, eg. 19:30",
             default,
-            json)
+            is_json)
 
-    def get_argument_order(self, name, default=_ARG_DEFAULT_MANGO, json=False):
+    def get_argument_order(self, name, default=_ARG_DEFAULT_MANGO,
+                           is_json=False):
         return self.get_argument_allowed(
             name, ("asc", "desc"), default,
-            json)
+            is_json)
 
-    def get_argument_public(self, name="public", default=_ARG_DEFAULT_MANGO, json=False):
+    def get_argument_public(self, name="public", default=_ARG_DEFAULT_MANGO,
+                            is_json=False):
         table = {
             "null": None,
             "true": True,
@@ -736,23 +769,25 @@ select auto_increment
             }
         value = self.get_argument_allowed(
             name, table.keys(), default,
-            json)
+            is_json)
         return table[value]
 
-    def get_argument_visibility(self, json=False):
+    def get_argument_visibility(self, is_json=False):
         if not self.moderator:
             return None
         return self.get_argument_allowed(
-            "visibility", ("pending", "all", "private", "public"), None, json)
+            "visibility", ("pending", "all", "private", "public"),
+            None, is_json=is_json)
 
-    def get_argument_view(self, json=False):
+    def get_argument_view(self, is_json=False):
         if not self.current_user:
             return None
         return self.get_argument_allowed(
-            "view", ("browse", "edit"), None, json)
+            "view", ("browse", "edit"), None, is_json=is_json)
 
-    def get_argument_geobox(self, name, min_radius=None, default=_ARG_DEFAULT_MANGO, json=False):
-        value = self.get_argument(name, default, json)
+    def get_argument_geobox(self, name, min_radius=None,
+                            default=_ARG_DEFAULT_MANGO, is_json=False):
+        value = self.get_argument(name, default, is_json=is_json)
 
         if value == default:
             if default is self._ARG_DEFAULT_MANGO:
@@ -784,36 +819,36 @@ select auto_increment
         if self.request.body:
             try:
                 self.json_data = json.loads(self.request.body)
-            except ValueError as e:
+            except ValueError:
                 raise HTTPError(400, "Could not decode JSON data.")
         else:
             self.json_data = {}
 
-    def get_argument(self, name, default=_ARG_DEFAULT_MANGO, json=False):
-        if not json:
+    def get_argument(self, name, default=_ARG_DEFAULT_MANGO, is_json=False):
+        if not is_json:
             if default is self._ARG_DEFAULT_MANGO:
                 default = RequestHandler._ARG_DEFAULT
             return RequestHandler.get_argument(self, name, default)
 
         self.get_json_data()
 
-        if not name in self.json_data:
+        if name not in self.json_data:
             if default is self._ARG_DEFAULT_MANGO:
                 raise HTTPError(400, "Missing argument %s" % name)
             return default
 
         return self.json_data[name]
 
-    def get_arguments(self, name, strip=True, json=False):
-        if not json:
+    def get_arguments(self, name, strip=True, is_json=False):
+        if not is_json:
             return RequestHandler.get_arguments(self, name, strip)
 
         self.get_json_data()
         return self.json_data.get(name)
 
-    def get_arguments_multi(self, name, delimiter=",", json=False):
+    def get_arguments_multi(self, name, delimiter=",", is_json=False):
         ret = []
-        args = self.get_arguments(name, strip=True, json=json)
+        args = self.get_arguments(name, strip=True, is_json=is_json)
         for arg in args:
             for value in arg.split(delimiter):
                 value = unicode(value.strip())
@@ -824,10 +859,8 @@ select auto_increment
     def get_arguments_int(self, name):
         return [int(value) for value in self.get_arguments(name)]
 
-
-
-
-    def dump_json(self, obj):
+    @staticmethod
+    def dump_json(obj):
         return json.dumps(obj, indent=2)
 
     def write_json(self, obj):
@@ -839,24 +872,27 @@ select auto_increment
         """
         visibility:  "public", "pending", "private", "all". Unknown = "public".
         """
+        # pylint: disable=invalid-name,singleton-comparison
+        # Allow `Entity` as abstract class name.
+        # Cannot use `is` in SQLAlchemy filters
 
         if secondary:
             if visibility in ["pending", "private"]:
                 visibility = "all"
         filter_args = []
         if null_column:
-            filter_args.append(null_column==None)
+            filter_args.append(null_column == None)
         if self.moderator and visibility:
             if visibility == "pending":
-                filter_args.append(Entity.public==None)
+                filter_args.append(Entity.public == None)
             elif visibility == "all":
                 filter_args = []
             elif visibility == "private":
-                filter_args.append(Entity.public==False)
+                filter_args.append(Entity.public == False)
             else:
-                filter_args.append(Entity.public==True)
+                filter_args.append(Entity.public == True)
         else:
-            filter_args.append(Entity.public==True)
+            filter_args.append(Entity.public == True)
         if filter_args:
             return query.filter(or_(*filter_args))
         return query
@@ -864,16 +900,17 @@ select auto_increment
     def set_parameters(self):
         self.parameters = {}
         is_json = self.content_type("application/json")
-        visibility = self.get_argument_visibility(json=is_json)
+        visibility = self.get_argument_visibility(is_json=is_json)
         if visibility:
             self.parameters["visibility"] = visibility
-        view = self.get_argument_view(json=is_json)
+        view = self.get_argument_view(is_json=is_json)
         if view:
             self.parameters["view"] = view
 
 
     def deep_visible(self):
-        return self.parameters.get("visibility", None) in ["pending", "private", "all"]
+        return self.parameters.get("visibility", None) in [
+            "pending", "private", "all"]
 
     def orm_commit(self):
         try:
@@ -908,7 +945,7 @@ class ServerStatusHandler(tornado.web.RequestHandler):
             return data[0]
         if len(data) % 2:
             return (data[len(data) / 2 - 1] +
-                data[len(data) / 2]) / 2
+                    data[len(data) / 2]) / 2
         else:
             return data[len(data) / 2]
 
@@ -976,7 +1013,8 @@ class ServerStatusHandler(tornado.web.RequestHandler):
         min_ = None
         max_ = None
 
-        for (timestamp, status_code, duration_) in self.application.response_log:
+        for (_timestamp,
+             status_code, duration_) in self.application.response_log:
             if min_ is None:
                 min_ = duration_
                 max_ = duration_
@@ -994,7 +1032,8 @@ class ServerStatusHandler(tornado.web.RequestHandler):
                 duration.update(self.quartiles([
                     v[2] for v in self.application.response_log]))
             except TypeError:
-                sys.stderr.write("Failed quartiles: %s" % repr([v[2] for v in self.application.response_log]))
+                sys.stderr.write("Failed quartiles: %s" % repr(
+                    [v[2] for v in self.application.response_log]))
                 sys.stderr.flush()
                 raise
 
@@ -1039,11 +1078,14 @@ HistoryEntity = namedtuple(
 
 
 class MangoBaseEntityHandlerMixin(RequestHandler):
+    # pylint: disable=invalid-name
+    # Allow `Entity` and `Entity_v` as abstract class name.
+
     def _create_revision(self):
         is_json = self.content_type("application/json")
 
         if self.moderator:
-            public = self.get_argument_public("public", json=is_json)
+            public = self.get_argument_public("public", is_json=is_json)
         else:
             # Suggestions will be created pending
             public = None
@@ -1051,10 +1093,9 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
 
         return public, moderation_user
 
-    def _history_query(self,
-                       Entity, entity_id,
-                       Entity_v,
-                       id_):
+    def _history_query(self, Entity, entity_id, Entity_v, id_):
+        # pylint: disable=singleton-comparison
+        # Cannot use `is` in SQLAlchemy filters
 
         entity_query = self.orm.query(Entity) \
             .filter(getattr(Entity, entity_id) == id_)
@@ -1071,7 +1112,8 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
             if entity:
                 filters = or_(
                     and_(
-                        Entity_v.moderation_user_id == self.current_user.user_id,
+                        (Entity_v.moderation_user_id ==
+                         self.current_user.user_id),
                         Entity_v.a_time > entity.a_time,
                         ),
                     and_(
@@ -1080,19 +1122,16 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
                         ),
                     )
             else:
-                filters = Entity_v.moderation_user_id == self.current_user.user_id
+                filters = (Entity_v.moderation_user_id ==
+                           self.current_user.user_id)
             entity_v_query = entity_v_query \
                 .filter(filters)
 
         return entity_v_query, entity
 
 
-    def _get_entity(self,
-                    Entity, entity_id,
-                    entity_type,
-                    id_,
-                    required=True,
-                    ):
+    def _get_entity(self, Entity, entity_id, entity_type, id_,
+                    required=True):
 
         query = self.orm.query(Entity) \
             .filter(getattr(Entity, entity_id) == id_)
@@ -1112,19 +1151,20 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
         return entity
 
 
-    def _get_entity_v(self,
-                      Entity, entity_id,
-                      Entity_v, entity_v_id,
-                      entity_type,
-                      id_,
-                      ):
+    def _get_entity_v(self, _Entity, entity_id, Entity_v, entity_v_id,
+                      _entity_type, id_,):
+        # pylint: disable=singleton-comparison
+        # Cannot use `is` in SQLAlchemy filters
+
         if not self.current_user:
             raise HTTPError(404)
 
         entity_v_mod = self.orm.query(Entity_v) \
             .join((User, Entity_v.moderation_user)) \
-            .filter(getattr(Entity_v, entity_id) == id_) \
-            .filter(User.moderator == True) \
+            .filter(
+                getattr(Entity_v, entity_id) == id_,
+                User.moderator == True
+            ) \
             .subquery()
 
         query = self.orm.query(Entity_v) \
@@ -1132,7 +1172,8 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
 
         if not self.moderator:
             query = query \
-                .filter(Entity_v.moderation_user_id==self.current_user.user_id)
+                .filter(Entity_v.moderation_user_id ==
+                        self.current_user.user_id)
         query = query \
             .filter(~exists().where(
                 entity_v_mod.c.a_time >= Entity_v.a_time
@@ -1151,12 +1192,8 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
         return entity_v
 
 
-    def _touch_entity(self,
-                      Entity, entity_id,
-                      entity_type,
-                      decline_v,
-                      id_,
-                  ):
+    def _touch_entity(self, Entity, entity_id,
+                      _entity_type, decline_v, id_,):
         """
         Moderators only already checked
         Return: entity or entity_v, exists
@@ -1171,7 +1208,7 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
             entity = None
 
         if entity:
-            entity.a_time = 0;
+            entity.a_time = 0
             entity.moderation_user = self.current_user
             return entity, True
 
@@ -1185,11 +1222,13 @@ class MangoBaseEntityHandlerMixin(RequestHandler):
             get_pending_parent_entity_id, decline_v):
 
         for row in get_pending_parent_entity_id(self.orm):
-            parent_id, parent_desc, parent_exists = row[:3]
-            entity_id, entity_desc_new, entity_exists, entity_desc_old, user_name = row[3:]
+            (parent_id, _parent_desc, _parent_exists) = row[:3]
+            (entity_id, _entity_desc_new, _entity_exists,
+             _entity_desc_old, _user_name) = row[3:]
             if parent_id == declined_parent_id:
                 MangoBaseEntityHandlerMixin._touch_entity(
-                    self, Entity, entity_id_attr, entity_type, decline_v, entity_id)
+                    self, Entity, entity_id_attr, entity_type,
+                    decline_v, entity_id)
 
 
 
@@ -1207,9 +1246,11 @@ class MangoEntityHandlerMixin(BaseHandler):
 
     def get_note_arguments(self):
         is_json = self.content_type("application/json")
-        note_search = self.get_argument("note_search", None, json=is_json)
-        note_order = self.get_argument_order("note_order", None, json=is_json)
-        note_offset = self.get_argument_int("note_offset", None, json=is_json)
+        note_search = self.get_argument("note_search", None, is_json=is_json)
+        note_order = self.get_argument_order(
+            "note_order", None, is_json=is_json)
+        note_offset = self.get_argument_int(
+            "note_offset", None, is_json=is_json)
         return note_search, note_order, note_offset
 
     @authenticated
@@ -1229,10 +1270,10 @@ class MangoEntityHandlerMixin(BaseHandler):
         if not self.moderator:
             raise HTTPError(405)
 
-        (entity_or_v, exists) = self._touch(entity_id)
+        (entity_or_v, exists_) = self._touch(entity_id)
         self.orm.commit()
 
-        if exists:
+        if exists_:
             return self.redirect_next(entity_or_v.url)
         else:
             return self.redirect_next("%s/revision" % entity_or_v.url)
@@ -1264,7 +1305,8 @@ class MangoEntityHandlerMixin(BaseHandler):
             if pre_entity:
                 if pre_entity.content_same(new_entity, public=False):
                     return self.redirect_next(new_entity.url)
-            elif old_entity and old_entity.content_same(new_entity, public=False):
+            elif old_entity and old_entity.content_same(
+                    new_entity, public=False):
                 return self.redirect_next(new_entity.url)
         self.orm.add(new_entity)
         self.orm_commit()
@@ -1302,7 +1344,7 @@ class MangoEntityListHandlerMixin(RequestHandler):
         self.orm_commit()
 
         self.orm.query(self.Entity_v) \
-            .filter(getattr(self.Entity_v, self.entity_id)==id_) \
+            .filter(getattr(self.Entity_v, self.entity_id) == id_) \
             .delete()
         self.orm_commit()
 

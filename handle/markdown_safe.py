@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 
 
 
-markdown_ = markdown.Markdown()
+MARKDOWN = markdown.Markdown()
 
 
 
@@ -56,7 +56,7 @@ def convert_links(text, quote="\""):
 
 
 def markdown_safe(text, autolink=False):
-    html = markdown_.convert(text)
+    html = MARKDOWN.convert(text)
     clean = bleach.clean(
         html,
         tags=[

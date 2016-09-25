@@ -40,21 +40,20 @@ serve-test :
 
 lint : lint-py lint-js
 
-lint-py :
+lint-py : lint-py-web lint-py-tools
+
+lint-py-web :
 	pylint --rcfile=test/pylintrc \
 	  --disable=duplicate-code \
-	  conf.py geo.py mango.py model.py model_v.py \
-	  handle/*.py \
-	  tools/*.py \
+	  conf.py geo.py model.py model_v.py \
+	  mango.py handle/*.py \
 	  skin/*/*.py
 
-lint-py-error :
-	pylint --rcfile=test/pylintrc -E\
+lint-py-tools :
+	pylint --rcfile=test/pylintrc \
 	  --disable=duplicate-code \
-	  conf.py geo.py mango.py model.py model_v.py \
-	  handle/*.py \
+	  conf.py geo.py model.py model_v.py \
 	  tools/*.py \
-	  skin/*/*.py
 
 lint-js :
 	jshint -c test/jshint.json \

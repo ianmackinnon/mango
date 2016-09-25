@@ -6,60 +6,70 @@ from sqlalchemy import and_
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import literal
-from sqlalchemy import Unicode
 from tornado.web import HTTPError
 
-import geo
-
-from base import BaseHandler, authenticated, \
-    HistoryEntity, \
-    MangoEntityHandlerMixin, \
-    MangoBaseEntityHandlerMixin
-
-from note import BaseNoteHandler
-
-from model import User, Address, Note, Org, Orgtag, Event, \
+from model import User, Address, Org, Event, \
     org_address, event_address, detach
 
 from model_v import Address_v, \
     accept_address_org_v, accept_address_event_v, \
-    org_address_v, event_address_v, \
     mango_entity_append_suggestion
 
-from handle.user import get_user_pending_address_event, get_user_pending_address_org
+from handle.base import BaseHandler, authenticated, \
+    HistoryEntity, \
+    MangoEntityHandlerMixin, \
+    MangoBaseEntityHandlerMixin
+
+from handle.note import BaseNoteHandler
+
+from handle.user import get_user_pending_address_event, \
+    get_user_pending_address_org
+
 
 
 
 class BaseAddressHandler(BaseHandler, MangoBaseEntityHandlerMixin):
     def _get_address(self, address_id, required=True):
-        return self._get_entity(Address, "address_id",
-                                "address",
-                                address_id,
-                                required,
-                                )
+        return self._get_entity(
+            Address,
+            "address_id",
+            "address",
+            address_id,
+            required,
+        )
 
     def _get_address_v(self, address_v_id):
-        return self._get_entity_v(Address, "address_id",
-                                  Address_v, "address_v_id",
-                                  "address",
-                                  address_v_id,
-                                  )
+        return self._get_entity_v(
+            Address,
+            "address_id",
+            Address_v,
+            "address_v_id",
+            "address",
+            address_v_id,
+        )
 
     def _touch_address(self, address_id):
-        return self._touch_entity(Address, "address_id",
-                                "address",
-                                  self._decline_address_v,
-                                address_id,
-                                )
+        return self._touch_entity(
+            Address,
+            "address_id",
+            "address",
+            self._decline_address_v,
+            address_id,
+        )
 
     def _create_address(self, id_=None, version=False):
+        # pylint: disable=redefined-variable-type
+        # Entity may be a previous version ("_v")
+
         is_json = self.content_type("application/json")
-        
-        postal = self.get_argument("postal", json=is_json)
-        source = self.get_argument("source", json=is_json)
-        lookup = self.get_argument("lookup", None, json=is_json)
-        manual_longitude = self.get_argument_float("manual_longitude", None, json=is_json)
-        manual_latitude = self.get_argument_float("manual_latitude", None, json=is_json)
+
+        postal = self.get_argument("postal", is_json=is_json)
+        source = self.get_argument("source", is_json=is_json)
+        lookup = self.get_argument("lookup", None, is_json=is_json)
+        manual_longitude = self.get_argument_float(
+            "manual_longitude", None, is_json=is_json)
+        manual_latitude = self.get_argument_float(
+            "manual_latitude", None, is_json=is_json)
 
         public, moderation_user = self._create_revision()
 
@@ -76,17 +86,17 @@ class BaseAddressHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                 lookup,
                 manual_longitude, manual_latitude,
                 moderation_user=moderation_user, public=public)
-            
+
             if id_:
                 address.address_id = id_
 
         detach(address)
-        
+
         return address
-    
+
     def _create_address_v(self, address_id):
         return self._create_address(address_id, version=True)
-    
+
     @staticmethod
     def _decline_address_v(address_id, moderation_user):
         address = Address_v(
@@ -96,7 +106,7 @@ class BaseAddressHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         address.existence = False
 
         detach(address)
-        
+
         return address
 
     def _address_history_query(self, address_id):
@@ -107,18 +117,21 @@ class BaseAddressHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
     def _get_address_history(self, address_id):
         address_v_query, address = self._address_history_query(address_id)
-        
+
         address_v_query = address_v_query \
             .order_by(Address_v.address_v_id.desc())
 
         return address_v_query.all(), address
 
     def _count_address_history(self, address_id):
-        address_v_query, address = self._address_history_query(address_id)
+        (address_v_query, _address) = self._address_history_query(address_id)
 
         return address_v_query.count()
 
     def _get_address_latest_a_time(self, id_):
+        # pylint: disable=singleton-comparison
+        # Cannot use `is` in SQLAlchemy filters
+
         address_v = self.orm.query(Address_v.a_time) \
             .join((User, Address_v.moderation_user)) \
             .filter(Address_v.address_id == id_) \
@@ -128,7 +141,8 @@ class BaseAddressHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
         return address_v and address_v.a_time or None
 
-    def _before_address_set(self, address):
+    @staticmethod
+    def _before_address_set(address):
         address.geocode()
 
     def _after_address_accept_new(self, address):
@@ -194,12 +208,12 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
 
         if address:
             if self.deep_visible():
-                org_list=address.org_list
-                event_list=address.event_list
+                org_list = address.org_list
+                event_list = address.event_list
             else:
-                org_list=address.org_list_public
-                event_list=address.event_list_public
-                
+                org_list = address.org_list_public
+                event_list = address.event_list_public
+
             note_list, note_count = address.note_list_filtered(
                 note_search=note_search,
                 note_order=note_order,
@@ -207,9 +221,9 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
                 all_visible=self.deep_visible()
                 )
         else:
-            org_list=[]
-            event_list=[]
-            note_list=[]
+            org_list = []
+            event_list = []
+            note_list = []
             note_count = 0
 
         if self.contributor:
@@ -241,10 +255,10 @@ class AddressHandler(BaseAddressHandler, MangoEntityHandlerMixin):
             note_count=note_count,
             )
 
-        version_url=None
+        version_url = None
 
         if self.current_user and self._count_address_history(address_id) > 1:
-            version_url="%s/revision" % address.url
+            version_url = "%s/revision" % address.url
 
         if self.accept_type("json"):
             self.write_json(obj)
@@ -308,8 +322,11 @@ class AddressRevisionListHandler(BaseAddressHandler):
         if not self.moderator:
             if len(history) == int(bool(address)):
                 raise HTTPError(404)
-        
-        version_current_url = (address and address.url) or (not self.moderator and history and history[-1].url)
+
+        version_current_url = (
+            (address and address.url) or
+            (not self.moderator and history and history[-1].url)
+        )
 
         self.render(
             'revision-history.html',
@@ -319,7 +336,7 @@ class AddressRevisionListHandler(BaseAddressHandler):
             title_text="Revision History",
             history=history,
             )
-        
+
 
 
 class AddressRevisionHandler(BaseAddressHandler):
@@ -331,7 +348,8 @@ class AddressRevisionHandler(BaseAddressHandler):
         try:
             address_v = query.one()
         except NoResultFound:
-            raise HTTPError(404, "%d:%d: No such address revision" % (address_id, address_v_id))
+            raise HTTPError(404, "%d:%d: No such address revision" % (
+                address_id, address_v_id))
 
         query = self.orm.query(Address) \
             .filter_by(address_id=address_id)
@@ -345,8 +363,9 @@ class AddressRevisionHandler(BaseAddressHandler):
 
     @authenticated
     def get(self, address_id, address_v_id):
-        address_v, address = self._get_address_revision(address_id, address_v_id)
-        
+        (address_v, address) = self._get_address_revision(
+            address_id, address_v_id)
+
         if not address_v.existence:
             raise HTTPError(404)
 
@@ -400,11 +419,14 @@ class AddressRevisionHandler(BaseAddressHandler):
             obj=obj,
             obj_v=obj_v,
             )
-        
+
 
 
 class AddressEntityListHandler(BaseHandler):
     def get(self):
+        # pylint: disable=singleton-comparison
+        # Cannot use `is` in SQLAlchemy filters
+
         key = "address:%s" % ["public", "all"][self.deep_visible()]
 
         value = self.cache.get(key)
@@ -416,10 +438,10 @@ class AddressEntityListHandler(BaseHandler):
             Address.address_id,
             func.coalesce(Address.latitude, Address.manual_latitude),
             func.coalesce(Address.longitude, Address.manual_longitude),
-            ).filter(func.coalesce(
-                Address.latitude, Address.manual_latitude,
-                Address.longitude, Address.manual_longitude
-                ) != None);
+        ).filter(func.coalesce(
+            Address.latitude, Address.manual_latitude,
+            Address.longitude, Address.manual_longitude
+        ) != None)
 
         org_list = address_list \
             .join((org_address,
@@ -437,16 +459,17 @@ class AddressEntityListHandler(BaseHandler):
         event_list = event_list.filter(Event.start_date >= today)
 
         if not (self.moderator and self.deep_visible()):
-            org_list = org_list.filter(Org.public==True)
-            event_list = event_list.filter(Event.public==True)
-        
+            org_list = org_list.filter(Org.public == True)
+            event_list = event_list.filter(Event.public == True)
+
         address_list = org_list.union(event_list)
 
         obj_list = []
         for result in address_list.all():
-            obj_list.append(dict(zip(
-                        ["address_id", "latitude", "longitude", "entity_id", "name", "entity"],
-                        result)))
+            obj_list.append(dict(zip([
+                "address_id", "latitude", "longitude",
+                "entity_id", "name", "entity"
+            ], result)))
 
         value = self.dump_json(obj_list)
         self.cache.set(key, value)
@@ -458,15 +481,15 @@ class AddressEntityListHandler(BaseHandler):
 class AddressLookupHandler(BaseAddressHandler):
     def get(self):
         is_json = self.content_type("application/json")
-        postal = self.get_argument("postal", json=is_json)
-        lookup = self.get_argument("lookup", None, json=is_json)
+        postal = self.get_argument("postal", is_json=is_json)
+        lookup = self.get_argument("lookup", None, is_json=is_json)
 
         address = Address(postal, None, lookup)
         address.geocode()
 
         self.write_json(address.obj(
-                public=self.moderator,
-                ))
+            public=self.moderator,
+        ))
 
 
 
@@ -531,18 +554,19 @@ class AddressNoteHandler(BaseAddressHandler, BaseNoteHandler):
 class ModerationAddressNotFoundHandler(BaseHandler):
     @authenticated
     def get(self):
+        # pylint: disable=singleton-comparison
+        # Cannot use `is` in SQLAlchemy filters
+
         if not self.moderator:
             raise HTTPError(404)
-
-        is_json = self.content_type("application/json")
 
         query = self.orm.query(Org, Address) \
                 .join(org_address) \
                 .join(Address) \
                 .filter(and_(
-                    Org.public==True,
-                    Address.public==True,
-                    Address.latitude==None,
+                    Org.public == True,
+                    Address.public == True,
+                    Address.latitude == None,
                 ))
 
         data = []
@@ -560,4 +584,3 @@ class ModerationAddressNotFoundHandler(BaseHandler):
             'moderation-address-not-found.html',
             data=data,
             )
-

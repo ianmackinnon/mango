@@ -1,64 +1,66 @@
 # -*- coding: utf-8 -*-
 
-import datetime
-
-from sqlalchemy import and_
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.sql import func
-from sqlalchemy.sql.expression import literal
-from sqlalchemy import Unicode
 from tornado.web import HTTPError
 
-from base import BaseHandler, authenticated, \
+from model import User, Medium, Contact, \
+    detach
+
+from model_v import Contact_v, \
+    accept_contact_org_v, accept_contact_event_v, \
+    mango_entity_append_suggestion
+
+from handle.base import BaseHandler, authenticated, \
     HistoryEntity, \
     MangoEntityHandlerMixin, \
     MangoBaseEntityHandlerMixin
 
-from model import User, Medium, Contact, Org, Event, \
-    org_contact, event_contact, detach
-
-from model_v import Contact_v, \
-    accept_contact_org_v, accept_contact_event_v, \
-    org_contact_v, event_contact_v, \
-    mango_entity_append_suggestion
-
-from handle.user import get_user_pending_contact_event, get_user_pending_contact_org
+from handle.user import get_user_pending_contact_event, \
+    get_user_pending_contact_org
 
 
 
 class BaseContactHandler(BaseHandler, MangoBaseEntityHandlerMixin):
     def _get_contact(self, contact_id, required=True):
-        return self._get_entity(Contact, "contact_id",
-                                "contact",
-                                contact_id,
-                                required,
-                                )
+        return self._get_entity(
+            Contact,
+            "contact_id",
+            "contact",
+            contact_id,
+            required,
+        )
 
     def _get_contact_v(self, contact_v_id):
-        return self._get_entity_v(Contact, "contact_id",
-                                  Contact_v, "contact_v_id",
-                                  "contact",
-                                  contact_v_id,
-                                  )
+        return self._get_entity_v(
+            Contact,
+            "contact_id",
+            Contact_v,
+            "contact_v_id",
+            "contact",
+            contact_v_id,
+        )
 
     def _touch_contact(self, contact_id):
-        return self._touch_entity(Contact, "contact_id",
-                                  "contact",
-                                  self._decline_contact_v,
-                                  contact_id,
-                              )
+        return self._touch_entity(
+            Contact,
+            "contact_id",
+            "contact",
+            self._decline_contact_v,
+            contact_id,
+        )
 
     def _create_contact(self, id_=None, version=False):
-        # pylint: disable=maybe-no-member
-        # (`self.get_argument` appears to return list)
+        # pylint: disable=maybe-no-member,redefined-variable-type
+        # `self.get_argument` appears to return list
+        # Entity may be a previous version ("_v")
 
         is_json = self.content_type("application/json")
-        
-        medium_name = self.get_argument("medium", json=is_json)
 
-        text = self.get_argument("text", json=is_json)
-        description = self.get_argument("description", None, json=is_json)
-        source = self.get_argument("source", None, json=is_json)
+        medium_name = self.get_argument("medium", is_json=is_json)
+
+        text = self.get_argument("text", is_json=is_json)
+        description = self.get_argument("description", None, is_json=is_json)
+        source = self.get_argument("source", None, is_json=is_json)
         public, moderation_user = self._create_revision()
 
         if medium_name == "Twitter" and text.startswith("@"):
@@ -82,18 +84,18 @@ class BaseContactHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                 medium,
                 text, description, source,
                 moderation_user=moderation_user, public=public)
-            
+
             if id_:
                 contact.contact_id = id_
 
         contact.medium_id = medium.medium_id
         detach(contact)
-        
+
         return contact
-    
+
     def _create_contact_v(self, contact_id):
         return self._create_contact(contact_id, version=True)
-    
+
     @staticmethod
     def _decline_contact_v(contact_id, moderation_user):
         contact = Contact_v(
@@ -104,7 +106,7 @@ class BaseContactHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         contact.existence = False
 
         detach(contact)
-        
+
         return contact
 
     def _contact_history_query(self, contact_id):
@@ -114,19 +116,22 @@ class BaseContactHandler(BaseHandler, MangoBaseEntityHandlerMixin):
             contact_id)
 
     def _get_contact_history(self, contact_id):
-        contact_v_query, contact = self._contact_history_query(contact_id)
-        
+        (contact_v_query, contact) = self._contact_history_query(contact_id)
+
         contact_v_query = contact_v_query \
             .order_by(Contact_v.contact_v_id.desc())
 
         return contact_v_query.all(), contact
 
     def _count_contact_history(self, contact_id):
-        contact_v_query, contact = self._contact_history_query(contact_id)
+        (contact_v_query, _contact) = self._contact_history_query(contact_id)
 
         return contact_v_query.count()
 
     def _get_contact_latest_a_time(self, id_):
+        # pylint: disable=singleton-comparison
+        # Cannot use `is` in SQLAlchemy filters
+
         contact_v = self.orm.query(Contact_v.a_time) \
             .join((User, Contact_v.moderation_user)) \
             .filter(Contact_v.contact_id == id_) \
@@ -206,14 +211,14 @@ class ContactHandler(BaseContactHandler, MangoEntityHandlerMixin):
 
         if contact:
             if self.deep_visible():
-                org_list=contact.org_list
-                event_list=contact.event_list
+                org_list = contact.org_list
+                event_list = contact.event_list
             else:
-                org_list=contact.org_list_public
-                event_list=contact.event_list_public
+                org_list = contact.org_list_public
+                event_list = contact.event_list_public
         else:
-            org_list=[]
-            event_list=[]
+            org_list = []
+            event_list = []
 
         if self.contributor:
             contact_id = contact and contact.contact_id or contact_v.contact_id
@@ -242,10 +247,10 @@ class ContactHandler(BaseContactHandler, MangoEntityHandlerMixin):
             event_list=event_list,
             )
 
-        version_url=None
+        version_url = None
 
         if self.current_user and self._count_contact_history(contact_id) > 1:
-            version_url="%s/revision" % contact.url
+            version_url = "%s/revision" % contact.url
 
         if self.accept_type("json"):
             self.write_json(obj)
@@ -306,8 +311,11 @@ class ContactRevisionListHandler(BaseContactHandler):
         if not self.moderator:
             if len(history) == int(bool(contact)):
                 raise HTTPError(404)
-        
-        version_current_url = (contact and contact.url) or (not self.moderator and history and history[-1].url)
+
+        version_current_url = (
+            (contact and contact.url) or
+            (not self.moderator and history and history[-1].url)
+        )
 
         self.render(
             'revision-history.html',
@@ -317,7 +325,7 @@ class ContactRevisionListHandler(BaseContactHandler):
             title_text="Revision History",
             history=history,
             )
-        
+
 
 
 class ContactRevisionHandler(BaseContactHandler):
@@ -329,7 +337,8 @@ class ContactRevisionHandler(BaseContactHandler):
         try:
             contact_v = query.one()
         except NoResultFound:
-            raise HTTPError(404, "%d:%d: No such contact revision" % (contact_id, contact_v_id))
+            raise HTTPError(404, "%d:%d: No such contact revision" % (
+                contact_id, contact_v_id))
 
         query = self.orm.query(Contact) \
             .filter_by(contact_id=contact_id)
@@ -343,8 +352,9 @@ class ContactRevisionHandler(BaseContactHandler):
 
     @authenticated
     def get(self, contact_id, contact_v_id):
-        contact_v, contact = self._get_contact_revision(contact_id, contact_v_id)
-        
+        (contact_v, contact) = self._get_contact_revision(
+            contact_id, contact_v_id)
+
         if not contact_v.existence:
             raise HTTPError(404)
 
@@ -402,6 +412,3 @@ class ContactRevisionHandler(BaseContactHandler):
             obj=obj,
             obj_v=obj_v,
             )
-        
-
-

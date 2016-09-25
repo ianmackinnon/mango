@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 
-from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
 from tornado.web import HTTPError
 
-from base import authenticated, \
-    MangoEntityHandlerMixin, MangoEntityListHandlerMixin
-from base_tag import BaseTagHandler
-from note import BaseNoteHandler
+from model import Org, Orgtag, org_orgtag
 
-from model import Org, Orgtag, Note, org_orgtag
+from handle.base import authenticated, \
+    MangoEntityHandlerMixin, MangoEntityListHandlerMixin
+from handle.base_tag import BaseTagHandler
+from handle.note import BaseNoteHandler
 
 
 
@@ -25,14 +24,14 @@ class BaseOrgtagHandler(BaseTagHandler):
     def _get_full_orgtag_list(self):
         orgtag_and_org_count_list = \
             self._get_orgtag_and_org_count_list_search(
-            visibility=self.parameters.get("visibility", None),
+                visibility=self.parameters.get("visibility", None),
             )
         orgtag_list = []
         for orgtag, org_count in orgtag_and_org_count_list:
             orgtag_list.append(orgtag.obj(
-                    public=self.moderator,
-                    org_len=org_count,
-                    ))
+                public=self.moderator,
+                org_len=org_count,
+            ))
         return orgtag_list
 
 
@@ -55,7 +54,7 @@ class OrgtagListHandler(BaseOrgtagHandler,
         return MangoEntityListHandlerMixin.post(self)
 
     def get(self):
-        (orgtag_list, name, name_short, base, base_short,
+        (orgtag_list, _name, _name_short, _base, _base_short,
          path, search, sort) = self._get_tag_search_args()
 
         if self.accept_type("json"):
@@ -114,7 +113,8 @@ class OrgtagHandler(BaseOrgtagHandler,
 
     def _before_delete(self, orgtag):
         if orgtag.org_list:
-            raise HTTPError(405, "Cannot delete tag because it has attached organisations.")
+            raise HTTPError(
+                405, "Cannot delete tag because it has attached organisations.")
 
     @authenticated
     def put(self, entity_id):
@@ -130,7 +130,8 @@ class OrgtagHandler(BaseOrgtagHandler,
         if not old_entity.content_same(new_entity):
             if old_entity.is_virtual is not None:
                 if old_entity.name != new_entity.name:
-                    raise HTTPError(404, "May not change the name of a virtual tag.")
+                    raise HTTPError(
+                        404, "May not change the name of a virtual tag.")
             old_entity.content_copy(new_entity, self.current_user)
             self.orm_commit()
 
@@ -147,8 +148,10 @@ class OrgtagHandler(BaseOrgtagHandler,
 
         org_list_query = self.orm.query(Org) \
             .join(org_orgtag) \
-            .filter(Org.org_id==org_orgtag.c.org_id) \
-            .filter(org_orgtag.c.orgtag_id==orgtag.orgtag_id)
+            .filter(
+                Org.org_id == org_orgtag.c.org_id,
+                org_orgtag.c.orgtag_id == orgtag.orgtag_id,
+            )
         org_list_query = self.filter_visibility(
             org_list_query,
             Org,
@@ -254,27 +257,32 @@ class OrgtagNoteHandler(BaseOrgtagHandler, BaseNoteHandler):
 
 class OrgtagActivityHandler(BaseOrgtagHandler):
     def get(self):
+        # pylint: disable=singleton-comparison
+        # Cannot use `is` in SQLAlchemy filters
+
         path_list = [u'activity', u'activity-exclusion']
 
         visibility = self.parameters.get("visibility", None)
 
         q1 = self.orm.query(org_orgtag.c.orgtag_id) \
-            .join(Org, org_orgtag.c.org_id==Org.org_id) \
+            .join(Org, org_orgtag.c.org_id == Org.org_id) \
             .add_columns(Org.org_id)
         q1 = self.filter_visibility(q1, Org, visibility=visibility)
         s1 = q1.subquery()
 
         q2 = self.orm.query(Orgtag) \
-             .outerjoin(s1, Orgtag.orgtag_id==s1.c.orgtag_id) \
+             .outerjoin(s1, Orgtag.orgtag_id == s1.c.orgtag_id) \
              .add_columns(func.count(s1.c.org_id).label("count"))
         q2 = self.filter_visibility(q2, Orgtag, visibility='all')
         q2 = q2 \
-            .filter(Orgtag.path_short.in_(path_list)) \
-            .filter(Orgtag.is_virtual==None) \
+            .filter(
+                Orgtag.path_short.in_(path_list),
+                Orgtag.is_virtual == None,
+            ) \
             .group_by(Orgtag.orgtag_id) \
             .order_by(Orgtag.path_short, Orgtag.name_short)
 
-        orgtag_list=[]
+        orgtag_list = []
         for orgtag, count in q2.all():
             obj = orgtag.obj(public=True)
             obj.update({

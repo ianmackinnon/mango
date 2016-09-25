@@ -5,12 +5,14 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from tornado.web import HTTPError
 
-from base import BaseHandler, MangoBaseEntityHandlerMixin
-from model import short_name, detach, url_directory
+from model import short_name, detach, URL_DIRECTORY
+
+from handle.base import BaseHandler, MangoBaseEntityHandlerMixin
 
 
 
 class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
+
     # Override:
     tag_id = None
     entity_id = None
@@ -20,15 +22,19 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
     # Override:
     def Tag(self, *args, **kwargs):
+        # pylint: disable=invalid-name
+        # Allow `Tag` as abstract class names
         raise NotImplementedError
 
     # Override:
     def Entity(self, *args, **kwargs):
+        # pylint: disable=invalid-name
+        # Allow `Entity` as abstract class names
         raise NotImplementedError
 
     def _get_tag(self, tag_id, options=None):
         query = self.orm.query(self.Tag)\
-            .filter(getattr(self.Tag, self.tag_id)==tag_id)
+            .filter(getattr(self.Tag, self.tag_id) == tag_id)
 
         if not self.moderator:
             query = query \
@@ -69,14 +75,14 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         # (`self.get_argument` appears to return list)
 
         is_json = self.content_type("application/json")
-        name = self.get_argument("name", json=is_json)
-        description = self.get_argument("description", None, json=is_json)
-        path = self.get_argument("path", None, json=is_json)
-        public = self.get_argument_public("public", json=is_json)
-        
+        name = self.get_argument("name", is_json=is_json)
+        description = self.get_argument("description", None, is_json=is_json)
+        path = self.get_argument("path", None, is_json=is_json)
+        public = self.get_argument_public("public", is_json=is_json)
+
         if name and path:
             name = u"%s | %s" % (path.strip(), name.strip())
-            
+
         return name, description, public
 
     def _get_path_list(self):
@@ -85,16 +91,20 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
             .group_by(self.Tag.path) \
             .order_by(func.count(getattr(self.Tag, self.tag_id)).desc()) \
             .all()
-        
+
         return [entry.path for entry in path_list]
-        
-    def _get_tag_entity_count_search(self, name=None, name_short=None, base=None, base_short=None, path=None, search=None, sort=None, visibility=None):
+
+    def _get_tag_entity_count_search(
+            self,
+            name=None, name_short=None, base=None, base_short=None,
+            path=None, search=None, sort=None, visibility=None):
 
         tag_list = self.orm.query(self.Tag)
         entity_q = self.orm.query(self.Entity)
 
         tag_list = self.filter_visibility(tag_list, self.Tag, visibility)
-        entity_q = self.filter_visibility(entity_q, self.Entity, visibility).subquery()
+        entity_q = self.filter_visibility(
+            entity_q, self.Entity, visibility).subquery()
 
         if name:
             tag_list = tag_list.filter_by(name=name)
@@ -121,8 +131,8 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
             tag_list = tag_list \
                 .filter(search_member.contains(search))
 
-        cross_tag_id = getattr(self.cross_table.c, self.tag_id) 
-        cross_entity_id = getattr(self.cross_table.c, self.entity_id) 
+        cross_tag_id = getattr(self.cross_table.c, self.tag_id)
+        cross_entity_id = getattr(self.cross_table.c, self.entity_id)
         entity_id = getattr(entity_q.c, self.entity_id)
 
         s = self.orm.query(
@@ -135,7 +145,8 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
         results = tag_list\
             .add_columns(s.c.count)\
-            .outerjoin((s, getattr(self.Tag, self.tag_id) == getattr(s.c, self.tag_id)))
+            .outerjoin((s, getattr(self.Tag, self.tag_id) ==
+                        getattr(s.c, self.tag_id)))
 
         if search:
             results = results\
@@ -143,7 +154,8 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
         if sort:
             sort_dict = {
-                "name": getattr(self.Tag, "name_short" if path else "base_short"),
+                "name": getattr(self.Tag,
+                                "name_short" if path else "base_short"),
                 "date": getattr(self.Tag, "a_time").desc(),
                 "freq": s.c.count.desc(),
                 }
@@ -154,20 +166,20 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         tag_and_org_count_list = results.all()
 
         return tag_and_org_count_list
-        
+
     def get_argument_sort(self, json=False):
         return self.get_argument_allowed(
             "sort", ("name", "date", "freq"), None, json)
 
     def _get_tag_search_args(self):
         is_json = self.content_type("application/json")
-        name = self.get_argument("name", None, json=is_json)
-        name_short = self.get_argument("name_short", None, json=is_json)
-        base = self.get_argument("short", None, json=is_json)
-        base_short = self.get_argument("base_short", None, json=is_json)
-        path = self.get_argument_bool("path", None, json=is_json)
-        search = self.get_argument("search", None, json=is_json)
-        sort = self.get_argument("sort", None, json=is_json)
+        name = self.get_argument("name", None, is_json=is_json)
+        name_short = self.get_argument("name_short", None, is_json=is_json)
+        base = self.get_argument("short", None, is_json=is_json)
+        base_short = self.get_argument("base_short", None, is_json=is_json)
+        path = self.get_argument_bool("path", None, is_json=is_json)
+        search = self.get_argument("search", None, is_json=is_json)
+        sort = self.get_argument("sort", None, is_json=is_json)
 
         entity_count_list = self._get_tag_entity_count_search(
             name=name,
@@ -180,7 +192,7 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
             visibility=self.parameters.get("visibility", None),
             )
 
-        entity_url = url_directory[self.entity_type]
+        entity_url = URL_DIRECTORY[self.entity_type]
 
         tag_list = []
         for tag, entity_count in entity_count_list:
@@ -192,4 +204,3 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
         return (tag_list, name, name_short, base, base_short,
                 path, search, sort)
-

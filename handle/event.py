@@ -3,25 +3,22 @@
 import json
 
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.sql.expression import exists, or_, and_
 from tornado.web import HTTPError
 
-from base import authenticated, sha1_concat, \
-    HistoryEntity, \
-    MangoEntityHandlerMixin, MangoEntityListHandlerMixin
-from base_event import BaseEventHandler
-from base_org import BaseOrgHandler
-from base_note import BaseNoteHandler
-from eventtag import BaseEventtagHandler
-from address import BaseAddressHandler
-from contact import BaseContactHandler
-
-from model import Event, Note, Address, Contact, \
-    Org, Eventtag, event_eventtag
+from model import Event, Note, Address, Contact, Eventtag
 
 from model_v import Event_v, Address_v, Contact_v, \
-    event_address_v, event_contact_v, \
     mango_entity_append_suggestion
+
+from handle.base import authenticated, sha1_concat, \
+    HistoryEntity, \
+    MangoEntityHandlerMixin, MangoEntityListHandlerMixin
+from handle.base_event import BaseEventHandler
+from handle.base_org import BaseOrgHandler
+from handle.base_note import BaseNoteHandler
+from handle.eventtag import BaseEventtagHandler
+from handle.address import BaseAddressHandler
+from handle.contact import BaseContactHandler
 
 from handle.user import \
     get_user_pending_event_address, \
@@ -49,35 +46,39 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
         return self._get_event
 
     @staticmethod
-    def _cache_key(name_search, past, tag_name_list, tag_all,page_view, visibility, moderator):
+    def _cache_key(name_search, past, tag_name_list, tag_all,
+                   page_view, visibility, moderator):
         if not visibility:
             visibility = "public"
         return sha1_concat(json.dumps({
-                "nameSearch": name_search,
-                "past": past,
-                "tag": tuple(set(tag_name_list)),
-                "tagAll": tag_all,
-                "visibility": visibility,
-                "moderator": moderator,
-                "pageView": page_view,
-                }))
-    
+            "nameSearch": name_search,
+            "past": past,
+            "tag": tuple(set(tag_name_list)),
+            "tagAll": tag_all,
+            "visibility": visibility,
+            "moderator": moderator,
+            "pageView": page_view,
+        }))
+
     def get(self):
+        # pylint: disable=redefined-variable-type
+        # Pylint thinks `page_view` is first defined as a list
+
         is_json = self.content_type("application/json")
 
         min_radius = 10
 
-        name = self.get_argument("name", None, json=is_json)
-        name_search = self.get_argument("nameSearch", None, json=is_json)
-        past = self.get_argument_bool("past", None, json=is_json)
-        tag_name_list = self.get_arguments_multi("tag", json=is_json)
-        tag_all = self.get_argument_bool("tagAll", None, json=is_json)
+        name = self.get_argument("name", None, is_json=is_json)
+        name_search = self.get_argument("nameSearch", None, is_json=is_json)
+        past = self.get_argument_bool("past", None, is_json=is_json)
+        tag_name_list = self.get_arguments_multi("tag", is_json=is_json)
+        tag_all = self.get_argument_bool("tagAll", None, is_json=is_json)
         location = self.get_argument_geobox(
-            "location", min_radius=min_radius, default=None, json=is_json)
-        offset = self.get_argument_int("offset", None, json=is_json)
+            "location", min_radius=min_radius, default=None, is_json=is_json)
+        offset = self.get_argument_int("offset", None, is_json=is_json)
         page_view = self.get_argument_allowed(
             "pageView", ["entity", "map", "marker"],
-            default="entity", json=is_json)
+            default="entity", is_json=is_json)
 
         if not self.accept_type("json"):
             if self.has_javascript:
@@ -91,7 +92,7 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
                     location=location and location.to_obj(),
                     offset=offset,
                     )
-                return;
+                return
             if page_view == "entity":
                 page_view = "map"
 
@@ -99,7 +100,7 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
         if 0 and self.accept_type("json") and not location and not offset:
             cache_key = self._cache_key(
                 name_search, past,
-                tag_name_list, 
+                tag_name_list,
                 tag_all,
                 page_view,
                 self.parameters.get("visibility", None),
@@ -107,7 +108,8 @@ class EventListHandler(BaseEventHandler, BaseEventtagHandler,
                 )
             value = self.cache.get(cache_key)
             if value:
-                self.set_header("Content-Type", "application/json; charset=UTF-8")
+                self.set_header(
+                    "Content-Type", "application/json; charset=UTF-8")
                 self.write(value)
                 self.finish()
                 return
@@ -220,28 +222,28 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
 
         if event:
             if self.deep_visible():
-                org_list=event.org_list
-                address_list=event.address_list
-                eventtag_list=event.eventtag_list
-                contact_list=event.contact_list
+                org_list = event.org_list
+                address_list = event.address_list
+                eventtag_list = event.eventtag_list
+                contact_list = event.contact_list
             else:
-                org_list=event.org_list_public
-                address_list=event.address_list_public
-                eventtag_list=event.eventtag_list_public
-                contact_list=event.contact_list_public
+                org_list = event.org_list_public
+                address_list = event.address_list_public
+                eventtag_list = event.eventtag_list_public
+                contact_list = event.contact_list_public
 
             note_list, note_count = event.note_list_filtered(
                 note_search=note_search,
                 note_order=note_order,
                 note_offset=note_offset,
                 all_visible=self.deep_visible(),
-                )
+            )
         else:
-            org_list=[]
-            address_list=[]
-            eventtag_list=[]
-            contact_list=[]
-            note_list=[]
+            org_list = []
+            address_list = []
+            eventtag_list = []
+            contact_list = []
+            note_list = []
             note_count = 0
 
         if self.contributor:
@@ -256,9 +258,11 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
 
         org_list = [org.obj(public=public) for org in org_list]
         address_list = [address.obj(public=public) for address in address_list]
-        eventtag_list = [eventtag.obj(public=public) for eventtag in eventtag_list]
+        eventtag_list = [eventtag.obj(public=public)
+                         for eventtag in eventtag_list]
         note_list = [note.obj(public=public) for note in note_list]
-        contact_list = [contact.obj(public=public, medium=contact.medium.name) for contact in contact_list]
+        contact_list = [contact.obj(public=public, medium=contact.medium.name)
+                        for contact in contact_list]
 
         edit_block = False
         if event_v:
@@ -277,9 +281,9 @@ class EventHandler(BaseEventHandler, MangoEntityHandlerMixin):
             contact_list=contact_list,
             )
 
-        version_url=None
+        version_url = None
         if self.current_user and self._count_event_history(event_id) > 1:
-            version_url="%s/revision" % event.url
+            version_url = "%s/revision" % event.url
 
         if self.accept_type("json"):
             self.write_json(obj)
@@ -339,8 +343,11 @@ class EventRevisionListHandler(BaseEventHandler):
         if not self.moderator:
             if len(history) == int(bool(event)):
                 raise HTTPError(404)
-        
-        version_current_url = (event and event.url) or (not self.moderator and history and history[-1].url)
+
+        version_current_url = (
+            (event and event.url) or
+            (not self.moderator and history and history[-1].url)
+        )
 
         self.load_map = True
         self.render(
@@ -351,7 +358,7 @@ class EventRevisionListHandler(BaseEventHandler):
             title_text="Revision History",
             history=history,
             )
-        
+
 
 
 class EventRevisionHandler(BaseEventHandler):
@@ -363,7 +370,8 @@ class EventRevisionHandler(BaseEventHandler):
         try:
             event_v = query.one()
         except NoResultFound:
-            raise HTTPError(404, "%d:%d: No such event revision" % (event_id, event_v_id))
+            raise HTTPError(
+                404, "%d:%d: No such event revision" % (event_id, event_v_id))
 
         query = self.orm.query(Event) \
             .filter_by(event_id=event_id)
@@ -436,7 +444,7 @@ class EventRevisionHandler(BaseEventHandler):
             obj=obj,
             obj_v=obj_v,
             )
-        
+
 
 
 class EventAddressListHandler(BaseEventHandler, BaseAddressHandler):
@@ -462,7 +470,7 @@ class EventAddressListHandler(BaseEventHandler, BaseAddressHandler):
             address=None,
             entity=obj,
             )
-        
+
     @authenticated
     def post(self, event_id):
         required = True
@@ -491,7 +499,7 @@ class EventAddressListHandler(BaseEventHandler, BaseAddressHandler):
         self.orm_commit()
 
         self.orm.query(Address_v) \
-            .filter(Address_v.address_id==id_) \
+            .filter(Address_v.address_id == id_) \
             .delete()
         self.orm_commit()
 
@@ -562,7 +570,7 @@ class EventContactListHandler(BaseEventHandler, BaseContactHandler):
             entity=obj,
             medium_list=self.medium_list,
             )
-        
+
     @authenticated
     def post(self, event_id):
         required = True
@@ -591,7 +599,7 @@ class EventContactListHandler(BaseEventHandler, BaseContactHandler):
         self.orm_commit()
 
         self.orm.query(Contact_v) \
-            .filter(Contact_v.contact_id==id_) \
+            .filter(Contact_v.contact_id == id_) \
             .delete()
         self.orm_commit()
 
@@ -703,7 +711,7 @@ class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
             raise HTTPError(404)
 
         is_json = self.content_type("application/json")
-        group = self.get_argument("group", None, json=is_json)
+        group = self.get_argument("group", None, is_json=is_json)
         tag_id_list = self.get_arguments_int("tag")
 
         event = self._get_event(event_id)
@@ -719,7 +727,10 @@ class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
             if tag.eventtag_id not in tag_id_list:
                 while tag in event.eventtag_list:
                     event.eventtag_list.remove(tag)
-            if tag.eventtag_id in tag_id_list and tag not in event.eventtag_list:
+            if (
+                    tag.eventtag_id in tag_id_list and
+                    tag not in event.eventtag_list
+            ):
                 event.eventtag_list.append(tag)
 
         if group_tag_query:
@@ -729,24 +740,28 @@ class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
 
     @authenticated
     def get(self, event_id):
+        # pylint: disable=singleton-comparison
+        # Cannot use `is` in SQLAlchemy filters
+
         if not self.moderator:
             raise HTTPError(404)
 
         is_json = self.content_type("application/json")
-        group = self.get_argument("group", None, json=is_json)
+        group = self.get_argument("group", None, is_json=is_json)
 
         # event...
 
         event = self._get_event(event_id)
 
         if self.deep_visible():
-            eventtag_list=event.eventtag_list
+            eventtag_list = event.eventtag_list
         else:
-            eventtag_list=event.eventtag_list_public
+            eventtag_list = event.eventtag_list_public
 
         public = self.moderator
 
-        eventtag_list = [eventtag.obj(public=public) for eventtag in eventtag_list]
+        eventtag_list = [eventtag.obj(public=public)
+                         for eventtag in eventtag_list]
 
         obj = event.obj(
             public=public,
@@ -755,7 +770,7 @@ class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
 
         # eventtag...
 
-        (eventtag_list, name, name_short, base, base_short,
+        (eventtag_list, _name, _name_short, _base, _base_short,
          path, search, sort) = self._get_tag_search_args()
 
         group_tag_list = []
@@ -766,7 +781,7 @@ class EventEventtagListHandler(BaseEventHandler, BaseEventtagHandler):
             group_tag_list = [eventtag.obj() for eventtag in group_tag_query]
 
         path_query = self.orm.query(Eventtag.path, Eventtag.path_short) \
-            .filter(Eventtag.path!=None) \
+            .filter(Eventtag.path != None) \
             .group_by(Eventtag.path_short)
         path_list = list(path_query)
 
@@ -823,7 +838,7 @@ class EventOrgListHandler(BaseEventHandler, BaseOrgHandler):
     def get(self, event_id):
         if not self.moderator:
             raise HTTPError(404)
-            
+
         is_json = self.content_type("application/json")
 
         # event...
@@ -831,10 +846,10 @@ class EventOrgListHandler(BaseEventHandler, BaseOrgHandler):
         event = self._get_event(event_id)
 
         if self.deep_visible():
-            org_list=event.org_list
+            org_list = event.org_list
         else:
-            org_list=event.org_list_public
-            
+            org_list = event.org_list_public
+
         public = self.moderator
 
         org_list = [org.obj(public=public) for org in org_list]
@@ -848,7 +863,7 @@ class EventOrgListHandler(BaseEventHandler, BaseOrgHandler):
 
         # org...
 
-        org_name_search = self.get_argument("search", None, json=is_json)
+        org_name_search = self.get_argument("search", None, is_json=is_json)
 
         org_alias_name_query = BaseOrgHandler._get_org_alias_search_query(
             self,
@@ -860,11 +875,11 @@ class EventOrgListHandler(BaseEventHandler, BaseOrgHandler):
         org_count = org_alias_name_query.count()
         for org, alias in org_alias_name_query[:20]:
             org_list.append(org.obj(
+                public=public,
+                alias=alias and alias.obj(
                     public=public,
-                    alias=alias and alias.obj(
-                        public=public,
-                        ),
-                    ))
+                ),
+            ))
 
         self.next_ = event.url
         self.render(
@@ -882,7 +897,7 @@ class EventOrgHandler(BaseEventHandler, BaseOrgHandler):
     def put(self, event_id, org_id):
         if not self.moderator:
             raise HTTPError(404)
-            
+
         event = self._get_event(event_id)
         org = self._get_org(org_id)
         if org not in event.org_list:
@@ -894,7 +909,7 @@ class EventOrgHandler(BaseEventHandler, BaseOrgHandler):
     def delete(self, event_id, org_id):
         if not self.moderator:
             raise HTTPError(404)
-            
+
         event = self._get_event(event_id)
         org = self._get_org(org_id)
         if org in event.org_list:
@@ -909,11 +924,11 @@ class EventDuplicateHandler(BaseEventHandler):
     def post(self, event_id):
         if not self.moderator:
             raise HTTPError(404)
-            
+
         event = self._get_event(event_id)
 
         is_json = self.content_type("application/json")
-        start_date = self.get_argument_date("start_date", json=is_json)
+        start_date = self.get_argument_date("start_date", is_json=is_json)
 
         end_date = start_date + (event.end_date - event.start_date)
 

@@ -11,19 +11,20 @@ import logging
 
 from optparse import OptionParser
 
-from sqlalchemy import create_engine, func
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from model import connection_url_app, attach_search
-from model import User, Org, Orgalias, Note, Address, Orgtag
+from model import User, Org
 
 
 
-log = logging.getLogger('find_similar')
+LOG = logging.getLogger('find_similar')
 
-setting_path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-csv_path = os.path.join(setting_path, "similar.csv")
-csv_path_tmp = os.path.join("/tmp", "similar.csv")
+SETTING_PATH = os.path.dirname(
+    os.path.abspath(inspect.getfile(inspect.currentframe())))
+CSV_PATH = os.path.join(SETTING_PATH, "similar.csv")
+CSV_PATH_TMP = os.path.join("/tmp", "similar.csv")
 
 
 
@@ -59,7 +60,7 @@ def write_csv(path, data):
             match = int(data[key])
             csv_file.write(u"%d, %d, %d\n" % (match, org_id_a, org_id_b))
     print "written", path
-                           
+
 
 
 def nearest(es, name, org_id, blacklist):
@@ -94,7 +95,7 @@ def nearest(es, name, org_id, blacklist):
     if blacklist:
         print "BLACKLIST", org_id, blacklist
     for result in results:
-        if not result["_source"]["org_id"] in blacklist:
+        if result["_source"]["org_id"] not in blacklist:
             return result
 
 
@@ -110,7 +111,7 @@ def ignore(similar, org_id):
 
 
 
-def main(orm, similar):
+def find_similar(orm, similar):
     user = orm.query(User).filter_by(user_id=-1).one()
     es = orm.get_bind().search
 
@@ -150,11 +151,14 @@ def main(orm, similar):
             if key in similar:
                 print "SIM", key, similar[key]
                 continue
-            print (u" %40s  %40s " % (hit["_orig"].org_id, hit["_source"]["org_id"])).encode("utf-8")
-            print (" %40s  %40s " % (hit["_orig"].public, hit["_source"]["public"])).encode("utf-8")
-            print (" %40s  %40s " % (hit["_orig"].name, hit["_source"]["name"])).encode("utf-8")
+            print (u" %40s  %40s " % (hit["_orig"].org_id,
+                                      hit["_source"]["org_id"])).encode("utf-8")
+            print (" %40s  %40s " % (hit["_orig"].public,
+                                     hit["_source"]["public"])).encode("utf-8")
+            print (" %40s  %40s " % (hit["_orig"].name,
+                                     hit["_source"]["name"])).encode("utf-8")
             for alias in hit["_source"]["alias"][1:]:
-                print " %40s  %40s " % ("", alias)               
+                print " %40s  %40s " % ("", alias)
             print
             print "Merge? (%.2f)" % hit["_score"]
             print
@@ -167,7 +171,9 @@ def main(orm, similar):
             print ">",
             value = raw_input()
             if value and value[0] in "lr":
-                org_b = orm.query(Org).filter(Org.org_id==hit["_source"]["org_id"]).one()
+                org_b = orm.query(Org) \
+                    .filter(Org.org_id == hit["_source"]["org_id"]) \
+                    .one()
                 public = "DEFAULT"
                 if len(value) > 1 and value[1] in "uei":
                     public = {"u": True, "e": None, "i": False}[value[1]]
@@ -182,32 +188,33 @@ def main(orm, similar):
                 orm.commit()
                 key = org_key(hit["_orig"].org_id, hit["_source"]["org_id"])
                 similar[key] = True
-                write_csv(csv_path, similar)
+                write_csv(CSV_PATH, similar)
             else:
                 key = org_key(hit["_orig"].org_id, hit["_source"]["org_id"])
                 similar[key] = False
-                write_csv(csv_path, similar)
-            
-    
+                write_csv(CSV_PATH, similar)
 
 
-if __name__ == "__main__":
-    log.addHandler(logging.StreamHandler())
+
+
+def main():
+    LOG.addHandler(logging.StreamHandler())
 
     usage = """%prog"""
 
     parser = OptionParser(usage=usage)
-    parser.add_option("-v", "--verbose", action="count", dest="verbose",
-                      help="Print verbose information for debugging.", default=0)
-    parser.add_option("-q", "--quiet", action="count", dest="quiet",
-                      help="Suppress warnings.", default=0)
+    parser.add_option("-v", "--verbose", dest="verbose",
+                      action="count", default=0,
+                      help="Print verbose information for debugging.")
+    parser.add_option("-q", "--quiet", dest="quiet",
+                      action="count", default=0,
+                      help="Suppress warnings.")
 
     (options, args) = parser.parse_args()
 
-    verbosity = max(0, min(3, 1 + options.verbose - options.quiet))
-    log.setLevel(
-        (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[verbosity]
-        )
+    level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG)[
+        max(0, min(3, 1 + options.verbose - options.quiet))]
+    LOG.setLevel(level)
 
     if args:
         parser.print_usage()
@@ -215,10 +222,14 @@ if __name__ == "__main__":
 
     connection_url = connection_url_app()
     engine = create_engine(connection_url,)
-    Session = sessionmaker(bind=engine, autocommit=False)
-    orm = Session()
+    session_ = sessionmaker(bind=engine, autocommit=False)
+    orm = session_()
     attach_search(engine, orm)
 
-    similar = read_csv(csv_path)
+    similar = read_csv(CSV_PATH)
 
-    main(orm, similar)
+    find_similar(orm, similar)
+
+
+if __name__ == "__main__":
+    main()

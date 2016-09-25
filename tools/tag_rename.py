@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# pylint: disable=invalid-name
+# Using `Tag` for tag class type
+
 import sys
 
 sys.path.append(".")
@@ -16,9 +19,9 @@ from model import Orgtag, Eventtag
 
 
 
-log = logging.getLogger('tag_rename')
+LOG = logging.getLogger('tag_rename')
 
-type_list = {
+TYPE_LIST = {
     "org": Orgtag,
     "event": Eventtag,
     }
@@ -41,37 +44,41 @@ def tag_rename(orm, Tag, before, after):
 
 
 
-if __name__ == "__main__":
-    log.addHandler(logging.StreamHandler())
+def main():
+    LOG.addHandler(logging.StreamHandler())
 
     usage = """%%prog TAGTYPE BEFORE AFTER
 
 TAGTYPE:   %s
 Bulk rename tag paths.
-""" % (", ".join(type_list.keys()))
+""" % (", ".join(TYPE_LIST.keys()))
 
     parser = OptionParser(usage=usage)
-    parser.add_option("-v", "--verbose", action="count", dest="verbose",
-                      help="Print verbose information for debugging.", default=0)
-    parser.add_option("-q", "--quiet", action="count", dest="quiet",
-                      help="Suppress warnings.", default=0)
+    parser.add_option("-v", "--verbose", dest="verbose",
+                      action="count", default=0,
+                      help="Print verbose information for debugging.")
+    parser.add_option("-q", "--quiet", dest="quiet",
+                      action="count", default=0,
+                      help="Suppress warnings.")
     parser.add_option("-n", "--dry-run", action="store_true", dest="dry_run",
                       help="Dry run.", default=None)
 
     (options, args) = parser.parse_args()
     args = [arg.decode(sys.getfilesystemencoding()) for arg in args]
 
-    verbosity = max(0, min(3, 1 + options.verbose - options.quiet))
+    level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG)[
+        max(0, min(3, 1 + options.verbose - options.quiet))]
+    LOG.setLevel(level)
 
-    if not len(args) == 3:
+    if len(args) != 3:
         parser.print_usage()
         sys.exit(1)
 
     tag_type, before, after = args
-    
+
     try:
-        Tag = type_list.get(tag_type)
-    except IndexError as e:
+        Tag = TYPE_LIST.get(tag_type)
+    except IndexError:
         raise OptionError
 
     connection_url = connection_url_app()
@@ -84,3 +91,6 @@ Bulk rename tag paths.
     if not options.dry_run:
         orm.commit()
 
+
+if __name__ == "__main__":
+    main()

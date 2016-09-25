@@ -12,11 +12,23 @@ from model_v import Org_v, Event_v, Address_v, Contact_v, \
 
 
 def get_pending_entity_id(orm, Entity_v, Entity, desc_attr):
-    latest = orm.query(Entity_v.entity_id.label("entity_id"), getattr(Entity_v, desc_attr).label("desc"), Entity_v.moderation_user_id) \
+    # pylint: disable=invalid-name,singleton-comparison
+    # Allow `Entity_v` and `Entity` as abstract class names.
+    # Cannot use `is` in SQLAlchemy filters
+
+    latest = orm.query(
+        Entity_v.entity_id.label("entity_id"),
+        getattr(Entity_v, desc_attr).label("desc"),
+        Entity_v.moderation_user_id
+    ) \
         .order_by(Entity_v.entity_v_id.desc()) \
         .subquery()
 
-    latest = orm.query(latest.c.entity_id, latest.c.desc, latest.c.moderation_user_id) \
+    latest = orm.query(
+        latest.c.entity_id,
+        latest.c.desc,
+        latest.c.moderation_user_id
+    ) \
         .group_by(latest.c.entity_id) \
         .subquery()
 
@@ -59,7 +71,12 @@ def get_pending_contact_id(orm):
 
 def has_pending(orm):
     count = 0
-    for f in [get_pending_org_id, get_pending_event_id, get_pending_address_id, get_pending_contact_id]:
+    for f in [
+            get_pending_org_id,
+            get_pending_event_id,
+            get_pending_address_id,
+            get_pending_contact_id
+    ]:
         pending = f(orm)
         count += len(pending)
     return count
@@ -67,13 +84,16 @@ def has_pending(orm):
 
 
 def has_address_not_found(orm):
+    # pylint: disable=singleton-comparison
+    # Cannot use `is` in SQLAlchemy filters
+
     return orm.query(Org, Address) \
         .join(org_address) \
         .join(Address) \
         .filter(and_(
-            Org.public==True,
-            Address.public==True,
-            Address.latitude==None,
+            Org.public == True,
+            Address.public == True,
+            Address.latitude == None,
         )) \
         .count()
 
@@ -89,11 +109,14 @@ def dict_by_first(list_):
 
 def get_pending_parent_entity_id(
         orm,
-        get_pending_entity_id,
+        get_pending_entity_id_,
         parent_entity_v,
-        Parent, parent_id, parent_desc, entity_id, 
+        Parent, parent_id, parent_desc, entity_id,
 ):
-    entity_id_list = dict_by_first(get_pending_entity_id(orm))
+    # pylint: disable=invalid-name
+    # Allow abstract `Parent`.
+
+    entity_id_list = dict_by_first(get_pending_entity_id_(orm))
 
     if not entity_id_list:
         return []
@@ -102,23 +125,29 @@ def get_pending_parent_entity_id(
         getattr(parent_entity_v.c, parent_id),
         getattr(parent_entity_v.c, entity_id)
     ) \
-        .outerjoin(Parent, getattr(Parent, parent_id) == getattr(parent_entity_v.c, parent_id)) \
+        .outerjoin(Parent, getattr(Parent, parent_id) ==
+                   getattr(parent_entity_v.c, parent_id)) \
         .add_columns(
             getattr(Parent, parent_id),
             getattr(Parent, parent_desc)
         ) \
-        .filter(getattr(parent_entity_v.c, entity_id).in_(entity_id_list.keys())) \
+        .filter(
+            getattr(parent_entity_v.c, entity_id).in_(entity_id_list.keys())
+        ) \
         .distinct()
 
     results = []
-    for j, (parent_id, entity_id, parent_exists, parent_desc) in enumerate(query.all()):
-        entity_id, entity_desc_new, entity_exists, entity_desc_old, user_name = entity_id_list.pop(entity_id)
+    for _j, (parent_id, entity_id,
+             parent_exists, parent_desc) in enumerate(query.all()):
+        (entity_id, entity_desc_new, entity_exists,
+         entity_desc_old, user_name) = entity_id_list.pop(entity_id)
         results.append((
             parent_id, parent_desc, bool(parent_exists),
-            entity_id, entity_desc_new, entity_exists, entity_desc_old, user_name
+            entity_id, entity_desc_new, entity_exists,
+            entity_desc_old, user_name
         ))
 
-    for key, value in entity_id_list.items():
+    for _key, _value in entity_id_list.items():
         # Parent doesn't exist, or isn't of type 'parent'
         pass
 
@@ -157,9 +186,3 @@ def get_pending_event_contact_id(orm):
         event_contact_v,
         Event, "event_id", "name", "contact_id",
     )
-
-
-
-
-
-

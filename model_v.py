@@ -1,19 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# pylint: disable=no-value-for-parameter
-
+# pylint: disable=invalid-name,no-value-for-parameter
+# Allow using lambdas for MySQL global column types
+# and lowercase association table names for SQLAlchemy declarative
+# Allow calling `insert` on association tables without argument `dml`.
 
 from sqlalchemy import Column, Table
 from sqlalchemy import and_
-from sqlalchemy import ForeignKey, ForeignKeyConstraint, UniqueConstraint, CheckConstraint, PrimaryKeyConstraint
+from sqlalchemy import ForeignKey, CheckConstraint
 
-from sqlalchemy import Boolean, Integer, Float as FloatOrig, Numeric, Date, Time
+from sqlalchemy import Boolean, Integer, Float as FloatOrig, Date, Time
 from sqlalchemy import Unicode as UnicodeOrig, String as StringOrig
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.mysql import LONGTEXT, DOUBLE
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.sql.expression import exists
 
 import geo
 
@@ -26,27 +27,31 @@ from model import Base, User, Medium, MangoEntity, \
 
 from model import sanitise_name, sanitise_address
 
-Float = lambda : FloatOrig
-String = lambda : StringOrig
-Unicode = lambda : UnicodeOrig
+Float = lambda: FloatOrig
+String = lambda: StringOrig
+Unicode = lambda: UnicodeOrig
 
 def use_mysql():
     global Float, String, Unicode
-    Float = lambda : DOUBLE()
-    String = lambda : LONGTEXT(charset="latin1", collation="latin1_swedish_ci")
-    Unicode = lambda : LONGTEXT(charset="utf8", collation="utf8_general_ci")
+    Float = DOUBLE
+    String = lambda: LONGTEXT(charset="latin1", collation="latin1_swedish_ci")
+    Unicode = lambda: LONGTEXT(charset="utf8", collation="utf8_general_ci")
 
 
 
-def mango_entity_append_suggestion(orm, source_list, get_pending, user, source_id, target_id_name):
+def mango_entity_append_suggestion(
+        orm, source_list, get_pending, user, source_id, target_id_name):
     for entity_v in get_pending(orm, user, source_id):
         for i, entity in enumerate(source_list):
-            if getattr(entity, target_id_name) == getattr(entity_v, target_id_name):
+            if (
+                    getattr(entity, target_id_name) ==
+                    getattr(entity_v, target_id_name)
+            ):
                 source_list[i] = entity_v
                 break
         else:
             source_list.append(entity_v)
-    
+
 
 
 
@@ -95,7 +100,7 @@ def get_history(session, user_id=None, limit=20, offset=None):
     if limit is None:
         limit = 20
 
-    if (user_id):
+    if user_id:
         user_sql_1 = ""
         user_sql_2 = """
 where user.user_id = %d
@@ -103,9 +108,9 @@ where user.user_id = %d
     else:
         user_sql_1 = """
 , user_id, user.name as user_name, auth.gravatar_hash
-""" 
+"""
         user_sql_2 = ""
-        
+
     core_sql = u"""
 from
   (
@@ -199,19 +204,19 @@ from
     left outer join note using (note_id)
     left outer join org_note on (note.note_id = org_note.note_id)
     left outer join org on (org_note.org_id = org.org_id)
-  ) as T 
+  ) as T
 left outer join user on (moderation_user_id = user_id)
 left outer join auth using (auth_id)
 %s
 """ % (
-        user_sql_2,
-        )
+    user_sql_2,
+)
 
     count_sql = """select count(*)
 %s
 """ % (
-        core_sql,
-    )
+    core_sql,
+)
 
     data_sql = u"""
 select
@@ -225,16 +230,16 @@ select
   parent_name,
   a_time as date,
   T.name%s
-  %s  
+  %s
 order by a_time desc
 limit %d
 offset %d
 """ % (
-        user_sql_1,
-        core_sql,
-        limit,
-        offset
-        )
+    user_sql_1,
+    core_sql,
+    limit,
+    offset
+)
 
     for row in session.connection().execute(count_sql):
         count = row[0]
@@ -259,6 +264,9 @@ offset %d
 
 
 def accept_address_org_v(orm, address_id):
+    # pylint: disable=singleton-comparison
+    # Cannot use `is` in SQLAlchemy filters
+
     # Need to clarify the return status of this function
 
     query = orm.query(org_address_v.c.org_id) \
@@ -270,7 +278,7 @@ def accept_address_org_v(orm, address_id):
         .limit(1)
     try:
         (org_id, ) = query.one()
-    except NoResultFound as e:
+    except NoResultFound:
         return False
 
     query = orm.query(org_address) \
@@ -288,17 +296,20 @@ def accept_address_org_v(orm, address_id):
         return True
 
     items = [{
-            "address_id": address_id,
-            "org_id": org_id,
-            "a_time": 0,
-            }]
+        "address_id": address_id,
+        "org_id": org_id,
+        "a_time": 0,
+    }]
     orm.connection().engine.execute(org_address.insert(), *items)
     orm.commit()
     return True
-        
+
 
 
 def accept_address_event_v(orm, address_id):
+    # pylint: disable=singleton-comparison
+    # Cannot use `is` in SQLAlchemy filters
+
     query = orm.query(event_address_v.c.event_id) \
         .filter(and_(
             event_address_v.c.address_id == address_id,
@@ -308,7 +319,7 @@ def accept_address_event_v(orm, address_id):
         .limit(1)
     try:
         (event_id, ) = query.one()
-    except NoResultFound as e:
+    except NoResultFound:
         return False
 
     query = orm.query(event_address) \
@@ -326,18 +337,19 @@ def accept_address_event_v(orm, address_id):
         return True
 
     items = [{
-            "address_id": address_id,
-            "event_id": event_id,
-            "a_time": 0,
-            }]
+        "address_id": address_id,
+        "event_id": event_id,
+        "a_time": 0,
+    }]
     orm.connection().execute(event_address.insert(), *items)
     orm.commit()
     return True
-        
+
 def accept_org_address_v(orm, org_id):
     """
     Take an org ID of a newly accepted (already committed) org.
-    Find matching org_address_v (they can only be in the future from the same non-mod as the org).
+    Find matching org_address_v (they can only be in the future
+    from the same non-mod as the org).
     If the addresses already exist, create new org_address rows to link them.
     """
     org = orm.query(Org).filter_by(org_id=org_id).first()
@@ -360,7 +372,8 @@ def accept_org_address_v(orm, org_id):
 def accept_event_address_v(orm, event_id):
     """
     Take an event ID of a newly accepted (already committed) event.
-    Find matching event_address_v (they can only be in the future from the same non-mod as the event).
+    Find matching event_address_v (they can only be in the future
+    from the same non-mod as the event).
     If the addresses already exist, create new event_address rows to link them.
     """
     event = orm.query(Event).filter_by(event_id=event_id).first()
@@ -383,6 +396,8 @@ def accept_event_address_v(orm, event_id):
 
 
 def accept_contact_org_v(orm, contact_id):
+    # pylint: disable=singleton-comparison
+    # Cannot use `is` in SQLAlchemy filters
     query = orm.query(org_contact_v.c.org_id) \
         .filter(and_(
             org_contact_v.c.contact_id == contact_id,
@@ -392,9 +407,9 @@ def accept_contact_org_v(orm, contact_id):
         .limit(1)
     try:
         (org_id, ) = query.one()
-    except NoResultFound as e:
+    except NoResultFound:
         return False
-    
+
     query = orm.query(org_contact) \
         .filter(and_(
             org_contact.c.contact_id == contact_id,
@@ -410,17 +425,20 @@ def accept_contact_org_v(orm, contact_id):
         return True
 
     items = [{
-            "contact_id": contact_id,
-            "org_id": org_id,
-            "a_time": 0,
-            }]
+        "contact_id": contact_id,
+        "org_id": org_id,
+        "a_time": 0,
+    }]
     orm.connection().execute(org_contact.insert(), *items)
     orm.commit()
     return True
-        
+
 
 
 def accept_contact_event_v(orm, contact_id):
+    # pylint: disable=singleton-comparison
+    # Cannot use `is` in SQLAlchemy filters
+
     query = orm.query(event_contact_v.c.event_id) \
         .filter(and_(
             event_contact_v.c.contact_id == contact_id,
@@ -430,7 +448,7 @@ def accept_contact_event_v(orm, contact_id):
         .limit(1)
     try:
         (event_id, ) = query.one()
-    except NoResultFound as e:
+    except NoResultFound:
         return False
 
     query = orm.query(event_contact) \
@@ -448,18 +466,19 @@ def accept_contact_event_v(orm, contact_id):
         return True
 
     items = [{
-            "contact_id": contact_id,
-            "event_id": event_id,
-            "a_time": 0,
-            }]
+        "contact_id": contact_id,
+        "event_id": event_id,
+        "a_time": 0,
+    }]
     orm.connection().execute(event_contact.insert(), *items)
     orm.commit()
     return True
-        
+
 def accept_org_contact_v(orm, org_id):
     """
     Take an org ID of a newly accepted (already committed) org.
-    Find matching org_contact_v (they can only be in the future from the same non-mod as the org).
+    Find matching org_contact_v (they can only be in the future
+    from the same non-mod as the org).
     If the contactes already exist, create new org_contact rows to link them.
     """
     org = orm.query(Org).filter_by(org_id=org_id).first()
@@ -482,7 +501,8 @@ def accept_org_contact_v(orm, org_id):
 def accept_event_contact_v(orm, event_id):
     """
     Take an event ID of a newly accepted (already committed) event.
-    Find matching event_contact_v (they can only be in the future from the same non-mod as the event).
+    Find matching event_contact_v (they can only be in the future
+    from the same non-mod as the event).
     If the contactes already exist, create new event_contact rows to link them.
     """
     event = orm.query(Event).filter_by(event_id=event_id).first()
@@ -538,16 +558,17 @@ class Org_v(Base, MangoEntity):
     @classmethod
     def entity_v_id(cls):
         return cls.org_v_id
-    
+
     def __init__(self,
                  org_id,
                  name, description=None, end_date=None,
                  moderation_user=None, public=None):
+        super(Org_v, self).__init__()
 
-        #
+        # Start setting version variables
         self.org_id = org_id
         self.existence = True
-        #
+        # End setting version variables
 
         self.name = sanitise_name(name)
 
@@ -557,7 +578,9 @@ class Org_v(Base, MangoEntity):
         self.moderation_user = moderation_user
         self.a_time = 0
         self.public = public
-        
+
+
+
 class Orgalias_v(Base):
     __tablename__ = 'orgalias_v'
 
@@ -567,7 +590,7 @@ class Orgalias_v(Base):
     orgalias_id = Column(Integer, nullable=False)
 
     org_id = Column(Integer, nullable=False)
-    
+
     name = Column(Unicode(), nullable=False)
 
     moderation_user_id = Column(Integer, ForeignKey(User.user_id))
@@ -610,10 +633,11 @@ class Event_v(Base, MangoEntity):
 
     name = Column(Unicode(), nullable=False)
     start_date = Column(Date, nullable=False)
-    end_date = Column(Date,
-                      CheckConstraint("end_date >= start_date"),
-                      nullable=False,
-                      )
+    end_date = Column(
+        Date,
+        CheckConstraint("end_date >= start_date"),
+        nullable=False,
+    )
     description = Column(Unicode())
     start_time = Column(Time)
     end_time = Column(Time)
@@ -642,17 +666,18 @@ class Event_v(Base, MangoEntity):
     @classmethod
     def entity_v_id(cls):
         return cls.event_v_id
-    
+
     def __init__(self,
                  event_id,
                  name, start_date, end_date,
                  description=None, start_time=None, end_time=None,
                  moderation_user=None, public=None):
+        super(Event_v, self).__init__()
 
-        #
+        # Start setting version variables
         self.event_id = event_id
         self.existence = True
-        #
+        # End setting version variables
 
         self.name = sanitise_name(name)
         self.start_date = start_date
@@ -665,7 +690,7 @@ class Event_v(Base, MangoEntity):
         self.moderation_user = moderation_user
         self.a_time = 0
         self.public = public
-        
+
 
 
 class Eventtag_v(Base):
@@ -733,7 +758,7 @@ class Address_v(Base, MangoEntity):
     @classmethod
     def entity_v_id(cls):
         return cls.address_v_id
-    
+
     def __init__(self,
                  address_id,
                  postal, source,
@@ -741,11 +766,12 @@ class Address_v(Base, MangoEntity):
                  manual_longitude=None, manual_latitude=None,
                  longitude=None, latitude=None,
                  moderation_user=None, public=None):
+        super(Address_v, self).__init__()
 
-        #
+        # Start setting version variables
         self.address_id = address_id
         self.existence = True
-        #
+        # End setting version variables
 
         self.postal = sanitise_address(postal)
         self.source = source
@@ -758,13 +784,16 @@ class Address_v(Base, MangoEntity):
         self.moderation_user = moderation_user
         self.a_time = 0
         self.public = public
-        
+
     def geocode(self):
-        if self.manual_longitude is not None and self.manual_latitude is not None:
+        if (
+                self.manual_longitude is not None and
+                self.manual_latitude is not None
+        ):
             self.longitude = self.manual_longitude
             self.latitude = self.manual_latitude
             return
-        
+
         if self.lookup:
             coords = geo.coords(self.lookup)
             if coords:
@@ -810,16 +839,17 @@ class Note_v(Base, MangoEntity):
     @classmethod
     def entity_v_id(cls):
         return cls.note_v_id
-    
+
     def __init__(self,
                  note_id,
                  text, source,
                  moderation_user=None, public=None):
+        super(Note_v, self).__init__()
 
-        #
+        # Start setting version variables
         self.note_id = note_id
         self.existence = True
-        #
+        # End setting version variables
 
         self.text = text
         self.source = source
@@ -827,7 +857,8 @@ class Note_v(Base, MangoEntity):
         self.moderation_user = moderation_user
         self.a_time = 0
         self.public = public
-        
+
+
 
 class Contact_v(Base, MangoEntity):
     __tablename__ = 'contact_v'
@@ -866,17 +897,18 @@ class Contact_v(Base, MangoEntity):
     @classmethod
     def entity_v_id(cls):
         return cls.contact_v_id
-    
+
     def __init__(self,
                  contact_id,
                  medium,
                  text, description=None, source=None,
                  moderation_user=None, public=None):
+        super(Contact_v, self).__init__()
 
-        #
+        # Start setting version variables
         self.contact_id = contact_id
         self.existence = True
-        #
+        # End setting version variables
 
         if medium:
             self.medium = medium
@@ -890,7 +922,3 @@ class Contact_v(Base, MangoEntity):
         self.moderation_user = moderation_user
         self.a_time = 0
         self.public = public
-        
-
-
-

@@ -4,7 +4,6 @@
 import sys
 sys.path.append(".")
 
-import time
 import json
 import codecs
 import logging
@@ -13,19 +12,16 @@ from optparse import OptionParser
 import Levenshtein
 
 from sqlalchemy import create_engine, func
-from sqlalchemy.orm import sessionmaker, object_session
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
-from sqlalchemy.orm.util import has_identity
-
-import geo
 
 from model import connection_url_app, attach_search, sanitise_name
 from model import User, Org, Orgalias, Note, Address, Orgtag, Contact, Medium
 
 
 
-log = logging.getLogger('insert_organisation')
-log_search = logging.getLogger('search')
+LOG = logging.getLogger('insert_organisation')
+LOG_SEARCH = logging.getLogger('search')
 
 
 
@@ -44,12 +40,12 @@ def text_to_ngrams(text, size=5):
 def get_names(orm):
     names = {}
     for org in orm.query(Org).all():
-        if not org.org_id in names:
+        if org.org_id not in names:
             names[org.org_id] = []
         names[org.org_id].append(org.name)
     for orgalias in orm.query(Orgalias).all():
         org_id = orgalias.org.org_id
-        if not org_id in names:
+        if org_id not in names:
             names[org_id] = []
         names[org_id].append(orgalias.name)
     return names
@@ -58,7 +54,9 @@ def get_names(orm):
 
 def select_from_list(matches):
     for m, (name, alias) in enumerate(matches):
-        print (u"  %4d  %s  %s" % (m, name, (alias and ("[%s]" % alias) or ""))).encode("utf-8")
+        print (
+            u"  %4d  %s  %s" % (m, name, (alias and ("[%s]" % alias) or ""))
+        ).encode("utf-8")
     print
     print "Choose name or non-numeric to exit: ",
 
@@ -66,12 +64,12 @@ def select_from_list(matches):
 
     try:
         choice = int(choice)
-    except ValueError as e:
-        log.warning("Could not convert %s to integer." % choice)
+    except ValueError:
+        LOG.warning("Could not convert %s to integer.", choice)
         return None
 
     if choice >= len(matches) or choice < 0:
-        log.error("%d is out of range." % choice)
+        LOG.error("%d is out of range.", choice)
         return None
 
     return matches[choice][0]
@@ -81,8 +79,16 @@ def select_from_list(matches):
 def closest_names(name, names, orm):
     matches = set()
 
-    lower = orm.query(Org.name).filter(Org.name > name).order_by(Org.name.asc()).limit(3).all()
-    higher = orm.query(Org.name).filter(Org.name < name).order_by(Org.name.desc()).limit(3).all()
+    lower = orm.query(Org.name) \
+        .filter(Org.name > name) \
+        .order_by(Org.name.asc()) \
+        .limit(3) \
+        .all()
+    higher = orm.query(Org.name) \
+        .filter(Org.name < name) \
+        .order_by(Org.name.desc()) \
+        .limit(3) \
+        .all()
 
     for (name2, ) in lower + higher:
         matches.add((name2, None))
@@ -109,22 +115,26 @@ def closest_names(name, names, orm):
 def get_org(orm, name):
     name = name.lower()
 
-    query = orm.query(Org).filter(func.lower(Org.name)==name)
+    query = orm.query(Org) \
+        .filter(func.lower(Org.name) == name)
+
     try:
         return query.one()
     except NoResultFound:
         org = None
     except MultipleResultsFound:
-        log.warning("Multiple results found for name '%s'." % name)
+        LOG.warning("Multiple results found for name '%s'." % name)
         return query.first()
 
-    query = orm.query(Orgalias).filter(func.lower(Orgalias.name)==name)
+    query = orm.query(Orgalias) \
+        .filter(func.lower(Orgalias.name) == name)
+
     try:
         return query.one().org
     except NoResultFound:
         orgalias = None
     except MultipleResultsFound:
-        log.warning("Multiple results found for alias '%s'." % name)
+        LOG.warning("Multiple results found for alias '%s'." % name)
         return query.first().org
 
     return None
@@ -159,18 +169,22 @@ def search_org(es, text_orig, just_search=False):
     text_search = text_orig
 
     while True:
-        ngrams = {}
-
-
         candidates = get_candidates(es, text_search)
         if not candidates:
             break
 
-        sys.stderr.write((u"\nFind: '\033[92m%s\033[0m'\n\n" % (text_orig)).encode("utf-8"))
+        sys.stderr.write(
+            (u"\nFind: '\033[92m%s\033[0m'\n\n" % (text_orig)).encode("utf-8")
+        )
         for i, org in enumerate(candidates, 1):
-            sys.stderr.write("  %4d: \033[37m%-5d %s\033[0m\n" % (i, org["org_id"], org["score"]))
+            sys.stderr.write(
+                "  %4d: \033[37m%-5d %s\033[0m\n" % (
+                    i, org["org_id"], org["score"])
+            )
             for name in org["alias"]:
-                sys.stderr.write((u"        \033[94m%s\033[0m\n" % name).encode("utf-8"))
+                sys.stderr.write(
+                    (u"        \033[94m%s\033[0m\n" % name).encode("utf-8")
+                )
         sys.stderr.write("\n")
         sys.stderr.write(" Empty: None of the above\n")
         sys.stderr.write("  Text: Alternative search\n: ")
@@ -219,7 +233,7 @@ def select_org(orm, name, user, search=True):
 
     es = orm.get_bind().search
     if es is None:
-        log.error("Cannot connect to Elasticsearch.")
+        LOG.error("Cannot connect to Elasticsearch.")
         sys.exit(1)
     org_id = search_org(es, name)
 
@@ -229,7 +243,7 @@ def select_org(orm, name, user, search=True):
     try:
         org = orm.query(Org).filter_by(org_id=org_id).one()
     except NoResultFound as e:
-        log.warning("No result found for '%s', org_id '%d'." % (name, org_id))
+        LOG.warning("No result found for '%s', org_id '%d'.", name, org_id)
         raise e
 
     orgalias = Orgalias(name, org, user, False)
@@ -238,33 +252,42 @@ def select_org(orm, name, user, search=True):
 
 
 
-def insert_fast(data, orm, public=None, tag_names=None, dry_run=None, address_exclusive=None, search=True, org_id_whitelist=None):
+def insert_fast(
+        data, orm,
+        public=None, tag_names=None, dry_run=None, address_exclusive=None,
+        search=True, org_id_whitelist=None
+):
     user = orm.query(User).filter_by(user_id=-1).one()
     tag_names = tag_names or []
-    names = None
 
     tags = []
     for tag_name in tag_names:
-        tag = Orgtag.get(orm,
-                         tag_name,
-                         moderation_user=user,
-                         public=public,
-                         )
+        tag = Orgtag.get(
+            orm,
+            tag_name,
+            moderation_user=user,
+            public=public,
+        )
         tags.append(tag)
 
     for chunk in data:
         # pylint: disable=maybe-no-member
         has_address = None
-        log.info(("\n%s\n" % chunk["name"]).encode("utf-8"))
+        LOG.info(("\n%s\n" % chunk["name"]).encode("utf-8"))
         org = select_org(orm, chunk["name"], user, search)
 
-        if org is False or (org_id_whitelist and ((not org) or (org.org_id not in org_id_whitelist))):
-            log.info("Skipping org: %s", org and org.org_id)
+        if (
+                org is False or
+                (org_id_whitelist and
+                 ((not org) or (org.org_id not in org_id_whitelist)))
+        ):
+            LOG.info("Skipping org: %s", org and org.org_id)
             orm.rollback()
             continue
 
         if not org:
-            log.warning((u"\nCreating org %s\n" % chunk["name"]).encode("utf-8"))
+            LOG.warning(
+                (u"\nCreating org %s\n" % chunk["name"]).encode("utf-8"))
             org = Org(chunk["name"], moderation_user=user, public=public,)
             orm.add(org)
             # Querying org address list on a new org would trigger a commit
@@ -277,9 +300,10 @@ def insert_fast(data, orm, public=None, tag_names=None, dry_run=None, address_ex
 
         if "tag" in chunk:
             for tag_name in chunk["tag"]:
-                tag = Orgtag.get(orm, tag_name,
-                                 moderation_user=user, public=public,
-                                 )
+                tag = Orgtag.get(
+                    orm, tag_name,
+                    moderation_user=user, public=public,
+                )
                 if tag not in org.orgtag_list:
                     org.orgtag_list.append(tag)
 
@@ -293,7 +317,7 @@ def insert_fast(data, orm, public=None, tag_names=None, dry_run=None, address_ex
                     moderation_user=user, public=None,
                     )
                 address.geocode()
-                log.debug(address)
+                LOG.debug(address)
                 orm.add(address)
                 org.address_list.append(address)
 
@@ -303,8 +327,8 @@ def insert_fast(data, orm, public=None, tag_names=None, dry_run=None, address_ex
                 match = False
                 for contact in org.contact_list:
                     if (
-                        contact.text == text and
-                        contact.medium.name == contact_data["medium"]
+                            contact.text == text and
+                            contact.medium.name == contact_data["medium"]
                     ):
                         match = True
                         break
@@ -316,7 +340,7 @@ def insert_fast(data, orm, public=None, tag_names=None, dry_run=None, address_ex
                         .filter_by(name=contact_data["medium"]) \
                         .one()
                 except NoResultFound:
-                    log.warning("%s: No such medium" % contact_data["medium"])
+                    LOG.warning("%s: No such medium", contact_data["medium"])
                     continue
 
                 contact = Contact(
@@ -324,7 +348,7 @@ def insert_fast(data, orm, public=None, tag_names=None, dry_run=None, address_ex
                     source=contact_data["source"],
                     moderation_user=user, public=None,
                 )
-                log.debug(contact)
+                LOG.debug(contact)
                 orm.add(contact)
                 org.contact_list.append(contact)
 
@@ -336,35 +360,37 @@ def insert_fast(data, orm, public=None, tag_names=None, dry_run=None, address_ex
                     note_data["text"], note_data["source"],
                     moderation_user=user, public=None,
                     )
-                log.debug(note)
+                LOG.debug(note)
                 orm.add(note)
                 org.note_list.append(note)
 
         if not (orm.new or orm.dirty or orm.deleted):
-            log.info("Nothing to commit.")
+            LOG.info("Nothing to commit.")
             continue
 
-        if dry_run == True:
-            log.warning("rolling back")
+        if dry_run is True:
+            LOG.warning("rolling back")
             orm.rollback()
             continue
 
-        log.info("Committing.")
+        LOG.info("Committing.")
         orm.commit()
 
 
 
-if __name__ == "__main__":
-    log.addHandler(logging.StreamHandler())
-    log_search.addHandler(logging.StreamHandler())
+def main():
+    LOG.addHandler(logging.StreamHandler())
+    LOG_SEARCH.addHandler(logging.StreamHandler())
 
     usage = """%prog JSON..."""
 
     parser = OptionParser(usage=usage)
-    parser.add_option("-v", "--verbose", action="count", dest="verbose",
-                      help="Print verbose information for debugging.", default=0)
-    parser.add_option("-q", "--quiet", action="count", dest="quiet",
-                      help="Suppress warnings.", default=0)
+    parser.add_option("-v", "--verbose", dest="verbose",
+                      action="count", default=0,
+                      help="Print verbose information for debugging.")
+    parser.add_option("-q", "--quiet", dest="quiet",
+                      action="count", default=0,
+                      help="Suppress warnings.")
 
     parser.add_option("-t", "--tag", action="append", dest="tag",
                       help="Tag to apply to all insertions.", default=[])
@@ -382,22 +408,23 @@ if __name__ == "__main__":
                       default=None)
     parser.add_option("-A", "--address-exclusive", action="store_true",
                       dest="address_exclusive",
-                      help="Only import addresses if org has no existing address.",
+                      help="Only import addresses if org has no existing "
+                      "address.",
                       default=None)
     parser.add_option("-L", "--limit-org", action="store",
                       dest="limit_org",
-                      help="Only apply changes to orgs whose IDs are supplied (a comma separated string)",
+                      help="Only apply changes to orgs whose IDs are "
+                      "supplied (a comma separated string)",
                       default=None)
     parser.add_option("-n", "--dry-run", action="store_true", dest="dry_run",
                       help="Dry run.", default=None)
 
     (options, args) = parser.parse_args()
 
-    log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[
+    level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG)[
         max(0, min(3, 1 + options.verbose - options.quiet))]
-
-    log.setLevel(log_level)
-    log_search.setLevel(log_level)
+    LOG.setLevel(level)
+    LOG_SEARCH.setLevel(level)
 
     if len(args) == 0:
         parser.print_usage()
@@ -405,8 +432,8 @@ if __name__ == "__main__":
 
     connection_url = connection_url_app()
     engine = create_engine(connection_url,)
-    Session = sessionmaker(bind=engine, autocommit=False, autoflush=False)
-    orm = Session()
+    session_ = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    orm = session_()
     attach_search(engine, orm)
 
 
@@ -429,7 +456,16 @@ if __name__ == "__main__":
         try:
             data = json.load(codecs.open(arg, "r", "utf8"))
         except ValueError:
-            log.error("%s: Could not decode JSON data.", arg)
+            LOG.error("%s: Could not decode JSON data.", arg)
             continue
 
-        insert_fast(data, orm, options.public, options.tag, options.dry_run, options.address_exclusive, (not options.no_search), org_id_whitelist)
+        insert_fast(
+            data, orm, options.public, options.tag, options.dry_run,
+            options.address_exclusive, (not options.no_search),
+            org_id_whitelist
+        )
+
+
+
+if __name__ == "__main__":
+    main()

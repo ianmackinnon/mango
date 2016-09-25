@@ -8,32 +8,31 @@ import Levenshtein
 
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
-from sqlalchemy.sql.expression import literal_column, or_, and_, not_, distinct
+from sqlalchemy.sql.expression import literal_column, or_, and_, not_
 from tornado.web import HTTPError
-
-from base import authenticated, sha1_concat, \
-    HistoryEntity, \
-    MangoBaseEntityHandlerMixin, \
-    MangoEntityHandlerMixin, MangoEntityListHandlerMixin
-from base_note import BaseNoteHandler
-from base_org import BaseOrgHandler
-from base_event import BaseEventHandler
-from orgtag import BaseOrgtagHandler
-from address import BaseAddressHandler
-from contact import BaseContactHandler
-
-from base_moderation import \
-    get_pending_org_address_id, \
-    get_pending_org_contact_id
 
 import geo
 
-from model import Org, Note, Address, Orgalias, Event, Orgtag, Contact, \
+from model import Org, Note, Address, Orgalias, Orgtag, Contact, \
     org_orgtag, org_address, org_note
 
 from model_v import Org_v, Address_v, Contact_v, \
-    org_address_v, org_contact_v, \
     mango_entity_append_suggestion
+
+from handle.base import authenticated, sha1_concat, \
+    HistoryEntity, \
+    MangoBaseEntityHandlerMixin, \
+    MangoEntityHandlerMixin, MangoEntityListHandlerMixin
+from handle.base_note import BaseNoteHandler
+from handle.base_org import BaseOrgHandler
+from handle.base_event import BaseEventHandler
+from handle.orgtag import BaseOrgtagHandler
+from handle.address import BaseAddressHandler
+from handle.contact import BaseContactHandler
+
+from handle.base_moderation import \
+    get_pending_org_address_id, \
+    get_pending_org_contact_id
 
 from handle.user import \
     get_user_pending_org_address, \
@@ -61,17 +60,18 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
         return self._get_org
 
     @staticmethod
-    def _cache_key(name_search, tag_name_list, tag_all, page_view, visibility, moderator):
+    def _cache_key(name_search, tag_name_list, tag_all, page_view,
+                   visibility, moderator):
         if not visibility:
             visibility = "public"
         return sha1_concat(json.dumps({
-                "nameSearch": name_search,
-                "tag": tuple(set(tag_name_list)),
-                "tagAll": tag_all,
-                "visibility": visibility,
-                "moderator": moderator,
-                "pageView": page_view,
-                }))
+            "nameSearch": name_search,
+            "tag": tuple(set(tag_name_list)),
+            "tagAll": tag_all,
+            "visibility": visibility,
+            "moderator": moderator,
+            "pageView": page_view,
+        }))
 
     @staticmethod
     def _get_random_suggestions(results, count=2):
@@ -82,7 +82,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
 
         for i in xrange(count):
             total = 0
-            for name, freq in results:
+            for (_name, freq) in results:
                 total += freq
 
             if not total:
@@ -90,7 +90,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
 
             target = random.randrange(total)
             total = 0
-            for i, (name, freq) in enumerate(results):
+            for i, (_name, freq) in enumerate(results):
                 total += freq
                 if total > target:
                     suggestions.append(results.pop(i)[0])
@@ -98,7 +98,10 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
 
         return suggestions
 
-    def _get_tag_suggestions(self, tag_list):
+    def _get_tag_suggestions(self, _tag_list):
+        # pylint: disable=singleton-comparison
+        # Cannot use `is` in SQLAlchemy filters
+
         include = [
             u'exhibitor',
             u'delegate',
@@ -108,12 +111,18 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
 
         results = []
         for path_short in include:
-            q = self.orm.query(Orgtag.base_short, func.count(Org.org_id).label("freq")) \
-                .join(org_orgtag, org_orgtag.c.orgtag_id==Orgtag.orgtag_id) \
-                .join(Org, Org.org_id==org_orgtag.c.org_id) \
-                .filter(Orgtag.public==True, Orgtag.is_virtual==None) \
-                .filter(Orgtag.path_short==path_short) \
-                .filter(Org.public==True) \
+            q = self.orm.query(
+                Orgtag.base_short,
+                func.count(Org.org_id).label("freq")
+            ) \
+                .join(org_orgtag, org_orgtag.c.orgtag_id == Orgtag.orgtag_id) \
+                .join(Org, Org.org_id == org_orgtag.c.org_id) \
+                .filter(
+                    Orgtag.public == True,
+                    Orgtag.is_virtual == None,
+                    Orgtag.path_short == path_short,
+                    Org.public == True
+                ) \
                 .group_by(Orgtag.orgtag_id) \
                 .order_by(func.count(Org.org_id).desc()) \
                 .limit(10)
@@ -123,16 +132,25 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
         return self._get_random_suggestions(results, 2)
 
 
-    def _get_name_suggestion(self, has_name, count=2):
+    def _get_name_suggestion(self, has_name):
+        # pylint: disable=singleton-comparison
+        # Cannot use `is` in SQLAlchemy filters
+
         suggestions = []
         if has_name:
             return suggestions
 
-        q = self.orm.query(Org.name, func.count(Orgtag.orgtag_id).label("freq")) \
-            .join(org_orgtag, org_orgtag.c.org_id==Org.org_id) \
-            .join(Orgtag, Orgtag.orgtag_id==org_orgtag.c.orgtag_id) \
-            .filter(Org.public==True) \
-            .filter(Orgtag.public==True, Orgtag.is_virtual==None) \
+        q = self.orm.query(
+            Org.name,
+            func.count(Orgtag.orgtag_id).label("freq")
+        ) \
+            .join(org_orgtag, org_orgtag.c.org_id == Org.org_id) \
+            .join(Orgtag, Orgtag.orgtag_id == org_orgtag.c.orgtag_id) \
+            .filter(
+                Org.public == True,
+                Orgtag.public == True,
+                Orgtag.is_virtual == None,
+            ) \
             .group_by(Org.org_id) \
             .order_by(func.count(Orgtag.orgtag_id).desc()) \
             .limit(30)
@@ -154,20 +172,23 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
         return suggestions
 
     def get(self):
+        # pylint: disable=redefined-variable-type
+        # Pylint thinks `page_view` is first defined as a list
+
         is_json = self.content_type("application/json")
 
         min_radius = 10
 
-        name = self.get_argument("name", None, json=is_json)
-        name_search = self.get_argument("nameSearch", None, json=is_json)
-        tag_name_list = self.get_arguments_multi("tag", json=is_json)
-        tag_all = self.get_argument_bool("tagAll", None, json=is_json)
+        name = self.get_argument("name", None, is_json=is_json)
+        name_search = self.get_argument("nameSearch", None, is_json=is_json)
+        tag_name_list = self.get_arguments_multi("tag", is_json=is_json)
+        tag_all = self.get_argument_bool("tagAll", None, is_json=is_json)
         location = self.get_argument_geobox(
-            "location", min_radius=min_radius, default=None, json=is_json)
-        offset = self.get_argument_int("offset", None, json=is_json)
+            "location", min_radius=min_radius, default=None, is_json=is_json)
+        offset = self.get_argument_int("offset", None, is_json=is_json)
         page_view = self.get_argument_allowed(
             "pageView", ["entity", "map", "marker"],
-            default="entity", json=is_json)
+            default="entity", is_json=is_json)
 
         if not self.accept_type("json"):
             if self.has_javascript:
@@ -181,7 +202,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
                     location=location and location.to_obj(),
                     offset=offset,
                     )
-                return;
+                return
             if page_view == "entity":
                 page_view = "map"
 
@@ -197,7 +218,8 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
                 )
             value = self.cache.get(cache_key)
             if value:
-                self.set_header("Content-Type", "application/json; charset=UTF-8")
+                self.set_header(
+                    "Content-Type", "application/json; charset=UTF-8")
                 self.write(value)
                 self.finish()
                 return
@@ -253,7 +275,7 @@ class OrgNewHandler(BaseOrgHandler):
 class OrgSearchHandler(BaseOrgHandler):
     def get(self):
         is_json = self.content_type("application/json")
-        name = self.get_argument("name", None, json=is_json)
+        name = self.get_argument("name", None, is_json=is_json)
         public = not self.moderator
 
         search = self.orm.get_bind().search
@@ -353,6 +375,8 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
         return self._after_org_accept_new
 
     def touch(self, org_id):
+        # pylint: disable=protected-access
+        # Using protected internal methods for version handling
         if not self.moderator:
             raise HTTPError(405)
 
@@ -393,17 +417,17 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
         if org:
             # We don't need to alter these from now on.
             if self.deep_visible():
-                address_list=list(org.address_list)
-                orgtag_list=list(org.orgtag_list)
-                event_list=list(org.event_list)
-                orgalias_list=list(org.orgalias_list)
-                contact_list=list(org.contact_list)
+                address_list = list(org.address_list)
+                orgtag_list = list(org.orgtag_list)
+                event_list = list(org.event_list)
+                orgalias_list = list(org.orgalias_list)
+                contact_list = list(org.contact_list)
             else:
-                address_list=list(org.address_list_public)
-                orgtag_list=list(org.orgtag_list_public)
-                event_list=list(org.event_list_public)
-                orgalias_list=list(org.orgalias_list_public)
-                contact_list=list(org.contact_list_public)
+                address_list = list(org.address_list_public)
+                orgtag_list = list(org.orgtag_list_public)
+                event_list = list(org.event_list_public)
+                orgalias_list = list(org.orgalias_list_public)
+                contact_list = list(org.contact_list_public)
 
             note_list, note_count = org.note_list_filtered(
                 note_search=note_search,
@@ -412,12 +436,12 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
                 all_visible=self.deep_visible(),
                 )
         else:
-            address_list=[]
-            orgtag_list=[]
-            event_list=[]
-            orgalias_list=[]
-            contact_list=[]
-            note_list=[]
+            address_list = []
+            orgtag_list = []
+            event_list = []
+            orgalias_list = []
+            contact_list = []
+            note_list = []
             note_count = 0
 
         if self.contributor:
@@ -435,8 +459,12 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
         orgtag_list = [orgtag.obj(public=public) for orgtag in orgtag_list]
         note_list = [note.obj(public=public) for note in note_list]
         event_list = [event.obj(public=public) for event in event_list]
-        orgalias_list = [orgalias.obj(public=public) for orgalias in orgalias_list]
-        contact_list = [contact.obj(public=public, medium=contact.medium.name) for contact in contact_list]
+        orgalias_list = [orgalias.obj(public=public)
+                         for orgalias in orgalias_list]
+        contact_list = [
+            contact.obj(public=public, medium=contact.medium.name)
+            for contact in contact_list
+        ]
 
         edit_block = False
         if org_v:
@@ -454,11 +482,14 @@ class OrgHandler(BaseOrgHandler, MangoEntityHandlerMixin):
             event_list=event_list,
             orgalias_list=orgalias_list,
             contact_list=contact_list,
-            )
+        )
 
-        version_url=None
-        if self.current_user and self._count_org_history(org_id) > 1:
-            version_url="%s/revision" % org.url
+        version_url = None
+        if (
+                self.current_user and
+                self._count_org_history(org_id) > 1
+        ):
+            version_url = "%s/revision" % org.url
 
         if self.accept_type("json"):
             self.write_json(obj)
@@ -519,7 +550,10 @@ class OrgRevisionListHandler(BaseOrgHandler):
             if len(history) == int(bool(org)):
                 raise HTTPError(404)
 
-        version_current_url = (org and org.url) or (not self.moderator and history and history[-1].url)
+        version_current_url = (
+            (org and org.url) or
+            (not self.moderator and history and history[-1].url)
+        )
 
         self.load_map = True
         self.render(
@@ -542,7 +576,8 @@ class OrgRevisionHandler(BaseOrgHandler):
         try:
             org_v = query.one()
         except NoResultFound:
-            raise HTTPError(404, "%d:%d: No such org revision" % (org_id, org_v_id))
+            raise HTTPError(
+                404, "%d:%d: No such org revision" % (org_id, org_v_id))
 
         query = self.orm.query(Org) \
             .filter_by(org_id=org_id)
@@ -667,7 +702,7 @@ class OrgAddressListHandler(BaseOrgHandler, BaseAddressHandler):
         self.orm_commit()
 
         self.orm.query(Address_v) \
-            .filter(Address_v.address_id==id_) \
+            .filter(Address_v.address_id == id_) \
             .delete()
         self.orm_commit()
 
@@ -768,7 +803,7 @@ class OrgContactListHandler(BaseOrgHandler, BaseContactHandler):
         self.orm_commit()
 
         self.orm.query(Contact_v) \
-            .filter(Contact_v.contact_id==id_) \
+            .filter(Contact_v.contact_id == id_) \
             .delete()
         self.orm_commit()
 
@@ -881,7 +916,7 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
             raise HTTPError(404)
 
         is_json = self.content_type("application/json")
-        group = self.get_argument("group", None, json=is_json)
+        group = self.get_argument("group", None, is_json=is_json)
         tag_id_list = self.get_arguments_int("tag")
 
         org = self._get_org(org_id)
@@ -907,20 +942,23 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
 
     @authenticated
     def get(self, org_id):
+        # pylint: disable=singleton-comparison
+        # Cannot use `is` in SQLAlchemy filters
+
         if not self.moderator:
             raise HTTPError(404)
 
         is_json = self.content_type("application/json")
-        group = self.get_argument("group", None, json=is_json)
+        group = self.get_argument("group", None, is_json=is_json)
 
         # org...
 
         org = self._get_org(org_id)
 
         if self.deep_visible():
-            orgtag_list=org.orgtag_list
+            orgtag_list = org.orgtag_list
         else:
-            orgtag_list=org.orgtag_list_public
+            orgtag_list = org.orgtag_list_public
 
         public = self.moderator
 
@@ -935,7 +973,7 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
 
         # orgtag...
 
-        (orgtag_list, name, name_short, base, base_short,
+        (orgtag_list, _name, _name_short, _base, _base_short,
          path, search, sort) = self._get_tag_search_args()
 
         group_tag_list = []
@@ -946,7 +984,7 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
             group_tag_list = [orgtag.obj() for orgtag in group_tag_query]
 
         path_query = self.orm.query(Orgtag.path, Orgtag.path_short) \
-            .filter(Orgtag.path!=None) \
+            .filter(Orgtag.path != None) \
             .group_by(Orgtag.path_short)
         path_list = list(path_query)
 
@@ -967,7 +1005,7 @@ class OrgOrgtagListHandler(BaseOrgHandler, BaseOrgtagHandler):
             path_list=path_list,
             group=group,
             group_tag_list=group_tag_list,
-            )
+        )
 
 
 
@@ -1013,13 +1051,14 @@ class OrgOrgaliasListHandler(BaseOrgHandler, BaseOrgtagHandler):
             self.redirect_next()
 
         if self.deep_visible():
-            orgalias_list=org.orgalias_list
+            orgalias_list = org.orgalias_list
         else:
-            orgalias_list=org.orgalias_list_public
+            orgalias_list = org.orgalias_list_public
 
         public = self.moderator
 
-        orgalias_list = [orgalias.obj(public=public) for orgalias in orgalias_list]
+        orgalias_list = [orgalias.obj(public=public)
+                         for orgalias in orgalias_list]
 
         obj = org.obj(
             public=public,
@@ -1045,11 +1084,12 @@ class OrgOrgaliasListHandler(BaseOrgHandler, BaseOrgtagHandler):
             raise HTTPError(404)
 
         is_json = self.content_type("application/json")
-        name = self.get_argument("name", json=is_json)
+        name = self.get_argument("name", is_json=is_json)
 
         org = self._get_org(org_id)
 
         orgalias = Orgalias.get(self.orm, name, org, self.current_user, True)
+        self.orm.add(orgalias)
         self.orm_commit()
 
         return self.redirect_next(org.url)
@@ -1069,9 +1109,9 @@ class OrgEventListHandler(BaseOrgHandler, BaseEventHandler):
         org = self._get_org(org_id)
 
         if self.deep_visible():
-            event_list=org.event_list
+            event_list = org.event_list
         else:
-            event_list=org.event_list_public
+            event_list = org.event_list_public
 
         public = self.moderator
 
@@ -1086,7 +1126,7 @@ class OrgEventListHandler(BaseOrgHandler, BaseEventHandler):
 
         # event...
 
-        event_name_search = self.get_argument("search", None, json=is_json)
+        event_name_search = self.get_argument("search", None, is_json=is_json)
 
         event_name_query = BaseEventHandler._get_event_search_query(
             self,
@@ -1098,8 +1138,8 @@ class OrgEventListHandler(BaseOrgHandler, BaseEventHandler):
         event_count = event_name_query.count()
         for event in event_name_query[:20]:
             event_list.append(event.obj(
-                    public=public,
-                    ))
+                public=public,
+            ))
 
         self.next_ = org.url
         self.render(
@@ -1147,9 +1187,9 @@ class ModerationOrgDescHandler(BaseOrgHandler):
 
         is_json = self.content_type("application/json")
 
-        name = self.get_argument("name", None, json=is_json)
-        name_search = self.get_argument("nameSearch", None, json=is_json)
-        offset = self.get_argument_int("offset", None, json=is_json)
+        name = self.get_argument("name", None, is_json=is_json)
+        name_search = self.get_argument("nameSearch", None, is_json=is_json)
+        offset = self.get_argument_int("offset", None, is_json=is_json)
 
         name_subquery = self._get_name_search_query(
             name=None,
@@ -1158,8 +1198,10 @@ class ModerationOrgDescHandler(BaseOrgHandler):
             ).subquery()
 
         org_alias_query = self.orm.query(Org, Orgalias) \
-            .join(name_subquery, Org.org_id==name_subquery.c.org_id) \
-            .outerjoin(Orgalias, Orgalias.orgalias_id==name_subquery.c.orgalias_id)
+            .join(name_subquery,
+                  Org.org_id == name_subquery.c.org_id) \
+            .outerjoin(Orgalias,
+                       Orgalias.orgalias_id == name_subquery.c.orgalias_id)
 
 
         org_alias_query = org_alias_query.filter(Org.description != None)
@@ -1169,19 +1211,19 @@ class ModerationOrgDescHandler(BaseOrgHandler):
 
         orgs = OrderedDict()
         for org, alias in org_alias_query:
-            if not org.org_id in orgs:
+            if org.org_id not in orgs:
                 orgs[org.org_id] = {
                     "org": org,
                     "alias": alias and alias.name,
                     }
 
         org_packet["orgList"] = []
-        for org_id, data in orgs.items():
+        for data in orgs.values():
             org = data["org"]
             org_packet["orgList"].append(org.obj(
-                    alias=data["alias"],
-                    public=self.moderator,
-                    ))
+                alias=data["alias"],
+                public=self.moderator,
+            ))
 
         self.render(
             'moderation-org-desc.html',
@@ -1194,27 +1236,50 @@ class ModerationOrgDescHandler(BaseOrgHandler):
 
 
 class ModerationOrgIncludeHandler(BaseOrgHandler):
+    # pylint: disable=singleton-comparison
+    # Cannot use `is` in SQLAlchemy filters
+
+    @staticmethod
+    def in_uk_or_no_address():
+        uk_south = 49.87
+        uk_north = 55.81
+        uk_west = -6.38
+        uk_east = 1.77
+        return or_(
+            and_(
+                Address.latitude != None,
+                Address.longitude != None,
+                Address.latitude >= uk_south,
+                Address.latitude <= uk_north,
+                Address.longitude >= uk_west,
+                Address.longitude <= uk_east,
+            ),
+            Address.latitude == None,
+        )
+
     @authenticated
     def get(self):
         if not self.moderator:
             raise HTTPError(404)
 
-        is_json = self.content_type("application/json")
-
-        act_query = self.orm.query(func.count(Orgtag.orgtag_id).label("count")) \
+        act_query = self.orm.query(
+            func.count(Orgtag.orgtag_id).label("count")
+        ) \
             .join(org_orgtag) \
             .add_columns(org_orgtag.c.org_id) \
             .filter(or_(
-                Orgtag.path_short==u'activity',
-                Orgtag.path_short==u'activity-exclusion',
-                )) \
+                Orgtag.path_short == u'activity',
+                Orgtag.path_short == u'activity-exclusion',
+            )) \
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
-        addr_query = self.orm.query(func.count(Address.address_id).label("count")) \
+        addr_query = self.orm.query(
+            func.count(Address.address_id).label("count")
+        ) \
             .join(org_address) \
             .add_columns(org_address.c.org_id) \
-            .filter(Address.public==True) \
+            .filter(Address.public == True) \
             .group_by(org_address.c.org_id) \
             .subquery()
 
@@ -1249,32 +1314,16 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                                        .label("count")) \
             .join(org_orgtag) \
             .add_columns(org_orgtag.c.org_id) \
-            .filter(Orgtag.name_short==u"exhibitor|dsei-2015") \
+            .filter(Orgtag.name_short == u"exhibitor|dsei-2015") \
             .group_by(org_orgtag.c.org_id) \
             .subquery()
-
-        uk_south = 49.87
-        uk_north = 55.81
-        uk_west = -6.38
-        uk_east = 1.77
-        in_uk_or_no_address = or_(
-                and_(
-                    Address.latitude != None,
-                    Address.longitude != None,
-                    Address.latitude >= uk_south,
-                    Address.latitude <= uk_north,
-                    Address.longitude >= uk_west,
-                    Address.longitude <= uk_east,
-                ),
-                Address.latitude == None,
-            )
-        # .filter(in_uk_or_no_address) \
 
         israel_query = self.orm.query(func.count(Orgtag.orgtag_id) \
                                      .label("count")) \
             .join(org_orgtag) \
             .add_columns(org_orgtag.c.org_id) \
-            .filter(Orgtag.name_short==u"market|military-export-applicant-to-israel") \
+            .filter(Orgtag.name_short ==
+                    u"market|military-export-applicant-to-israel") \
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
@@ -1313,19 +1362,23 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
 
         canterbury_query = location_subquery(u"canterbury")
 
-        exist_clause = "exists (select 1 from org_include where org_include.org_id = org.org_id)"
+        exist_clause = """exists (
+    select 1 from org_include
+    where org_include.org_id = org.org_id
+)"""
 
         org_query = self.orm.query(Org) \
-            .outerjoin(act_query, act_query.c.org_id==Org.org_id) \
-            .outerjoin(addr_query, addr_query.c.org_id==Org.org_id) \
-            .outerjoin(dseitag_query, dseitag_query.c.org_id==Org.org_id) \
-            .outerjoin(saptag_query, saptag_query.c.org_id==Org.org_id) \
-            .outerjoin(tag_query, tag_query.c.org_id==Org.org_id) \
-            .outerjoin(dsei2015_query, dsei2015_query.c.org_id==Org.org_id) \
-            .outerjoin(israel_query, israel_query.c.org_id==Org.org_id) \
-            .outerjoin(canterbury_query, canterbury_query.c.org_id==Org.org_id) \
-            .outerjoin(sipri_query, sipri_query.c.org_id==Org.org_id) \
-            .outerjoin(note_query, note_query.c.org_id==Org.org_id) \
+            .outerjoin(act_query, act_query.c.org_id == Org.org_id) \
+            .outerjoin(addr_query, addr_query.c.org_id == Org.org_id) \
+            .outerjoin(dseitag_query, dseitag_query.c.org_id == Org.org_id) \
+            .outerjoin(saptag_query, saptag_query.c.org_id == Org.org_id) \
+            .outerjoin(tag_query, tag_query.c.org_id == Org.org_id) \
+            .outerjoin(dsei2015_query, dsei2015_query.c.org_id == Org.org_id) \
+            .outerjoin(israel_query, israel_query.c.org_id == Org.org_id) \
+            .outerjoin(canterbury_query,
+                       canterbury_query.c.org_id == Org.org_id) \
+            .outerjoin(sipri_query, sipri_query.c.org_id == Org.org_id) \
+            .outerjoin(note_query, note_query.c.org_id == Org.org_id) \
             .add_columns(
                 literal_column(exist_clause).label("include"),
                 func.coalesce(act_query.c.count, 0).label("act"),
@@ -1339,9 +1392,11 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 func.coalesce(sipri_query.c.count, 0).label("sipri"),
                 func.coalesce(note_query.c.count, 0).label("note"),
                 ) \
-            .filter(Org.end_date==None) \
+            .filter(Org.end_date == None) \
             .order_by(
-                literal_column(u"((dseitag > 0) * 4 + (saptag > 0) * 2 + (sipri > 0))").desc(),
+                literal_column(
+                    u"((dseitag > 0) * 4 + (saptag > 0) * 2 + (sipri > 0))"
+                ).desc(),
                 literal_column(u"tag").desc(),
                 Org.name,
             )
@@ -1370,7 +1425,11 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "exclude_pending": 0,
             }
 
-        for org, include, act, addr, dseitag, saptag, tag, dsei2015, israel, canterbury, sipri, note in org_query:
+        for (
+                org, include,
+                act, addr, dseitag, saptag, tag, dsei2015,
+                israel, canterbury, sipri, note
+        ) in org_query:
             if act:
                 if org.public:
                     if not addr:
@@ -1398,8 +1457,8 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 packet["remove_public"] \
                     .append((org, dseitag, saptag, tag))
             elif org.public == False:
-                    packet["remove_private"] \
-                        .append((org, dseitag, saptag, tag))
+                packet["remove_private"] \
+                    .append((org, dseitag, saptag, tag))
             else:
                 # Pending
                 if org.description:

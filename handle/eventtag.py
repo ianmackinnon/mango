@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.sql import func
 from tornado.web import HTTPError
 
-from base import authenticated, \
-    MangoEntityHandlerMixin, MangoEntityListHandlerMixin
-from base_tag import BaseTagHandler
-from note import BaseNoteHandler
+from model import Event, Eventtag, event_eventtag
 
-from model import Event, Eventtag, Note, event_eventtag, short_name
+from handle.base import authenticated, \
+    MangoEntityHandlerMixin, MangoEntityListHandlerMixin
+from handle.base_tag import BaseTagHandler
+from handle.note import BaseNoteHandler
 
 
 
@@ -25,14 +23,14 @@ class BaseEventtagHandler(BaseTagHandler):
     def _get_full_eventtag_list(self):
         eventtag_and_event_count_list = \
             self._get_eventtag_and_event_count_list_search(
-            visibility=self.parameters.get("visibility", None),
+                visibility=self.parameters.get("visibility", None),
             )
         eventtag_list = []
         for eventtag, event_count in eventtag_and_event_count_list:
             eventtag_list.append(eventtag.obj(
-                    public=self.moderator,
-                    event_len=event_count,
-                    ))
+                public=self.moderator,
+                event_len=event_count,
+            ))
         return eventtag_list
 
 
@@ -55,7 +53,7 @@ class EventtagListHandler(BaseEventtagHandler,
         return MangoEntityListHandlerMixin.post(self)
 
     def get(self):
-        (eventtag_list, name, name_short, base, base_short,
+        (eventtag_list, _name, _name_short, _base, _base_short,
          path, search, sort) = self._get_tag_search_args()
 
         if self.accept_type("json"):
@@ -114,7 +112,8 @@ class EventtagHandler(BaseEventtagHandler,
 
     def _before_delete(self, eventtag):
         if eventtag.event_list:
-            raise HTTPError(405, "Cannot delete tag because it has attached events.")
+            raise HTTPError(
+                405, "Cannot delete tag because it has attached events.")
 
     @authenticated
     def put(self, entity_id):
@@ -130,7 +129,8 @@ class EventtagHandler(BaseEventtagHandler,
         if not old_entity.content_same(new_entity):
             if old_entity.is_virtual is not None:
                 if old_entity.name != new_entity.name:
-                    raise HTTPError(404, "May not change the name of a virtual tag.")
+                    raise HTTPError(
+                        404, "May not change the name of a virtual tag.")
             old_entity.content_copy(new_entity, self.current_user)
             self.orm_commit()
 
@@ -147,8 +147,10 @@ class EventtagHandler(BaseEventtagHandler,
 
         event_list_query = self.orm.query(Event) \
             .join(event_eventtag) \
-            .filter(Event.event_id==event_eventtag.c.event_id) \
-            .filter(event_eventtag.c.eventtag_id==eventtag.eventtag_id)
+            .filter(
+                Event.event_id == event_eventtag.c.event_id,
+                event_eventtag.c.eventtag_id == eventtag.eventtag_id,
+            )
         event_list_query = self.filter_visibility(
             event_list_query,
             Event,

@@ -1,37 +1,43 @@
 # -*- coding: utf-8 -*-
 
+# pylint: disable=singleton-comparison,invalid-name
+# Cannot use `is` in SQLAlchemy filters
+# Allow aliased abstract class names
+
+
 from tornado.web import HTTPError
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql.expression import exists, and_, or_
 from sqlalchemy.orm.exc import NoResultFound
 
-from base import BaseHandler, authenticated
-from model import User
-from model import Org, Event, Address, Contact
-from model_v import Org_v, Event_v, Address_v, Contact_v
-from model_v import org_address_v, event_address_v, org_contact_v, event_contact_v
-from model_v import get_history
+from model import Org, Event, Address, Contact, User
+from model_v import Org_v, Event_v, Address_v, Contact_v, \
+    org_address_v, event_address_v, org_contact_v, event_contact_v, \
+    get_history
 
+from handle.base import BaseHandler, authenticated
 
 
 def get_user_pending_org(orm, user):
     Org_v_all = aliased(Org_v)
     Org_v_new = aliased(Org_v)
-    
+
     query = orm.query(Org_v_all) \
         .outerjoin((
-            Org, 
+            Org,
             Org.org_id == Org_v_all.org_id
-            )) \
-        .filter(Org_v_all.moderation_user_id==user.user_id) \
-        .filter(~exists().where(and_(
+        )) \
+        .filter(
+            Org_v_all.moderation_user_id == user.user_id,
+            ~exists().where(and_(
                 Org_v_new.org_id == Org_v_all.org_id,
                 Org_v_new.a_time > Org_v_all.a_time,
-                ))) \
-        .filter(or_(
+            )),
+            or_(
                 Org.a_time == None,
                 Org_v_all.a_time > Org.a_time,
-                )) \
+            ),
+        ) \
          .order_by(Org_v_all.a_time.desc()) \
 
     return query.all()
@@ -46,16 +52,18 @@ def get_user_pending_event(orm, user):
         .outerjoin((
             Event,
             Event.event_id == Event_v_all.event_id
-            )) \
-        .filter(Event_v_all.moderation_user_id==user.user_id) \
-        .filter(~exists().where(and_(
+        )) \
+        .filter(
+            Event_v_all.moderation_user_id == user.user_id,
+            ~exists().where(and_(
                 Event_v_new.event_id == Event_v_all.event_id,
                 Event_v_new.a_time > Event_v_all.a_time,
-                ))) \
-        .filter(or_(
+            )),
+            or_(
                 Event.a_time == None,
                 Event_v_all.a_time > Event.a_time,
-                )) \
+            )
+        ) \
         .order_by(Event_v_all.a_time.desc()) \
 
     return query.all()
@@ -70,16 +78,18 @@ def get_user_pending_address(orm, user):
         .outerjoin((
             Address,
             Address.address_id == Address_v_all.address_id
-            )) \
-        .filter(Address_v_all.moderation_user_id==user.user_id) \
-        .filter(~exists().where(and_(
+        )) \
+        .filter(
+            Address_v_all.moderation_user_id == user.user_id,
+            ~exists().where(and_(
                 Address_v_new.address_id == Address_v_all.address_id,
                 Address_v_new.a_time > Address_v_all.a_time,
-                ))) \
-        .filter(or_(
+            )),
+            or_(
                 Address.a_time == None,
                 Address_v_all.a_time > Address.a_time,
-                )) \
+            )
+        ) \
         .order_by(Address_v_all.a_time.desc()) \
 
     return query.all()
@@ -94,24 +104,26 @@ def get_user_pending_org_address(orm, user, org_id):
         .outerjoin((
             Address,
             Address.address_id == Address_v_all.address_id
-            )) \
+        )) \
         .join((
             org_address_v,
             and_(
                 org_address_v.c.address_id == Address_v_all.address_id,
                 org_address_v.c.org_id == org_id,
                 org_address_v.c.existence == 1,
-                )
-            )) \
-        .filter(Address_v_all.moderation_user_id==user.user_id) \
-        .filter(~exists().where(and_(
+            )
+        )) \
+        .filter(
+            Address_v_all.moderation_user_id == user.user_id,
+            ~exists().where(and_(
                 Address_v_new.address_id == Address_v_all.address_id,
                 Address_v_new.a_time > Address_v_all.a_time,
-                ))) \
-        .filter(or_(
+            )),
+            or_(
                 Address.a_time == None,
                 Address_v_all.a_time > Address.a_time,
-                )) \
+            )
+        ) \
         .order_by(Address_v_all.a_time.desc())
 
     return query.all()
@@ -135,15 +147,17 @@ def get_user_pending_address_org(orm, user, address_id):
                 org_address_v.c.existence == 1,
                 )
             )) \
-        .filter(Org_v_all.moderation_user_id==user.user_id) \
-        .filter(~exists().where(and_(
+        .filter(
+            Org_v_all.moderation_user_id == user.user_id,
+            ~exists().where(and_(
                 Org_v_new.org_id == Org_v_all.org_id,
                 Org_v_new.a_time > Org_v_all.a_time,
-                ))) \
-        .filter(or_(
+            )),
+            or_(
                 Org.a_time == None,
                 Org_v_all.a_time > Org.a_time,
-                )) \
+            )
+        ) \
         .order_by(Org_v_all.a_time.desc()) \
 
     return query.all()
@@ -167,15 +181,17 @@ def get_user_pending_address_event(orm, user, address_id):
                 event_address_v.c.existence == 1,
                 )
             )) \
-        .filter(Event_v_all.moderation_user_id==user.user_id) \
-        .filter(~exists().where(and_(
+        .filter(
+            Event_v_all.moderation_user_id == user.user_id,
+            ~exists().where(and_(
                 Event_v_new.event_id == Event_v_all.event_id,
                 Event_v_new.a_time > Event_v_all.a_time,
-                ))) \
-        .filter(or_(
+                )),
+            or_(
                 Event.a_time == None,
                 Event_v_all.a_time > Event.a_time,
-                )) \
+                )
+        ) \
         .order_by(Event_v_all.a_time.desc()) \
 
     return query.all()
@@ -199,15 +215,17 @@ def get_user_pending_event_address(orm, user, event_id):
                 event_address_v.c.existence == 1,
                 )
             )) \
-        .filter(Address_v_all.moderation_user_id==user.user_id) \
-        .filter(~exists().where(and_(
+        .filter(
+            Address_v_all.moderation_user_id == user.user_id,
+            ~exists().where(and_(
                 Address_v_new.address_id == Address_v_all.address_id,
                 Address_v_new.a_time > Address_v_all.a_time,
-                ))) \
-        .filter(or_(
+                )),
+            or_(
                 Address.a_time == None,
                 Address_v_all.a_time > Address.a_time,
-                )) \
+            )
+        ) \
         .order_by(Address_v_all.a_time.desc()) \
 
     return query.all()
@@ -231,15 +249,17 @@ def get_user_pending_org_contact(orm, user, org_id):
                 org_contact_v.c.existence == 1,
                 )
             )) \
-        .filter(Contact_v_all.moderation_user_id==user.user_id) \
-        .filter(~exists().where(and_(
+        .filter(
+            Contact_v_all.moderation_user_id == user.user_id,
+            ~exists().where(and_(
                 Contact_v_new.contact_id == Contact_v_all.contact_id,
                 Contact_v_new.a_time > Contact_v_all.a_time,
-                ))) \
-        .filter(or_(
+            )),
+            or_(
                 Contact.a_time == None,
                 Contact_v_all.a_time > Contact.a_time,
-                )) \
+            )
+        ) \
         .order_by(Contact_v_all.a_time.desc())
 
     return query.all()
@@ -263,15 +283,17 @@ def get_user_pending_contact_org(orm, user, contact_id):
                 org_contact_v.c.existence == 1,
                 )
             )) \
-        .filter(Org_v_all.moderation_user_id==user.user_id) \
-        .filter(~exists().where(and_(
+        .filter(
+            Org_v_all.moderation_user_id == user.user_id,
+            ~exists().where(and_(
                 Org_v_new.org_id == Org_v_all.org_id,
                 Org_v_new.a_time > Org_v_all.a_time,
-                ))) \
-        .filter(or_(
+            )),
+            or_(
                 Org.a_time == None,
                 Org_v_all.a_time > Org.a_time,
-                )) \
+            )
+        ) \
         .order_by(Org_v_all.a_time.desc()) \
 
     return query.all()
@@ -295,15 +317,17 @@ def get_user_pending_event_contact(orm, user, event_id):
                 event_contact_v.c.existence == 1,
                 )
             )) \
-        .filter(Contact_v_all.moderation_user_id==user.user_id) \
-        .filter(~exists().where(and_(
+        .filter(
+            Contact_v_all.moderation_user_id == user.user_id,
+            ~exists().where(and_(
                 Contact_v_new.contact_id == Contact_v_all.contact_id,
                 Contact_v_new.a_time > Contact_v_all.a_time,
-                ))) \
-        .filter(or_(
+            )),
+            or_(
                 Contact.a_time == None,
                 Contact_v_all.a_time > Contact.a_time,
-                )) \
+            )
+        ) \
         .order_by(Contact_v_all.a_time.desc())
 
     return query.all()
@@ -327,15 +351,17 @@ def get_user_pending_contact_event(orm, user, contact_id):
                 event_contact_v.c.existence == 1,
                 )
             )) \
-        .filter(Event_v_all.moderation_user_id==user.user_id) \
-        .filter(~exists().where(and_(
+        .filter(
+            Event_v_all.moderation_user_id == user.user_id,
+            ~exists().where(and_(
                 Event_v_new.event_id == Event_v_all.event_id,
                 Event_v_new.a_time > Event_v_all.a_time,
-                ))) \
-        .filter(or_(
+            )),
+            or_(
                 Event.a_time == None,
                 Event_v_all.a_time > Event.a_time,
-                )) \
+            )
+        ) \
         .order_by(Event_v_all.a_time.desc()) \
 
     return query.all()
@@ -350,7 +376,7 @@ class UserListHandler(BaseHandler):
 
         user_list = self.orm.query(User) \
             .order_by(
-                (User.user_id==-1).desc(),
+                (User.user_id == -1).desc(),
                 User.moderator.desc(),
                 User.locked.asc(),
                 User.name,
@@ -374,13 +400,14 @@ class UserHandler(BaseHandler):
             raise HTTPError(404, "%d: No such user" % user_id)
 
         is_json = self.content_type("application/json")
-        offset = self.get_argument_int("offset", None, json=is_json)
+        offset = self.get_argument_int("offset", None, is_json=is_json)
 
         submissions = {}
         history = None
 
         if self.moderator:
-            history = get_history(self.orm, user.user_id, offset=offset, limit=50)
+            history = get_history(
+                self.orm, user.user_id, offset=offset, limit=50)
         else:
             if user != self.current_user:
                 raise HTTPError(404)
@@ -397,7 +424,4 @@ class UserHandler(BaseHandler):
             user=user,
             history=history,
             submissions=submissions,
-            )
-
-
-
+        )

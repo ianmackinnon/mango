@@ -4,13 +4,14 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm import joinedload
 from tornado.web import HTTPError
 
-from base import BaseHandler, authenticated
+from model import Orgalias
 
-from model import Org, Orgalias
+from handle.base import BaseHandler, authenticated
 
 
 
-class BaseOrgaliasHandler(BaseHandler): 
+
+class BaseOrgaliasHandler(BaseHandler):
     def _get_orgalias(self, orgalias_id, options=None):
         query = self.orm.query(Orgalias)\
             .filter_by(orgalias_id=orgalias_id)
@@ -32,8 +33,8 @@ class BaseOrgaliasHandler(BaseHandler):
 
     def _get_entity_arguments(self):
         is_json = self.content_type("application/json")
-        name = self.get_argument("name", json=is_json)
-        public = self.get_argument_public("public", json=is_json)
+        name = self.get_argument("name", is_json=is_json)
+        public = self.get_argument_public("public", is_json=is_json)
 
         return name, public
 
@@ -48,8 +49,8 @@ class OrgaliasHandler(BaseOrgaliasHandler):
         public = True
 
         options = (
-                joinedload("org"),
-                )
+            joinedload("org"),
+        )
 
         orgalias = self._get_orgalias(orgalias_id, options)
 
@@ -97,7 +98,7 @@ class OrgaliasHandler(BaseOrgaliasHandler):
         if orgalias.name == name and \
                 orgalias.public == public:
             return self.redirect_next(orgalias.url)
-            
+
         orgalias.name = name
         orgalias.public = public
         orgalias.moderation_user = self.current_user
