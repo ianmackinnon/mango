@@ -39,6 +39,8 @@ On the CAAT server
 
 ### Services
 
+#### Google OAuth 2.0
+
 Requires a Google OAuth 2.0 Client ID
 
 Sign in to Google as `caatdata@gmail.com`.
@@ -66,6 +68,18 @@ Authorized redirect URIs:
     https://www.caat.org.uk/resources/mapping/auth/login/google
     https://www-dev.caat.org.uk/resources/mapping/auth/login/google
     http://localhost:8802/auth/login/google
+    
+#### Google Maps API
+
+Go to:
+
+    https://developers.google.com/maps/documentation/javascript/get-api-key#key
+
+Click "Get a key"
+
+Choose project "CAAT Mango"
+
+Copy API key into ".mango.conf"
 
 
 ### 3rd party static content

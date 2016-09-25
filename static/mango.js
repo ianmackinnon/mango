@@ -38,8 +38,6 @@ var m = (function () {
       var cmd = ("" + key + "=" + JSON.stringify(value) +
                  "; path=" + path);
 
-      console.log("cookie", cmd);
-
       window.document.cookie = cmd;
     },
 
@@ -219,7 +217,10 @@ var m = (function () {
       orgCollection.fetch({
         data: data,
         success: function (collection, response) {
-          orgCollectionView.initialize();
+          orgCollectionView.initialize({
+            collection: orgCollection,
+            mapView: mapView
+          });
           orgCollectionView.render(true);
         },
         error: function (collection, response) {
@@ -239,7 +240,10 @@ var m = (function () {
         eventCollection.fetch({
           data: data,
           success: function (collection, response) {
-            eventCollectionView.initialize();
+            eventCollectionView.initialize({
+              collection: eventCollection,
+              mapView: mapView
+            });
             eventCollectionView.render(true);
           },
           error: function (collection, response) {

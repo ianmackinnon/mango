@@ -37,6 +37,10 @@ from handle.markdown_safe import markdown_safe, convert_links
 
 
 
+GOOGLE_MAPS_API_VERSION = "3"
+
+
+
 def sha1_concat(*parts):
     sha1 = hashlib.sha1()
     for part in parts:
@@ -493,15 +497,15 @@ class BaseHandler(RequestHandler):
             if b:
                 a[:] = [v for v in a if v not in b]
 
-        # vendro
+        # Before loading Google Maps API
+        # After loading Google Maps API, but before page JS variables
         scripts1 = [
-            "jquery.min.js", "jquery-ui/jquery-ui.min.js", "tag-it.js",
-            "underscore-min.js", "backbone-min.js", "markdown.js",
+            "jquery.3.min.js", "jquery-ui/jquery-ui.min.js", "tag-it.js",
+            "underscore-min.js", "backbone-min.js",
             "jquery.history.js", "jquery.ui.timepicker.js", "markerclusterer.js"
         ]
-        # before page js variables
         scripts2 = ["geobox.js", "template.js", "mango.js"]
-        # after page js variables
+        # after page JS variables
         scripts3 = ["address.js", "tag.js", "entity.js", "org.js"]
         if self.application.events:
             scripts3 += ["event.js"]
@@ -564,6 +568,13 @@ class BaseHandler(RequestHandler):
             "parameters": self.parameters,
             "parameters_json": json.dumps(self.parameters),
         })
+
+        if "google_maps" in self.application.settings:
+            kwargs.update({
+                "google_maps_api_key": self.application.settings[
+                    "google_maps"]["api_key"],
+                "google_maps_api_version": GOOGLE_MAPS_API_VERSION
+            })
 
         if self.moderator:
             kwargs.update({

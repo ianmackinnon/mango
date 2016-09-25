@@ -8,9 +8,9 @@
   window.Marker = Backbone.Model.extend();
 
   window.MarkerViewDot = Backbone.View.extend({
-    initialize: function () {
-      this.mapView = this.options.mapView;
-      this.color = this.options.color;
+    initialize: function (options) {
+      this.mapView = options.mapView;
+      this.color = options.color;
     },
 
     render: function () {
@@ -40,9 +40,9 @@
     className: "address-row",
     templateName: "address-row.html",
 
-    initialize: function () {
-      this.mapView = this.options.mapView;
-      this.color = this.options.color;
+    initialize: function (options) {
+      this.mapView = options.mapView;
+      this.color = options.color;
     },
 
     render: function () {
@@ -70,10 +70,10 @@
   });
 
   window.AddressViewDot = Backbone.View.extend({
-    initialize: function () {
-      this.mapView = this.options.mapView;
-      this.color = this.options.color;
-      this.entityName = this.options.entityName;
+    initialize: function (options) {
+      this.mapView = options.mapView;
+      this.color = options.color;
+      this.entityName = options.entityName;
     },
 
     render: function () {
@@ -105,13 +105,13 @@
       return this.entityName + "_address_list";
     },
 
-    initialize: function () {
+    initialize: function (options) {
       var view = this;
 
-      view.mapView = this.options.mapView;
-      view.limit = this.options.limit;
-      view.color = this.options.color;
-      view.entityName = this.options.entityName;
+      view.mapView = options.mapView;
+      view.limit = options.limit;
+      view.color = options.color;
+      view.entityName = options.entityName;
 
       this._modelViews = [];
       this.collection.each(function (model) {

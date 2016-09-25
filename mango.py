@@ -421,7 +421,7 @@ class Application(tornado.web.Application):
             (r"/api/markdown-safe", MarkdownSafeHandler),
 
             (r"/.*", NotFoundHandler),
-            ]
+        ]
 
         self.label = options.label
 
@@ -444,13 +444,17 @@ class Application(tornado.web.Application):
             "key": conf.get(CONF_PATH, 'google-oauth', 'client-id'),
             "secret": conf.get(CONF_PATH, 'google-oauth', 'client-secret'),
             "default_handler_class": DefaultHandler,
-            }
+        }
+
+        settings["google_maps"] = {
+            "api_key": conf.get(CONF_PATH, 'google-maps', 'api-key'),
+        }
 
         self.load_cookie_secret()
         settings.update(dict(
             xsrf_cookies=True,
             cookie_secret=self.cookie_secret,
-            ))
+        ))
 
         self.local_auth = options.local
         self.cookie_prefix = conf.get(CONF_PATH, u"app", u"cookie-prefix")
@@ -467,7 +471,7 @@ class Application(tornado.web.Application):
         engine = create_engine(
             connection_url,
             pool_recycle=7200  # Expire connections after 2 hours
-            )                  # (MySQL disconnects unilaterally after 8)
+        )                      # (MySQL disconnects unilaterally after 8)
 
         engine_disable_mode(engine, "ONLY_FULL_GROUP_BY")
         self.orm = scoped_session(sessionmaker(
@@ -495,7 +499,6 @@ class Application(tornado.web.Application):
         self.log_uri.propagate = False
         self.log_uri.setLevel(logging.INFO)
         if options.log:
-            options.log = options.log.decode("utf-8")
             try:
                 os.makedirs(options.log)
             except OSError, e:
@@ -540,6 +543,8 @@ class Application(tornado.web.Application):
         # HTTP Server
 
         self.forwarding_server_list = FORWARDING_SERVER_LIST
+
+        self.settings = settings
 
         tornado.web.Application.__init__(self, self.handlers, **settings)
 

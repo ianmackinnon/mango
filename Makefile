@@ -32,7 +32,8 @@ serve-test :
 	  -W error \
 	  -W ignore::UserWarning:bs4 \
 	  -W ignore::ImportWarning:httplib2 \
-	  ./mango.py --local=1 --events=0
+	  ./mango.py --local=1 --events=0 \
+	    --log=/tmp/mango-log
 
 
 

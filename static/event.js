@@ -25,9 +25,9 @@
     className: "event-box",
     templateName: "event-box.html",
 
-    initialize: function () {
-      this.mapView = this.options.mapView;
-      this.limit = this.options.limit;
+    initialize: function (options) {
+      this.mapView = options.mapView;
+      this.limit = options.limit;
     },
 
     render: function (callback) {
@@ -138,16 +138,16 @@
     tagName: "div",
     className: "column",
 
-    initialize: function () {
+    initialize: function (options) {
       var view = this;
       var limit = {
         offset: null,  // Counter
         limit: null
       };
 
-      view.mapView = this.options.mapView;
-      view.offset = this.options.offset || 0;
-      view.limit = this.options.limit || 0;
+      view.mapView = options.mapView;
+      view.offset = options.offset || 0;
+      view.limit = options.limit || 0;
 
       this._modelViews = [];
       view.many = null;
@@ -258,7 +258,7 @@
       return defaults;
     },
 
-    initialize: function () {
+    initialize: function (attributes, options) {
       this.lastRequest = null;
       this.lastResult = null;
     },
@@ -670,7 +670,7 @@
       google.maps.event.trigger(this.mapView, "idle");
     },
 
-    initialize: function () {
+    initialize: function (options) {
       _.bindAll(
         this,
         "render",
@@ -693,13 +693,13 @@
       this.model.bind("change:visibility", this.changeVisibility);
       this.model.bind("request", this.onModelRequest);
 
-      this.$results = this.options.$results;
-      this.$paging = this.options.$paging;
-      this.mapView = this.options.mapView;
+      this.$results = options.$results;
+      this.$paging = options.$paging;
+      this.mapView = options.mapView;
 
       this.formAction = null;
 
-      var data = this.serializeForm(this.options.$form);
+      var data = this.serializeForm(options.$form);
       m.log.debug("set serializeForm", data);
       this.model.set(data);
 
@@ -750,7 +750,7 @@
       this.eventtagCollection = new window.EventtagCollection();
       var eventtagListRequest = this.fetchEventtagList();
       if (eventtagListRequest) {
-        eventtagListRequest.complete(this.render);
+        eventtagListRequest.allways(this.render);
       }
     },
 

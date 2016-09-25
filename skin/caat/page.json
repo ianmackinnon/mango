@@ -5,9 +5,9 @@
   "sidebarLeft": "0",
   "sidebarRight": "0",
   "pagetitlehref": "/resources/mapping",
-  
+
   "scripts": [
-    "jquery.min.js",
+    "jquery.3.min.js",
     "jquery-ui/jquery-ui.min.js"
   ],
   "stylesheets": [
