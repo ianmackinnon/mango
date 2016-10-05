@@ -19,7 +19,7 @@ from hashlib import md5
 
 from model import connection_url_app, attach_search
 from model import User, Org
-from model import log as log_model
+from model import LOG as log_model
 
 from model_v import org_address_v
 
@@ -90,7 +90,7 @@ def multi_merge(orm, org_id_list):
 
         sql = "update org_contact_v set org_id = %d where org_id = %d" % (main.org_id, org.org_id)
         engine.execute(sql)
-            
+
 
 
 
@@ -146,7 +146,7 @@ def main(orm, threshold, c, alpha=None):
         if c:
             org_list_start = org_list_start.filter(Org.name.like(org_i.name[:c] + "%"))
         org_list_start = org_list_start.all()
-        
+
         for org_j in org_list_start:
             if org_i == org_j:
                 continue
@@ -233,8 +233,3 @@ ID:   Integer organisation IDs to merge."""
     else:
         log.info("Committing.")
         orm.commit()
-    
-
-
-
-
