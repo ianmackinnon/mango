@@ -8,16 +8,15 @@ import re
 
 from optparse import OptionParser
 
-from sqlalchemy import create_engine, func
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.exc import NoResultFound
 
 from model import connection_url_app
-from model import User, Org, Note, Address, Orgtag
+from model import User, Address
 
 
 
-log = logging.getLogger('sanitize_addresses')
+LOG = logging.getLogger('sanitize_addresses')
 
 
 
@@ -31,9 +30,14 @@ def query_yes_no(question, default="yes"):
 
     The "answer" return value is one of "yes" or "no".
     """
-    valid = {"yes":True,   "y":True,  "ye":True,
-             "no":False,     "n":False}
-    if default == None:
+    valid = {
+        "yes": True,
+        "ye": True,
+        "y": True,
+        "no": False,
+        "n": False
+    }
+    if default is None:
         prompt = " [y/n] "
     elif default == "yes":
         prompt = " [Y/n] "
@@ -54,11 +58,11 @@ def query_yes_no(question, default="yes"):
                              "(or 'y' or 'n').\n")
 
 
-re_code = re.compile("([^\W\d]\d|\d[^\W\d])", re.UNICODE)
+RE_CODE = re.compile(r"([^\W\d]\d|\d[^\W\d])", re.UNICODE)
 
 def split_postcode(line):
     def is_code(text):
-        return bool(re_code.search(text))
+        return bool(RE_CODE.search(text))
 
     ret = [[]]
     last_code = None
@@ -80,7 +84,7 @@ def suspicious_postcodes(orm):
     for address in orm.query(Address):
         parts = Address.parts(address.postal)
         for part in parts[len(parts)/2:]:
-            if re_code.search(part):
+            if RE_CODE.search(part):
                 split = split_postcode(part)
                 if len(split) > 1:
                     print
@@ -98,7 +102,7 @@ def sanitise_addresses(orm):
     for address in orm.query(Address):
         a = address.postal
         b = address.sanitise_address(address.postal)
-        if (a != b):
+        if a != b:
             if "," not in b:
                 address.postal = b
                 print b.encode("utf-8")
@@ -113,13 +117,13 @@ def sanitise_addresses(orm):
             print
             if query_yes_no(u"replace?", default=None):
                 address.postal = b
+                address.moderation_user = user
                 orm.commit()
 
 
 
-
-if __name__ == "__main__":
-    log.addHandler(logging.StreamHandler())
+def main():
+    LOG.addHandler(logging.StreamHandler())
 
     usage = """%prog [ID]...
 
@@ -127,23 +131,32 @@ ID:   Integer organisation IDs to merge."""
 
 
     parser = OptionParser(usage=usage)
-    parser.add_option("-v", "--verbose", action="count", dest="verbose",
-                      help="Print verbose information for debugging.", default=0)
-    parser.add_option("-q", "--quiet", action="count", dest="quiet",
-                      help="Suppress warnings.", default=0)
+    parser.add_option(
+        "-v", "--verbose", dest="verbose",
+        action="count", default=0,
+        help="Print verbose information for debugging.")
+    parser.add_option(
+        "-q", "--quiet", dest="quiet",
+        action="count", default=0,
+        help="Suppress warnings.")
 
-    (options, args) = parser.parse_args()
+    (options, _args) = parser.parse_args()
 
-    verbosity = max(0, min(3, 1 + options.verbose - options.quiet))
-    log.setLevel(
-        (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[verbosity]
-        )
+    log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[
+        max(0, min(3, 1 + options.verbose - options.quiet))]
+    LOG.setLevel(log_level)
 
     connection_url = connection_url_app()
     engine = create_engine(connection_url,)
-    Session = sessionmaker(bind=engine, autocommit=False, autoflush=False)
-    orm = Session()
+    session_factory = sessionmaker(
+        bind=engine, autocommit=False, autoflush=False)
+    orm = session_factory()
 
-#    sanitise_addresses(orm);
+#    sanitise_addresses(orm)
 
-    suspicious_postcodes(orm);
+    suspicious_postcodes(orm)
+
+
+
+if __name__ == "__main__":
+    main()

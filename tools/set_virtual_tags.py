@@ -8,17 +8,16 @@ import logging
 
 from optparse import OptionParser
 
-from sqlalchemy import create_engine, func
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.exc import NoResultFound
 
 from model import connection_url_app, attach_search
-from model import User, Org, Orgtag, virtual_orgtag_list, virtual_org_orgtag_all
-from model import log as log_model
+from model import User, Org, Orgtag, VIRTUAL_ORGTAG_LIST, virtual_org_orgtag_all
+from model import LOG as LOG_MODEL
 
 
 
-log = logging.getLogger('set_virtual_tags')
+LOG = logging.getLogger('set_virtual_tags')
 
 
 
@@ -31,15 +30,15 @@ def shell_blue(text):
 
 
 def create_all_virtual_orgtags(orm, system_user):
-    for virtual_name, filter_search in virtual_orgtag_list:
-        log.info(virtual_name)
+    for virtual_name, _filter_search in VIRTUAL_ORGTAG_LIST:
+        LOG.info(virtual_name)
 
         virtual_tag = orm.query(Orgtag) \
             .filter_by(name=virtual_name) \
             .first()
 
         if not virtual_tag:
-            log.info("creating")
+            LOG.info("creating")
             virtual_tag = Orgtag(virtual_name,
                                  moderation_user=system_user,
                                  public=False)
@@ -60,24 +59,24 @@ def check_orgtags(orm, org_id_list=None):
 
     total = query.count()
     for i, org in enumerate(query.all(), 1):
-        if (i % 100 == 0):
-            log.info(u"%5d/%d" % (i, total))
-        log.debug(shell_blue(org.name))
+        if i % 100 == 0:
+            LOG.info(u"%5d/%d", i, total)
+        LOG.debug(shell_blue(org.name))
 
-        if log.level == logging.DEBUG:
+        if LOG.level == logging.DEBUG:
             before = [orgtag.orgtag_id for orgtag in org.orgtag_list]
         virtual_org_orgtag_all(org)
-        if log.level == logging.DEBUG:
+        if LOG.level == logging.DEBUG:
             if before != [orgtag.orgtag_id for orgtag in org.orgtag_list]:
-                log.warning(shell_red(u"Changed: %s" % org.name))
+                LOG.warning(shell_red(u"Changed: %s" % org.name))
 
     orm.commit()
 
 
 
 def main():
-    log.addHandler(logging.StreamHandler())
-    log_model.addHandler(logging.StreamHandler())
+    LOG.addHandler(logging.StreamHandler())
+    LOG_MODEL.addHandler(logging.StreamHandler())
 
     usage = """%prog [ORG_ID...]
 
@@ -86,33 +85,38 @@ ORG_ID      List of Org IDs to set, otherwise set all orgs.
 
 """
 
-
     parser = OptionParser(usage=usage)
-    parser.add_option("-v", "--verbose", action="count", dest="verbose",
-                      help="Print verbose information for debugging.", default=0)
-    parser.add_option("-q", "--quiet", action="count", dest="quiet",
-                      help="Suppress warnings.", default=0)
+    parser.add_option(
+        "-v", "--verbose", dest="verbose",
+        action="count", default=0,
+        help="Print verbose information for debugging.")
+    parser.add_option(
+        "-q", "--quiet", dest="quiet",
+        action="count", default=0,
+        help="Suppress warnings.")
     parser.add_option("-c", "--create", action="store_true", dest="create",
                       help="Create tags that don't already exist.", default=None)
 
     (options, args) = parser.parse_args()
     args = [arg.decode(sys.getfilesystemencoding()) for arg in args]
 
-    log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[max(0, min(3, 1 + options.verbose - options.quiet))]
+    log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[
+        max(0, min(3, 1 + options.verbose - options.quiet))]
 
-    log.setLevel(log_level)
-    log_model.setLevel(log_level)
+    LOG.setLevel(log_level)
+    LOG_MODEL.setLevel(log_level)
 
     connection_url = connection_url_app()
     engine = create_engine(connection_url)
-    Session = sessionmaker(bind=engine, autoflush=False, autocommit=False)
-    orm = Session()
+    session_factory = sessionmaker(
+        bind=engine, autoflush=False, autocommit=False)
+    orm = session_factory()
     attach_search(engine, orm)
 
     try:
         org_id_list = [int(arg) for arg in args]
-    except ValueError as e:
-        log.error("Could not convert all arguments to integers.")
+    except ValueError:
+        LOG.error("Could not convert all arguments to integers.")
         parser.print_usage()
         sys.exit(1)
 

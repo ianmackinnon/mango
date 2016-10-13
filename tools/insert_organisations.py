@@ -121,9 +121,9 @@ def get_org(orm, name):
     try:
         return query.one()
     except NoResultFound:
-        org = None
+        pass
     except MultipleResultsFound:
-        LOG.warning("Multiple results found for name '%s'." % name)
+        LOG.warning("Multiple results found for name '%s'.", name)
         return query.first()
 
     query = orm.query(Orgalias) \
@@ -132,9 +132,9 @@ def get_org(orm, name):
     try:
         return query.one().org
     except NoResultFound:
-        orgalias = None
+        pass
     except MultipleResultsFound:
-        LOG.warning("Multiple results found for alias '%s'." % name)
+        LOG.warning("Multiple results found for alias '%s'.", name)
         return query.first().org
 
     return None
@@ -164,6 +164,8 @@ def get_candidates(es, text):
 
 def search_org(es, text_orig, just_search=False):
     """Returns False to skip"""
+    # pylint: disable=redefined-variable-type
+    # `org_id` may be `None`, `False` or string.
 
     org_id = None
     text_search = text_orig
@@ -246,7 +248,8 @@ def select_org(orm, name, user, search=True):
         LOG.warning("No result found for '%s', org_id '%d'.", name, org_id)
         raise e
 
-    orgalias = Orgalias(name, org, user, False)
+    # Adds new `Orgalias` to `Org`.
+    Orgalias(name, org, user, False)
 
     return org
 
@@ -421,10 +424,10 @@ def main():
 
     (options, args) = parser.parse_args()
 
-    level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG)[
+    log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG)[
         max(0, min(3, 1 + options.verbose - options.quiet))]
-    LOG.setLevel(level)
-    LOG_SEARCH.setLevel(level)
+    LOG.setLevel(log_level)
+    LOG_SEARCH.setLevel(log_level)
 
     if len(args) == 0:
         parser.print_usage()

@@ -11,19 +11,17 @@ from optparse import OptionParser
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
-import mysql.mysql
-
 from model import connection_url_admin
-from model import Auth, User, Session
+from model import Auth, User
 
 
 
-log = logging.getLogger('manage_user')
+LOG = logging.getLogger('manage_user')
 
 
 
-if __name__ == "__main__":
-    log.addHandler(logging.StreamHandler())
+def main():
+    LOG.addHandler(logging.StreamHandler())
 
     usage = """%prog NAME GMAIL
 
@@ -31,10 +29,12 @@ Set moderator status of user, creating user if they don't already exist.
 """
 
     parser = OptionParser(usage=usage)
-    parser.add_option("-v", "--verbose", action="count", dest="verbose",
-                      help="Print verbose information for debugging.", default=0)
-    parser.add_option("-q", "--quiet", action="count", dest="quiet",
-                      help="Suppress warnings.", default=0)
+    parser.add_option("-v", "--verbose", dest="verbose",
+                      action="count", default=0,
+                      help="Print verbose information for debugging.")
+    parser.add_option("-q", "--quiet", dest="quiet",
+                      action="count", default=0,
+                      help="Suppress warnings.")
     parser.add_option("-m", "--moderator", action="store", dest="moderator",
                       help="0 or 1.", default=None)
     parser.add_option("-l", "--lock", action="store", dest="lock",
@@ -42,15 +42,13 @@ Set moderator status of user, creating user if they don't already exist.
 
     (options, args) = parser.parse_args()
 
-    log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[
+    log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG)[
         max(0, min(3, 1 + options.verbose - options.quiet))]
+    LOG.setLevel(log_level)
 
-    log.setLevel(log_level)
-
-    if not len(args) == 2:
+    if len(args) != 2:
         parser.print_usage()
         sys.exit(1)
-
 
     if options.moderator is not None:
         if options.moderator not in ["0", "1"]:
@@ -64,8 +62,8 @@ Set moderator status of user, creating user if they don't already exist.
 
     connection_url = connection_url_admin()
     engine = create_engine(connection_url,)
-    Session = sessionmaker(bind=engine, autocommit=False)
-    orm = Session()
+    session_factory = sessionmaker(bind=engine, autocommit=False)
+    orm = session_factory()
 
     user_name, auth_name = args
 
@@ -80,3 +78,7 @@ Set moderator status of user, creating user if they don't already exist.
         user.locked = options.lock
     orm.commit()
 
+
+
+if __name__ == "__main__":
+    main()

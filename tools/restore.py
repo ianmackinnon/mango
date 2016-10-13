@@ -2,47 +2,30 @@
 # -*- coding: utf-8 -*-
 
 import sys
-sys.path.append(".")
-import redis
-import urllib
 import logging
-import datetime
-
 from optparse import OptionParser
 
-from sqlalchemy import Column
-from sqlalchemy import ForeignKey, ForeignKeyConstraint, UniqueConstraint, CheckConstraint, PrimaryKeyConstraint
-
-from sqlalchemy import create_engine, func
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.exc import NoResultFound
-
-from sqlalchemy.orm import object_session 
-from sqlalchemy.orm.util import has_identity
-
-from sqlalchemy import Boolean, Integer, Float as FloatOrig, Numeric, Date, Time
-from sqlalchemy import Unicode as UnicodeOrig, String as StringOrig
-from sqlalchemy.dialects.mysql import LONGTEXT, DOUBLE
-
-from sqlalchemy.sql import select
-
-from hashlib import md5
 
 from model import connection_url_app, attach_search
 from model import User, Event, Eventtag, Org, Orgtag, Orgalias, Note, Address
-from model_v import Org_v, Orgalias_v, Orgtag_v, Event_v, Eventtag_v, Address_v, Note_v, use_mysql
+from model_v import Org_v, Orgalias_v, Orgtag_v, Event_v, Eventtag_v, \
+    Address_v, Note_v
 
 
 
-log = logging.getLogger('restore')
+LOG = logging.getLogger('restore')
 
 
 
-transaction_time_threshold = 2
+TRANSACTION_TIME_THRESHOLD = 2
 
 
 
 def get_existing_entity(orm, Entity, key, value):
+    # pylint: disable=invalid-name
+    # Allow `Entity` abstract class name.
     entity_query = orm.query(Entity) \
         .filter_by(**{key: value})
     return entity_query.first()
@@ -50,6 +33,8 @@ def get_existing_entity(orm, Entity, key, value):
 
 
 def get_deleted_entity(orm, Entity, Entity_v, key, value, key_v, d_time=None):
+    # pylint: disable=invalid-name
+    # Allow `Entity_v` and `Entity` abstract class names.
     entity = get_existing_entity(orm, Entity, key, value)
     if entity:
         return entity, None, None
@@ -58,13 +43,13 @@ def get_deleted_entity(orm, Entity, Entity_v, key, value, key_v, d_time=None):
         .filter_by(**{key: value, "existence": False})
     if d_time is not None:
         entity_v_deleted_query = entity_v_deleted_query \
-            .filter(Entity_v.a_time <= d_time + transaction_time_threshold) \
-            .filter(Entity_v.a_time >= d_time - transaction_time_threshold)
+            .filter(Entity_v.a_time <= d_time + TRANSACTION_TIME_THRESHOLD) \
+            .filter(Entity_v.a_time >= d_time - TRANSACTION_TIME_THRESHOLD)
     entity_v_deleted_query = entity_v_deleted_query \
         .order_by(Entity_v.a_time.desc())
     entity_v_deleted = entity_v_deleted_query.first()
     if not entity_v_deleted:
-        log.debug("Deleted row not found.")
+        LOG.debug("Deleted row not found.")
         return None, None, None
 
     entity_v_last = orm.query(Entity_v) \
@@ -75,19 +60,21 @@ def get_deleted_entity(orm, Entity, Entity_v, key, value, key_v, d_time=None):
         .first()
 
     if not entity_v_last:
-        log.warning("Existing row not found.")
+        LOG.warning("Existing row not found.")
         return None, None, None
 
     if not entity_v_last.existence:
-        log.warning("Existing row not last.")
+        LOG.warning("Existing row not last.")
         return None, None, None
 
     return None, entity_v_last, entity_v_deleted.a_time
 
 
 
-
-def get_deleted_entity_list(orm, Entity, Entity_v, key, value, key_2, key_v, d_time):
+def get_deleted_entity_list(
+        orm, Entity, Entity_v, key, value, key_2, key_v, d_time):
+    # pylint: disable=invalid-name
+    # Allow `Entity_v` and `Entity` abstract class names.
     entity_query = orm.query(Entity) \
         .filter_by(**{key: value})
     entity_list = entity_query.all()
@@ -98,8 +85,8 @@ def get_deleted_entity_list(orm, Entity, Entity_v, key, value, key_2, key_v, d_t
         .filter_by(**{key: value, "existence": False})
     if d_time is not None:
         entity_v_deleted_query = entity_v_deleted_query \
-            .filter(Entity_v.a_time <= d_time + transaction_time_threshold) \
-            .filter(Entity_v.a_time >= d_time - transaction_time_threshold)
+            .filter(Entity_v.a_time <= d_time + TRANSACTION_TIME_THRESHOLD) \
+            .filter(Entity_v.a_time >= d_time - TRANSACTION_TIME_THRESHOLD)
     entity_v_deleted_list = entity_v_deleted_query \
         .order_by(Entity_v.a_time.desc()) \
         .all()
@@ -114,15 +101,17 @@ def get_deleted_entity_list(orm, Entity, Entity_v, key, value, key_2, key_v, d_t
                 key: value,
                 key_2: getattr(entity_v_deleted, key_2),
                 }) \
-            .filter(Entity_v.a_time <= entity_v_deleted.a_time) \
-            .filter(getattr(Entity_v, key_v) != getattr(entity_v_deleted, key_v)) \
+            .filter(
+                Entity_v.a_time <= entity_v_deleted.a_time,
+                getattr(Entity_v, key_v) != getattr(entity_v_deleted, key_v)
+            ) \
             .order_by(Entity_v.a_time.desc()) \
             .first()
         if not entity_v_last:
-            log.warning("Existing row not found (list %s %s).", )
+            LOG.warning("Existing row not found (list %s %s).", )
             continue
         if not entity_v_last.existence:
-            log.warning("Existing row not last.")
+            LOG.warning("Existing row not last.")
             continue
         entity_v_last_list.append(entity_v_last)
 
@@ -130,7 +119,8 @@ def get_deleted_entity_list(orm, Entity, Entity_v, key, value, key_2, key_v, d_t
 
 
 
-def get_deleted_child_id_list(orm, table_name, table_name_v, key, value, key_2, d_time):
+def get_deleted_child_id_list(
+        orm, table_name, table_name_v, key, value, key_2, d_time):
     engine = orm.connection().engine
 
     deleted_id_list = []
@@ -140,15 +130,15 @@ def get_deleted_child_id_list(orm, table_name, table_name_v, key, value, key_2, 
     sql = """
 select %s from %s
 where %s = %d""" % (
-        key_2, table_name,
-        key, value,
-        )
+    key_2, table_name,
+    key, value,
+)
     results = engine.execute(sql)
 
     for (value_2, ) in results:
         if value_2 in deleted_id_list:
             continue
-        log.warning("Found existing cross link for %s:%d", key_2, value_2)
+        LOG.warning("Found existing cross link for %s:%d", key_2, value_2)
         deleted_id_list.append(value_2)
 
     # Get deleted links
@@ -157,16 +147,16 @@ where %s = %d""" % (
 select %s, a_time from %s
 where %s = %d
 and existence = 0""" % (
-        key_2, table_name_v,
-        key, value,
-        )
+    key_2, table_name_v,
+    key, value,
+)
     if d_time is not None:
         sql += """
 and a_time <= %.3f
 and a_time >= %.3f""" % (
-            d_time + transaction_time_threshold,
-            d_time - transaction_time_threshold,
-            )
+    d_time + TRANSACTION_TIME_THRESHOLD,
+    d_time - TRANSACTION_TIME_THRESHOLD,
+)
     sql += """
 order by a_time desc"""
     results = engine.execute(sql)
@@ -184,18 +174,19 @@ and a_time <= %.3f
 and existence = 1
 order by a_time desc
 limit 1""" % (
-            table_name_v,
-            key, value,
-            key_2, value_2,
-            a_time,
-            )
+    table_name_v,
+    key, value,
+    key_2, value_2,
+    a_time,
+)
         result = list(engine.execute(sql))
         if not result:
-            log.warning("Existing row not found (id %s %s %s)." % (key_2, value_2, sql))
+            LOG.warning(
+                "Existing row not found (id %s %s %s).", key_2, value_2, sql)
             sys.exit(1)
             continue
         if not result[0]:
-            log.warning("Existing row not last.")
+            LOG.warning("Existing row not last.")
             continue
         deleted_id_list.append(value_2)
 
@@ -204,21 +195,25 @@ limit 1""" % (
 
 
 def restore_note(orm, user, note_id, historic, d_time=None):
-    log.info("Restoring note %d" % note_id)
+    LOG.info("Restoring note %d", note_id)
 
     d_time = historic and d_time or None
-    note, note_v, d_time = get_deleted_entity(orm, Note, Note_v, "note_id", note_id, "note_v_id", d_time)
+    note, note_v, d_time = get_deleted_entity(
+        orm, Note, Note_v, "note_id", note_id, "note_v_id", d_time)
     d_time = historic and d_time or None
-    
+
     if note:
-        log.warning("Note %d already exists." % note_id)
+        LOG.warning("Note %d already exists.", note_id)
         return note
 
     if not note_v:
-        log.error("Cannot restore note %d because no recently deleted versions exist." % note_id)
+        LOG.error(
+            "Cannot restore note %d because no recently "
+            "deleted versions exist.",
+            note_id)
         return None
 
-    log.info("deleted time: %s" % d_time)
+    LOG.info("deleted time: %s", d_time)
 
     note = Note(
         note_v.text, note_v.source,
@@ -230,50 +225,58 @@ def restore_note(orm, user, note_id, historic, d_time=None):
 
 
 
-def restore_orgtag(orm, user, orgtag_id):
-    log.info("Restoring orgtag %d" % orgtag_id)
+def restore_orgtag(orm, _user, orgtag_id):
+    LOG.info("Restoring orgtag %d", orgtag_id)
 
 
-    orgtag, orgtag_v, d_time = get_deleted_entity(orm, Orgtag, Orgtag_v, "orgtag_id", orgtag_id, "orgtag_v_id", None)
-    
+    orgtag, _orgtag_v, _d_time = get_deleted_entity(
+        orm, Orgtag, Orgtag_v, "orgtag_id", orgtag_id, "orgtag_v_id", None)
+
     if orgtag:
-        log.warning("Orgtag %d already exists." % orgtag_id)
+        LOG.warning("Orgtag %d already exists.", orgtag_id)
         return orgtag
 
-    raise NotImplementedError;
+    raise NotImplementedError
 
 
 
-def restore_eventtag(orm, user, eventtag_id):
-    log.info("Restoring eventtag %d" % eventtag_id)
+def restore_eventtag(orm, _user, eventtag_id):
+    LOG.info("Restoring eventtag %d", eventtag_id)
 
 
-    eventtag, eventtag_v, d_time = get_deleted_entity(orm, Eventtag, Eventtag_v, "eventtag_id", eventtag_id, "eventtag_v_id", None)
-    
+    eventtag, _eventtag_v, _d_time = get_deleted_entity(
+        orm, Eventtag, Eventtag_v,
+        "eventtag_id", eventtag_id, "eventtag_v_id", None)
+
     if eventtag:
-        log.warning("Eventtag %d already exists." % eventtag_id)
+        LOG.warning("Eventtag %d already exists.", eventtag_id)
         return eventtag
 
-    raise NotImplementedError;
+    raise NotImplementedError
 
 
 
 def restore_address(orm, user, address_id, historic, d_time=None):
-    log.info("Restoring address %d" % address_id)
+    LOG.info("Restoring address %d", address_id)
 
     d_time = historic and d_time or None
-    address, address_v, d_time = get_deleted_entity(orm, Address, Address_v, "address_id", address_id, "address_v_id", d_time)
+    address, address_v, d_time = get_deleted_entity(
+        orm, Address, Address_v,
+        "address_id", address_id, "address_v_id", d_time)
     d_time = historic and d_time or None
-    
+
     if address:
-        log.warning("Address %d already exists." % address_id)
+        LOG.warning("Address %d already exists.", address_id)
         return address
 
     if not address_v:
-        log.error("Cannot restore address %d because no recently deleted versions exist." % address_id)
+        LOG.error(
+            "Cannot restore address %d because no recently "
+            "deleted versions exist.",
+            address_id)
         return None
 
-    log.info("deleted time: %s" % d_time)
+    LOG.info("deleted time: %s", d_time)
 
     address = Address(
         address_v.postal, address_v.source, address_v.lookup,
@@ -285,14 +288,17 @@ def restore_address(orm, user, address_id, historic, d_time=None):
     orm.add(address)
 
     note_id_list = get_deleted_child_id_list(
-        orm, "address_note", "address_note_v", "address_id", address_id, "note_id", d_time)
+        orm, "address_note", "address_note_v",
+        "address_id", address_id, "note_id", d_time)
 
     for note_id in note_id_list:
         note = restore_note(orm, user, note_id, historic, d_time)
         if not note:
             continue
         if note in address.note_list:
-            log.warning("Not linking note %s, already linked to this address.", note_id)
+            LOG.warning(
+                "Not linking note %s, already linked to this address.",
+                note_id)
             continue
         address.note_list.append(note)
 
@@ -301,21 +307,25 @@ def restore_address(orm, user, address_id, historic, d_time=None):
 
 
 def restore_org(orm, user, org_id, historic, d_time=None):
-    log.info("Restoring org %d" % org_id)
+    LOG.info("Restoring org %d", org_id)
 
     d_time = historic and d_time or None
-    org, org_v, d_time = get_deleted_entity(orm, Org, Org_v, "org_id", org_id, "org_v_id", d_time)
+    org, org_v, d_time = get_deleted_entity(
+        orm, Org, Org_v, "org_id", org_id, "org_v_id", d_time)
     d_time = historic and d_time or None
-    
+
     if org:
-        log.warning("Org %d already exists." % org_id)
+        LOG.warning("Org %d already exists.", org_id)
         return org
 
     if not org_v:
-        log.error("Cannot restore org %d because no recently deleted versions exist." % org_id)
+        LOG.error(
+            "Cannot restore org %d because no recently "
+            "deleted versions exist.",
+            org_id)
         return None
 
-    log.info("deleted time: %s" % d_time)
+    LOG.info("deleted time: %s", d_time)
 
     org = Org(org_v.name,
               description=org_v.description,
@@ -326,8 +336,9 @@ def restore_org(orm, user, org_id, historic, d_time=None):
     orm.add(org)
 
 
-    orgalias_list, orgalias_v_list = get_deleted_entity_list(
-        orm, Orgalias, Orgalias_v, "org_id", org_id, "orgalias_id", "orgalias_v_id", d_time)
+    _orgalias_list, orgalias_v_list = get_deleted_entity_list(
+        orm, Orgalias, Orgalias_v,
+        "org_id", org_id, "orgalias_id", "orgalias_v_id", d_time)
 
     for orgalias_v in orgalias_v_list:
         orgalias = Orgalias(orgalias_v.name, org, user, orgalias_v.public)
@@ -335,30 +346,38 @@ def restore_org(orm, user, org_id, historic, d_time=None):
 
 
     orgtag_id_list = get_deleted_child_id_list(
-        orm, "org_orgtag", "org_orgtag_v", "org_id", org_id, "orgtag_id", d_time)
+        orm, "org_orgtag", "org_orgtag_v",
+        "org_id", org_id, "orgtag_id", d_time)
 
     for orgtag_id in orgtag_id_list:
         orgtag = restore_orgtag(orm, user, orgtag_id)
         if orgtag in org.orgtag_list:
             if not orgtag:
                 continue
-            log.warning("Not linking orgtag %s, already linked to this org." % orgtag_id)
+            LOG.warning(
+                "Not linking orgtag %s, already linked to this org.",
+                orgtag_id)
             continue
         org.orgtag_list.append(orgtag)
 
 
     address_id_list = get_deleted_child_id_list(
-        orm, "org_address", "org_address_v", "org_id", org_id, "address_id", d_time)
+        orm, "org_address", "org_address_v",
+        "org_id", org_id, "address_id", d_time)
 
     for address_id in address_id_list:
         address = restore_address(orm, user, address_id, historic, d_time)
         if not address:
             continue
         if address.org_list or address.event_list:
-            log.warning("Not linking address %s, already linked to another entity.", address_id)
+            LOG.warning(
+                "Not linking address %s, already linked to another entity.",
+                address_id)
             continue
         if address in org.address_list:
-            log.warning("Not linking address %s, already linked to this org.", address_id)
+            LOG.warning(
+                "Not linking address %s, already linked to this org.",
+                address_id)
             continue
         org.address_list.append(address)
 
@@ -371,7 +390,8 @@ def restore_org(orm, user, org_id, historic, d_time=None):
         if not note:
             continue
         if note in org.note_list:
-            log.warning("Not linking note %s, already linked to this org.", note_id)
+            LOG.warning(
+                "Not linking note %s, already linked to this org.", note_id)
             continue
         org.note_list.append(note)
 
@@ -383,11 +403,13 @@ def restore_org(orm, user, org_id, historic, d_time=None):
         event = get_existing_entity(orm, Event, "event_id", event_id)
         if event:
             if event in org.event_list:
-                log.warning("Not linking event %s, already linked to this org.", event_id)
+                LOG.warning(
+                    "Not linking event %s, already linked to this org.",
+                    event_id)
                 continue
             org.event_list.append(event)
         else:
-            log.warning("Not restoring link to deleted event %d." % event_id)
+            LOG.warning("Not restoring link to deleted event %d.", event_id)
 
 
     return org
@@ -395,21 +417,25 @@ def restore_org(orm, user, org_id, historic, d_time=None):
 
 
 def restore_event(orm, user, event_id, historic, d_time=None):
-    log.info("Restoring event %d" % event_id)
+    LOG.info("Restoring event %d", event_id)
 
     d_time = historic and d_time or None
-    event, event_v, d_time = get_deleted_entity(orm, Event, Event_v, "event_id", event_id, "event_v_id", d_time)
+    event, event_v, d_time = get_deleted_entity(
+        orm, Event, Event_v, "event_id", event_id, "event_v_id", d_time)
     d_time = historic and d_time or None
-    
+
     if event:
-        log.warning("Event %d already exists." % event_id)
+        LOG.warning("Event %d already exists.", event_id)
         return event
 
     if not event_v:
-        log.error("Cannot restore event %d because no recently deleted versions exist." % event_id)
+        LOG.error(
+            "Cannot restore event %d because no recently "
+            "deleted versions exist.",
+            event_id)
         return None
 
-    log.info("deleted time: %s" % d_time)
+    LOG.info("deleted time: %s", d_time)
 
     event = Event(
         event_v.name, event_v.start_date, event_v.end_date,
@@ -421,43 +447,54 @@ def restore_event(orm, user, event_id, historic, d_time=None):
 
 
     eventtag_id_list = get_deleted_child_id_list(
-        orm, "event_eventtag", "event_eventtag_v", "event_id", event_id, "eventtag_id", d_time)
+        orm, "event_eventtag", "event_eventtag_v",
+        "event_id", event_id, "eventtag_id", d_time)
 
     for eventtag_id in eventtag_id_list:
         eventtag = restore_eventtag(orm, user, eventtag_id)
         if not eventtag:
             continue
         if eventtag in event.eventtag_list:
-            log.warning("Not linking eventtag %s, already linked to this event." % eventtag_id)
+            LOG.warning(
+                "Not linking eventtag %s, already linked to this event.",
+                eventtag_id)
             continue
         event.eventtag_list.append(eventtag)
 
 
     address_id_list = get_deleted_child_id_list(
-        orm, "event_address", "event_address_v", "event_id", event_id, "address_id", d_time)
+        orm, "event_address", "event_address_v",
+        "event_id", event_id, "address_id", d_time)
 
     for address_id in address_id_list:
         address = restore_address(orm, user, address_id, historic, d_time)
         if not address:
             continue
         if address.org_list or address.event_list:
-            log.warning("Not linking address %s, already linked to another entity.", address_id)
+            LOG.warning(
+                "Not linking address %s, already linked to another entity.",
+                address_id)
             continue
         if address in event.address_list:
-            log.warning("Not linking address %s, already linked to this event.", address_id)
+            LOG.warning(
+                "Not linking address %s, already linked to this event.",
+                address_id)
             continue
         event.address_list.append(address)
 
 
     note_id_list = get_deleted_child_id_list(
-        orm, "event_note", "event_note_v", "event_id", event_id, "note_id", d_time)
+        orm, "event_note", "event_note_v",
+        "event_id", event_id, "note_id", d_time)
 
     for note_id in note_id_list:
         note = restore_note(orm, user, note_id, historic, d_time)
         if not note:
             continue
         if note in event.note_list:
-            log.warning("Not linking note %s, already linked to this event.", note_id)
+            LOG.warning(
+                "Not linking note %s, already linked to this event.",
+                note_id)
             continue
         event.note_list.append(note)
 
@@ -469,19 +506,20 @@ def restore_event(orm, user, event_id, historic, d_time=None):
         org = get_existing_entity(orm, Org, "org_id", org_id)
         if org:
             if org in event.org_list:
-                log.warning("Not linking org %s, already linked to this event.", org_id)
+                LOG.warning(
+                    "Not linking org %s, already linked to this event.",
+                    org_id)
                 continue
             event.org_list.append(org)
         else:
-            log.warning("Not restoring link to deleted org %d." % org_id)
+            LOG.warning("Not restoring link to deleted org %d.", org_id)
 
 
     return event
 
-    
-    
-if __name__ == "__main__":
-    log.addHandler(logging.StreamHandler())
+
+def main():
+    LOG.addHandler(logging.StreamHandler())
 
     usage = """%prog [ID]...
 
@@ -489,10 +527,14 @@ ID:   Integer organisation IDs to merge."""
 
 
     parser = OptionParser(usage=usage)
-    parser.add_option("-v", "--verbose", action="count", dest="verbose",
-                      help="Print verbose information for debugging.", default=0)
-    parser.add_option("-q", "--quiet", action="count", dest="quiet",
-                      help="Suppress warnings.", default=0)
+    parser.add_option(
+        "-v", "--verbose", dest="verbose",
+        action="count", default=0,
+        help="Print verbose information for debugging.")
+    parser.add_option(
+        "-q", "--quiet", dest="quiet",
+        action="count", default=0,
+        help="Suppress warnings.")
     parser.add_option("-n", "--dry-run", action="store_true", dest="dry_run",
                       help="Dry run.", default=None)
     parser.add_option("-i", "--ignore-timestamp", action="store_false",
@@ -504,17 +546,17 @@ ID:   Integer organisation IDs to merge."""
     parser.add_option("-E", "--event", action="store", dest="event", type="int",
                       help="Restore event by id.", default=None)
 
-    (options, args) = parser.parse_args()
+    (options, _args) = parser.parse_args()
 
-    verbosity = max(0, min(3, 1 + options.verbose - options.quiet))
-    log.setLevel(
-        (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[verbosity]
-        )
+    log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[
+        max(0, min(3, 1 + options.verbose - options.quiet))]
+
+    LOG.setLevel(log_level)
 
     connection_url = connection_url_app()
     engine = create_engine(connection_url,)
-    Session = sessionmaker(bind=engine, autocommit=False)
-    orm = Session()
+    session_factory = sessionmaker(bind=engine, autocommit=False)
+    orm = session_factory()
     attach_search(engine, orm)
 
     user = orm.query(User).filter_by(user_id=-1).one()
@@ -522,16 +564,21 @@ ID:   Integer organisation IDs to merge."""
     if options.org:
         org = restore_org(orm, user, options.org, options.historic)
         if org:
-            log.info(org.pprint())
+            LOG.info(org.pprint())
 
     if options.event:
         event = restore_event(orm, user, options.event, options.historic)
         if event:
-            log.info(event.pprint())
+            LOG.info(event.pprint())
 
     if options.dry_run:
-        log.warning("rolling back")
+        LOG.warning("rolling back")
         orm.rollback()
     else:
-        log.info("Committing.")
+        LOG.info("Committing.")
         orm.commit()
+
+
+
+if __name__ == "__main__":
+    main()
