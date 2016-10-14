@@ -1,9 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import sys
-sys.path.append(".")
-
 import json
 import codecs
 import logging
@@ -29,9 +27,9 @@ def text_to_ngrams(text, size=5):
     ngrams = []
     for word in text.lower().split():
         length = len(word)
-        space = u" " * (size - 1)
+        space = " " * (size - 1)
         word = space + word + space
-        for i in xrange(length + size - 1):
+        for i in range(length + size - 1):
             ngrams.append(word[i: i + size])
     return ngrams
 
@@ -54,13 +52,13 @@ def get_names(orm):
 
 def select_from_list(matches):
     for m, (name, alias) in enumerate(matches):
-        print (
-            u"  %4d  %s  %s" % (m, name, (alias and ("[%s]" % alias) or ""))
-        ).encode("utf-8")
-    print
-    print "Choose name or non-numeric to exit: ",
+        print((
+            "  %4d  %s  %s" % (m, name, (alias and ("[%s]" % alias) or ""))
+        ).encode("utf-8"))
+    print()
+    print("Choose name or non-numeric to exit: ", end=' ')
 
-    choice = raw_input()
+    choice = input()
 
     try:
         choice = int(choice)
@@ -103,8 +101,8 @@ def closest_names(name, names, orm):
 
     matches = sorted(list(matches))
 
-    print
-    print         ("\n%s\n" % name).encode("utf-8")
+    print()
+    print(("\n%s\n" % name).encode("utf-8"))
 
     existing_name = select_from_list(matches)
 
@@ -176,7 +174,7 @@ def search_org(es, text_orig, just_search=False):
             break
 
         sys.stderr.write(
-            (u"\nFind: '\033[92m%s\033[0m'\n\n" % (text_orig)).encode("utf-8")
+            ("\nFind: '\033[92m%s\033[0m'\n\n" % (text_orig)).encode("utf-8")
         )
         for i, org in enumerate(candidates, 1):
             sys.stderr.write(
@@ -185,7 +183,7 @@ def search_org(es, text_orig, just_search=False):
             )
             for name in org["alias"]:
                 sys.stderr.write(
-                    (u"        \033[94m%s\033[0m\n" % name).encode("utf-8")
+                    ("        \033[94m%s\033[0m\n" % name).encode("utf-8")
                 )
         sys.stderr.write("\n")
         sys.stderr.write(" Empty: None of the above\n")
@@ -194,7 +192,7 @@ def search_org(es, text_orig, just_search=False):
         if just_search:
             return
 
-        choice = raw_input()
+        choice = input()
         choice = choice.strip()
         if not len(choice):
             org_id = None
@@ -290,7 +288,7 @@ def insert_fast(
 
         if not org:
             LOG.warning(
-                (u"\nCreating org %s\n" % chunk["name"]).encode("utf-8"))
+                ("\nCreating org %s\n" % chunk["name"]).encode("utf-8"))
             org = Org(chunk["name"], moderation_user=user, public=public,)
             orm.add(org)
             # Querying org address list on a new org would trigger a commit

@@ -1,18 +1,17 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import sys
 import logging
 import unittest
 from optparse import OptionParser
 
-from http_test import Http, log as http_log
+from http_test import Http, LOG as HTTP_LOG
 
 
 
-log = logging.getLogger('test_mango_web')
+LOG = logging.getLogger('test_mango_web')
 
-host = "http://localhost:8802"
+HOST = "http://localhost:8802"
 
 EVENTS_ENABLED = False
 SESSION_COOKIE = "mango-session"
@@ -21,7 +20,7 @@ SESSION_COOKIE = "mango-session"
 class HttpTest(unittest.TestCase, Http):
     error_html = "/tmp/mango-error-web.html"
 
-    host = host
+    host = HOST
 
     org_id = 1
     orgtag_id = 1
@@ -33,7 +32,7 @@ class HttpTest(unittest.TestCase, Http):
     address_id = 1
     contact_id = 1
 
-    org_search_name = u"random"
+    org_search_name = "random"
 
     org_n_id = 404
     orgtag_n_id = 404
@@ -55,6 +54,8 @@ class HttpTest(unittest.TestCase, Http):
             "/event-tag",
             "/organisation/search?name=%s" % self.org_search_name,
             "/organisation?json=true",
+            "/organisation?location=wc1&pageView=map&json=true",
+            "/organisation?tag=farnborough-2016&pageView=map&json=true",
             "/event?json=true",
             "/event?json=true&past=true",
             "/event?json=true&pageView=map",
@@ -150,25 +151,28 @@ class TestPublic(HttpTest):
         cls.longMessage = True
 
     def test_json_public(self):
-        log.info("Public User / Authorised JSON")
+        LOG.info("Public User / Authorised JSON")
         for path in self.json_path_list:
             data = self.get_json_data(path)
             self.assertNotEqual(len(data), 0, msg=path)
 
     def test_html_none(self):
-        log.info("Public User / Non-existant HTML")
+        LOG.info("Public User / Non-existant HTML")
         for path in self.html_path_list_none:
             self.get_html_not_found(path)
 
     def test_html_public(self):
-        log.info("Public User / Authorised HTML")
+        LOG.info("Public User / Authorised HTML")
         for path in self.html_path_list_public:
             html = self.get_html(path)
             self.mako_error_test(html)
 
     def test_html_private(self):
-        log.info("Public User / Not-authorised HTML")
-        for path in self.html_path_list_registered + self.html_path_list_moderator:
+        LOG.info("Public User / Not-authorised HTML")
+        for path in (
+                self.html_path_list_registered +
+                self.html_path_list_moderator
+        ):
             self.get_html_not_found(path)
 
 
@@ -181,19 +185,19 @@ class TestRegistered(HttpTest):
         cls.cookie = cls.get_cookies(cls.host + "/auth/login/local?user=3")
 
     def test_json_public(self):
-        log.info("Registered User / Authorised JSON")
+        LOG.info("Registered User / Authorised JSON")
         for path in self.json_path_list:
             data = self.get_json_data(path, cookie=self.cookie)
             self.assertNotEqual(len(data), 0, msg=path)
 
     def test_html_public(self):
-        log.info("Registered User / Authorised HTML")
+        LOG.info("Registered User / Authorised HTML")
         for path in self.html_path_list_public + self.html_path_list_registered:
             html = self.get_html(path, cookie=self.cookie)
             self.mako_error_test(html)
 
     def test_html_private(self):
-        log.info("Registered User / Not-authorised HTML")
+        LOG.info("Registered User / Not-authorised HTML")
         for path in self.html_path_list_moderator:
             self.get_html_not_found(path, cookie=self.cookie)
 
@@ -207,13 +211,13 @@ class TestModerator(HttpTest):
         cls.cookie = cls.get_cookies(cls.host + "/auth/login/local?user=1")
 
     def test_json_public(self):
-        log.info("Moderator User / Authorised JSON")
+        LOG.info("Moderator User / Authorised JSON")
         for path in self.json_path_list:
             data = self.get_json_data(path, cookie=self.cookie)
             self.assertNotEqual(len(data), 0, msg=path)
 
     def test_html_public(self):
-        log.info("Moderator User / Authorised HTML")
+        LOG.info("Moderator User / Authorised HTML")
         for path in self.html_path_list_public + \
                 self.html_path_list_registered + \
                 self.html_path_list_moderator:
@@ -228,51 +232,61 @@ class TestAuth(HttpTest):
         cls.longMessage = True
 
     def test_auth_redirection(self):
+        print()
+
         url = self.host + "/auth/login/local?user=1"
-        response, content = self.http.request(url)
-        self.assertEqual(response.status, 302)
-        self.assertEqual(response["location"], '/')
-        self.assertLoggedIn(response, SESSION_COOKIE)
+        print(url)
+        response = self.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.headers["location"], '/')
+        self.assert_logged_in(response, SESSION_COOKIE)
 
         url = self.host + "/auth/login/local?user=9999"
-        response, content = self.http.request(url)
-        self.assertEqual(response.status, 401)
-        self.assertNotLoggedIn(response, SESSION_COOKIE)
+        print(url)
+        response = self.get(url)
+        self.assertEqual(response.status_code, 401)
+        self.assert_not_logged_in(response, SESSION_COOKIE)
 
         url = self.host + "/auth/login/local?user=0"
-        response, content = self.http.request(url)
-        self.assertEqual(response.status, 302)
-        self.assertEqual(response["location"], '/auth/register')
-        self.assertNotLoggedIn(response, SESSION_COOKIE)
+        print(url)
+        response = self.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.headers["location"], '/auth/register')
+        self.assert_not_logged_in(response, SESSION_COOKIE)
 
         url = self.host + "/auth/login/local?user=0&register=1"
-        response, content = self.http.request(url)
-        self.assertEqual(response.status, 302)
-        self.assertRegexpMatches(response["location"], '/user/[0-9]+$')
-        self.assertLoggedIn(response, SESSION_COOKIE)
+        print(url)
+        response = self.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertRegex(response.headers["location"], '/user/[0-9]+$')
+        self.assert_logged_in(response, SESSION_COOKIE)
 
-if __name__ == "__main__":
-    log.addHandler(logging.StreamHandler())
-    http_log.addHandler(logging.StreamHandler())
+
+def main():
+    LOG.addHandler(logging.StreamHandler())
+    HTTP_LOG.addHandler(logging.StreamHandler())
 
     usage = """%prog"""
 
     parser = OptionParser(usage=usage)
-    parser.add_option("-v", "--verbose", action="count", dest="verbose",
-                      help="Print verbose information for debugging.", default=0)
-    parser.add_option("-q", "--quiet", action="count", dest="quiet",
-                      help="Suppress warnings.", default=0)
+    parser.add_option(
+        "-v", "--verbose", dest="verbose",
+        action="count", default=0,
+        help="Print verbose information for debugging.")
+    parser.add_option(
+        "-q", "--quiet", dest="quiet",
+        action="count", default=0,
+        help="Suppress warnings.")
 
-    (options, args) = parser.parse_args()
-    args = [arg.decode(sys.getfilesystemencoding()) for arg in args]
+    (options, _args) = parser.parse_args()
 
     log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[
         max(0, min(3, 1 + options.verbose - options.quiet))]
 
-    log.setLevel(log_level)
-    http_log.setLevel(log_level)
+    LOG.setLevel(log_level)
+    HTTP_LOG.setLevel(log_level)
 
-    log.info(u"""
+    LOG.info("""
 
   Testing Mango:
 
@@ -288,6 +302,11 @@ if __name__ == "__main__":
 
     %s/auth/login/local?user=1
 
-""" % (host, host))
+""", HOST, HOST)
 
     unittest.main()
+
+
+
+if __name__ == "__main__":
+    main()

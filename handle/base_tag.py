@@ -81,7 +81,7 @@ class BaseTagHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         public = self.get_argument_public("public", is_json=is_json)
 
         if name and path:
-            name = u"%s | %s" % (path.strip(), name.strip())
+            name = "%s | %s" % (path.strip(), name.strip())
 
         return name, description, public
 

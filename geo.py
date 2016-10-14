@@ -3,15 +3,16 @@
 import re
 import json
 import time
-import urllib
+import urllib.request
+import urllib.parse
+import urllib.error
 import logging
 import socket
 from hashlib import md5
-from urllib2 import URLError
 
 import redis
 import geopy
-import httplib2
+import requests
 
 from geolocation import GeoLocation
 
@@ -22,7 +23,6 @@ LOG.addHandler(logging.StreamHandler())
 
 
 
-HTTP = httplib2.Http(cache=None)
 GEOCODER = geopy.geocoders.GoogleV3()
 REDIS_SERVER = redis.Redis("localhost")
 WAIT = 0.0
@@ -45,9 +45,9 @@ EXCLUDE = [
 def _latitude(lat):
     lat = float(lat)
     if lat < -90:
-        raise ValueError(u"%0.3f: Latitude below -90°", lat)
+        raise ValueError("%0.3f: Latitude below -90°", lat)
     if lat > 90:
-        raise ValueError(u"%0.3f: Latitude above 90°", lat)
+        raise ValueError("%0.3f: Latitude above 90°", lat)
     return lat
 
 
@@ -55,9 +55,9 @@ def _latitude(lat):
 def _longitude(lon):
     lon = float(lon)
     if lon < -180:
-        raise ValueError(u"%0.3f: Longitude below -180°", lon)
+        raise ValueError("%0.3f: Longitude below -180°", lon)
     if lon > 180:
-        raise ValueError(u"%0.3f: Longitude above 180°", lon)
+        raise ValueError("%0.3f: Longitude above 180°", lon)
     return lon
 
 
@@ -88,7 +88,7 @@ class Geobox(object):
             if isinstance(args[0], Geobox):
                 self.set_from_geobox(args[0])
                 return
-            elif isinstance(args[0], basestring):
+            elif isinstance(args[0], str):
                 self.set_from_string(args[0])
                 return
         raise ValueError("Geobox accepts four coordinates or a Geobox.")
@@ -203,13 +203,21 @@ def clean_address(address):
 
 
 
+def geo_key(category, value):
+    return "geo:%s:%s" % (
+        category,
+        md5(value.encode("utf-8")).hexdigest()
+    )
+
+
+
 def coords(address, cache=GEOCODE_CACHE_DEFAULT):
     # pylint: disable=too-many-return-statements
     global WAIT
 
     address = clean_address(address)
 
-    key = "geo:coords:%s" % md5(address).hexdigest()
+    key = geo_key("coords", address)
 
     if cache:
         value = None
@@ -219,6 +227,7 @@ def coords(address, cache=GEOCODE_CACHE_DEFAULT):
             LOG.warning("Connection to redis server on localhost failed.")
 
         if value:
+            value = value.decode("utf-8")
             try:
                 return json.loads(value)
             except ValueError:
@@ -241,20 +250,20 @@ def coords(address, cache=GEOCODE_CACHE_DEFAULT):
                 region=GEOCODE_DEFAULT_REGION,
                 )
         except geopy.exc.GeocoderUnavailable as e:
-            print e
+            print(e)
             return None
         except geopy.exc.GeocoderQueryError as e:
-            print e
+            print(e)
             return None
         except geopy.exc.GeocoderQuotaExceeded as e:
-            print e
+            print(e)
             WAIT += 1
             continue
-        except URLError as e:
-            print e
+        except urllib.error.URLError as e:
+            print(e)
             return None
         except ValueError as e:
-            print e
+            print(e)
             return None
         if result is None:
             return None
@@ -279,7 +288,7 @@ def bounds(address_full, min_radius=None, cache=GEOCODE_CACHE_DEFAULT):
 
     address = clean_address(address_full)
 
-    key = "geo:bounds:%s" % md5(address).hexdigest()
+    key = geo_key("bounds", address)
 
     if cache:
         value = None
@@ -289,6 +298,7 @@ def bounds(address_full, min_radius=None, cache=GEOCODE_CACHE_DEFAULT):
             LOG.warning("Connection to redis server on localhost failed.")
 
         if value:
+            value = value.decode("utf-8")
             try:
                 bounds_ = Geobox.from_json(value)
             except ValueError:
@@ -300,7 +310,7 @@ def bounds(address_full, min_radius=None, cache=GEOCODE_CACHE_DEFAULT):
             if WAIT:
                 time.sleep(WAIT)
 
-            parameters = urllib.urlencode({
+            parameters = urllib.parse.urlencode({
                 "sensor": "false",
                 "address": address,
                 "region": GEOCODE_DEFAULT_REGION,
@@ -308,14 +318,17 @@ def bounds(address_full, min_radius=None, cache=GEOCODE_CACHE_DEFAULT):
 
             # Force IPv4 address to avoid timeouts
             host = socket.gethostbyname('maps.googleapis.com')
-            url = (u"http://%s/maps/api/geocode/json?%s" % (
+            url = ("http://%s/maps/api/geocode/json?%s" % (
                 host, parameters))
-            response, content = HTTP.request(url)
 
-            if response.status != 200:
+            response = requests.get(url)
+
+            if response.status_code != 200:
                 continue
 
-            content = json.loads(content)
+            print("R", response.encoding)
+
+            content = json.loads(response.text)
 
             if content["status"] != "OK":
                 return None

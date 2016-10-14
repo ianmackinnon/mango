@@ -1,13 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # pylint: disable=invalid-name
 # Using `Tag` for tag class type
 
 import sys
-
-sys.path.append(".")
-
 import logging
 
 from optparse import OptionParser, OptionError
@@ -29,8 +26,8 @@ TYPE_LIST = {
 
 
 def tag_rename(orm, Tag, before, after):
-    print before
-    print after
+    print(before)
+    print(after)
 
     tag_list = orm.query(Tag) \
         .filter(Tag.name.startswith(before)) \
@@ -38,9 +35,9 @@ def tag_rename(orm, Tag, before, after):
 
     for tag in tag_list:
         tag.name = tag.name.replace(before, after, 1)
-        print tag.name
+        print(tag.name)
 
-    print len(tag_list)
+    print(len(tag_list))
 
 
 
@@ -51,7 +48,7 @@ def main():
 
 TAGTYPE:   %s
 Bulk rename tag paths.
-""" % (", ".join(TYPE_LIST.keys()))
+""" % (", ".join(list(TYPE_LIST.keys())))
 
     parser = OptionParser(usage=usage)
     parser.add_option("-v", "--verbose", dest="verbose",

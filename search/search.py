@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import os
@@ -46,7 +46,7 @@ def verify_org(es, orm, Org, Orgalias):
 
 
 def verify(es, orm, Org, Orgalias):
-    print "VERIFY"
+    print("VERIFY")
     try:
         if verify_org(es, orm, Org, Orgalias):
             return
@@ -104,7 +104,7 @@ def build_org(es, orm, Org, Orgalias):
 
 
 def rebuild(es, orm, Org, Orgalias):
-    settings_path = os.path.join(setting_path, u"mango.json")
+    settings_path = os.path.join(setting_path, "mango.json")
 
     log.warning("Deleting ES index.")
     try:

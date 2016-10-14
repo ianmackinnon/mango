@@ -101,7 +101,7 @@ class BaseAddressHandler(BaseHandler, MangoBaseEntityHandlerMixin):
     def _decline_address_v(address_id, moderation_user):
         address = Address_v(
             address_id,
-            u"DECLINED", u"DECLINED",
+            "DECLINED", "DECLINED",
             moderation_user=moderation_user, public=None)
         address.existence = False
 
@@ -466,10 +466,10 @@ class AddressEntityListHandler(BaseHandler):
 
         obj_list = []
         for result in address_list.all():
-            obj_list.append(dict(zip([
+            obj_list.append(dict(list(zip([
                 "address_id", "latitude", "longitude",
                 "entity_id", "name", "entity"
-            ], result)))
+            ], result))))
 
         value = self.dump_json(obj_list)
         self.cache.set(key, value)

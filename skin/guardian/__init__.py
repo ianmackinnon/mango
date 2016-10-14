@@ -7,12 +7,12 @@ def load(**kwargs):
     loader = Loader("skin/guardian")
 
     def header(title=None):
-        return loader.load(u"header.html").generate(
+        return loader.load("header.html").generate(
             static_url=kwargs.get("static_url", None),
             title=title or "",
             stylesheets=kwargs["stylesheets"],
             ).decode("utf-8")
-    footer = loader.load(u"footer.html").generate()
+    footer = loader.load("footer.html").generate().decode("utf-8")
 
     return {
         "header": header,

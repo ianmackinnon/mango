@@ -137,6 +137,7 @@ ${header(title=self.application_title()) | n}
 
 </div>
 
+
 %if load_map and google_maps_api_key:
 <script
    src="https://maps.googleapis.com/maps/api/js?v=${google_maps_api_version}&key=${google_maps_api_key}"
@@ -150,6 +151,7 @@ ${header(title=self.application_title()) | n}
 %for script in scripts2:
 <script type="text/javascript" src="${static_url(script)}"></script>
 %endfor:
+
 <script type="text/javascript">
 m.urlRoot = "${url_root | n}";
 m.parameters = ${parameters_json | n};
@@ -161,13 +163,12 @@ m.xsrf = "${xsrf | n}";
 m.cookiePrefix = "${cookie_prefix | n}";
 m.next = "${next_ or "" | n}" || null;
 </script>
+
 %for script in scripts3:
 <script type="text/javascript" src="${static_url(script)}"></script>
 %endfor:
 
 ${footer | n}
-
-
 
 <%def name="application_title()"><%
 return (self.title() and self.title() + u" | " or u"") + u"CAAT Mapping Application" %></%def>
@@ -175,6 +176,4 @@ return (self.title() and self.title() + u" | " or u"") + u"CAAT Mapping Applicat
 <%def name="logout_url()"><% return uri %></%def>
 
 <%namespace name="mini" file="mini.html" inheritable="True"/>
-
-
 

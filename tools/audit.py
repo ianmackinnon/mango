@@ -1,14 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # pylint: disable=invalid-name
 # Allow `Entity`, `Entity_v` abstract class names
 
 import sys
-sys.path.append(".")
-
 import logging
-
 from optparse import OptionParser
 
 from sqlalchemy import create_engine, func
@@ -138,19 +135,19 @@ def audit_entity(orm, Entity, Entity_v, key, key_v, attr):
         if entity:
             if not entity_v:
                 LOG.warning("key %d: Exists with no versions.", entity_id)
-                print add(orm, Entity_v, entity, key, attr)
+                print(add(orm, Entity_v, entity, key, attr))
                 continue
 
             if not entity_v.existence:
                 LOG.warning(
                     "key %d: Exists but last version is deleted.", entity_id)
-                print add(orm, Entity_v, entity, key, attr)
+                print(add(orm, Entity_v, entity, key, attr))
                 continue
 
             if compare(entity_v, entity, attr):
                 LOG.warning(
                     "key %d: Exists but last version doesn't match.", entity_id)
-                print add(orm, Entity_v, entity, key, attr)
+                print(add(orm, Entity_v, entity, key, attr))
                 continue
         else:
             if not entity_v:
@@ -242,15 +239,15 @@ update %s
 
 def audit_cross(orm):
     cross_list = [
-        (1, u"org", u"address"),
-        (1, u"org", u"note"),
-        (0, u"org", u"orgtag"),
-        (0, u"orgtag", u"note"),
-        (0, u"event", u"address"),
-        (0, u"event", u"eventtag"),
-        (0, u"eventtag", u"note"),
-        (0, u"address", u"note"),
-        (0, u"org", u"event"),
+        (1, "org", "address"),
+        (1, "org", "note"),
+        (0, "org", "orgtag"),
+        (0, "orgtag", "note"),
+        (0, "event", "address"),
+        (0, "event", "eventtag"),
+        (0, "eventtag", "note"),
+        (0, "address", "note"),
+        (0, "org", "event"),
         ]
 
     engine = orm.connection().engine
@@ -342,7 +339,7 @@ def audit_cross(orm):
 
                 if versions[0]["existence"]:
                     if versions[1]["existence"]:
-                        print versions
+                        print(versions)
                         if versions[0]["a_time"] == versions[1]["a_time"]:
                             LOG.warning(
                                 "%s:%d %s:%d Doesn't exist and last version "

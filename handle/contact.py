@@ -101,7 +101,7 @@ class BaseContactHandler(BaseHandler, MangoBaseEntityHandlerMixin):
         contact = Contact_v(
             contact_id,
             None, # medium
-            u"DECLINED",
+            "DECLINED",
             moderation_user=moderation_user, public=None)
         contact.existence = False
 

@@ -114,7 +114,7 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
         event = Event_v(
             event_id,
-            u"DECLINED", date, date,
+            "DECLINED", date, date,
             moderation_user=moderation_user, public=None)
         event.existence = False
 
@@ -293,7 +293,7 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                             }
                 event_packet["eventLength"] = len(events)
                 event_packet["eventList"] = []
-                for data in events.values()[
+                for data in list(events.values())[
                         (offset or 0):(offset or 0) + MAX_EVENT_PER_PAGE]:
                     event = data["event"]
                     event_packet["eventList"].append(event.obj(
@@ -320,7 +320,7 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
                 event_packet["eventLength"] = len(events)
                 event_packet["eventList"] = []
-                for data in events.values():
+                for data in list(events.values()):
                     event = data["event"]
                     address_list = data["addressList"]
                     address_list.sort(
@@ -343,7 +343,7 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                         "addressList": [],
                         }
             event_packet["eventList"] = []
-            for data in events.values():
+            for data in list(events.values()):
                 event = data["event"]
                 event_packet["eventList"].append(event.obj(
                     public=self.moderator,

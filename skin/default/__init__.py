@@ -12,7 +12,7 @@ def load(**kwargs):
             title=title or "",
             stylesheets=kwargs["stylesheets"],
             ).decode("utf-8")
-    footer = loader.load("footer.html").generate()
+    footer = loader.load("footer.html").generate().decode("utf-8")
 
     return {
         "header": header,

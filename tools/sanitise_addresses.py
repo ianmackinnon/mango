@@ -1,11 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import sys
-sys.path.append(".")
-import logging
 import re
-
+import sys
+import logging
 from optparse import OptionParser
 
 from sqlalchemy import create_engine
@@ -48,7 +46,7 @@ def query_yes_no(question, default="yes"):
 
     while True:
         sys.stdout.write(question + prompt)
-        choice = raw_input().lower()
+        choice = input().lower()
         if default is not None and choice == '':
             return valid[default]
         elif choice in valid:
@@ -78,8 +76,8 @@ def split_postcode(line):
 
 def suspicious_postcodes(orm):
 
-    print "Suspicious postcodes"
-    print
+    print("Suspicious postcodes")
+    print()
 
     for address in orm.query(Address):
         parts = Address.parts(address.postal)
@@ -87,10 +85,10 @@ def suspicious_postcodes(orm):
             if RE_CODE.search(part):
                 split = split_postcode(part)
                 if len(split) > 1:
-                    print
-                    print address.url
-                    print repr(part)
-                    print split
+                    print()
+                    print(address.url)
+                    print(repr(part))
+                    print(split)
 
 
 
@@ -105,17 +103,17 @@ def sanitise_addresses(orm):
         if a != b:
             if "," not in b:
                 address.postal = b
-                print b.encode("utf-8")
-                print
+                print(b.encode("utf-8"))
+                print()
                 orm.commit()
                 continue
             b = address.sanitise_address(address.postal, False)
-            print
-            print a.encode("utf-8")
-            print
-            print b.encode("utf-8")
-            print
-            if query_yes_no(u"replace?", default=None):
+            print()
+            print(a.encode("utf-8"))
+            print()
+            print(b.encode("utf-8"))
+            print()
+            if query_yes_no("replace?", default=None):
                 address.postal = b
                 address.moderation_user = user
                 orm.commit()

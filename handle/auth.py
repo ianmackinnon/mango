@@ -3,9 +3,10 @@
 import re
 import json
 
+import requests
+
 import tornado.auth
 from tornado.web import HTTPError
-from tornado import httpclient
 from sqlalchemy.orm.exc import NoResultFound
 
 from model import User, Auth, Session
@@ -73,18 +74,18 @@ class AuthLoginLocalHandler(LoginHandler):
     def _create_user(self):
         user_id = self.get_argument_int("user", -1)
         assert user_id == 0
-        user_name = u"NEW USER"
+        user_name = "NEW USER"
         user = User(None, user_name, moderator=False)
         self.orm.add(user)
         self.orm.commit()
-        user.name = u"Local %d" % user.user_id
+        user.name = "Local %d" % user.user_id
         self.orm.commit()
         self.next_ = "/user/%d" % user.user_id
         return user
 
     def get(self):
         if not self.application.local_auth:
-            print u"Local authentication is not enabled."
+            print("Local authentication is not enabled.")
             raise HTTPError(404, "Not found")
         if not self.is_local():
             raise HTTPError(404, "Not found")
@@ -110,11 +111,11 @@ class AuthLoginGoogleHandler(LoginHandler, tornado.auth.GoogleOAuth2Mixin):
     # pylint: disable=no-value-for-parameter
 
     # Only used for our local database, not for actual auth
-    openid_url = u"https://www.google.com/accounts/o8/id"
+    openid_url = "https://www.google.com/accounts/o8/id"
 
     def _create_user(self, auth_user, auth_name):
         auth = Auth(self.openid_url, auth_name)
-        user_name = unicode(auth_user["name"])
+        user_name = str(auth_user["name"])
         user = User(auth, user_name, moderator=False)
         self.orm.add(user)
         self.orm.commit()
@@ -124,7 +125,7 @@ class AuthLoginGoogleHandler(LoginHandler, tornado.auth.GoogleOAuth2Mixin):
     @tornado.web.asynchronous
     @tornado.gen.engine
     def get(self):
-        redirect_path = self.url_rewrite(u"/auth/login/google")
+        redirect_path = self.url_rewrite("/auth/login/google")
         login_url = "%s://%s%s" % (
             self.request.protocol, self.request.host, redirect_path)
 
@@ -159,19 +160,12 @@ class AuthLoginGoogleHandler(LoginHandler, tornado.auth.GoogleOAuth2Mixin):
                 "https://www.googleapis.com/oauth2/v1/userinfo?access_token=" +
                 access_token
             )
-            http_client = httpclient.HTTPClient()
-            try:
-                response = http_client.fetch(uri)
-                body = response.body
-                auth_user = json.loads(body)
-            except httpclient.HTTPError:
-                # HTTPError is raised for non-200 responses; the response
-                # can be found in e.response.
-                raise tornado.web.HTTPError(500, 'Google authentication failed')
-            except Exception:
-                # Other errors are possible, such as IOError.
+            response = requests.get(uri)
+            if response.status_code != 200:
+                print("Google auth status code: %s" % response.status_code)
                 raise tornado.web.HTTPError(500, 'Server error')
-            http_client.close()
+
+            auth_user = json.loads(response.text)
 
             register = self.app_get_cookie("register")
             self.next_ = self.app_get_cookie("next")
@@ -200,11 +194,11 @@ class AuthLoginGoogleHandler(LoginHandler, tornado.auth.GoogleOAuth2Mixin):
 
 class AuthVisitHandler(LoginHandler):
     def _create_user(self):
-        user_name = u"NEW USER"
+        user_name = "NEW USER"
         user = User(None, user_name, moderator=False)
         self.orm.add(user)
         self.orm.commit()
-        user.name = u"Anonymous %d" % user.user_id
+        user.name = "Anonymous %d" % user.user_id
         self.orm.commit()
         self.next_ = "/user/%d" % user.user_id
         return user
@@ -252,7 +246,7 @@ class AuthLogoutHandler(BaseHandler):
 def delete_inactive_users(orm):
     away_time = 60 * 60 * 24 * 30  # 30 Days in seconds
 
-    inner_sql = u"""select
+    inner_sql = """select
     user_id,
     unix_timestamp() - max(session.a_time) as away
   from user
@@ -275,7 +269,7 @@ def delete_inactive_users(orm):
   group by user_id
   having away is null or away > %d""" % away_time
 
-    session_sql = u"""delete
+    session_sql = """delete
   from session
   where exists (
     select 1
@@ -285,7 +279,7 @@ def delete_inactive_users(orm):
       where q2.user_id = session.user_id
     )
   ;""" % inner_sql
-    user_sql = u"""delete
+    user_sql = """delete
   from user
   where exists (
     select 1

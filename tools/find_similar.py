@@ -1,11 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import sys
-sys.path.append(".")
-
 import os
-import codecs
+import sys
 import inspect
 import logging
 
@@ -36,7 +33,7 @@ def org_key(a, b):
 def read_csv(path):
     data = {}
     try:
-        with codecs.open(path, "r", "utf-8") as csv_file:
+        with open(path, "r", encoding="utf-8") as csv_file:
             for line in csv_file.readlines():
                 line = line.strip()
                 if not line:
@@ -54,12 +51,12 @@ def read_csv(path):
 
 
 def write_csv(path, data):
-    with codecs.open(path, "w", "utf-8") as csv_file:
+    with open(path, "w", encoding="utf-8") as csv_file:
         for key in sorted(data.keys()):
             org_id_a, org_id_b = key
             match = int(data[key])
-            csv_file.write(u"%d, %d, %d\n" % (match, org_id_a, org_id_b))
-    print "written", path
+            csv_file.write("%d, %d, %d\n" % (match, org_id_a, org_id_b))
+    print("written", path)
 
 
 
@@ -93,7 +90,7 @@ def nearest(es, name, org_id, blacklist):
         return
     results = results["hits"]["hits"]
     if blacklist:
-        print "BLACKLIST", org_id, blacklist
+        print("BLACKLIST", org_id, blacklist)
     for result in results:
         if result["_source"]["org_id"] not in blacklist:
             return result
@@ -102,7 +99,7 @@ def nearest(es, name, org_id, blacklist):
 
 def ignore(similar, org_id):
     blacklist = set()
-    for a, b in similar.keys():
+    for a, b in list(similar.keys()):
         if a == org_id:
             blacklist.add(b)
         if b == org_id:
@@ -143,33 +140,36 @@ def find_similar(orm, similar):
         i += 1
         if i == interval:
             i = 0
-            print
-            print o
+            print()
+            print(o)
             hit = hit_list.pop(0)
 
             key = org_key(hit["_orig"].org_id, hit["_source"]["org_id"])
             if key in similar:
-                print "SIM", key, similar[key]
+                print("SIM", key, similar[key])
                 continue
-            print (u" %40s  %40s " % (hit["_orig"].org_id,
-                                      hit["_source"]["org_id"])).encode("utf-8")
-            print (" %40s  %40s " % (hit["_orig"].public,
-                                     hit["_source"]["public"])).encode("utf-8")
-            print (" %40s  %40s " % (hit["_orig"].name,
-                                     hit["_source"]["name"])).encode("utf-8")
+            print((" %40s  %40s " % (
+                hit["_orig"].org_id, hit["_source"]["org_id"]
+            )).encode("utf-8"))
+            print((" %40s  %40s " % (
+                hit["_orig"].public, hit["_source"]["public"]
+            )).encode("utf-8"))
+            print((" %40s  %40s " % (
+                hit["_orig"].name, hit["_source"]["name"]
+            )).encode("utf-8"))
             for alias in hit["_source"]["alias"][1:]:
-                print " %40s  %40s " % ("", alias)
-            print
-            print "Merge? (%.2f)" % hit["_score"]
-            print
-            print "Enter = do not merge"
-            print "[l] = left is main"
-            print "[r] = right is main"
-            print "[ u] = pUblic"
-            print "[ e] = pEnding"
-            print "[ i] = prIvate"
-            print ">",
-            value = raw_input()
+                print(" %40s  %40s " % ("", alias))
+            print()
+            print("Merge? (%.2f)" % hit["_score"])
+            print()
+            print("Enter = do not merge")
+            print("[l] = left is main")
+            print("[r] = right is main")
+            print("[ u] = pUblic")
+            print("[ e] = pEnding")
+            print("[ i] = prIvate")
+            print(">", end=' ')
+            value = input()
             if value and value[0] in "lr":
                 org_b = orm.query(Org) \
                     .filter(Org.org_id == hit["_source"]["org_id"]) \

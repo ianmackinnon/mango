@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # pylint: disable=invalid-name,no-value-for-parameter
@@ -111,7 +111,7 @@ where user.user_id = %d
 """
         user_sql_2 = ""
 
-    core_sql = u"""
+    core_sql = """
 from
   (
   select "organisation" as type, org_v.org_id as entity_id, org_v_id as entity_v_id, org_v.a_time, org.org_id and 1 as existence, existence as existence_v, org_v.name as name, null as parent_id, null as parent_existence, null as parent_name, org_v.moderation_user_id from org_v left outer join org using (org_id)
@@ -218,7 +218,7 @@ left outer join auth using (auth_id)
     core_sql,
 )
 
-    data_sql = u"""
+    data_sql = """
 select
   type,
   entity_id,
@@ -254,7 +254,7 @@ offset %d
     }
     for row in results:
         row_dict = {}
-        for column in row.keys():
+        for column in list(row.keys()):
             row_dict[column] = getattr(row, column)
         if not user_id and not row_dict.get("gravatar_hash", None):
             row_dict["gravatar_hash"] = gravatar_hash(str(row.user_id))
@@ -915,9 +915,9 @@ class Contact_v(Base, MangoEntity):
         else:
             self.medium_id = 0
 
-        self.text = sanitise_name(unicode(text))
-        self.description = description and unicode(description)
-        self.source = source and unicode(source)
+        self.text = sanitise_name(str(text))
+        self.description = description and str(description)
+        self.source = source and str(source)
 
         self.moderation_user = moderation_user
         self.a_time = 0

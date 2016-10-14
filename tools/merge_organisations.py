@@ -1,8 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import sys
-import urllib
+import urllib.request
+import urllib.parse
+import urllib.error
 import logging
 from hashlib import md5
 from optparse import OptionParser
@@ -35,7 +37,7 @@ def hash_digest(name_a, name_b):
 
 
 def merge(master, alias, moderation_user=None):
-    print "MERGE: '%s' -> '%s'" % (alias.name, master.name)
+    print("MERGE: '%s' -> '%s'" % (alias.name, master.name))
     master.merge(alias, moderation_user)
 
 
@@ -56,11 +58,11 @@ def multi_merge(orm, org_id_list):
         sys.exit(1)
 
     for o, org in enumerate(org_list):
-        print "%d %s (%d)" % (o, org.name.encode("utf-8"), org.org_id)
-    print
-    print "Choose merge target number or non-numeric to exit: ",
+        print("%d %s (%d)" % (o, org.name.encode("utf-8"), org.org_id))
+    print()
+    print("Choose merge target number or non-numeric to exit: ", end=' ')
 
-    choice = raw_input()
+    choice = input()
 
     try:
         choice = int(choice)
@@ -91,9 +93,9 @@ def multi_merge(orm, org_id_list):
 
 def left_right_false(left, right):
     while True:
-        print "'%s'\n'%s' | [L/R/F]?" % (left, right)
-        print "https://www.google.es/search?q=%s" % urllib.quote_plus(right.encode("utf-8"))
-        choice = raw_input().lower()
+        print("'%s'\n'%s' | [L/R/F]?" % (left, right))
+        print("https://www.google.es/search?q=%s" % urllib.parse.quote_plus(right.encode("utf-8")))
+        choice = input().lower()
         if choice in 'lrf':
             return {'l':"L", "r":"R", "f":False}[choice]
 

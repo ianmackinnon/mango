@@ -132,7 +132,8 @@ def get_pending_parent_entity_id(
             getattr(Parent, parent_desc)
         ) \
         .filter(
-            getattr(parent_entity_v.c, entity_id).in_(entity_id_list.keys())
+            getattr(parent_entity_v.c, entity_id).in_(
+                list(entity_id_list.keys()))
         ) \
         .distinct()
 
@@ -147,7 +148,7 @@ def get_pending_parent_entity_id(
             entity_desc_old, user_name
         ))
 
-    for _key, _value in entity_id_list.items():
+    for _key, _value in list(entity_id_list.items()):
         # Parent doesn't exist, or isn't of type 'parent'
         pass
 

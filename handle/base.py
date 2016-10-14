@@ -5,17 +5,16 @@ import sys
 import json
 import time
 import hashlib
-import httplib
+import http.client
 import datetime
-import urlparse
+import urllib.parse
 import functools
-from urllib import urlencode
 from collections import namedtuple
 
 from sqlalchemy import and_, or_
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.sql.expression import exists, and_, or_
+from sqlalchemy.sql.expression import exists
 from mako import exceptions
 
 from tornado.web import RequestHandler, HTTPError
@@ -44,13 +43,13 @@ GOOGLE_MAPS_API_VERSION = "3"
 def sha1_concat(*parts):
     sha1 = hashlib.sha1()
     for part in parts:
-        sha1.update(part)
+        sha1.update(part.encode("utf-8"))
     return sha1.hexdigest()
 
 
 
 def authenticated(method):
-    u"Replaces tornado decorator."
+    "Replaces tornado decorator."
 
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
@@ -159,19 +158,20 @@ def url_rewrite_static(
     if root is None:
         root = "/"
 
-    scheme, netloc, path, query, fragment = urlparse.urlsplit(uri)
+    scheme, netloc, path, query, fragment = urllib.parse.urlsplit(uri)
 
     if path.startswith("/") and not path.startswith(root):
         path = root + path[1:]
 
     arguments = parameters.copy()
 
-    for key, value in urlparse.parse_qs(query, keep_blank_values=False).items():
+    for key, value in urllib.parse.parse_qs(
+            query, keep_blank_values=False).items():
         arguments[key] = value
         if value is None:
             del arguments[key]
 
-    for key, value in options.items():
+    for key, value in list(options.items()):
         arguments[key] = value
         if value is None:
             del arguments[key]
@@ -179,9 +179,9 @@ def url_rewrite_static(
     if next_:
         arguments["next"] = url_rewrite_static(next_, root)
 
-    query = urlencode(arguments, True)
+    query = urllib.parse.urlencode(arguments, True)
 
-    uri = urlparse.urlunsplit((scheme, netloc, path, query, fragment))
+    uri = urllib.parse.urlunsplit((scheme, netloc, path, query, fragment))
     return uri
 
 
@@ -196,8 +196,8 @@ class BaseHandler(RequestHandler):
 
 
     def cookie_name(self, name):
-        return "-".join(filter(None, [
-            self.application.cookie_prefix, name]))
+        return "-".join([_f for _f in [
+            self.application.cookie_prefix, name] if _f])
 
 
     def app_set_cookie(self, key, value, **kwargs):
@@ -206,9 +206,9 @@ class BaseHandler(RequestHandler):
         Stringify as JSON. Always set secure.
         """
 
-        kwargs = dict({
+        kwargs = dict(list({
             "path": self.url_root_dir()
-        }.items() + (kwargs or {}).items())
+        }.items()) + list((kwargs or {}).items()))
 
         key = self.cookie_name(key)
         value = json.dumps(value)
@@ -222,8 +222,12 @@ class BaseHandler(RequestHandler):
         key = self.cookie_name(key)
 
         if secure:
+            # Returns `bytes`
             value = self.get_secure_cookie(key)
+            if value:
+                value = value.decode("utf-8")
         else:
+            # Returns `str`
             value = self.get_cookie(key)
 
         return value and json.loads(value)
@@ -250,7 +254,7 @@ class BaseHandler(RequestHandler):
         self.scripts = []
         RequestHandler.__init__(self, *args, **kwargs)
         self.orm = self.application.orm()
-        self.url_root = self.request.headers.get(u"X-Forwarded-Root", "/")
+        self.url_root = self.request.headers.get("X-Forwarded-Root", "/")
         self.has_javascript = self.app_get_cookie("javascript", secure=False)
         self.set_parameters()
         self.next_ = self.get_argument("next", None)
@@ -336,7 +340,7 @@ class BaseHandler(RequestHandler):
 
             self.path_args = [self.decode_argument(arg) for arg in args]
             self.path_kwargs = dict((k, self.decode_argument(v, name=k))
-                                    for (k, v) in kwargs.items())
+                                    for (k, v) in list(kwargs.items()))
 
             # mango end
             self._mango_handle_args()
@@ -381,10 +385,10 @@ class BaseHandler(RequestHandler):
 
         # mango start - Think this is to catch MySQL errors?
         except IOError as e:
-            print 'ioerror'
+            print('ioerror')
             raise e
         except AssertionError as e:
-            print 'assertionerror'
+            print('assertionerror')
             raise e
         # mango end
 
@@ -404,7 +408,7 @@ class BaseHandler(RequestHandler):
                 exception = exc_info[1]
                 if hasattr(exception, "log_message"):
                     message = exception.log_message
-                    status_message = httplib.responses[status_code]
+                    status_message = http.client.responses[status_code]
                     self.render("error.html",
                                 status_code=status_code,
                                 status_message=status_message,
@@ -430,7 +434,7 @@ class BaseHandler(RequestHandler):
     def get_accept_language(self):
         if "Accept-Language" in self.request.headers:
             return self.request.headers["Accept-Language"]
-        return u""
+        return ""
 
     def get_user_agent(self):
         return self.request.headers["User-Agent"]
@@ -450,11 +454,11 @@ class BaseHandler(RequestHandler):
         uri = self.request.path
         if uri.startswith("/"):
             uri = self.url_root + uri[1:]
-        uri += "?" + urlencode(arguments, True)
+        uri += "?" + urllib.parse.urlencode(arguments, True)
         return uri
 
     def url_root_dir(self):
-        u"""
+        """
         Return the root path without a trailing slash.
         """
         if self.url_root == "/":
@@ -559,7 +563,7 @@ class BaseHandler(RequestHandler):
             "moderator": self.moderator,
             "contributor": self.contributor,
             "uri": self.request.uri,
-            "xsrf": self.xsrf_token,
+            "xsrf": self.xsrf_token.decode("utf-8"),
             "cookie_prefix": self.application.cookie_prefix,
             "events_enabled": self.application.events,
             "json_dumps": json.dumps,
@@ -585,17 +589,19 @@ class BaseHandler(RequestHandler):
         try:
             self.write(mako_template.render(**kwargs))
         except Exception:
+            print(template_name, kwargs)
+            print((exceptions.text_error_template().render()))
             self.write(exceptions.html_error_template().render())
         if self.orm.new or self.orm.dirty or self.orm.deleted:
-            print self.orm.new or self.orm.dirty or self.orm.deleted
+            print(self.orm.new or self.orm.dirty or self.orm.deleted)
             self.orm.rollback()
 
     def compare_session(self, session):
         # Returns falsy if equal, truthy if different
         return \
-            cmp(session.ip_address, self.request.remote_ip) or \
-            cmp(session.accept_language, self.get_accept_language()) or \
-            cmp(session.user_agent, self.get_user_agent())
+            session.ip_address != self.request.remote_ip or \
+            session.accept_language != self.get_accept_language() or \
+            session.user_agent != self.get_user_agent()
 
     def get_session(self):
         session_id = self.app_get_cookie("session")
@@ -631,7 +637,7 @@ class BaseHandler(RequestHandler):
 
     @staticmethod
     def _get_autoincrement(orm, table):
-        sql_get = u"""
+        sql_get = """
 select auto_increment
   from information_schema.tables
   where table_name = '%s'
@@ -779,7 +785,7 @@ select auto_increment
             False: False,
             }
         value = self.get_argument_allowed(
-            name, table.keys(), default,
+            name, list(table.keys()), default,
             is_json)
         return table[value]
 
@@ -862,7 +868,7 @@ select auto_increment
         args = self.get_arguments(name, strip=True, is_json=is_json)
         for arg in args:
             for value in arg.split(delimiter):
-                value = unicode(value.strip())
+                value = str(value.strip())
                 if value:
                     ret.append(value)
         return ret
@@ -962,7 +968,7 @@ class ServerStatusHandler(tornado.web.RequestHandler):
 
     @staticmethod
     def quartiles(data):
-        u"""
+        """
         Accepts an unsorted list of floats.
         """
         if not data:

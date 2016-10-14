@@ -1,9 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import re
 import json
-import urllib
+import urllib.request
+import urllib.parse
+import urllib.error
 import httplib2
 
 
@@ -43,7 +45,7 @@ def get_one_note(text, source):
     HTTP.follow_redirects = True
     HTTP.follow_all_redirects = True
     uri = "http://localhost:8802/note?text=%s,source=%s" % (
-        urllib.quote_plus(text), urllib.quote_plus(source))
+        urllib.parse.quote_plus(text), urllib.parse.quote_plus(source))
     res, body = HTTP.request(
         uri,
         headers=headers,
@@ -52,13 +54,13 @@ def get_one_note(text, source):
     try:
         obj_list = json.loads(body)
     except ValueError as e:
-        print body
+        print(body)
         raise e
     if not obj_list:
         return None
     if len(obj_list) == 1:
         return obj_list[0]
-    raise Exception, repr(obj_list)
+    raise Exception(repr(obj_list))
 
 def get_or_make_note(text, source):
     return get_one_note(text, source) or make_note(text, source)
@@ -81,7 +83,7 @@ def update_note(note):
     try:
         obj = json.loads(body)
     except ValueError as e:
-        print body
+        print(body)
         raise e
     return obj
 
@@ -118,7 +120,7 @@ def get_organisation_by_id(id_):
     try:
         obj = json.loads(body)
     except ValueError as e:
-        print body
+        print(body)
         raise e
     if not obj:
         return None
@@ -131,20 +133,20 @@ def get_one_organisation(name):
     HTTP.follow_redirects = True
     HTTP.follow_all_redirects = True
     res, body = HTTP.request(
-        "http://localhost:8802/organisation?name=%s" % urllib.quote_plus(name),
+        "http://localhost:8802/organisation?name=%s" % urllib.parse.quote_plus(name),
         headers=headers,
     )
     assert res.status == 200, repr((res, body))
     try:
         obj_list = json.loads(body)
     except ValueError as e:
-        print body
+        print(body)
         raise e
     if not obj_list:
         return None
     if len(obj_list) == 1:
         return obj_list[0]
-    raise Exception, repr(obj_list)
+    raise Exception(repr(obj_list))
 
 def get_or_make_organisation(name):
     return get_one_organisation(name) or make_organisation(name)
@@ -167,7 +169,7 @@ def update_organisation(organisation):
     try:
         obj = json.loads(body)
     except ValueError as e:
-        print body
+        print(body)
         raise e
     return obj
 
@@ -197,7 +199,7 @@ def get_one_organisation_tag(name):
     HTTP.follow_redirects = True
     HTTP.follow_all_redirects = True
     res, body = HTTP.request(
-        "http://localhost:8802/organisation-tag?name=%s" % urllib.quote_plus(
+        "http://localhost:8802/organisation-tag?name=%s" % urllib.parse.quote_plus(
             name),
         headers=headers,
     )
@@ -205,13 +207,13 @@ def get_one_organisation_tag(name):
     try:
         obj_list = json.loads(body)
     except ValueError as e:
-        print body
+        print(body)
         raise e
     if not obj_list:
         return None
     if len(obj_list) == 1:
         return obj_list[0]
-    raise Exception, repr(obj_list)
+    raise Exception(repr(obj_list))
 
 def get_or_make_organisation_tag(name):
     return get_one_organisation_tag(name) or make_organisation_tag(name)
@@ -234,7 +236,7 @@ def update_organisation_tag(tag):
     try:
         obj = json.loads(body)
     except ValueError as e:
-        print body
+        print(body)
         raise e
     return obj
 
@@ -258,7 +260,7 @@ def update_address(address):
     try:
         obj = json.loads(body)
     except ValueError as e:
-        print body
+        print(body)
         raise e
     return obj
 
@@ -311,7 +313,7 @@ def organisation_add_address(organisation, postal, source):
     HTTP.follow_redirects = True
     HTTP.follow_all_redirects = True
     data = json.dumps({"postal": postal, "source": source})
-    print data
+    print(data)
     res, body = HTTP.request(
         "http://localhost:8802%s/address" % organisation["url"],
         "POST",

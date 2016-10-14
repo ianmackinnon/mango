@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import sys
@@ -10,8 +10,6 @@ from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import sessionmaker
 
 from mako.lookup import TemplateLookup
-
-sys.path.append(".")
 
 from model import connection_url_app, attach_search
 from model import Org, Orgtag, Address
@@ -113,7 +111,7 @@ tag:   Tag to filter by."""
         sys.exit(1)
 
     (orgtag_name_short, ) = args
-    orgtag_name_short = unicode(orgtag_name_short)
+    orgtag_name_short = str(orgtag_name_short)
 
     svg_map(orm, orgtag_name_short)
 

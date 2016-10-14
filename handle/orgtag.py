@@ -260,7 +260,7 @@ class OrgtagActivityHandler(BaseOrgtagHandler):
         # pylint: disable=singleton-comparison
         # Cannot use `is` in SQLAlchemy filters
 
-        path_list = [u'activity', u'activity-exclusion']
+        path_list = ['activity', 'activity-exclusion']
 
         visibility = self.parameters.get("visibility", None)
 

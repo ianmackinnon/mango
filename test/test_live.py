@@ -1,22 +1,17 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os
-import sys
-import json
 import logging
 import unittest
-import httplib2
-import lxml.html
 from optparse import OptionParser
 
-from http_test import Http, log as http_log
+from http_test import Http, LOG as HTTP_LOG
 
 
 
-log = logging.getLogger('test_mango_web')
+LOG = logging.getLogger('test_mango_web')
 
-host = "https://www.caat.org.uk/resources/mapping"
+HOST = "https://www.caat.org.uk/resources/mapping"
 
 EVENTS_ENABLED = False
 SESSION_COOKIE = "mapping-session"
@@ -25,7 +20,7 @@ SESSION_COOKIE = "mapping-session"
 class HttpTest(unittest.TestCase, Http):
     error_html = "/tmp/mango-error-web.html"
 
-    host = host
+    host = HOST
 
     org_id = 416          # BAE Systems
     orgtag_id = 262       # DSEI 2011
@@ -37,7 +32,7 @@ class HttpTest(unittest.TestCase, Http):
     address_id = 1        # Address 1
     contact_id = 189      # BAE
 
-    org_search_name = u"bae"
+    org_search_name = "bae"
 
     org_n_id = 4040404
     orgtag_n_id = 4040404
@@ -59,7 +54,7 @@ class HttpTest(unittest.TestCase, Http):
         ]
 
         self.php_path_list_none = [
-#            "/resources/countries/%s" % self.country_name_n,
+            # "/resources/countries/%s" % self.country_name_n,
         ]
 
         self.json_path_list = [
@@ -97,8 +92,8 @@ class HttpTest(unittest.TestCase, Http):
             "/event-tag/%s" % self.eventtag_id,
             "/note",
             "/note/%s" % self.note_org_id,
-#            "/note/%s" % self.note_event_id,
-#            "/note/%s" % self.note_address_id,
+            # "/note/%s" % self.note_event_id,
+            # "/note/%s" % self.note_address_id,
             "/address/%s" % self.address_id,
             "/contact/%s" % self.contact_id,
             "/diary",
@@ -165,64 +160,68 @@ class TestPublic(HttpTest):
         cls.longMessage = True
 
     def test_php_public(self):
-        log.info("Public User / PHP")
+        LOG.info("Public User / PHP")
         for path in self.php_path_list:
             html = self.get_html(path, host="https://www.caat.org.uk")
             self.php_error_test(html)
 
     def test_php_none(self):
-        log.info("Public User / Non-existant PHP")
+        LOG.info("Public User / Non-existant PHP")
         for path in self.php_path_list_none:
             html = self.get_html_not_found(path, host="https://www.caat.org.uk")
             self.php_error_test(html)
 
     def test_json_public(self):
-        log.info("Public User / Authorised JSON")
+        LOG.info("Public User / Authorised JSON")
         for path in self.json_path_list:
             data = self.get_json_data(path)
             self.assertNotEqual(len(data), 0, msg=path)
 
     def test_html_none(self):
-        log.info("Public User / Non-existant HTML")
+        LOG.info("Public User / Non-existant HTML")
         for path in self.html_path_list_none:
             self.get_html_not_found(path)
 
     def test_html_public(self):
-        log.info("Public User / Authorised HTML")
+        LOG.info("Public User / Authorised HTML")
         for path in self.html_path_list_public:
             html = self.get_html(path)
             self.mako_error_test(html)
 
     def test_html_private(self):
-        log.info("Public User / Not-authorised HTML")
-        for path in self.html_path_list_registered + self.html_path_list_moderator:
+        LOG.info("Public User / Not-authorised HTML")
+        for path in (
+                self.html_path_list_registered +
+                self.html_path_list_moderator
+        ):
             self.get_html_not_found(path)
 
 
 
-
-if __name__ == "__main__":
-    log.addHandler(logging.StreamHandler())
-    http_log.addHandler(logging.StreamHandler())
+def main():
+    LOG.addHandler(logging.StreamHandler())
+    HTTP_LOG.addHandler(logging.StreamHandler())
 
     usage = """%prog"""
 
     parser = OptionParser(usage=usage)
-    parser.add_option("-v", "--verbose", action="count", dest="verbose",
-                      help="Print verbose information for debugging.", default=0)
-    parser.add_option("-q", "--quiet", action="count", dest="quiet",
-                      help="Suppress warnings.", default=0)
+    parser.add_option(
+        "-v", "--verbose", dest="verbose",
+        action="count", default=0,
+        help="Print verbose information for debugging.")
+    parser.add_option(
+        "-q", "--quiet", dest="quiet",
+        action="count", default=0,
+        help="Suppress warnings.")
 
-    (options, args) = parser.parse_args()
-    args = [arg.decode(sys.getfilesystemencoding()) for arg in args]
+    (options, _args) = parser.parse_args()
 
     log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[
         max(0, min(3, 1 + options.verbose - options.quiet))]
+    LOG.setLevel(log_level)
+    HTTP_LOG.setLevel(log_level)
 
-    log.setLevel(log_level)
-    http_log.setLevel(log_level)
-
-    log.info(u"""
+    LOG.info("""
 
   Testing Mango:
 
@@ -238,6 +237,11 @@ if __name__ == "__main__":
 
     %s/auth/login/local?user=1
 
-""" % (host, host))
+""", HOST, HOST)
 
     unittest.main()
+
+
+
+if __name__ == "__main__":
+    main()

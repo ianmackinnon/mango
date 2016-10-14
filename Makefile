@@ -8,6 +8,7 @@ SHELL := /bin/bash
 	lint-js
 
 
+REDIS_NAMESPACE := mango
 
 all : vendor .xsrf
 
@@ -23,32 +24,54 @@ endif
 	head -c 32 /dev/urandom | base64 > .xsrf
 	chmod o-rwx .xsrf
 
+
+# Cache
+
+drop-cache-live :
+	ssh $(LIVE_HOST) -t " \
+	  redis-cli keys \"$(REDIS_NAMESPACE):*\" | xargs -n 100 redis-cli DEL; \
+	  "
+
+drop-cache :
+	-redis-cli keys "$(REDIS_NAMESPACE):*" | xargs -n 100 redis-cli DEL;
+
+
+# Serve & test
+
 test : mysql-test serve-test
 
 serve-test :
 #	Ignore BS4 File/URL warnings
 #	Ignore httplib2 Google app engine install warning
-	python \
+	python3 \
 	  -W error \
 	  -W ignore::UserWarning:bs4 \
 	  -W ignore::ImportWarning:httplib2 \
 	  ./mango.py --local=1 --events=0 \
 	    --log=/tmp/mango-log
 
+test-web :
+	./test/test_web.py -v
 
 
 # Static analysis
 
 lint : lint-py lint-js
 
-lint-py : lint-py-web lint-py-tools
+lint-py : lint-py-web lint-py-test lint-py-tools
 
 lint-py-web :
 	pylint --rcfile=test/pylintrc \
 	  --disable=duplicate-code \
 	  conf.py geo.py model.py model_v.py \
+	  mysql/*.py \
 	  mango.py handle/*.py \
 	  skin/*/*.py
+
+lint-py-test :
+	PYTHONPATH="." pylint --rcfile=test/pylintrc \
+	  --disable=duplicate-code \
+	  test/*.py \
 
 lint-py-tools :
 	pylint --rcfile=test/pylintrc \

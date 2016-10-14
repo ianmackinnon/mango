@@ -1,13 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import sys
-
-sys.path.append(".")
-
 import logging
-
 from optparse import OptionParser
+
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
@@ -67,11 +64,11 @@ Set moderator status of user, creating user if they don't already exist.
 
     user_name, auth_name = args
 
-    openid_url = u"https://www.google.com/accounts/o8/id"
+    openid_url = "https://www.google.com/accounts/o8/id"
 
     auth = Auth.get(orm, openid_url, auth_name)
     user = User.get(orm, auth, user_name)
-    print options.lock
+    print(options.lock)
     if options.moderator is not None:
         user.moderator = options.moderator
     if options.lock is not None:

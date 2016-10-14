@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import os
@@ -94,7 +94,7 @@ from model import Org
 
 define("port", type=int, default=8802, help="Run on the given port")
 define("root", default='', help="URL root")
-define("skin", default=u"default", help="skin with the given style")
+define("skin", default="default", help="skin with the given style")
 define("local", type=bool, default=False, help="Allow local authentication")
 define("offsite", type=bool, default=None,
        help="Correct skin-specific links when offsite.")
@@ -153,12 +153,12 @@ class RedisCache(object):
         except (redis.ConnectionError, redis.exceptions.ResponseError):
             value = None
         if value:
-            value = unicode(value, "utf-8")
+            value = str(value, "utf-8")
         return value
 
     def set(self, key, value, period=DEFAULT_CACHE_PERIOD):
         try:
-            self._cache.set(self.key(key), unicode(value))
+            self._cache.set(self.key(key), str(value))
             if period:
                 self._cache.expire(self.key(key), period)
         except (redis.ConnectionError, redis.exceptions.ResponseError):
@@ -207,16 +207,17 @@ def url_type_id(text):
 
 
 class Application(tornado.web.Application):
-    name = u"mango"
-    title = u"Mapping Application for NGOs (Mango)"
-    sqlite_path = u"mango.db"
+    name = "mango"
+    title = "Mapping Application for NGOs (Mango)"
+    sqlite_path = "mango.db"
     max_age = 86400 * 365 * 10  # 10 years
 
     RESPONSE_LOG_DURATION = 5 * 60  # Seconds
 
     def load_cookie_secret(self):
         try:
-            self.cookie_secret = open(".xsrf", "r").read().strip()
+            with open(".xsrf", "r", encoding="utf-8") as fp:
+                self.cookie_secret = fp.read().strip()
         except IOError:
             sys.stderr.write(
                 "Could not open XSRF key. Run 'make .xsrf' to generate one.\n"
@@ -457,11 +458,11 @@ class Application(tornado.web.Application):
         ))
 
         self.local_auth = options.local
-        self.cookie_prefix = conf.get(CONF_PATH, u"app", u"cookie-prefix")
+        self.cookie_prefix = conf.get(CONF_PATH, "app", "cookie-prefix")
 
         # Database & Cache
 
-        mysql_database = conf.get(CONF_PATH, u"mysql", u"database")
+        mysql_database = conf.get(CONF_PATH, "mysql", "database")
         self.database_namespace = 'mysql://%s' % mysql_database
 
         self.cache = RedisCache(
@@ -495,19 +496,19 @@ class Application(tornado.web.Application):
         # Logging
 
         self.log_path_uri = None
-        self.log_uri = logging.getLogger(u'%s.uri' % self.name)
+        self.log_uri = logging.getLogger('%s.uri' % self.name)
         self.log_uri.propagate = False
         self.log_uri.setLevel(logging.INFO)
         if options.log:
             try:
                 os.makedirs(options.log)
-            except OSError, e:
+            except OSError as e:
                 if e.errno != errno.EEXIST:
                     raise e
 
             self.log_uri_path = os.path.join(
                 options.log,
-                u'%s.uri.log' % self.name
+                '%s.uri.log' % self.name
                 )
 
             self.log_uri.addHandler(
@@ -560,9 +561,9 @@ class Application(tornado.web.Application):
             .strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
 
-        sys.stdout.write(u"%s is running.\n" % self.title)
-        for key, value in stats.items():
-            sys.stdout.write(u"  %-20s %s\n" % (key + ":", value))
+        sys.stdout.write("%s is running.\n" % self.title)
+        for key, value in list(stats.items()):
+            sys.stdout.write("  %-20s %s\n" % (key + ":", value))
         sys.stdout.flush()
 
 

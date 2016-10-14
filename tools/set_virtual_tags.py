@@ -1,11 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import sys
-sys.path.append(".")
-
 import logging
-
 from optparse import OptionParser
 
 from sqlalchemy import create_engine
@@ -22,10 +19,10 @@ LOG = logging.getLogger('set_virtual_tags')
 
 
 def shell_red(text):
-    return u"\033[91m%s\033[0m" % text
+    return "\033[91m%s\033[0m" % text
 
 def shell_blue(text):
-    return u"\033[94m%s\033[0m" % text
+    return "\033[94m%s\033[0m" % text
 
 
 
@@ -60,7 +57,7 @@ def check_orgtags(orm, org_id_list=None):
     total = query.count()
     for i, org in enumerate(query.all(), 1):
         if i % 100 == 0:
-            LOG.info(u"%5d/%d", i, total)
+            LOG.info("%5d/%d", i, total)
         LOG.debug(shell_blue(org.name))
 
         if LOG.level == logging.DEBUG:
@@ -68,7 +65,7 @@ def check_orgtags(orm, org_id_list=None):
         virtual_org_orgtag_all(org)
         if LOG.level == logging.DEBUG:
             if before != [orgtag.orgtag_id for orgtag in org.orgtag_list]:
-                LOG.warning(shell_red(u"Changed: %s" % org.name))
+                LOG.warning(shell_red("Changed: %s" % org.name))
 
     orm.commit()
 

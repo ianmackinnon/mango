@@ -3,17 +3,18 @@
 import re
 import os
 import json
-import urllib
-import urllib2
+import urllib.request
+import urllib.parse
+import urllib.error
 
 from bs4 import BeautifulSoup
 from tornado.template import Loader
 
 
 
-DEFAULT_PROTOCOL = u"http"
-DEFAULT_HOST = u"www.caat.org.uk"
-DEFAULT_DOMAIN = u"caat.org.uk"
+DEFAULT_PROTOCOL = "http"
+DEFAULT_HOST = "www.caat.org.uk"
+DEFAULT_DOMAIN = "caat.org.uk"
 MAX_TITLE_LENGTH = 5
 
 
@@ -37,7 +38,7 @@ def caat_fix_links(page, protocol=DEFAULT_PROTOCOL, host=DEFAULT_HOST):
     for link in soup.findAll(src=regex):
         link["src"] = "%s://%s%s" % (protocol, host, link["src"])
 
-    text = unicode(soup)
+    text = str(soup)
     return text
 
 
@@ -68,17 +69,17 @@ def load(**kwargs):
             url_root=url_root,
             ).decode("utf-8")
 
-    uri = u"%s://%s/resources/app-skin" % (protocol, host)
-    uri += "?" + urllib.urlencode(PAGE_DATA)
+    uri = "%s://%s/resources/app-skin" % (protocol, host)
+    uri += "?" + urllib.parse.urlencode(PAGE_DATA)
 
-    page = urllib2.urlopen(uri).read()
+    page = urllib.request.urlopen(uri).read()
 
     text = page.decode("utf-8")
     if offsite:
         text = caat_fix_links(page, protocol=protocol, host=host)
     text = text.replace("</head>", "%s</head>" % head)
     if load_nav:
-        text = text.replace(u'<div id="app"', u'%s<div id="app"' % nav)
+        text = text.replace('<div id="app"', '%s<div id="app"' % nav)
 
     splitter = '<!--split-->'
     assert splitter in text
@@ -97,7 +98,7 @@ def load(**kwargs):
         "footer": footer,
         }
 
-    title_base = [u"CAAT", PAGE_DATA["pagetitle"]]
+    title_base = ["CAAT", PAGE_DATA["pagetitle"]]
     if header_function:
         # Give the templates a function to set the title
         components["title_base"] = title_base

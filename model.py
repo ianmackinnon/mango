@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # pylint: disable=invalid-name
@@ -69,23 +69,23 @@ def use_mysql():
 
 
 def mysql_connection_url(username, password, database):
-    return 'mysql://%s:%s@localhost/%s?charset=utf8' % (
+    return 'mysql+pymysql://%s:%s@localhost/%s?charset=utf8' % (
         username, password, database)
 
 
 
 def connection_url_admin():
-    username = conf.get(CONF_PATH, u"mysql-admin", u"username")
-    password = conf.get(CONF_PATH, u"mysql-admin", u"password")
-    database = conf.get(CONF_PATH, u"mysql", u"database")
+    username = conf.get(CONF_PATH, "mysql-admin", "username")
+    password = conf.get(CONF_PATH, "mysql-admin", "password")
+    database = conf.get(CONF_PATH, "mysql", "database")
     return mysql_connection_url(username, password, database)
 
 
 
 def connection_url_app():
-    username = conf.get(CONF_PATH, u"mysql-app", u"username")
-    password = conf.get(CONF_PATH, u"mysql-app", u"password")
-    database = conf.get(CONF_PATH, u"mysql", u"database")
+    username = conf.get(CONF_PATH, "mysql-app", "username")
+    password = conf.get(CONF_PATH, "mysql-app", "password")
+    database = conf.get(CONF_PATH, "mysql", "database")
     return mysql_connection_url(username, password, database)
 
 
@@ -154,7 +154,7 @@ def short_name(name, allow_end_pipe=False):
 
 
 def sanitise_name(name):
-    return re.sub(r"[\s]+", u" ", name).strip()
+    return re.sub(r"[\s]+", " ", name).strip()
 
 
 
@@ -191,13 +191,13 @@ def detach(entity):
 
 
 def gravatar_hash(plaintext):
-    return md5(plaintext).hexdigest()
+    return md5(plaintext.encode("utf-8")).hexdigest()
 
 
 
 def generate_hash(plaintext):
     "Generate a pseudorandom 40 digit hexadecimal hash using SHA1"
-    return sha1(plaintext).hexdigest()
+    return sha1(plaintext.encode("utf-8")).hexdigest()
 
 
 
@@ -325,7 +325,7 @@ class MangoEntity(object):
             # (`self.obj_extra` may be `None`)
             obj.update(self.obj_extra(obj))
 
-        for name, value in kwargs.items():
+        for name, value in list(kwargs.items()):
             obj[camel_case(name)] = value
 
         return obj
@@ -551,13 +551,13 @@ class Auth(Base):
         "name" must be a unique value for the specified provider url,
         eg. an email address or unique user name for that service
         """
-        self.url = unicode(url)
+        self.url = str(url)
         self.name_hash = generate_hash(name)
         self.gravatar_hash = gravatar_hash(name)
 
     @staticmethod
     def get(orm, url, name):
-        url = unicode(url)
+        url = str(url)
         name_hash = generate_hash(name)
 
         auth = None
@@ -621,7 +621,7 @@ class User(Base):
 
     @staticmethod
     def get(orm, auth, name):
-        name = unicode(name)
+        name = str(name)
 
         user = None
         try:
@@ -697,7 +697,7 @@ class Medium(Base):
         )
 
     def __init__(self, name):
-        self.name = unicode(name)
+        self.name = str(name)
 
 
 
@@ -834,7 +834,7 @@ class Org(Base, MangoEntity, NotableEntity):
 
     @classmethod
     def _dummy(cls, _orm):
-        return cls(u"dummy")
+        return cls("dummy")
 
     def __init__(self,
                  name, description=None, end_date=None,
@@ -843,7 +843,7 @@ class Org(Base, MangoEntity, NotableEntity):
 
         self.name = sanitise_name(name)
 
-        self.description = description and unicode(description) or None
+        self.description = description and str(description) or None
         self.end_date = end_date
 
         self.moderation_user = moderation_user
@@ -851,15 +851,15 @@ class Org(Base, MangoEntity, NotableEntity):
         self.public = public
 
     def __unicode__(self):
-        return u"<Org-%s (%s) '%s'>" % (
+        return "<Org-%s (%s) '%s'>" % (
             self.org_id or "?",
             {True:"public", False:"private", None: "pending"}[self.public],
             self.name,
             )
 
     def pprint(self, indent=""):
-        o = u""
-        o += u"%sOrg: %s %s\n" % (indent, self.org_id, self.name)
+        o = ""
+        o += "%sOrg: %s %s\n" % (indent, self.org_id, self.name)
         for orgalias in self.orgalias_list:
             o += orgalias.pprint(indent + "  ")
         for contact in self.contact_list:
@@ -871,7 +871,7 @@ class Org(Base, MangoEntity, NotableEntity):
         for note in self.note_list:
             o += note.pprint(indent + "  ")
         for event in self.event_list:
-            o += u"%sEvent: %s %s...\n" % (
+            o += "%sEvent: %s %s...\n" % (
                 indent + "  ", event.event_id, event.name)
         return o
 
@@ -881,7 +881,7 @@ class Org(Base, MangoEntity, NotableEntity):
         session = object_session(self)
         assert session
 
-        print "[", self.org_id, other.org_id, len(other.orgalias_list), "]"
+        print("[", self.org_id, other.org_id, len(other.orgalias_list), "]")
 
         self.orgalias_list = list(set(self.orgalias_list + other.orgalias_list))
         self.note_list = list(set(self.note_list + other.note_list))
@@ -897,7 +897,7 @@ class Org(Base, MangoEntity, NotableEntity):
         other.contact_list = []
 
         for alias in self.orgalias_list:
-            print alias.orgalias_id, alias.org_id, alias.name
+            print(alias.orgalias_id, alias.org_id, alias.name)
 
         orgalias = Orgalias.get(
             session, other.name, self, moderation_user, other.public)
@@ -973,15 +973,15 @@ class Orgalias(Base, MangoEntity):
         self.public = public
 
     def __unicode__(self):
-        return u"<Orgalias-%s (%s) '%s':%d>" % (
+        return "<Orgalias-%s (%s) '%s':%d>" % (
             self.orgalias_id or "?",
             {True:"public", False:"private", None: "pending"}[self.public],
             self.name, self.org_id,
             )
 
     def pprint(self, indent=""):
-        o = u""
-        o += u"%sOrgalias: %s %s\n" % (indent, self.orgalias_id, self.name)
+        o = ""
+        o += "%sOrgalias: %s %s\n" % (indent, self.orgalias_id, self.name)
         return o
 
     @staticmethod
@@ -1128,7 +1128,7 @@ class Event(Base, MangoEntity, NotableEntity):
 
     @classmethod
     def _dummy(cls, _orm):
-        return cls(u"dummy",
+        return cls("dummy",
                    datetime.date(1970, 1, 1), datetime.date(1970, 1, 1))
 
     def __init__(self,
@@ -1150,15 +1150,15 @@ class Event(Base, MangoEntity, NotableEntity):
         self.public = public
 
     def __unicode__(self):
-        return u"<Event-%s (%s) '%s'>" % (
+        return "<Event-%s (%s) '%s'>" % (
             self.event_id or "?",
             {True:"public", False:"private", None: "pending"}[self.public],
             self.name,
             )
 
     def pprint(self, indent=""):
-        o = u""
-        o += u"%sEvent: %s %s\n" % (indent, self.event_id, self.name)
+        o = ""
+        o += "%sEvent: %s %s\n" % (indent, self.event_id, self.name)
         for contact in self.contact_list:
             o += contact.pprint(indent + "  ")
         for eventtag in self.eventtag_list:
@@ -1168,7 +1168,7 @@ class Event(Base, MangoEntity, NotableEntity):
         for note in self.note_list:
             o += note.pprint(indent + "  ")
         for org in self.org_list:
-            o += u"%sOrg: %s %s...\n" % (indent + "  ", org.org_id, org.name)
+            o += "%sOrg: %s %s...\n" % (indent + "  ", org.org_id, org.name)
         return o
 
     @staticmethod
@@ -1269,7 +1269,7 @@ class Address(Base, MangoEntity, NotableEntity):
 
     @classmethod
     def _dummy(cls, _orm):
-        return cls(u"dummy", u"dummy", u"dummy")
+        return cls("dummy", "dummy", "dummy")
 
     def __init__(self,
                  postal, source,
@@ -1292,7 +1292,7 @@ class Address(Base, MangoEntity, NotableEntity):
         self.public = public
 
     def __unicode__(self):
-        return u"<Addr-%s (%s) '%s' '%s' %s %s>" % (
+        return "<Addr-%s (%s) '%s' '%s' %s %s>" % (
             self.address_id or "?",
             {True:"public", False:"private", None: "pending"}[self.public],
             self.postal[:10].replace("\n", " "),
@@ -1320,8 +1320,8 @@ class Address(Base, MangoEntity, NotableEntity):
                 (self.latitude, self.longitude) = coords
 
     def pprint(self, indent=""):
-        o = u""
-        o += u"%sAddress: %s %s\n" % (
+        o = ""
+        o += "%sAddress: %s %s\n" % (
             indent, self.address_id, self.postal.split("\n")[0])
         for note in self.note_list:
             o += note.pprint(indent + "  ")
@@ -1329,7 +1329,7 @@ class Address(Base, MangoEntity, NotableEntity):
 
     @property
     def split(self):
-        return filter(None, re.split("(?:\n|,)", self.postal))
+        return [_f for _f in re.split("(?:\n|,)", self.postal) if _f]
 
     @property
     def name(self):
@@ -1350,8 +1350,10 @@ class Address(Base, MangoEntity, NotableEntity):
 
     @staticmethod
     def repr_coordinates(longitude, latitude):
+        def cmp(a, b):
+            return (a > b) - (a < b)
         if longitude and latitude:
-            return u"%0.2f°%s %0.2f°%s" % (
+            return "%0.2f°%s %0.2f°%s" % (
                 abs(latitude), ("S", "", "N")[cmp(latitude, 0.0) + 1],
                 abs(longitude), ("W", "", "E")[cmp(longitude, 0.0) + 1],
                 )
@@ -1393,7 +1395,7 @@ class Address(Base, MangoEntity, NotableEntity):
 
 
 class Orgtag(Base, MangoEntity, NotableEntity):
-    u"""
+    """
     is_virtual:  None = normal
                  True = virtual
                  False = virtual, currently active in an event
@@ -1478,7 +1480,7 @@ class Orgtag(Base, MangoEntity, NotableEntity):
         super(Orgtag, self).__init__()
 
         self.name = sanitise_name(name)
-        self.description = description and unicode(description) or None
+        self.description = description and str(description) or None
         self.is_virtual = None
 
         self.moderation_user = moderation_user
@@ -1486,15 +1488,15 @@ class Orgtag(Base, MangoEntity, NotableEntity):
         self.public = public
 
     def __unicode__(self):
-        return u"<Orgtag-%s (%s) '%s'>" % (
+        return "<Orgtag-%s (%s) '%s'>" % (
             self.orgtag_id or "?",
             {True:"public", False:"private", None: "pending"}[self.public],
             self.name,
             )
 
     def pprint(self, indent=""):
-        o = u""
-        o += u"%sOrgtag: %s %s\n" % (indent, self.orgtag_id, self.name)
+        o = ""
+        o += "%sOrgtag: %s %s\n" % (indent, self.orgtag_id, self.name)
         for note in self.note_list:
             o += note.pprint(indent + "  ")
         return o
@@ -1517,7 +1519,7 @@ class Orgtag(Base, MangoEntity, NotableEntity):
 
 
 class Eventtag(Base, MangoEntity, NotableEntity):
-    u"""
+    """
     is_virtual:  None = normal
                  True = virtual
                  False = virtual, currently active in an event
@@ -1602,7 +1604,7 @@ class Eventtag(Base, MangoEntity, NotableEntity):
         super(Eventtag, self).__init__()
 
         self.name = sanitise_name(name)
-        self.description = description and unicode(description) or None
+        self.description = description and str(description) or None
         self.is_virtual = None
 
         self.moderation_user = moderation_user
@@ -1610,15 +1612,15 @@ class Eventtag(Base, MangoEntity, NotableEntity):
         self.public = public
 
     def __unicode__(self):
-        return u"<Eventtag-%s (%s) '%s'>" % (
+        return "<Eventtag-%s (%s) '%s'>" % (
             self.eventtag_id or "?",
             {True:"public", False:"private", None: "pending"}[self.public],
             self.name,
             )
 
     def pprint(self, indent=""):
-        o = u""
-        o += u"%sEventtag: %s %s\n" % (indent, self.eventtag_id, self.name)
+        o = ""
+        o += "%sEventtag: %s %s\n" % (indent, self.eventtag_id, self.name)
         for note in self.note_list:
             o += note.pprint(indent + "  ")
         return o
@@ -1710,7 +1712,7 @@ class Note(Base, MangoEntity):
 
     @classmethod
     def _dummy(cls, _orm):
-        return cls(u"dummy", u"dummy")
+        return cls("dummy", "dummy")
 
     def __init__(self,
                  text_, source,
@@ -1726,7 +1728,7 @@ class Note(Base, MangoEntity):
         self.public = public
 
     def __unicode__(self):
-        return u"<Note-%s (%s) '%s' '%s'>" % (
+        return "<Note-%s (%s) '%s' '%s'>" % (
             self.note_id or "?",
             {True:"public", False:"private", None: "pending"}[self.public],
             self.text[:10].replace("\n", " "),
@@ -1734,8 +1736,8 @@ class Note(Base, MangoEntity):
             )
 
     def pprint(self, indent=""):
-        o = u""
-        o += u"%sNote: %s %s\n" % (
+        o = ""
+        o += "%sNote: %s %s\n" % (
             indent, self.note_id, self.text.split("\n")[0][:32])
         return o
 
@@ -1797,7 +1799,7 @@ class Contact(Base, MangoEntity):
     @classmethod
     def _dummy(cls, orm):
         medium = orm.query(Medium).first()
-        return cls(medium, u"dummy")
+        return cls(medium, "dummy")
 
     def __init__(self,
                  medium,
@@ -1808,16 +1810,16 @@ class Contact(Base, MangoEntity):
 
         self.medium = medium
 
-        self.text = sanitise_name(unicode(text_))
-        self.description = description and unicode(description)
-        self.source = source and unicode(source)
+        self.text = sanitise_name(str(text_))
+        self.description = description and str(description)
+        self.source = source and str(source)
 
         self.moderation_user = moderation_user
         self.a_time = 0
         self.public = public
 
     def __unicode__(self):
-        return u"<Contact-%s (%s) %s: '%s'>" % (
+        return "<Contact-%s (%s) %s: '%s'>" % (
             self.contact_id or "?",
             {True:"public", False:"private", None: "pending"}[self.public],
             self.medium.name,
@@ -1825,8 +1827,8 @@ class Contact(Base, MangoEntity):
             )
 
     def pprint(self, indent=""):
-        o = u""
-        o += u"%sContact: %s %s:%s\n" % (
+        o = ""
+        o += "%sContact: %s %s:%s\n" % (
             indent, self.contact_id, self.medium.name, self.text[:32])
         return o
 
@@ -1851,23 +1853,23 @@ def attach_search(engine, orm, enabled=True, verify=True):
 
 VIRTUAL_ORGTAG_LIST = [
     (
-        u"Market | Military export applicant",
+        "Market | Military export applicant",
         Orgtag.name_short.like(
-            u"market|military-export-applicant-to-%-in-%"),
+            "market|military-export-applicant-to-%-in-%"),
     ),
     (
-        u"Exhibitor | DSEi",
+        "Exhibitor | DSEi",
         Orgtag.name_short.like(
-            u"exhibitor|dsei-%"),
+            "exhibitor|dsei-%"),
     ),
     (
-        u"Exhibitor | Farnborough",
+        "Exhibitor | Farnborough",
         Orgtag.name_short.like(
-            u"exhibitor|farnborough-%"),
+            "exhibitor|farnborough-%"),
     ),
     (
-        u"Activity | Military",
-        Orgtag.path_short == u"activity",
+        "Activity | Military",
+        Orgtag.path_short == "activity",
     ),
 ]
 
@@ -1885,7 +1887,7 @@ def virtual_org_orgtag_all(org):
         raise Exception("Neither org or orgtag attached to session.")
 
     for virtual_name, filter_search in VIRTUAL_ORGTAG_LIST:
-        LOG.debug(u"\nVirtual tag: %s", virtual_name)
+        LOG.debug("\nVirtual tag: %s", virtual_name)
 
         virtual_tag = orm.query(Orgtag) \
             .filter_by(name=virtual_name) \
@@ -1893,7 +1895,7 @@ def virtual_org_orgtag_all(org):
             .first()
 
         if not virtual_tag:
-            LOG.debug(u"  Virtual tag does not exist.")
+            LOG.debug("  Virtual tag does not exist.")
             continue
 
         has_virtual_tag = orm.query(Orgtag) \
@@ -1902,27 +1904,27 @@ def virtual_org_orgtag_all(org):
             .filter(Orgtag.is_virtual == None) \
             .filter(filter_search)
 
-        LOG.debug(u"  Has %d child tags.", has_virtual_tag.count())
+        LOG.debug("  Has %d child tags.", has_virtual_tag.count())
         if LOG.level == logging.DEBUG:
             for child_tag in has_virtual_tag:
-                LOG.debug(u"    %s", child_tag.name_short)
+                LOG.debug("    %s", child_tag.name_short)
 
         if has_virtual_tag.count():
             if virtual_tag not in org.orgtag_list:
-                LOG.debug(u"  Adding parent tag.")
+                LOG.debug("  Adding parent tag.")
                 # Flag the virtual tag so it doesn't trigger a value error
                 virtual_tag.is_virtual = False
                 org.orgtag_list.append(virtual_tag)
             else:
-                LOG.debug(u"  Already has parent tag.")
+                LOG.debug("  Already has parent tag.")
         else:
             if virtual_tag in org.orgtag_list:
-                LOG.debug(u"  Removing parent tag.")
+                LOG.debug("  Removing parent tag.")
                 # Flag the virtual tag so it doesn't trigger a value error
                 virtual_tag.is_virtual = False
                 org.orgtag_list.remove(virtual_tag)
             else:
-                LOG.debug(u"  Doesn't have parent tag.")
+                LOG.debug("  Doesn't have parent tag.")
 
 
 
@@ -1937,7 +1939,7 @@ def virtual_org_orgtag_edit(org, orgtag, add=None):
         return
 
     if orgtag.is_virtual:
-        LOG.warning(u"Cannot edit the membership of a virtual tag (%s).",
+        LOG.warning("Cannot edit the membership of a virtual tag (%s).",
                     orgtag.name)
         return
 

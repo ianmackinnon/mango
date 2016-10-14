@@ -1,10 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import sys
-import codecs
 import logging
-import ConfigParser
+import configparser
 from optparse import OptionParser
 
 
@@ -14,9 +13,9 @@ LOG = logging.getLogger('model')
 
 
 def get(ini_path, section, key):
-    with codecs.open(ini_path, "r", "utf-8") as ini_file:
-        config = ConfigParser.ConfigParser()
-        config.readfp(ini_file)
+    with open(ini_path, "r", encoding="utf-8") as ini_file:
+        config = configparser.ConfigParser()
+        config.read_file(ini_file)
 
         value = config.get(section, key)
         return value
@@ -26,7 +25,7 @@ def get(ini_path, section, key):
 def main():
     LOG.addHandler(logging.StreamHandler())
 
-    usage = u"""%prog INI SECTION KEY
+    usage = """%prog INI SECTION KEY
 
 Read INI
 """
@@ -55,7 +54,7 @@ Read INI
     ini_path, section, key = args
 
     value = get(ini_path, section, key)
-    sys.stdout.write(value + u"\n")
+    sys.stdout.write(value + "\n")
 
 
 

@@ -84,7 +84,7 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
     def _decline_org_v(org_id, moderation_user):
         org = Org_v(
             org_id,
-            u"DECLINED",
+            "DECLINED",
             moderation_user=moderation_user, public=None)
         org.existence = False
 
@@ -129,7 +129,7 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
     def _get_name_search_query(self, name=None, name_search=None,
                                visibility=None):
-        u"""
+        """
         name:         Full name match.
         name_search:  Name contains search, matches from start first.
         visibility:   "public", "pending", "private", "all". Unknown = "public".
@@ -314,7 +314,7 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                             }
                 org_packet["orgLength"] = len(orgs)
                 org_packet["orgList"] = []
-                for data in orgs.values()[
+                for data in list(orgs.values())[
                         (offset or 0):(offset or 0) + MAX_ORG_PER_PAGE]:
                     org = data["org"]
                     org_packet["orgList"].append(org.obj(
@@ -339,7 +339,7 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
 
                 org_packet["orgLength"] = len(orgs)
                 org_packet["orgList"] = []
-                for data in orgs.values():
+                for data in list(orgs.values()):
                     org = data["org"]
                     address_list = data["addressList"]
                     address_list.sort(
@@ -364,7 +364,7 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                         }
 
             org_packet["orgList"] = []
-            for data in orgs.values():
+            for data in list(orgs.values()):
                 org = data["org"]
                 org_packet["orgList"].append(org.obj(
                     alias=data["alias"],

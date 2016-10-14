@@ -80,7 +80,7 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
         if not (results and count):
             return suggestions
 
-        for i in xrange(count):
+        for i in range(count):
             total = 0
             for (_name, freq) in results:
                 total += freq
@@ -103,10 +103,10 @@ class OrgListHandler(BaseOrgHandler, BaseOrgtagHandler,
         # Cannot use `is` in SQLAlchemy filters
 
         include = [
-            u'exhibitor',
-            u'delegate',
-            u'market',
-            u'activity',
+            'exhibitor',
+            'delegate',
+            'market',
+            'activity',
         ]
 
         results = []
@@ -1218,7 +1218,7 @@ class ModerationOrgDescHandler(BaseOrgHandler):
                     }
 
         org_packet["orgList"] = []
-        for data in orgs.values():
+        for data in list(orgs.values()):
             org = data["org"]
             org_packet["orgList"].append(org.obj(
                 alias=data["alias"],
@@ -1268,8 +1268,8 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .join(org_orgtag) \
             .add_columns(org_orgtag.c.org_id) \
             .filter(or_(
-                Orgtag.path_short == u'activity',
-                Orgtag.path_short == u'activity-exclusion',
+                Orgtag.path_short == 'activity',
+                Orgtag.path_short == 'activity-exclusion',
             )) \
             .group_by(org_orgtag.c.org_id) \
             .subquery()
@@ -1288,7 +1288,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .join(org_orgtag) \
             .add_columns(org_orgtag.c.org_id) \
             .filter(Orgtag.name_short.startswith(
-                u"products-and-services|dsei%")) \
+                "products-and-services|dsei%")) \
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
@@ -1297,7 +1297,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .join(org_orgtag) \
             .add_columns(org_orgtag.c.org_id) \
             .filter(Orgtag.name_short.startswith(
-                u"products-and-services|security%")) \
+                "products-and-services|security%")) \
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
@@ -1306,7 +1306,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .join(org_orgtag) \
             .add_columns(org_orgtag.c.org_id) \
             .filter(not_(Orgtag.name_short.startswith(
-                u"products-and-services%"))) \
+                "products-and-services%"))) \
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
@@ -1314,7 +1314,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                                        .label("count")) \
             .join(org_orgtag) \
             .add_columns(org_orgtag.c.org_id) \
-            .filter(Orgtag.name_short == u"exhibitor|dsei-2015") \
+            .filter(Orgtag.name_short == "exhibitor|dsei-2015") \
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
@@ -1323,7 +1323,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .join(org_orgtag) \
             .add_columns(org_orgtag.c.org_id) \
             .filter(Orgtag.name_short ==
-                    u"market|military-export-applicant-to-israel") \
+                    "market|military-export-applicant-to-israel") \
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
@@ -1332,7 +1332,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .join(org_orgtag) \
             .add_columns(org_orgtag.c.org_id) \
             .filter(Orgtag.name_short.startswith(
-                u"products-and-services|sipri%")) \
+                "products-and-services|sipri%")) \
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
@@ -1360,7 +1360,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 .group_by(org_address.c.org_id) \
                 .subquery()
 
-        canterbury_query = location_subquery(u"canterbury")
+        canterbury_query = location_subquery("canterbury")
 
         exist_clause = """exists (
     select 1 from org_include
@@ -1395,9 +1395,9 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .filter(Org.end_date == None) \
             .order_by(
                 literal_column(
-                    u"((dseitag > 0) * 4 + (saptag > 0) * 2 + (sipri > 0))"
+                    "((dseitag > 0) * 4 + (saptag > 0) * 2 + (sipri > 0))"
                 ).desc(),
-                literal_column(u"tag").desc(),
+                literal_column("tag").desc(),
                 Org.name,
             )
 

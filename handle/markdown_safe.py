@@ -33,15 +33,15 @@ def convert_links(text, quote="\""):
         split = re.split(r"(?:(https?://)|(www\.))([\S]+\.[^\s<>\"\']+)", t)
         if len(split) == 1:
             continue
-        r = u""
+        r = ""
         n = 0
-        split = [s or u"" for s in split]
+        split = [s or "" for s in split]
         while split:
             if n % 2 == 0:
                 r += split[0]
                 split.pop(0)
             else:
-                r += u"<a href=%shttp://%s%s%s>%s%s%s</a>" % (
+                r += "<a href=%shttp://%s%s%s>%s%s%s</a>" % (
                     quote, split[1], split[2], quote,
                     split[0], split[1], split[2]
                     )
@@ -51,7 +51,7 @@ def convert_links(text, quote="\""):
             n += 1
 
         t.replaceWith(BeautifulSoup(r, "html.parser"))
-    return unicode(soup)
+    return str(soup)
 
 
 

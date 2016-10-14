@@ -64,10 +64,10 @@ class HomeTargetListHandler(BaseHandler):
             .join(q1, q1.c.org_id == org_orgtag.c.org_id) \
             .add_columns(func.count(q1.c.org_id)) \
             .filter(
-                Orgtag.path_short == u"market",
-                Orgtag.base_short.startswith(u"military-export-applicant-to-%"),
+                Orgtag.path_short == "market",
+                Orgtag.base_short.startswith("military-export-applicant-to-%"),
                 ~Orgtag.base_short.startswith(
-                    u"military-export-applicant-to-%-in-____"),
+                    "military-export-applicant-to-%-in-____"),
             ) \
             .group_by(Orgtag.orgtag_id) \
             .order_by(Orgtag.base)
@@ -103,14 +103,14 @@ class HomeOrgListHandler(BaseHandler):
             obj = {
                 "label": org.name,
                 "value": org.url,
-                }
+            }
             if org.orgalias_list_public:
                 obj["alias"] = []
                 for orgalias in org.orgalias_list_public:
                     obj["alias"].append(orgalias.name)
             org_list.append(obj)
 
-        org_list.sort()
+        org_list.sort(key=lambda x: x["label"])
         self.cache.set(cache_key, json.dumps(org_list))
         self.write_json(org_list)
 
@@ -162,7 +162,7 @@ class FairOrgListHandler(BaseHandler):
                         obj["alias"].append(orgalias.name)
                 org_list.append(obj)
 
-        org_list.sort()
+        org_list.sort(key=lambda x: x["label"])
         self.cache.set(self.cache_key, json.dumps(org_list))
         self.write_json(org_list)
 
@@ -170,50 +170,50 @@ class FairOrgListHandler(BaseHandler):
 
 class DseiHandler(FairHandler):
     name = "dsei"
-    tag_name = u"dsei-2015"
+    tag_name = "dsei-2015"
 
 class DseiTargetListHandler(HomeTargetListHandler):
-    tag_base = u"dsei-2015"
+    tag_base = "dsei-2015"
 
 class DseiOrgListHandler(FairOrgListHandler):
     cache_key = "dsei-org"
-    tag_name = u"dsei-2015"
+    tag_name = "dsei-2015"
 
 
 
 class DprteHandler(FairHandler):
     name = "dprte"
-    tag_name = u"dprte-2016"
+    tag_name = "dprte-2016"
 
 class DprteTargetListHandler(HomeTargetListHandler):
-    tag_base = u"dprte-2016"
+    tag_base = "dprte-2016"
 
 class DprteOrgListHandler(FairOrgListHandler):
     cache_key = "dprte-org"
-    tag_name = u"dprte-2016"
+    tag_name = "dprte-2016"
 
 
 
 class FarnboroughHandler(FairHandler):
     name = "farnborough"
-    tag_name = u"farnborough-2016"
+    tag_name = "farnborough-2016"
 
 class FarnboroughTargetListHandler(HomeTargetListHandler):
-    tag_base = u"farnborough-2016"
+    tag_base = "farnborough-2016"
 
 class FarnboroughOrgListHandler(FairOrgListHandler):
     cache_key = "farnborough-org"
-    tag_name = u"farnborough-2016"
+    tag_name = "farnborough-2016"
 
 
 
 class SecurityPolicingHandler(FairHandler):
     name = "security-and-policing"
-    tag_name = u"security-and-policing-2016"
+    tag_name = "security-and-policing-2016"
 
 class SecurityPolicingTargetListHandler(HomeTargetListHandler):
-    tag_base = u"security-and-policing-2016"
+    tag_base = "security-and-policing-2016"
 
 class SecurityPolicingOrgListHandler(FairOrgListHandler):
     cache_key = "security-and-policing-org"
-    tag_name = u"security-and-policing-2016"
+    tag_name = "security-and-policing-2016"
