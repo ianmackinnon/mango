@@ -90,7 +90,7 @@ lint-js :
 	  static/geobox.js \
 	  static/tag.js
 
-	jscs -c test/jscs.json -v \
+	jscs -c test/jscs.json --no-color \
 	  static/address.js \
 	  static/entity.js \
 	  static/org.js \

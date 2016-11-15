@@ -225,7 +225,7 @@ class BaseHandler(RequestHandler):
             # Returns `bytes`
             value = self.get_secure_cookie(key)
             if value:
-                value = value.decode("utf-8")
+                value = value.decode()
         else:
             # Returns `str`
             value = self.get_cookie(key)
@@ -960,11 +960,12 @@ class ServerStatusHandler(tornado.web.RequestHandler):
             return
         if len(data) == 1:
             return data[0]
+        half = int(len(data) / 2)
         if len(data) % 2:
-            return (data[len(data) / 2 - 1] +
-                    data[len(data) / 2]) / 2
+            return (data[half - 1] +
+                    data[half]) / 2
         else:
-            return data[len(data) / 2]
+            return data[half]
 
     @staticmethod
     def quartiles(data):
@@ -981,24 +982,25 @@ class ServerStatusHandler(tornado.web.RequestHandler):
             q3 = data[0]
         else:
             median = ServerStatusHandler.median_sorted(sample)
+            half = int(len(data) / 2)
             if len(data) % 2:
                 q1 = (
                     ServerStatusHandler.median_sorted(
-                        sample[:len(data) / 2]) +
+                        sample[:half]) +
                     ServerStatusHandler.median_sorted(
-                        sample[:len(data) / 2 + 1])
+                        sample[:half + 1])
                 ) / 2
                 q3 = (
                     ServerStatusHandler.median_sorted(
-                        sample[len(data) / 2:]) +
+                        sample[half:]) +
                     ServerStatusHandler.median_sorted(
-                        sample[len(data) / 2 + 1:])
+                        sample[half + 1:])
                 ) / 2
             else:
                 q1 = ServerStatusHandler.median_sorted(
-                    sample[:len(data) / 2])
+                    sample[:half])
                 q3 = ServerStatusHandler.median_sorted(
-                    sample[len(data) / 2:])
+                    sample[half:])
 
         return {
             "q1": median if q1 is None else q1,
