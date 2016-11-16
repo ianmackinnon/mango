@@ -35,8 +35,15 @@ drop-cache-live :
 drop-cache :
 	-redis-cli keys "$(REDIS_NAMESPACE):*" | xargs -n 100 redis-cli DEL;
 
+# Database
+
+mysql-import :
+	$(MAKE) -f mysql.Makefile mysql-import
+mysql-test :
+	$(MAKE) -f mysql.Makefile mysql-test
 
 # Serve & test
+
 
 test : mysql-test serve-test
 
@@ -47,6 +54,7 @@ serve-test :
 	  -W error \
 	  -W ignore::UserWarning:bs4 \
 	  -W ignore::ImportWarning:httplib2 \
+	  -W ignore::ResourceWarning: \
 	  ./mango.py --local=1 --events=0 \
 	    --log=/tmp/mango-log
 
@@ -90,7 +98,7 @@ lint-js :
 	  static/geobox.js \
 	  static/tag.js
 
-	jscs -c test/jscs.json --no-color \
+	jscs -c test/jscs.json --no-colors \
 	  static/address.js \
 	  static/entity.js \
 	  static/org.js \

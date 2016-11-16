@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import logging
+import argparse
 import unittest
-from optparse import OptionParser
+
 
 from http_test import Http, LOG as HTTP_LOG
 
@@ -202,24 +202,23 @@ def main():
     LOG.addHandler(logging.StreamHandler())
     HTTP_LOG.addHandler(logging.StreamHandler())
 
-    usage = """%prog"""
-
-    parser = OptionParser(usage=usage)
-    parser.add_option(
-        "-v", "--verbose", dest="verbose",
+    parser = argparse.ArgumentParser(
+        description="Test live instances of web application.")
+    parser.add_argument(
+        "--verbose", "-v",
         action="count", default=0,
         help="Print verbose information for debugging.")
-    parser.add_option(
-        "-q", "--quiet", dest="quiet",
+    parser.add_argument(
+        "--quiet", "-q",
         action="count", default=0,
         help="Suppress warnings.")
 
-    (options, _args) = parser.parse_args()
+    args = parser.parse_args()
 
-    log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[
-        max(0, min(3, 1 + options.verbose - options.quiet))]
-    LOG.setLevel(log_level)
-    HTTP_LOG.setLevel(log_level)
+    level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG)[
+        max(0, min(3, 1 + args.verbose - args.quiet))]
+    LOG.setLevel(level)
+    HTTP_LOG.setLevel(level)
 
     LOG.info("""
 

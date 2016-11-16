@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 import re
 import json
@@ -326,7 +325,7 @@ def bounds(address_full, min_radius=None, cache=GEOCODE_CACHE_DEFAULT):
             if response.status_code != 200:
                 continue
 
-            print("R", response.encoding)
+            print(("R", response.encoding))
 
             content = json.loads(response.text)
 

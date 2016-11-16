@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import sys
 import math
 import logging
-from optparse import OptionParser
+import argparse
 
 from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import sessionmaker
@@ -74,26 +73,26 @@ def main():
     LOG.addHandler(logging.StreamHandler())
     LOG_MODEL.addHandler(logging.StreamHandler())
 
-    usage = """%prog [tag]
-
-Dump an SVG map of Public organisation addresses in the UK.
-
-tag:   Tag to filter by."""
-
-    parser = OptionParser(usage=usage)
-    parser.add_option(
-        "-v", "--verbose", dest="verbose",
+    parser = argparse.ArgumentParser(
+        description="Dump an SVG map of Public "
+        "organisation addresses in the UK.")
+    parser.add_argument(
+        "--verbose", "-v",
         action="count", default=0,
         help="Print verbose information for debugging.")
-    parser.add_option(
-        "-q", "--quiet", dest="quiet",
+    parser.add_argument(
+        "--quiet", "-q",
         action="count", default=0,
         help="Suppress warnings.")
 
-    (options, args) = parser.parse_args()
+    parser.add_argument(
+        "orgtag_name_short", metavar="TAG",
+        help="Tag to filter by.")
+
+    args = parser.parse_args()
 
     log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[
-        max(0, min(3, 1 + options.verbose - options.quiet))]
+        max(0, min(3, 1 + args.verbose - args.quiet))]
 
     LOG.setLevel(log_level)
     LOG_MODEL.setLevel(log_level)
@@ -105,15 +104,7 @@ tag:   Tag to filter by."""
     orm = session_factory()
     attach_search(engine, orm)
 
-
-    if len(args) != 1:
-        parser.print_usage()
-        sys.exit(1)
-
-    (orgtag_name_short, ) = args
-    orgtag_name_short = str(orgtag_name_short)
-
-    svg_map(orm, orgtag_name_short)
+    svg_map(orm, args.orgtag_name_short)
 
 
 

@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 # pylint: disable=invalid-name
 # Using `Tag` for tag class type
 
 import sys
 import logging
-
-from optparse import OptionParser, OptionError
+import argparse
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
@@ -35,57 +33,61 @@ def tag_rename(orm, Tag, before, after):
 
     for tag in tag_list:
         tag.name = tag.name.replace(before, after, 1)
-        print(tag.name)
+        print((tag.name))
 
-    print(len(tag_list))
+    print((len(tag_list)))
 
 
 
 def main():
     LOG.addHandler(logging.StreamHandler())
 
-    usage = """%%prog TAGTYPE BEFORE AFTER
+    parser = argparse.ArgumentParser(
+        description="Bulk rename tag paths.")
+    parser.add_argument(
+        "--verbose", "-v",
+        action="count", default=0,
+        help="Print verbose information for debugging.")
+    parser.add_argument(
+        "--quiet", "-q",
+        action="count", default=0,
+        help="Suppress warnings.")
 
-TAGTYPE:   %s
-Bulk rename tag paths.
-""" % (", ".join(list(TYPE_LIST.keys())))
+    parser.add_argument(
+        "--dry-run", "-n",
+        action="store_true",
+        help="Dry run.")
 
-    parser = OptionParser(usage=usage)
-    parser.add_option("-v", "--verbose", dest="verbose",
-                      action="count", default=0,
-                      help="Print verbose information for debugging.")
-    parser.add_option("-q", "--quiet", dest="quiet",
-                      action="count", default=0,
-                      help="Suppress warnings.")
-    parser.add_option("-n", "--dry-run", action="store_true", dest="dry_run",
-                      help="Dry run.", default=None)
+    parser.add_argument(
+        "tag_type", metavar="TAGTYPE",
+        help="Tag type. Options: %s." % ", ".join(TYPE_LIST))
+    parser.add_argument(
+        "before", metavar="BEFORE",
+        help="Tag name before.")
+    parser.add_argument(
+        "after", metavar="AFTER",
+        help="Tag name after.")
 
-    (options, args) = parser.parse_args()
-    args = [arg.decode(sys.getfilesystemencoding()) for arg in args]
+    args = parser.parse_args()
 
     level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG)[
-        max(0, min(3, 1 + options.verbose - options.quiet))]
+        max(0, min(3, 1 + args.verbose - args.quiet))]
     LOG.setLevel(level)
 
-    if len(args) != 3:
-        parser.print_usage()
-        sys.exit(1)
-
-    tag_type, before, after = args
-
     try:
-        Tag = TYPE_LIST.get(tag_type)
+        Tag = TYPE_LIST.get(args.tag_type)
     except IndexError:
-        raise OptionError
+        LOG.error("Tag type must be one of %s", ", ".join(TYPE_LIST))
+        sys.exit(1)
 
     connection_url = connection_url_app()
     engine = create_engine(connection_url,)
     Session = sessionmaker(bind=engine, autocommit=False, autoflush=False)
     orm = Session()
 
-    tag_rename(orm, Tag, before, after)
+    tag_rename(orm, Tag, args.before, args.after)
 
-    if not options.dry_run:
+    if not args.dry_run:
         orm.commit()
 
 

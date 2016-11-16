@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 # pylint: disable=invalid-name
 # Allow using lambdas for MySQL global column types
@@ -7,13 +6,12 @@
 
 import os
 import re
-import sys
 import math
 import time
+import argparse
 import logging
 import datetime
 from hashlib import sha1, md5
-from optparse import OptionParser
 
 from sqlalchemy import create_engine
 from sqlalchemy import Column, Table, text
@@ -94,21 +92,21 @@ def main_1():
     LOG.addHandler(logging.StreamHandler())
     search.log.addHandler(logging.StreamHandler())
 
-    usage = """%%prog"""
+    parser = argparse.ArgumentParser(
+        description="Initialize database.")
+    parser.add_argument(
+        "--verbose", "-v",
+        action="count", default=0,
+        help="Print verbose information for debugging.")
+    parser.add_argument(
+        "--quiet", "-q",
+        action="count", default=0,
+        help="Suppress warnings.")
 
-    parser = OptionParser(usage=usage)
-    parser.add_option("-v", "--verbose", dest="verbose",
-                      action="count", default=0,
-                      help="Print verbose information for debugging.")
-    parser.add_option("-q", "--quiet", dest="quiet",
-                      action="count", default=0,
-                      help="Suppress warnings.")
-
-    (options, args) = parser.parse_args()
-    args = [arg.decode(sys.getfilesystemencoding()) for arg in args]
+    args = parser.parse_args()
 
     level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG)[
-        max(0, min(3, 1 + options.verbose - options.quiet))]
+        max(0, min(3, 1 + args.verbose - args.quiet))]
     LOG.setLevel(level)
     search.log.setLevel(level)
 
@@ -881,7 +879,7 @@ class Org(Base, MangoEntity, NotableEntity):
         session = object_session(self)
         assert session
 
-        print("[", self.org_id, other.org_id, len(other.orgalias_list), "]")
+        print(("[", self.org_id, other.org_id, len(other.orgalias_list), "]"))
 
         self.orgalias_list = list(set(self.orgalias_list + other.orgalias_list))
         self.note_list = list(set(self.note_list + other.note_list))
@@ -897,7 +895,7 @@ class Org(Base, MangoEntity, NotableEntity):
         other.contact_list = []
 
         for alias in self.orgalias_list:
-            print(alias.orgalias_id, alias.org_id, alias.name)
+            print((alias.orgalias_id, alias.org_id, alias.name))
 
         orgalias = Orgalias.get(
             session, other.name, self, moderation_user, other.public)

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 # pylint: disable=singleton-comparison,invalid-name
 # Cannot use `is` in SQLAlchemy filters

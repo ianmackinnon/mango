@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 import re
 import json
@@ -162,7 +161,7 @@ class AuthLoginGoogleHandler(LoginHandler, tornado.auth.GoogleOAuth2Mixin):
             )
             response = requests.get(uri)
             if response.status_code != 200:
-                print("Google auth status code: %s" % response.status_code)
+                print(("Google auth status code: %s" % response.status_code))
                 raise tornado.web.HTTPError(500, 'Server error')
 
             auth_user = json.loads(response.text)

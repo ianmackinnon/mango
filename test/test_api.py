@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 # pylint: disable=wrong-import-position,import-error
 # Allow appending to import path before import
@@ -9,8 +8,8 @@ import os
 import sys
 import time
 import logging
+import argparse
 import unittest
-from optparse import OptionParser
 from urllib.parse import urlencode
 from subprocess import Popen, PIPE
 from threading import Thread
@@ -27,7 +26,7 @@ from model import connection_url_app
 
 
 
-LOG = logging.getLogger('test_mango_web')
+LOG = logging.getLogger('test_api')
 
 HOST = "http://localhost:8802"
 
@@ -175,8 +174,8 @@ class TestUserSubmission(unittest.TestCase, MangoApiMixin):
         print(content)
         time.sleep(3)
         self.flush_mango_log()
-        print(self.mango_log_err)
-        print(self.mango_log_out)
+        print((self.mango_log_err))
+        print((self.mango_log_out))
 
 
 
@@ -185,23 +184,22 @@ class TestUserSubmission(unittest.TestCase, MangoApiMixin):
 def main():
     LOG.addHandler(logging.StreamHandler())
 
-    usage = """%prog"""
-
-    parser = OptionParser(usage=usage)
-    parser.add_option(
-        "-v", "--verbose", dest="verbose",
+    parser = argparse.ArgumentParser(
+        description="Test web app API.")
+    parser.add_argument(
+        "--verbose", "-v",
         action="count", default=0,
         help="Print verbose information for debugging.")
-    parser.add_option(
-        "-q", "--quiet", dest="quiet",
+    parser.add_argument(
+        "--quiet", "-q",
         action="count", default=0,
         help="Suppress warnings.")
 
-    (options, _args) = parser.parse_args()
+    args = parser.parse_args()
 
-    log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[
-        max(0, min(3, 1 + options.verbose - options.quiet))]
-    LOG.setLevel(log_level)
+    level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG)[
+        max(0, min(3, 1 + args.verbose - args.quiet))]
+    LOG.setLevel(level)
 
     unittest.main()
 

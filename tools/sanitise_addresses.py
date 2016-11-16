@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import re
 import sys
 import logging
-from optparse import OptionParser
+import argparse
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -86,8 +85,8 @@ def suspicious_postcodes(orm):
                 split = split_postcode(part)
                 if len(split) > 1:
                     print()
-                    print(address.url)
-                    print(repr(part))
+                    print((address.url))
+                    print((repr(part)))
                     print(split)
 
 
@@ -103,15 +102,15 @@ def sanitise_addresses(orm):
         if a != b:
             if "," not in b:
                 address.postal = b
-                print(b.encode("utf-8"))
+                print((b.encode("utf-8")))
                 print()
                 orm.commit()
                 continue
             b = address.sanitise_address(address.postal, False)
             print()
-            print(a.encode("utf-8"))
+            print((a.encode("utf-8")))
             print()
-            print(b.encode("utf-8"))
+            print((b.encode("utf-8")))
             print()
             if query_yes_no("replace?", default=None):
                 address.postal = b
@@ -123,25 +122,21 @@ def sanitise_addresses(orm):
 def main():
     LOG.addHandler(logging.StreamHandler())
 
-    usage = """%prog [ID]...
-
-ID:   Integer organisation IDs to merge."""
-
-
-    parser = OptionParser(usage=usage)
-    parser.add_option(
-        "-v", "--verbose", dest="verbose",
+    parser = argparse.ArgumentParser(
+        description="Sanitise addresses in the database.")
+    parser.add_argument(
+        "--verbose", "-v",
         action="count", default=0,
         help="Print verbose information for debugging.")
-    parser.add_option(
-        "-q", "--quiet", dest="quiet",
+    parser.add_argument(
+        "--quiet", "-q",
         action="count", default=0,
         help="Suppress warnings.")
 
-    (options, _args) = parser.parse_args()
+    args = parser.parse_args()
 
     log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[
-        max(0, min(3, 1 + options.verbose - options.quiet))]
+        max(0, min(3, 1 + args.verbose - args.quiet))]
     LOG.setLevel(log_level)
 
     connection_url = connection_url_app()

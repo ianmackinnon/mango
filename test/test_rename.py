@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 # pylint: disable=wrong-import-position,import-error
 # Allow appending to import path before import
@@ -9,8 +8,8 @@ import os
 import sys
 import json
 import logging
+import argparse
 import unittest
-from optparse import OptionParser
 
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
@@ -33,7 +32,7 @@ class TestTagShortName(unittest.TestCase):
     def test_html_private(self):
         for name, known_result in self.known:
             result = short_name(name)
-            print(name, known_result, result)
+            print((name, known_result, result))
             self.assertIsInstance(result, str)
             self.assertEqual(known_result, result)
 
@@ -42,23 +41,22 @@ class TestTagShortName(unittest.TestCase):
 def main():
     LOG.addHandler(logging.StreamHandler())
 
-    usage = """%prog"""
-
-    parser = OptionParser(usage=usage)
-    parser.add_option(
-        "-v", "--verbose", dest="verbose",
+    parser = argparse.ArgumentParser(
+        description="Test short name (slug) function produces desired results.")
+    parser.add_argument(
+        "--verbose", "-v",
         action="count", default=0,
         help="Print verbose information for debugging.")
-    parser.add_option(
-        "-q", "--quiet", dest="quiet",
+    parser.add_argument(
+        "--quiet", "-q",
         action="count", default=0,
         help="Suppress warnings.")
 
-    (options, _args) = parser.parse_args()
+    args = parser.parse_args()
 
-    log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[
-        max(0, min(3, 1 + options.verbose - options.quiet))]
-    LOG.setLevel(log_level)
+    level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG)[
+        max(0, min(3, 1 + args.verbose - args.quiet))]
+    LOG.setLevel(level)
 
     unittest.main()
 

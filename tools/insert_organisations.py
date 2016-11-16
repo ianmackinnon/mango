@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import sys
 import json
-import codecs
 import logging
-from optparse import OptionParser
+import argparse
 
 import Levenshtein
 
@@ -383,53 +381,58 @@ def main():
     LOG.addHandler(logging.StreamHandler())
     LOG_SEARCH.addHandler(logging.StreamHandler())
 
-    usage = """%prog JSON..."""
+    parser = argparse.ArgumentParser(description="__DESC__")
+    parser.add_argument(
+        "--verbose", "-v",
+        action="count", default=0,
+        help="Print verbose information for debugging.")
+    parser.add_argument(
+        "--quiet", "-q",
+        action="count", default=0,
+        help="Suppress warnings.")
 
-    parser = OptionParser(usage=usage)
-    parser.add_option("-v", "--verbose", dest="verbose",
-                      action="count", default=0,
-                      help="Print verbose information for debugging.")
-    parser.add_option("-q", "--quiet", dest="quiet",
-                      action="count", default=0,
-                      help="Suppress warnings.")
+    parser.add_argument(
+        "-t", "--tag",
+        action="append",
+        help="Tag to apply to all insertions.", default=[])
+    parser.add_argument(
+        "-p", "--public",
+        action="store", type=int,
+        help="Public state of new items (True, False, None).")
+    parser.add_argument(
+        "-s", "--search",
+        action="store_true",
+        help="Search string using import merge tool.")
+    parser.add_argument(
+        "-d", "--do-not-search",
+        action="store_true",
+        help="Do not search for similar org names.")
+    parser.add_argument(
+        "-A", "--address-exclusive",
+        action="store_true",
+        help="Only import addresses if org has no existing "
+        "address.")
+    parser.add_argument(
+        "-L", "--limit-org",
+        action="store",
+        help="Only apply changes to orgs whose IDs are "
+        "supplied (a comma separated string)")
+    parser.add_argument(
+        "-n", "--dry-run",
+        action="store_true",
+        help="Dry run.")
 
-    parser.add_option("-t", "--tag", action="append", dest="tag",
-                      help="Tag to apply to all insertions.", default=[])
-    parser.add_option("-p", "--public", action="store",
-                      dest="public", type=int,
-                      help="Public state of new items (True, False, None).",
-                      default=None)
-    parser.add_option("-s", "--search", action="store_true",
-                      dest="search",
-                      help="Search string using import merge tool.",
-                      default=None)
-    parser.add_option("-d", "--do-not-search", action="store_true",
-                      dest="no_search",
-                      help="Do not search for similar org names.",
-                      default=None)
-    parser.add_option("-A", "--address-exclusive", action="store_true",
-                      dest="address_exclusive",
-                      help="Only import addresses if org has no existing "
-                      "address.",
-                      default=None)
-    parser.add_option("-L", "--limit-org", action="store",
-                      dest="limit_org",
-                      help="Only apply changes to orgs whose IDs are "
-                      "supplied (a comma separated string)",
-                      default=None)
-    parser.add_option("-n", "--dry-run", action="store_true", dest="dry_run",
-                      help="Dry run.", default=None)
+    parser.add_argument(
+        "json_path", metavar="JSON",
+        nvars="+",
+        help="Path to JSON file.")
 
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
 
     log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG)[
-        max(0, min(3, 1 + options.verbose - options.quiet))]
+        max(0, min(3, 1 + args.verbose - args.quiet))]
     LOG.setLevel(log_level)
     LOG_SEARCH.setLevel(log_level)
-
-    if len(args) == 0:
-        parser.print_usage()
-        sys.exit(1)
 
     connection_url = connection_url_app()
     engine = create_engine(connection_url,)
@@ -437,32 +440,31 @@ def main():
     orm = session_()
     attach_search(engine, orm)
 
+    if args.public != None:
+        args.public = bool(args.public)
 
-    if options.public != None:
-        options.public = bool(options.public)
-
-    if options.search:
+    if args.search:
         es = orm.get_bind().search
         for arg in args:
             search_org(es, arg, just_search=True)
         sys.exit(0)
 
     org_id_whitelist = None
-    if options.limit_org:
+    if args.limit_org:
         org_id_whitelist = []
-        for id_ in options.limit_org.split(","):
+        for id_ in args.limit_org.split(","):
             org_id_whitelist.append(int(id_))
 
-    for arg in args:
+    for arg in args.json_path:
         try:
-            data = json.load(codecs.open(arg, "r", "utf8"))
+            data = json.load(open(arg, "r", encoding="utf8"))
         except ValueError:
             LOG.error("%s: Could not decode JSON data.", arg)
             continue
 
         insert_fast(
-            data, orm, options.public, options.tag, options.dry_run,
-            options.address_exclusive, (not options.no_search),
+            data, orm, args.public, args.tag, args.dry_run,
+            args.address_exclusive, (not args.do_not_search),
             org_id_whitelist
         )
 

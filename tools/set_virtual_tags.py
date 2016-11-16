@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import sys
 import logging
-from optparse import OptionParser
+import argparse
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from model import connection_url_app, attach_search
-from model import User, Org, Orgtag, VIRTUAL_ORGTAG_LIST, virtual_org_orgtag_all
+from model import User, Org, Orgtag, \
+    VIRTUAL_ORGTAG_LIST, virtual_org_orgtag_all
 from model import LOG as LOG_MODEL
 
 
@@ -43,7 +43,9 @@ def create_all_virtual_orgtags(orm, system_user):
             orm.add(virtual_tag)
         else:
             if virtual_tag.is_virtual != True:
-                raise Exception("Tag '%s' already exists but is not virtual." % virtual_tag.name)
+                raise Exception(
+                    "Tag '%s' already exists but is not virtual." %
+                    virtual_tag.name)
 
     orm.commit()
 
@@ -75,30 +77,32 @@ def main():
     LOG.addHandler(logging.StreamHandler())
     LOG_MODEL.addHandler(logging.StreamHandler())
 
-    usage = """%prog [ORG_ID...]
-
-ORG_ID      List of Org IDs to set, otherwise set all orgs.
-            May not be used with -c option.
-
-"""
-
-    parser = OptionParser(usage=usage)
-    parser.add_option(
-        "-v", "--verbose", dest="verbose",
+    parser = argparse.ArgumentParser(
+        description="Update virtual tags.")
+    parser.add_argument(
+        "--verbose", "-v",
         action="count", default=0,
         help="Print verbose information for debugging.")
-    parser.add_option(
-        "-q", "--quiet", dest="quiet",
+    parser.add_argument(
+        "--quiet", "-q",
         action="count", default=0,
         help="Suppress warnings.")
-    parser.add_option("-c", "--create", action="store_true", dest="create",
-                      help="Create tags that don't already exist.", default=None)
 
-    (options, args) = parser.parse_args()
-    args = [arg.decode(sys.getfilesystemencoding()) for arg in args]
+    parser.add_argument(
+        "--create", "-c",
+        action="store_true",
+        help="Create tags that don't already exist.")
+
+    parser.add_argument(
+        "org_id", metavar="ORG_ID",
+        nargs="*",
+        help="List of Org IDs to set, otherwise set all orgs. "
+        "May not be used with `-c` option.")
+
+    args = parser.parse_args()
 
     log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[
-        max(0, min(3, 1 + options.verbose - options.quiet))]
+        max(0, min(3, 1 + args.verbose - args.quiet))]
 
     LOG.setLevel(log_level)
     LOG_MODEL.setLevel(log_level)
@@ -117,7 +121,7 @@ ORG_ID      List of Org IDs to set, otherwise set all orgs.
         parser.print_usage()
         sys.exit(1)
 
-    if options.create:
+    if args.create:
         if org_id_list:
             parser.print_usage()
             sys.exit(1)

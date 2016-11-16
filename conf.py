@@ -1,59 +1,68 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import sys
 import logging
+import argparse
 import configparser
-from optparse import OptionParser
 
 
 
-LOG = logging.getLogger('model')
+LOG = logging.getLogger('conf')
+
+ARG_DEFAULT = []
 
 
 
-def get(ini_path, section, key):
-    with open(ini_path, "r", encoding="utf-8") as ini_file:
-        config = configparser.ConfigParser()
-        config.read_file(ini_file)
+def get(ini_path, section, key, default=ARG_DEFAULT):
+    # pylint: disable=dangerous-default-value
+    # Using `[]` as default value in `get`
 
+    config = configparser.ConfigParser()
+    config.read(ini_path)
+
+    try:
         value = config.get(section, key)
-        return value
+    except configparser.NoOptionError:
+        if default == ARG_DEFAULT:
+            raise
+        return default
+
+    return value
 
 
 
 def main():
     LOG.addHandler(logging.StreamHandler())
 
-    usage = """%prog INI SECTION KEY
+    parser = argparse.ArgumentParser(
+        description="Read configuration INI and print result.")
 
-Read INI
-"""
-
-    parser = OptionParser(usage=usage)
-    parser.add_option(
-        "-v", "--verbose", dest="verbose",
+    parser.add_argument(
+        "--verbose", "-v",
         action="count", default=0,
         help="Print verbose information for debugging.")
-    parser.add_option(
-        "-q", "--quiet", dest="quiet",
+    parser.add_argument(
+        "--quiet", "-q",
         action="count", default=0,
         help="Suppress warnings.")
 
-    (options, args) = parser.parse_args()
-    args = [arg.decode(sys.getfilesystemencoding()) for arg in args]
+    parser.add_argument(
+        "ini_path", metavar="INI",
+        help="Path to INI configuration file.")
+    parser.add_argument(
+        "section", metavar="SECTION",
+        help="Configuration section.")
+    parser.add_argument(
+        "key", metavar="KEY",
+        help="Configuration key.")
 
-    log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG)[
-        max(0, min(3, 1 + options.verbose - options.quiet))]
-    LOG.setLevel(log_level)
+    args = parser.parse_args()
 
-    if len(args) != 3:
-        parser.print_usage()
-        sys.exit(1)
+    level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG)[
+        max(0, min(3, 1 + args.verbose - args.quiet))]
+    LOG.setLevel(level)
 
-    ini_path, section, key = args
-
-    value = get(ini_path, section, key)
+    value = get(args.ini_path, args.section, args.key)
     sys.stdout.write(value + "\n")
 
 

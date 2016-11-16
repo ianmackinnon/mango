@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 import re
 import sys
@@ -165,8 +164,8 @@ def url_rewrite_static(
 
     arguments = parameters.copy()
 
-    for key, value in urllib.parse.parse_qs(
-            query, keep_blank_values=False).items():
+    for key, value in list(urllib.parse.parse_qs(
+            query, keep_blank_values=False).items()):
         arguments[key] = value
         if value is None:
             del arguments[key]
@@ -212,6 +211,8 @@ class BaseHandler(RequestHandler):
 
         key = self.cookie_name(key)
         value = json.dumps(value)
+
+        print("SET", repr(key), repr(value))
 
         self.set_secure_cookie(key, value, **kwargs)
 
@@ -266,7 +267,7 @@ class BaseHandler(RequestHandler):
         self.start = time.time()
 
     def on_finish(self):
-        if not hasattr(self, "start"):
+        if self.start is None:
             return
         now = time.time()
         duration = now - self.start
@@ -589,11 +590,11 @@ class BaseHandler(RequestHandler):
         try:
             self.write(mako_template.render(**kwargs))
         except Exception:
-            print(template_name, kwargs)
+            print((template_name, kwargs))
             print((exceptions.text_error_template().render()))
             self.write(exceptions.html_error_template().render())
         if self.orm.new or self.orm.dirty or self.orm.deleted:
-            print(self.orm.new or self.orm.dirty or self.orm.deleted)
+            print((self.orm.new or self.orm.dirty or self.orm.deleted))
             self.orm.rollback()
 
     def compare_session(self, session):

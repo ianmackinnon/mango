@@ -175,7 +175,7 @@ registrant|ads-security                                                         
 registrant|bdec                                                                                          |
 
 
-/opt/python-webapps/bin/python tools/insert_organisations.py -Av -L 1227,4950 \
+/opt/python3-webapps/bin/python tools/insert_organisations.py -Av -L 1227,4950 \
   /tmp/corpwatch.2012-09-07.13-30.json \
   /tmp/dsei-2011.json \
   /tmp/dsei-2013.json \
@@ -198,7 +198,7 @@ registrant|bdec                                                                 
   ;
 
 
-/opt/python-webapps/bin/python tools/insert_organisations.py -A \
+/opt/python3-webapps/bin/python tools/insert_organisations.py -A \
   /tmp/corpwatch.2012-09-07.13-30.json \
   /tmp/dsei-2011.json \
   /tmp/dsei-2013.json \

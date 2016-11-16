@@ -39,7 +39,7 @@ PYTHON_DEV :=
 
 PIP_ARGS := install --upgrade --src=/tmp
 
-ifneq (,$(wildcard /opt/python-webapps))  # If we're on the server
+ifneq (,$(wildcard /opt/python3-webapps))  # If we're on the server
 PIP_CMD := sudo -H -u www-caat-webapps /opt/python3-webapps/bin/pip
 else
 PIP_CMD := sudo -H pip3

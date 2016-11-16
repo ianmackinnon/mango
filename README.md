@@ -21,7 +21,7 @@ Mapping Application for NGOs
 
 On the CAAT server
 
--   Select virtual Python with `source ~ian.mackinnon/bin/python-webapps`
+-   Select virtual Python with `source ~ian.mackinnon/bin/python3-webapps`
 -   Don't run pip with `sudo`
 -   Install build tools first with `~ian.mackinnon/bin/install-compilers`
 -   Uninstall build tools later with `~ian.mackinnon/bin/uninstall-compilers`

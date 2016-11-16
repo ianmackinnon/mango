@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import os
 import sys
 import json
 import inspect
 import logging
-from optparse import OptionParser
+import argparse
 
 import pyelasticsearch
 

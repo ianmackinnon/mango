@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import sys
 import urllib.request
@@ -7,7 +6,7 @@ import urllib.parse
 import urllib.error
 import logging
 from hashlib import md5
-from optparse import OptionParser
+import argparse
 
 import redis
 import Levenshtein
@@ -180,32 +179,43 @@ def main():
     LOG.addHandler(logging.StreamHandler())
     LOG_MODEL.addHandler(logging.StreamHandler())
 
-    usage = """%prog [ID]...
+    parser = argparse.ArgumentParser(description="__DESC__")
+    parser.add_argument(
+        "--verbose", "-v",
+        action="count", default=0,
+        help="Print verbose information for debugging.")
+    parser.add_argument(
+        "--quiet", "-q",
+        action="count", default=0,
+        help="Suppress warnings.")
 
-ID:   Integer organisation IDs to merge."""
+    parser.add_argument(
+        "-t", "--threshold",
+        action="store", default=0.9,
+        help="Match ratio threshold.")
+    parser.add_argument(
+        "-k", "--characters",
+        action="store", type=int, default=2,
+        help="Number of initial characters to assume the same.")
+    parser.add_argument(
+        "-a", "--alpha",
+        action="store",
+        help="Letter of the alphabet to start at.")
+    parser.add_argument(
+        "-n", "--dry-run",
+        action="store_true",
+        help="Dry run.")
 
+    parser.add_argument(
+        "org_id", metavar="ORG_ID",
+        nargs="*",
+        help="Integer organisation IDs to merge. If none are supplied "
+        "automatic merging with default thresholds will take place.")
 
-    parser = OptionParser(usage=usage)
-    parser.add_option("-v", "--verbose", dest="verbose",
-                      action="count", default=0,
-                      help="Print verbose information for debugging.")
-    parser.add_option("-q", "--quiet", dest="quiet",
-                      action="count", default=0,
-                      help="Suppress warnings.")
-    parser.add_option("-t", "--threshold", action="store", dest="threshold",
-                      help="Match ratio threshold.", default=0.9)
-    parser.add_option("-k", "--characters", dest="characters",
-                      action="store", type=int, default=2,
-                      help="Number of initial characters to assume the same.")
-    parser.add_option("-a", "--alpha", action="store", dest="alpha",
-                      help="Letter of the alphabet to start at.", default=None)
-    parser.add_option("-n", "--dry-run", action="store_true", dest="dry_run",
-                      help="Dry run.", default=None)
-
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
 
     log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG)[
-        max(0, min(3, 1 + options.verbose - options.quiet))]
+        max(0, min(3, 1 + args.verbose - args.quiet))]
 
     LOG.setLevel(log_level)
     LOG_MODEL.setLevel(log_level)
@@ -220,7 +230,7 @@ ID:   Integer organisation IDs to merge."""
 
     if len(args) == 0:
         merge_organisations(
-            orm, options.threshold, options.characters, options.alpha)
+            orm, args.threshold, args.characters, args.alpha)
     else:
         try:
             org_id_list = [int(arg) for arg in args]
@@ -230,7 +240,7 @@ ID:   Integer organisation IDs to merge."""
 
         multi_merge(orm, org_id_list)
 
-    if options.dry_run:
+    if args.dry_run:
         LOG.warning("rolling back")
         orm.rollback()
     else:

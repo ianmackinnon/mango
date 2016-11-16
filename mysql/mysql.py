@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import re
 import os
 import sys
 import getpass
 import logging
+import argparse
 import configparser
 from hashlib import sha1
-from optparse import OptionParser
 from collections import namedtuple
 
 import pymysql
@@ -23,10 +22,12 @@ Options = namedtuple(
         "database",
         "app_username",
         "app_password",
+        "app_privileges",
         "admin_username",
         "admin_password",
-        ]
-    )
+        "admin_privileges",
+    ]
+)
 
 
 
@@ -48,18 +49,32 @@ def verify(string, section, name):
 
 
 
+def split(text):
+    values = []
+    for value in text.split(","):
+        value = value.strip()
+        if value:
+            values.append(value)
+    return values
+
+
+
 def get_conf(path):
     if not os.path.isfile(path):
         LOG.error("%s: File not found", path)
         sys.exit(1)
-    config = configparser.ConfigParser()
+    config = configparser.ConfigParser({
+        "privileges": ""
+    })
     config.read(path)
 
     database = config.get("mysql", "database")
     app_username = config.get("mysql-app", "username")
     app_password = config.get("mysql-app", "password")
+    app_privileges = split(config.get("mysql-app", "privileges"))
     admin_username = config.get("mysql-admin", "username")
     admin_password = config.get("mysql-admin", "password")
+    admin_privileges = split(config.get("mysql-admin", "privileges"))
 
     verify(database, "mysql", "database")
     verify(app_username, "mysql-app", "username")
@@ -71,25 +86,46 @@ def get_conf(path):
         database,
         app_username,
         app_password,
+        app_privileges,
         admin_username,
         admin_password,
-        )
+        admin_privileges,
+    )
 
     return options
 
 
 
-def connection_url_app(path):
-    options = get_conf(path)
-    return 'mysql+pymysql://%s:%s@localhost/%s?charset=utf8' % (
-        options.app_username, options.app_password, options.database)
+def mysql_connection_url(username, password, database,
+                         host=None, port=None):
+    login = "%s:%s@" % (username, password)
+
+    if host is None:
+        host = "localhost"
+    if host == "localhost":
+        host = "127.0.0.1"  # Prevents MySQL from using a socket
+    if port is not None:
+        host += ":%d" % port
+
+    path = "/%s?charset=utf8" % database
+
+    return "mysql+pymysql://%s%s%s" % (login, host, path)
 
 
 
-def connection_url_admin(path):
-    options = get_conf(path)
-    return 'mysql+pymysql://%s:%s@localhost/%s?charset=utf8' % (
-        options.admin_username, options.admin_password, options.database)
+def connection_url_admin(conf_path, host=None, port=None):
+    options = get_conf(conf_path)
+    return mysql_connection_url(
+        options.admin_username, options.admin_password, options.database,
+        host=host, port=port)
+
+
+
+def connection_url_app(conf_path, host=None, port=None):
+    options = get_conf(conf_path)
+    return mysql_connection_url(
+        options.app_username, options.app_password, options.database,
+        host=host, port=port)
 
 
 
@@ -102,7 +138,7 @@ def root_cursor():
             user="root",
             passwd=mysql_root_password,
             )
-    except pymysql.OperationalError as e:
+    except pymysql.err.InternalError as e:
         LOG.error("Could not connect with supplied root password.")
         print(e)
         sys.exit(1)
@@ -120,7 +156,7 @@ def admin_cursor(options):
             user=options.admin_username,
             passwd=options.admin_password,
             )
-    except pymysql.OperationalError as e:
+    except pymysql.err.InternalError as e:
         LOG.error("Could not connect with admin credentials.")
         print(e)
         sys.exit(1)
@@ -139,7 +175,7 @@ def app_cursor(options):
             user=options.app_username,
             passwd=options.app_password,
             )
-    except pymysql.OperationalError as e:
+    except pymysql.err.InternalError as e:
         LOG.error("Could not connect with app credentials.")
         print(e)
         sys.exit(1)
@@ -155,17 +191,19 @@ def drop_user(cursor, username):
     try:
         cursor.execute("drop user '%s'@'localhost';" % username)
         LOG.debug("User %s dropped.", username)
-    except pymysql.OperationalError as e:
+    except pymysql.err.InternalError as e:
         if e.args[0] != 1396:
             raise e
         LOG.debug("User %s did not exist.", username)
 
 
 
-def create_user(cursor, privileges, username, password):
+def create_user(cursor, username, password, privileges):
     drop_user(cursor, username)
-    cursor.execute("grant %s on * to '%s'@'localhost' identified by '%s';" % (privileges, username, password))
-    # cursor.execute("grant reload on *.* to '%s'@'localhost';" % (username))
+    user = "'%s'@'localhost'" % username
+    cursor.execute("create user %s identified by '%s';" % (user, password))
+    for privilege in privileges:
+        cursor.execute("grant %s.* to %s;" % (privilege, user))
     LOG.debug("User %s created with permissions.", username)
 
 
@@ -174,7 +212,7 @@ def drop_database(cursor, name):
     try:
         cursor.execute("drop database %s;" % name)
         LOG.debug("Databse %s dropped.", name)
-    except pymysql.OperationalError as e:
+    except pymysql.err.InternalError as e:
         if e.args[0] != 1008:
             raise e
         LOG.debug("Database %s did not exist.", name)
@@ -252,7 +290,7 @@ def mysql_create(options):
 
     try:
         cursor.execute("use %s;" % options.database)
-    except pymysql.OperationalError as e:
+    except pymysql.err.InternalError as e:
         if e.args[0] != 1049:
             raise e
 
@@ -266,10 +304,13 @@ DEFAULT COLLATE = utf8_bin;""" % options.database)
 
     LOG.debug("Database %s exists.", options.database)
 
-    create_user(cursor, "all privileges",
-                options.admin_username, options.admin_password)
-    create_user(cursor, "select, insert, update, delete",
-                options.app_username, options.app_password)
+    create_user(cursor, options.admin_username, options.admin_password, [
+        "all privileges on %s" % options.database,
+        # "reload on %s" % options.database,
+    ] + options.admin_privileges)
+    create_user(cursor, options.app_username, options.app_password, [
+        "select, insert, update, delete on %s" % options.database,
+    ] + options.app_privileges)
 
 
 
@@ -284,7 +325,7 @@ def mysql_test(options):
             passwd=options.app_password,
             db=options.database,
             )
-    except pymysql.OperationalError:
+    except pymysql.err.OperationalError:
         status = False
         LOG.debug("Could not connect as app user.")
 
@@ -295,7 +336,7 @@ def mysql_test(options):
             passwd=options.admin_password,
             db=options.database,
             )
-    except pymysql.OperationalError:
+    except pymysql.err.OperationalError:
         status = False
         LOG.debug("Could not connect as admin user.")
 
@@ -356,7 +397,7 @@ def mysql_source(options, source):
 
 
 
-def main2(
+def main_functions(
         conf_path,
         key=None, purge=False, empty=False, drop_triggers=False,
         account=None, generate=False, generate_dump=False, test=False,
@@ -366,7 +407,7 @@ def main2(
     options = get_conf(conf_path)
 
     if key:
-        print(getattr(options, key))
+        print((getattr(options, key)))
         return
 
     if source:
@@ -399,73 +440,76 @@ def main2(
 def main():
     LOG.addHandler(logging.StreamHandler())
 
-    usage = """%prog
-
-Create MySQL database and users.
-"""
-
-    parser = OptionParser(usage=usage)
-    parser.add_option(
-        "-v", "--verbose", dest="verbose",
+    parser = argparse.ArgumentParser(
+        description="Create MySQL database and users.")
+    parser.add_argument(
+        "--verbose", "-v",
         action="count", default=0,
         help="Print verbose information for debugging.")
-    parser.add_option(
-        "-q", "--quiet", dest="quiet",
+    parser.add_argument(
+        "--quiet", "-q",
         action="count", default=0,
         help="Suppress warnings.")
-    parser.add_option(
-        "-k", "--key", action="store", dest="key",
+
+    parser.add_argument(
+        "--key", "-k",
+        action="store",
         help="Print a configuration key")
-    parser.add_option(
-        "-t", "--test", action="store_true", dest="test",
-        help="Check the database and users are correctly setup.",
-        default=False)
-    parser.add_option(
-        "-p", "--purge", action="store_true", dest="purge",
-        help="Delete database and users.", default=False)
-    parser.add_option(
-        "-e", "--empty", action="store_true", dest="empty",
-        help="Empty the database.", default=False)
-    parser.add_option(
-        "-r", "--drop-triggers", action="store_true", dest="drop_triggers",
-        help="Drop all triggers.", default=False)
-    parser.add_option(
-        "-a", "--account", action="store", dest="account",
-        help="Specify account for conf files..", default=None)
-    parser.add_option(
-        "-g", "--generate", action="store_true", dest="generate",
-        help="Generate MySQL conf to stdout.", default=False)
-    parser.add_option(
-        "-G", "--generate-dump", action="store_true", dest="generate_dump",
-        help="Generate MySQL dump conf to stdout.", default=False)
-    parser.add_option(
-        "-s", "--source", action="store", dest="source",
+    parser.add_argument(
+        "--test", "-t",
+        action="store_true", default=False,
+        help="Check the database and users are correctly setup.")
+    parser.add_argument(
+        "--purge", "-p",
+        action="store_true", default=False,
+        help="Delete database and users.")
+    parser.add_argument(
+        "--empty", "-e",
+        action="store_true", default=False,
+        help="Empty the database.")
+    parser.add_argument(
+        "--drop-triggers", "-r",
+        action="store_true", default=False,
+        help="Drop all triggers.")
+    parser.add_argument(
+        "--account", "-a",
+        action="store",
+        help="Specify account for conf files..")
+    parser.add_argument(
+        "--generate", "-g",
+        action="store_true", default=False,
+        help="Generate MySQL conf to stdout.")
+    parser.add_argument(
+        "--generate-dump", "-G",
+        action="store_true", default=False,
+        help="Generate MySQL dump conf to stdout.")
+    parser.add_argument(
+        "--source", "-s",
+        action="store", dest="source",
         help="Source SQL.")
 
-    (options, args) = parser.parse_args()
+    parser.add_argument(
+        "conf_path", metavar="CONF",
+        help="Path to configuration file.")
 
-    if not len(args) == 1:
-        parser.print_usage()
-        sys.exit(1)
+    args = parser.parse_args()
 
-    (conf_path, ) = args
+    level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG)[
+        max(0, min(3, 1 + args.verbose - args.quiet))]
+    LOG.setLevel(level)
 
-    log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[
-        max(0, min(3, 1 + options.verbose - options.quiet))]
-    LOG.setLevel(log_level)
-
-    main2(
-        conf_path,
-        key=options.key,
-        purge=options.purge,
-        empty=options.empty,
-        drop_triggers=options.drop_triggers,
-        account=options.account,
-        generate=options.generate,
-        generate_dump=options.generate_dump,
-        test=options.test,
-        source=options.source
-        )
+    main_functions(
+        args.conf_path,
+        key=args.key,
+        purge=args.purge,
+        empty=args.empty,
+        drop_triggers=args.drop_triggers,
+        account=args.account,
+        generate=args.generate,
+        generate_dump=args.generate_dump,
+        test=args.test,
+        source=args.source
+    )
 
 
 if __name__ == "__main__":

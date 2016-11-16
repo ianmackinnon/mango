@@ -1,9 +1,11 @@
 {
   "preset": "jquery",
+
   "requireCurlyBraces": null,
   "requireSpacesInsideParentheses": null,
-  "disallowSpacesInFunctionExpression": null,
-  "disallowSpacesInAnonymousFunctionExpression": null,
+  "requireSpacesInsideBrackets": null,
+  "requireSpacesInsideArrayBrackets": null,
+  "requireSpacesInsideObjectBrackets": null,
   "requireSpacesInFunctionDeclaration": {
     "beforeOpeningRoundBrace": true,
     "beforeOpeningCurlyBrace": true
@@ -12,14 +14,17 @@
     "beforeOpeningRoundBrace": true,
     "beforeOpeningCurlyBrace": true
   },
+
+  "disallowSpacesInFunctionExpression": null,
+  "disallowSpacesInAnonymousFunctionExpression": null,
+
   "validateQuoteMarks": {
     "mark": "\"",
     "escape": true
   },
+
   "requirePaddingNewLinesBeforeLineComments": null,
-  "requireSpacesInsideBrackets": null,
-  "requireSpacesInsideArrayBrackets": null,
-  "requireSpacesInsideObjectBrackets": null,
   "requireCamelCaseOrUpperCaseIdentifiers": "ignoreProperties",
+
   "maximumLineLength": null
 }

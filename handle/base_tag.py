@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 from sqlalchemy.sql import func
 from sqlalchemy.orm.exc import NoResultFound

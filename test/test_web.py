@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import logging
+import argparse
 import unittest
-from optparse import OptionParser
 
 from http_test import Http, LOG as HTTP_LOG
 
@@ -245,14 +244,14 @@ class TestAuth(HttpTest):
         print(url)
         response = self.get(url)
         self.assertEqual(response.status_code, 401)
-        self.assert_not_logged_in(response, SESSION_COOKIE)
+        self.assert_not_logged_in(response, SESSION_COOKIE)  # Not working
 
         url = self.host + "/auth/login/local?user=0"
         print(url)
         response = self.get(url)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.headers["location"], '/auth/register')
-        self.assert_not_logged_in(response, SESSION_COOKIE)
+        self.assert_not_logged_in(response, SESSION_COOKIE)  # Not working
 
         url = self.host + "/auth/login/local?user=0&register=1"
         print(url)
@@ -266,25 +265,23 @@ def main():
     LOG.addHandler(logging.StreamHandler())
     HTTP_LOG.addHandler(logging.StreamHandler())
 
-    usage = """%prog"""
-
-    parser = OptionParser(usage=usage)
-    parser.add_option(
-        "-v", "--verbose", dest="verbose",
+    parser = argparse.ArgumentParser(
+        description="Test local instance of web application.")
+    parser.add_argument(
+        "--verbose", "-v",
         action="count", default=0,
         help="Print verbose information for debugging.")
-    parser.add_option(
-        "-q", "--quiet", dest="quiet",
+    parser.add_argument(
+        "--quiet", "-q",
         action="count", default=0,
         help="Suppress warnings.")
 
-    (options, _args) = parser.parse_args()
+    args = parser.parse_args()
 
-    log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[
-        max(0, min(3, 1 + options.verbose - options.quiet))]
-
-    LOG.setLevel(log_level)
-    HTTP_LOG.setLevel(log_level)
+    level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG)[
+        max(0, min(3, 1 + args.verbose - args.quiet))]
+    LOG.setLevel(level)
+    HTTP_LOG.setLevel(level)
 
     LOG.info("""
 

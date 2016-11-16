@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 # pylint: disable=wrong-import-position,import-error
 # Allow appending to import path before import
@@ -8,8 +7,8 @@
 import os
 import sys
 import logging
+import argparse
 import datetime
-from optparse import OptionParser
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -123,27 +122,22 @@ def seed_data(orm):
 def main():
     LOG.addHandler(logging.StreamHandler())
 
-    usage = """%prog"""
-
-    parser = OptionParser(usage=usage)
-    parser.add_option(
-        "-v", "--verbose", dest="verbose",
+    parser = argparse.ArgumentParser(
+        description="Seed database with example data for test suite.")
+    parser.add_argument(
+        "--verbose", "-v",
         action="count", default=0,
         help="Print verbose information for debugging.")
-    parser.add_option(
-        "-q", "--quiet", dest="quiet",
+    parser.add_argument(
+        "--quiet", "-q",
         action="count", default=0,
         help="Suppress warnings.")
 
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
 
-    log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[
-        max(0, min(3, 1 + options.verbose - options.quiet))]
-    LOG.setLevel(log_level)
-
-    if len(args):
-        parser.print_usage()
-        sys.exit(1)
+    level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG)[
+        max(0, min(3, 1 + args.verbose - args.quiet))]
+    LOG.setLevel(level)
 
     connection_url = connection_url_app()
     engine = create_engine(connection_url,)

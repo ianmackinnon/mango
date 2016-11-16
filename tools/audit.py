@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 # pylint: disable=invalid-name
 # Allow `Entity`, `Entity_v` abstract class names
 
 import sys
 import logging
-from optparse import OptionParser
+import argparse
 
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker
@@ -135,19 +134,19 @@ def audit_entity(orm, Entity, Entity_v, key, key_v, attr):
         if entity:
             if not entity_v:
                 LOG.warning("key %d: Exists with no versions.", entity_id)
-                print(add(orm, Entity_v, entity, key, attr))
+                print((add(orm, Entity_v, entity, key, attr)))
                 continue
 
             if not entity_v.existence:
                 LOG.warning(
                     "key %d: Exists but last version is deleted.", entity_id)
-                print(add(orm, Entity_v, entity, key, attr))
+                print((add(orm, Entity_v, entity, key, attr)))
                 continue
 
             if compare(entity_v, entity, attr):
                 LOG.warning(
                     "key %d: Exists but last version doesn't match.", entity_id)
-                print(add(orm, Entity_v, entity, key, attr))
+                print((add(orm, Entity_v, entity, key, attr)))
                 continue
         else:
             if not entity_v:
@@ -421,32 +420,34 @@ def audit(orm):
 def main():
     LOG.addHandler(logging.StreamHandler())
 
-    usage = """%prog"""
+    parser = argparse.ArgumentParser(description="__DESC__")
+    parser.add_argument(
+        "--verbose", "-v",
+        action="count", default=0,
+        help="Print verbose information for debugging.")
+    parser.add_argument(
+        "--quiet", "-q",
+        action="count", default=0,
+        help="Suppress warnings.")
 
-    parser = OptionParser(usage=usage)
-    parser.add_option("-v", "--verbose", dest="verbose",
-                      action="count", default=0,
-                      help="Print verbose information for debugging.")
-    parser.add_option("-q", "--quiet", dest="quiet",
-                      action="count", default=0,
-                      help="Suppress warnings.")
-    parser.add_option("-c", "--configuration", action="store",
-                      dest="configuration", help=".conf file.",
-                      default=".mango.conf")
-    parser.add_option("-d", "--database", action="store", dest="database",
-                      help="sqlite or mysql.", default="sqlite")
-    parser.add_option("-n", "--dry-run", action="store_true", dest="dry_run",
-                      help="Dry run.", default=None)
+    parser.add_argument(
+        "--configuration", "-c",
+        action="store", default=".mango.conf",
+        help="Path to configuration file.")
+    parser.add_argument(
+        "--database", "-d",
+        action="store", default="sqlite",
+        help="Database target, `sqlite` or `mysql`.")
+    parser.add_argument(
+        "--dry-run", "-n",
+        action="store_true",
+        help="Dry run.")
 
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
 
     level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG)[
-        max(0, min(3, 1 + options.verbose - options.quiet))]
+        max(0, min(3, 1 + args.verbose - args.quiet))]
     LOG.setLevel(level)
-
-    if len(args) != 0:
-        parser.print_usage(sys.stderr)
-        sys.exit(1)
 
     connection_url = connection_url_app()
     engine = create_engine(connection_url,)
@@ -456,7 +457,7 @@ def main():
     audit_cross(orm)
     sys.exit(0)
 
-    if options.dry_run:
+    if args.dry_run:
         LOG.warning("rolling back")
         orm.rollback()
     else:

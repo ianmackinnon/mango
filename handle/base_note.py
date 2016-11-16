@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 from model import User, Note, note_fts, detach
 

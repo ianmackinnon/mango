@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import sys
 import logging
-from optparse import OptionParser
+import argparse
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -521,35 +520,38 @@ def restore_event(orm, user, event_id, historic, d_time=None):
 def main():
     LOG.addHandler(logging.StreamHandler())
 
-    usage = """%prog [ID]...
-
-ID:   Integer organisation IDs to merge."""
-
-
-    parser = OptionParser(usage=usage)
-    parser.add_option(
-        "-v", "--verbose", dest="verbose",
+    parser = argparse.ArgumentParser(
+        description="Restore an organisation or event.")
+    parser.add_argument(
+        "--verbose", "-v",
         action="count", default=0,
         help="Print verbose information for debugging.")
-    parser.add_option(
-        "-q", "--quiet", dest="quiet",
+    parser.add_argument(
+        "--quiet", "-q",
         action="count", default=0,
         help="Suppress warnings.")
-    parser.add_option("-n", "--dry-run", action="store_true", dest="dry_run",
-                      help="Dry run.", default=None)
-    parser.add_option("-i", "--ignore-timestamp", action="store_false",
-                      dest="historic",
-                      help="Ignore timestamp.", default=True)
-    parser.add_option("-O", "--organisation", action="store", dest="org",
-                      type="int",
-                      help="Restore organisation by id.", default=None)
-    parser.add_option("-E", "--event", action="store", dest="event", type="int",
-                      help="Restore event by id.", default=None)
 
-    (options, _args) = parser.parse_args()
+    parser.add_argument(
+        "--dry-run", "-n",
+        action="store_true",
+        help="Dry run.")
+    parser.add_argument(
+        "--ignore-timestamp", "-i",
+        action="store_false",
+        help="Ignore timestamp.", default=True)
+    parser.add_argument(
+        "--organisation", "-O",
+        action="store", type="int",
+        help="Restore organisation by ID.")
+    parser.add_argument(
+        "--event", "-E",
+        action="store", type="int",
+        help="Restore event by ID.")
+
+    args = parser.parse_args()
 
     log_level = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG,)[
-        max(0, min(3, 1 + options.verbose - options.quiet))]
+        max(0, min(3, 1 + args.verbose - args.quiet))]
 
     LOG.setLevel(log_level)
 
@@ -561,17 +563,17 @@ ID:   Integer organisation IDs to merge."""
 
     user = orm.query(User).filter_by(user_id=-1).one()
 
-    if options.org:
-        org = restore_org(orm, user, options.org, options.historic)
+    if args.org:
+        org = restore_org(orm, user, args.organisation, args.ignore_timestamp)
         if org:
             LOG.info(org.pprint())
 
-    if options.event:
-        event = restore_event(orm, user, options.event, options.historic)
+    if args.event:
+        event = restore_event(orm, user, args.event, args.ignore_timestamp)
         if event:
             LOG.info(event.pprint())
 
-    if options.dry_run:
+    if args.dry_run:
         LOG.warning("rolling back")
         orm.rollback()
     else:

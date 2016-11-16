@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 from sqlalchemy.sql import func
 from tornado.web import HTTPError
