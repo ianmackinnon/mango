@@ -208,7 +208,6 @@
     },
 
     addMarker: function (latitude, longitude, color) {
-      console.log("addMarker", latitude, longitude, color);
       color = color || "ee6666";
 
       var circleIconUrl;

@@ -14,7 +14,7 @@ SHELL := /bin/bash
 # 
 
 
-all : backbone-min.js underscore-min.js tag-it.js tag-it.css jquery.3.min.js jquery-ui jquery.history.js jquery.ui.timepicker.js jquery.ui.timepicker.css geolocation.py markerclusterer.js
+all : backbone-min.js underscore-min.js tag-it.js tag-it.css jquery.3.min.js jquery-ui jquery.ui.timepicker.js jquery.ui.timepicker.css geolocation.py markerclusterer.js
 
 backbone-min.js:
 	wget https://raw.github.com/documentcloud/backbone/master/backbone-min.js -O $@ || ( rm -f $@ && false )
@@ -40,9 +40,6 @@ jquery-ui :
 	ln -sf ../../vendor/$(JQUERY_UI_PATH)/jquery-ui.css ../static/jquery-ui/
 	ln -sf ../../vendor/$(JQUERY_UI_PATH)/jquery-ui.js ../static/jquery-ui/
 	ln -sf ../../vendor/$(JQUERY_UI_PATH)/jquery-ui.min.js ../static/jquery-ui/
-
-jquery.history.js:
-	wget https://raw.github.com/browserstate/history.js/master/scripts/bundled/html4+html5/jquery.history.js -O $@ || ( rm -f $@ && false )
 
 jquery.ui.timepicker.js:
 	wget https://raw.github.com/fgelinas/timepicker/master/$@ -O $@ || ( rm -f $@ && false )

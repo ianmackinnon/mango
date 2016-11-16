@@ -1,4 +1,4 @@
-/*global window, jQuery, _, Backbone, google, m */
+/*global window, jQuery, Backbone, google, m */
 
 (function ($) {
   "use strict";
@@ -388,9 +388,8 @@
 
       var url = m.urlRoot + "event?" + queryString;
       m.log.debug("pushState", queryString);
-      if (window.History.enabled) {
-        window.History.pushState(null, null, url);
-      }
+      history.pushState(null, null, url);
+
       m.updateVisibilityButtons(url);
       this.updatePageTitle(modelData);
     },

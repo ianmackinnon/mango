@@ -507,7 +507,7 @@ class BaseHandler(RequestHandler):
         scripts1 = [
             "jquery.3.min.js", "jquery-ui/jquery-ui.min.js", "tag-it.js",
             "underscore-min.js", "backbone-min.js",
-            "jquery.history.js", "jquery.ui.timepicker.js", "markerclusterer.js"
+            "jquery.ui.timepicker.js", "markerclusterer.js"
         ]
         scripts2 = ["geobox.js", "template.js", "mango.js"]
         # after page JS variables

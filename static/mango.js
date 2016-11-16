@@ -1,4 +1,4 @@
-/*global window, $, _, Backbone, google, History */
+/*global window, $, _, Backbone, google */
 
 var m = (function () {
   "use strict";
@@ -49,13 +49,12 @@ var m = (function () {
     }),
 
     searchString: function () {
-      var url = window.History.getState().hash;
-
-      var index = url.indexOf("?");
-      if (index === -1) {
-        return "";
+      var search = window.location.search;
+      if (search) {
+        search = search.substr(1);
       }
-      return url.substr(index + 1);
+
+      return search;
     },
 
     templator: templator,
@@ -387,10 +386,7 @@ var m = (function () {
         orgSearchView.popstate();
       }
 
-      if (window.History.enabled) {
-        History.Adapter.bind(window, "statechange", orgSearchView.popstate);
-      }
-
+      window.onpopstate = orgSearchView.popstate;
       window.orgSearch = orgSearch;
 
       return orgSearch;
@@ -446,9 +442,7 @@ var m = (function () {
         eventSearchView.popstate();
       }
 
-      if (window.History.enabled) {
-        History.Adapter.bind(window, "statechange", eventSearchView.popstate);
-      }
+      window.onpopstate = eventSearchView.popstate;
 
       window.eventSearch = eventSearch;
 

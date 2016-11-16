@@ -381,9 +381,8 @@
 
       var url = m.urlRoot + "organisation?" + queryString;
       m.log.debug("pushState", queryString);
-      if (window.History.enabled) {
-        window.History.pushState(null, null, url);
-      }
+      history.pushState(null, null, url);
+
       m.updateVisibilityButtons(url);
       this.updatePageTitle(modelData);
     },
