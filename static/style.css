@@ -1,5 +1,9 @@
 /* general */
 
+* {
+    box-sizing: border-box !important;
+}
+
 #mango
 {
     width: 900px;
@@ -342,7 +346,7 @@ form.mango label
     float: left;
     display: block;
 
-    width: 384px;
+    width: 390px;
 
     margin: 0px;
     margin-bottom: 4px;
@@ -362,7 +366,7 @@ form.mango textarea
 }
 form.mango input
 {
-    width: 384px;
+    width: 388px;
 }
 form.mango textarea
 {
@@ -375,13 +379,20 @@ form.mango label.textarea
 {
     width: 187px;
 }
-form.mango input[type="button"],
-form.mango input[type="submit"]
+#mango form.mango input[type="button"],
+#mango form.mango input[type="submit"]
 {
-    width: 365px;
+    width: 390px;
     margin: 0px;
     padding: 2px 4px;
     margin-bottom: 4px;
+}
+#mango div.actions form.mango input[type="button"],
+#mango div.actions form.mango input[type="submit"] {
+    display: inline-block;
+    width: auto;
+    padding: 0 4px;
+    margin: 0;
 }
 form.mango span.checkbox
 {
@@ -487,7 +498,7 @@ form.mango input[type="checkbox"]
     float: right;
     margin: 0;
     text-align: right;
-    width: 80px;
+    width: 84px;
     padding: 0 2px;
     line-height: 26px;
 }
@@ -511,7 +522,7 @@ form.mango input[type="checkbox"]
     margin: 2px 0;
     border: 1px solid #ccc;
     padding: 0 4px;
-    height: 20px;
+    height: 22px;
     line-height: 20px;
     border-radius: 2px;
     vertical-align: bottom;
@@ -520,7 +531,7 @@ form.mango input[type="checkbox"]
 #mango .action-bar .actions input[type='submit']
 {
     margin: 2px;
-    height: 22px;
+    height: 24px;
 }
 
 #mango .action-bar input[type='text'],
@@ -591,7 +602,7 @@ form.mango input[type="checkbox"]
 
 #mango li.user
 {
-    width: 240px;
+    width: 242px;
 
     margin: 6px;
     border: 1px solid #ccc;
@@ -614,6 +625,7 @@ form.mango input[type="checkbox"]
 
 #mango li.user img
 {
+    width: 25px;
     border-right: 1px solid #ccc;
 }
 
@@ -621,7 +633,7 @@ form.mango input[type="checkbox"]
 {
     float: left;
 
-    width: 120px;
+    width: 134px;
 
     margin: 6px;
     border: 1px solid #ccc;
@@ -684,8 +696,7 @@ form.mango input[type="checkbox"]
 {
     display: inline-block;
     margin-right: 6px;
-    width: 54px;
-    
+    width: 58px;
 }
 #mango .visibility.public { background: #cfc; }
 #mango .visibility.private { background: #fcc; }
@@ -728,29 +739,40 @@ form.mango input[type="checkbox"]
 
 #org-form,
 #event-form,
-#address-form
+#address-form,
+#contact-form,
+#note-form
 {
     float: left;
 
     width: 490px;
 
     margin: 0;
-    margin-left: 20px;
     border: 0;
     padding: 0;
 }
 
-#org-form label[name="description"],
-#org-form label[name="description"] textarea,
-#event-form label[name="description"],
-#event-form label[name="description"] textarea
+#org-form,
+#event-form,
+#address-form
 {
-    width: 384px;
+    margin-left: 20px;
 }
 
-.form-hint
+#org-form label[name="description"],
+#event-form label[name="description"]
 {
-    width: 384px;
+    width: 390px;
+}
+
+#org-form label[name="description"] textarea,
+#event-form label[name="description"] textarea
+{
+    width: 388px;
+}
+
+.form-hint {
+    width: 390px;
     float: left;
 }
 
@@ -801,7 +823,7 @@ div.ui-timepicker td a.ui-state-active
 #event-search input[type="text"],
 #event-search input:not([type])
 {
-    width: 180px;
+    width: 190px;
 }
 #event-search label[name="tag"],
 #org-search label[name="tag"]
@@ -815,7 +837,7 @@ div.ui-timepicker td a.ui-state-active
 #event-search .inputs > label[name="nameSearch"] > span
 {
     display: inline-block;
-    width: 40px;
+    width: 48px;
 }
 #org-search label[name="tag"] ul,
 #event-search label[name="tag"] ul
@@ -878,34 +900,40 @@ div.ui-timepicker td a.ui-state-active
 {
     clear: both;
 }
-#contact-form label[name="source"],
-#contact-form label[name="source"] textarea
-{
-    width: 359px;
-}
 
 #address-form label[name="lookup"]
 {
     float: left;
     margin-left: 10px;
 }
+
 #address-form label[name="postal"],
+#address-form label[name="lookup"] {
+    width: 190px;
+}
 #address-form label[name="postal"] textarea,
-#address-form label[name="lookup"],
-#address-form label[name="lookup"] textarea
-{
-    width: 220px;
+#address-form label[name="lookup"] textarea {
+    width: 188px;
 }
+#contact-form label[name="source"],
 #address-form label[name="source"],
-#address-form label[name="source"] textarea
-{
-    width: 456px;
-}
 #tag-form label[name="description"],
-#tag-form label[name="description"] textarea
-{
+#note-form label[name="text"],
+#note-form label[name="source"] {
+    width: 390px;
+}
+#contact-form label[name="source"] textarea,
+#address-form label[name="source"] textarea,
+#tag-form label[name="description"] textarea,
+#note-form label[name="text"] textarea,
+#note-form label[name="source"] textarea {
+    width: 388px;
+}
+
+#tag-form span.select select {
     width: 384px;
 }
+
 #manual_position_clear
 {
     margin-left: 4px;
@@ -981,7 +1009,7 @@ div.ui-timepicker td a.ui-state-active
 #mango div.address-row .pin
 {
     float: left;
-    width: 22px;
+    width: 30px;
     padding: 4px;
 }
 #mango div.address-row .address
@@ -1032,7 +1060,7 @@ div.ui-timepicker td a.ui-state-active
     margin: 2px;
     border: 1px solid #ccc;
     padding: 0 4px;
-    height: 18px;
+    height: 20px;
     line-height: 18px;
     border-radius: 2px;
     background: #f8f8f8;
@@ -1082,7 +1110,7 @@ div.ui-timepicker td a.ui-state-active
 }
 #mango #tag-search input[name='search']
 {
-    width: 150px;
+    width: 160px;
 }
 
 #mango .group-tag-columns:before,
@@ -1173,21 +1201,6 @@ div.ui-timepicker td a.ui-state-active
     padding: 0;
 }
 
-#note-form label[name="text"],
-#note-form label[name="source"]
-{
-    width: 359px;
-
-}
-#note-form label[name="text"] textarea,
-#note-form label[name="source"] textarea
-{
-    width: 359px;
-}
-#note-form label[name="source"]
-{
-    float: right;
-}
 #note-links h3
 {
     display: inline;
@@ -1420,14 +1433,14 @@ padding: 10px;
 #mango div.inclusion ul
 {
     float: left;
-    width: 188px;
+    width: 200px;
     margin: 0;
     padding: 6px;
     list-style: none;
 }
 #mango div.inclusion .half ul
 {
-    width: 338px;
+    width: 350px;
 }
 #mango div.inclusion .full ul
 {
@@ -1440,7 +1453,7 @@ padding: 10px;
 #mango div.inclusion div.total
 {
     display: inline-block;
-    width: 88px;
+    width: 100px;
     padding: 6px;
     font-size: 30px;
     line-height: 44px;

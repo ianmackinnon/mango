@@ -74,7 +74,10 @@ elif obj:
     action = obj["url"]
 %>
 
-<div class="mango-box full" id="note-form">
+<div class="form-by-map" id="note-form">
+  ${self.mini.visibility_bar(obj)}
+  <h3>Note</h3>
+  
   <div class="form-hint">
     <p>Enter note text and source using <a href='http://daringfireball.net/projects/markdown/syntax'>Markdown syntax</a>.</p>
     <p>Only include images from <code>/resources/mapping/images/</code>.</p>

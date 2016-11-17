@@ -686,13 +686,16 @@ var m = (function () {
       var form = $("#tag-form");
       var inputName = form.find("input[name='name']");
       var inputPath = form.find("select[name='path']");
-      inputName.focus().val(inputName.val());  // Move cursor to end.
-      inputPath.after($("<span>").text("Select to prepend path to name."));
+      var labelSpan = form.find("label > span").eq(0);
+      inputName.focus()
+        .val(inputName.val());  // Move cursor to end.
       inputPath.change(function () {
         if (!inputPath.val()) {
           return;
         }
-        inputName.focus().val(inputPath.val() + " | " + inputName.val());
+        inputName.focus().val(
+          inputPath.val() + " | " + inputName.val()
+        );
         inputPath.val(null);
       });
     },
