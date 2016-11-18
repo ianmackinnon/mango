@@ -85,7 +85,7 @@ group_key = group_tag_list and group_tag_list[0]["path"]
 
     <div class="group-tag-columns">
       <div class="group-tag-column">
-        %for tag in group_tag_list[:(len(group_tag_list) + 1)/2]:
+        %for tag in group_tag_list[:(len(group_tag_list) + 1) // 2]:
         <label>
           <input type="checkbox" name="tag" value="${tag['id']}"${' checked' if tag['id'] in tag_id_list else ''}>
           <span>${tag['base'].split(" : ")[-1]}</span>
@@ -93,7 +93,7 @@ group_key = group_tag_list and group_tag_list[0]["path"]
         %endfor
       </div>
       <div class="group-tag-column">
-        %for tag in group_tag_list[(len(group_tag_list) + 1)/2:]:
+        %for tag in group_tag_list[(len(group_tag_list) + 1) // 2:]:
         <label>
           <input type="checkbox" name="tag" value="${tag['id']}"${' checked' if tag['id'] in tag_id_list else ''}>
           <span>${tag['base'].split(" : ")[-1]}</span>

@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# pylint: disable=wrong-import-position
+# Import from working directory.
+
 import sys
 import urllib.request
 import urllib.parse
@@ -13,6 +16,8 @@ import Levenshtein
 
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker
+
+sys.path.append(".")
 
 from model import connection_url_app, attach_search
 from model import User, Org
@@ -31,7 +36,7 @@ REDIS_SERVER = redis.Redis("localhost")
 def hash_digest(name_a, name_b):
     return "caat-directory:%s" % md5(
         name_a.encode("utf-8") + "|||" + name_b.encode("utf-8")
-        ).hexdigest()
+    ).hexdigest()
 
 
 
@@ -57,7 +62,7 @@ def multi_merge(orm, org_id_list):
         sys.exit(1)
 
     for o, org in enumerate(org_list):
-        print("%d %s (%d)" % (o, org.name.encode("utf-8"), org.org_id))
+        print("%d %s (%d)" % (o, org.name, org.org_id))
     print()
     print("Choose merge target number or non-numeric to exit: ", end=' ')
 
@@ -227,13 +232,12 @@ def main():
     orm = session_factory()
     attach_search(engine, orm)
 
-
-    if len(args) == 0:
+    if not args.org_id:
         merge_organisations(
             orm, args.threshold, args.characters, args.alpha)
     else:
         try:
-            org_id_list = [int(arg) for arg in args]
+            org_id_list = [int(arg) for arg in args.org_id]
         except ValueError:
             parser.print_usage()
             sys.exit(1)

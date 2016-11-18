@@ -80,7 +80,7 @@ def suspicious_postcodes(orm):
 
     for address in orm.query(Address):
         parts = Address.parts(address.postal)
-        for part in parts[len(parts)/2:]:
+        for part in parts[len(parts) // 2:]:
             if RE_CODE.search(part):
                 split = split_postcode(part)
                 if len(split) > 1:
