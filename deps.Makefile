@@ -4,6 +4,14 @@ SHELL := /bin/bash
 	deps-linux deps-python \
 	deps-linux-dev deps-python-dev
 
+
+ifneq (,$(wildcard /opt/python3-webapps))  # If we're on the server
+PIP_CMD := sudo -H -u www-caat-webapps /opt/python3-webapps/bin/pip
+else
+PIP_CMD := sudo -H pip3
+endif
+
+
 DEBIAN := \
 	libxml2-dev libxslt1-dev \
 	python3 python3-pip python3-dev \
@@ -38,12 +46,6 @@ PYTHON := \
 PYTHON_DEV := 
 
 PIP_ARGS := install --upgrade --src=/tmp
-
-ifneq (,$(wildcard /opt/python3-webapps))  # If we're on the server
-PIP_CMD := sudo -H -u www-caat-webapps /opt/python3-webapps/bin/pip
-else
-PIP_CMD := sudo -H pip3
-endif
 
 
 all : deps-linux deps-python

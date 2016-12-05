@@ -598,9 +598,12 @@ class BaseHandler(RequestHandler):
             self.orm.rollback()
 
     def compare_session(self, session):
-        # Returns falsy if equal, truthy if different
+        "Returns falsy if equal, truthy if different."
         return \
-            session.ip_address != self.request.remote_ip or \
+            session.ip_address not in (
+                self.request.remote_ip,
+                self.request.headers.get("X-Remote-Addr", None)
+            ) or \
             session.accept_language != self.get_accept_language() or \
             session.user_agent != self.get_user_agent()
 
