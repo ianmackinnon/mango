@@ -324,7 +324,7 @@ class BaseEventHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                     address_list = data["addressList"]
                     address_list.sort(
                         key=lambda address_obj: address_obj.get(
-                            "latitude", None),
+                            "latitude", None) or 0,
                         reverse=True
                         )
                     event_packet["eventList"].append(event.obj(

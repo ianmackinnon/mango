@@ -247,6 +247,8 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
             visibility=visibility,
             )
 
+        print(name, name_search)
+
         if location:
             org_alias_address_query = org_alias_query \
                 .join(Org.address_list)
@@ -343,7 +345,7 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
                     address_list = data["addressList"]
                     address_list.sort(
                         key=lambda address_obj: address_obj.get(
-                            "latitude", None),
+                            "latitude", None) or 0,
                         reverse=True
                         )
                     org_packet["orgList"].append(org.obj(
