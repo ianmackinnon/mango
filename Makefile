@@ -1,4 +1,4 @@
-SHELL := /bin/bash
+>SHELL := /bin/bash
 .PHONY : all purge \
 	vendor \
 	test \
@@ -69,7 +69,7 @@ lint : lint-py lint-js
 lint-py : lint-py-web lint-py-test lint-py-tools
 
 lint-py-web :
-	pylint --rcfile=test/pylintrc \
+	python3 -m pylint --rcfile=test/pylintrc \
 	  --disable=duplicate-code \
 	  conf.py geo.py model.py model_v.py \
 	  mysql/*.py \
@@ -77,12 +77,12 @@ lint-py-web :
 	  skin/*/*.py
 
 lint-py-test :
-	PYTHONPATH="." pylint --rcfile=test/pylintrc \
+	PYTHONPATH="." python3 -m pylint --rcfile=test/pylintrc \
 	  --disable=duplicate-code \
 	  test/*.py \
 
 lint-py-tools :
-	pylint --rcfile=test/pylintrc \
+	python3 -m pylint --rcfile=test/pylintrc \
 	  --disable=duplicate-code \
 	  conf.py geo.py model.py model_v.py \
 	  tools/*.py \

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# pylint: disable=wrong-import-position
+# Adding working directory to system path
 
 import sys
 import json
@@ -274,7 +276,7 @@ def insert_fast(
     for chunk in data:
         # pylint: disable=maybe-no-member
         has_address = None
-        LOG.info(("\n%s\n" % chunk["name"]))
+        LOG.info("\n%s\n", chunk["name"])
         org = select_org(orm, chunk["name"], user, search)
 
         if (
@@ -287,8 +289,7 @@ def insert_fast(
             continue
 
         if not org:
-            LOG.warning(
-                ("\nCreating org %s\n" % chunk["name"]))
+            LOG.warning("\nCreating org %s\n", chunk["name"])
             org = Org(chunk["name"], moderation_user=user, public=public,)
             orm.add(org)
             # Querying org address list on a new org would trigger a commit

@@ -245,7 +245,7 @@ def coords(address, cache=GEOCODE_CACHE_DEFAULT):
                 return None
         try:
             result = GEOCODER.geocode(
-                address.encode("utf-8"),
+                address,
                 region=GEOCODE_DEFAULT_REGION,
                 )
         except geopy.exc.GeocoderUnavailable as e:
@@ -265,6 +265,7 @@ def coords(address, cache=GEOCODE_CACHE_DEFAULT):
             print(e)
             return None
         if result is None:
+            print("No address found for %s." % repr(address))
             return None
 
         address, (latitude, longitude) = result

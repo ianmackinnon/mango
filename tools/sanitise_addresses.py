@@ -102,15 +102,15 @@ def sanitise_addresses(orm):
         if a != b:
             if "," not in b:
                 address.postal = b
-                print((b.encode("utf-8")))
+                print(b)
                 print()
                 orm.commit()
                 continue
             b = address.sanitise_address(address.postal, False)
             print()
-            print((a.encode("utf-8")))
+            print(a)
             print()
-            print((b.encode("utf-8")))
+            print(b)
             print()
             if query_yes_no("replace?", default=None):
                 address.postal = b

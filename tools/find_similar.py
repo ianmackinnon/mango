@@ -146,15 +146,15 @@ def find_similar(orm, similar):
             if key in similar:
                 print("SIM", key, similar[key])
                 continue
-            print((" %40s  %40s " % (
+            print(" %40s  %40s " % (
                 hit["_orig"].org_id, hit["_source"]["org_id"]
-            )).encode("utf-8"))
-            print((" %40s  %40s " % (
+            ))
+            print(" %40s  %40s " % (
                 hit["_orig"].public, hit["_source"]["public"]
-            )).encode("utf-8"))
-            print((" %40s  %40s " % (
+            ))
+            print(" %40s  %40s " % (
                 hit["_orig"].name, hit["_source"]["name"]
-            )).encode("utf-8"))
+            ))
             for alias in hit["_source"]["alias"][1:]:
                 print(" %40s  %40s " % ("", alias))
             print()
