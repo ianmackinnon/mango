@@ -2,10 +2,6 @@
 .PHONY : all purge \
 	vendor \
 	test \
-	serve-test \
-	lint-py \
-	lint-py-error \
-	lint-js
 
 
 REDIS_NAMESPACE := mango
@@ -71,7 +67,7 @@ lint-py : lint-py-web lint-py-test lint-py-tools
 lint-py-web :
 	python3 -m pylint --rcfile=test/pylintrc \
 	  --disable=duplicate-code \
-	  conf.py geo.py model.py model_v.py \
+	  geo.py model.py model_v.py \
 	  mysql/*.py \
 	  mango.py handle/*.py \
 	  skin/*/*.py
@@ -84,7 +80,7 @@ lint-py-test :
 lint-py-tools :
 	python3 -m pylint --rcfile=test/pylintrc \
 	  --disable=duplicate-code \
-	  conf.py geo.py model.py model_v.py \
+	  geo.py model.py model_v.py \
 	  tools/*.py \
 
 lint-js :

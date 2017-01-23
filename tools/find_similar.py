@@ -9,7 +9,7 @@ import argparse
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from model import connection_url_app, attach_search
+from model import mysql, CONF_PATH, attach_search
 from model import User, Org
 
 
@@ -214,7 +214,7 @@ def main():
         max(0, min(3, 1 + args.verbose - args.quiet))]
     LOG.setLevel(level)
 
-    connection_url = connection_url_app()
+    connection_url = mysql.connection_url_app(CONF_PATH)
     engine = create_engine(connection_url,)
     session_ = sessionmaker(bind=engine, autocommit=False)
     orm = session_()

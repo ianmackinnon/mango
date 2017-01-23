@@ -7,7 +7,7 @@ import argparse
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
-from model import connection_url_admin
+from model import mysql, CONF_PATH
 from model import Auth, User
 
 
@@ -68,7 +68,7 @@ def main():
             raise Exception("lock must be 0 or 1")
         args.lock = bool(int(args.lock))
 
-    connection_url = connection_url_admin()
+    connection_url = mysql.connection_url_app(CONF_PATH)
     engine = create_engine(connection_url,)
     session_factory = sessionmaker(bind=engine, autocommit=False)
     orm = session_factory()

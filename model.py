@@ -29,9 +29,10 @@ from sqlalchemy import event as sqla_event
 
 from tornado.web import HTTPError
 
+from mysql import mysql
+
 import geo
 
-import conf
 from search import search
 
 
@@ -63,28 +64,6 @@ def use_mysql():
     UnicodeKey = lambda: VARCHAR(
         length=MYSQL_MAX_KEY,
         charset="utf8", collation="utf8_bin")
-
-
-
-def mysql_connection_url(username, password, database):
-    return 'mysql+pymysql://%s:%s@localhost/%s?charset=utf8' % (
-        username, password, database)
-
-
-
-def connection_url_admin():
-    username = conf.get(CONF_PATH, "mysql-admin", "username")
-    password = conf.get(CONF_PATH, "mysql-admin", "password")
-    database = conf.get(CONF_PATH, "mysql", "database")
-    return mysql_connection_url(username, password, database)
-
-
-
-def connection_url_app():
-    username = conf.get(CONF_PATH, "mysql-app", "username")
-    password = conf.get(CONF_PATH, "mysql-app", "password")
-    database = conf.get(CONF_PATH, "mysql", "database")
-    return mysql_connection_url(username, password, database)
 
 
 
@@ -243,6 +222,7 @@ URL_DIRECTORY = {
     "contact": "contact",
     "contact_v": "contact",
     }
+
 
 
 class MangoEntity(object):
@@ -2079,7 +2059,7 @@ def engine_disable_mode(engine, mode):
 
 
 def main_2():
-    connection_url = connection_url_admin()
+    connection_url = mysql.connection_url_admin(CONF_PATH)
     engine = create_engine(connection_url)
     engine_disable_mode(engine, "ONLY_FULL_GROUP_BY")
     Base.metadata.create_all(engine)

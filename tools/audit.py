@@ -10,7 +10,7 @@ import argparse
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker
 
-from model import connection_url_app
+from model import mysql, CONF_PATH
 from model import Event, Eventtag, Org, Orgtag, Orgalias, Note, Address
 from model_v import Org_v, Orgalias_v, Orgtag_v, Event_v, Eventtag_v, \
     Address_v, Note_v
@@ -449,7 +449,7 @@ def main():
         max(0, min(3, 1 + args.verbose - args.quiet))]
     LOG.setLevel(level)
 
-    connection_url = connection_url_app()
+    connection_url = mysql.connection_url_app(CONF_PATH)
     engine = create_engine(connection_url,)
     session_ = sessionmaker(bind=engine, autocommit=False, autoflush=False)
     orm = session_()

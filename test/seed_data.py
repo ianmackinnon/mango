@@ -15,7 +15,7 @@ from sqlalchemy.orm import sessionmaker
 
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
-from model import connection_url_app, attach_search
+from model import mysql, attach_search, CONF_PATH
 from model import Medium, Auth, User, Session, Orgtag, Eventtag, \
     Org, Orgalias, Event, Address, Contact, Note
 
@@ -139,7 +139,7 @@ def main():
         max(0, min(3, 1 + args.verbose - args.quiet))]
     LOG.setLevel(level)
 
-    connection_url = connection_url_app()
+    connection_url = mysql.connection_url_app(CONF_PATH)
     engine = create_engine(connection_url,)
     session_factory = sessionmaker(bind=engine, autocommit=False)
     orm = session_factory()

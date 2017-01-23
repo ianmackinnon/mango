@@ -21,10 +21,11 @@ from tornado.web import RequestHandler, HTTPError
 
 # For _execute replacement
 from tornado import iostream
-import tornado.web
 from tornado.concurrent import is_future
 from tornado import gen
 from tornado.web import _has_stream_request_body
+
+import firma
 
 import geo
 
@@ -186,7 +187,7 @@ def url_rewrite_static(
 
 
 
-class BaseHandler(RequestHandler):
+class BaseHandler(firma.BaseHandler):
     # pylint: disable=dangerous-default-value
     # Using list type for argument default value
 
@@ -250,10 +251,12 @@ class BaseHandler(RequestHandler):
     def __init__(self, *args, **kwargs):
         # pylint: disable=invalid-name
         # Accessing `self.SUPPORTED_METHODS` from Tornado base classes.
+
+        super(BaseHandler, self).__init__(*args, **kwargs)
+
         self.SUPPORTED_METHODS += ("TOUCH", )
         self.messages = []
         self.scripts = []
-        RequestHandler.__init__(self, *args, **kwargs)
         self.orm = self.application.orm()
         self.url_root = self.request.headers.get("X-Forwarded-Root", "/")
         self.has_javascript = self.app_get_cookie("javascript", secure=False)
@@ -261,31 +264,17 @@ class BaseHandler(RequestHandler):
         self.next_ = self.get_argument("next", None)
         self.load_map = False
         self.json_data = None
-        self.start = None
 
-    def prepare(self):
-        self.start = time.time()
+        sys.stdout.flush()
 
     def on_finish(self):
-        if self.start is None:
-            return
-        now = time.time()
-        duration = now - self.start
-        self.application.log_uri.info(
-            "%s, %s, %s, %s, %0.3f",
-            str(now),
-            self.request.uri,
-            self.request.remote_ip,
-            repr(self.request.headers.get("User-Agent", "User-Agent")),
-            duration
-        )
+        super(BaseHandler, self).on_finish()
 
         if self.application.orm:
             self.application.orm.remove()
 
-        if self.application.response_log is not None:
-            response = [now, self._status_code, duration]
-            self.application.response_log.append(response)
+    def prepare(self):
+        self.start = time.time()
 
     def initialize(self, **kwargs):
         self.arg_type_handlers = kwargs.get("types", [])
@@ -846,6 +835,8 @@ select auto_increment
             self.json_data = {}
 
     def get_argument(self, name, default=_ARG_DEFAULT_MANGO, is_json=False):
+        # pylint: disable=protected-access
+        # Allow access to `RequestHandler` default argument.
         if not is_json:
             if default is self._ARG_DEFAULT_MANGO:
                 default = RequestHandler._ARG_DEFAULT
@@ -957,123 +948,6 @@ select auto_increment
 class DefaultHandler(BaseHandler):
     pass
 
-class ServerStatusHandler(tornado.web.RequestHandler):
-    @staticmethod
-    def median_sorted(data):
-        if not data:
-            return
-        if len(data) == 1:
-            return data[0]
-        half = int(len(data) / 2)
-        if len(data) % 2:
-            return (data[half - 1] +
-                    data[half]) / 2
-        else:
-            return data[half]
-
-    @staticmethod
-    def quartiles(data):
-        """
-        Accepts an unsorted list of floats.
-        """
-        if not data:
-            return
-        sample = sorted(data)
-
-        if len(data) == 1:
-            median = data[0]
-            q1 = data[0]
-            q3 = data[0]
-        else:
-            median = ServerStatusHandler.median_sorted(sample)
-            half = int(len(data) / 2)
-            if len(data) % 2:
-                q1 = (
-                    ServerStatusHandler.median_sorted(
-                        sample[:half]) +
-                    ServerStatusHandler.median_sorted(
-                        sample[:half + 1])
-                ) / 2
-                q3 = (
-                    ServerStatusHandler.median_sorted(
-                        sample[half:]) +
-                    ServerStatusHandler.median_sorted(
-                        sample[half + 1:])
-                ) / 2
-            else:
-                q1 = ServerStatusHandler.median_sorted(
-                    sample[:half])
-                q3 = ServerStatusHandler.median_sorted(
-                    sample[half:])
-
-        return {
-            "q1": median if q1 is None else q1,
-            "median": median,
-            "q3": median if q3 is None else q3
-        }
-
-    def get(self):
-        if self.application.response_log is None:
-            raise HTTPError(404)
-
-        response = {
-            "1": 0,
-            "2": 0,
-            "3": 0,
-            "4": 0,
-            "5": 0,
-        }
-        duration = {
-            "min": 0,
-            "q1": 0,
-            "median": 0,
-            "q3": 0,
-            "max": 0,
-        }
-
-        self.application.trim_response_log()
-
-        min_ = None
-        max_ = None
-
-        for (_timestamp,
-             status_code, duration_) in self.application.response_log:
-            if min_ is None:
-                min_ = duration_
-                max_ = duration_
-            else:
-                min_ = min(min_, duration_)
-                max_ = max(max_, duration_)
-
-            k = str(status_code)[0]
-            response[k] += 1
-
-        if min_ is not None:
-            duration["min"] = min_
-            duration["max"] = max_
-            try:
-                duration.update(self.quartiles([
-                    v[2] for v in self.application.response_log]))
-            except TypeError:
-                sys.stderr.write("Failed quartiles: %s" % repr(
-                    [v[2] for v in self.application.response_log]))
-                sys.stderr.flush()
-                raise
-
-        label = self.application.title
-
-        if self.application.label:
-            label = self.application.label
-
-        data = {
-            "label": label,
-            "response": response,
-            "duration": duration,
-        }
-
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Content-Type", "application/json; charset=UTF-8")
-        self.write(json.dumps(data))
 
 
 

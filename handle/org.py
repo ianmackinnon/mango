@@ -8,7 +8,10 @@ import Levenshtein
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import literal_column, or_, and_, not_
+from sqlalchemy.exc import InternalError
+
 from tornado.web import HTTPError
+from tornado.log import app_log
 
 import geo
 
@@ -28,6 +31,7 @@ from handle.base_event import BaseEventHandler
 from handle.orgtag import BaseOrgtagHandler
 from handle.address import BaseAddressHandler
 from handle.contact import BaseContactHandler
+from handle.markdown_safe import markdown_safe, convert_links
 
 from handle.base_moderation import \
     get_pending_org_address_id, \
@@ -36,6 +40,90 @@ from handle.base_moderation import \
 from handle.user import \
     get_user_pending_org_address, \
     get_user_pending_org_contact
+
+
+class ApiSummaryOrgHandler(BaseOrgHandler):
+    def get_influence_summary(self, org):
+        db_name = self.application.mysql_db_name("influence")
+        if not db_name:
+            app_log.warning(
+                "Cannot add influence data. Database `%s` not online.", db_name)
+            return
+
+        data = {}
+
+        sql = """
+select
+    {db}.org.org_id,
+    {db}.org.n_rev
+  from {db}.org
+  where {db}.org.map_id = {map_id}
+;
+""".format(**{
+    "db": db_name,
+    "map_id": org.org_id
+})
+
+        try:
+            result = self.orm.execute(sql).fetchone()
+        except InternalError as e:
+            print(e)
+            return
+
+        if result:
+            (org_id, n_rev, ) = result
+            data["influenceId"] = org_id
+            data["revolverCount"] = n_rev
+
+        sql = """
+select
+    count(distinct(m.meeting_id))
+  from {db}.meeting as m
+  join {db}.role_meeting as rm1 on (rm1.meeting_id = m.meeting_id)
+  join {db}.role as r1 on (r1.role_id = rm1.role_id)
+  join {db}.org as o1 on (o1.org_id = r1.org_id)
+  join {db}.role_meeting as rm2 on (rm2.meeting_id = m.meeting_id)
+  join {db}.role as r2 on (r2.role_id = rm2.role_id)
+  join {db}.org as o2 on (o2.org_id = r2.org_id)
+  where m.visible = 1
+    and o1.visible = 1
+    and o2.visible = 1
+    and o1.map_id = {map_id}
+    and o2.org_id > 0
+    and o2.country_iso2 = "gb"
+;
+""".format(**{
+    "db": db_name,
+    "map_id": org.org_id
+})
+
+        try:
+            result = self.orm.execute(sql).fetchone()
+        except InternalError as e:
+            print(e)
+            return
+
+        if result:
+            (n_meet, ) = result
+            data["meetingGovCount"] = n_meet
+
+        return data
+
+    def get(self, org_id):
+        org = self._get_org(org_id, required=True)
+
+        data = {
+            "name": org.name,
+            "addressCount": len(org.address_list_public),
+        }
+
+        if org.description:
+            data["descriptionHtmlSafe"] = \
+                convert_links(markdown_safe(org.description))
+
+        data.update(self.get_influence_summary(org) or {})
+
+        self.write_json(data)
 
 
 

@@ -15,7 +15,7 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 sys.path.append(".")
 
-from model import connection_url_app, attach_search, sanitise_name
+from model import mysql, CONF_PATH, attach_search, sanitise_name
 from model import User, Org, Orgalias, Note, Address, Orgtag, Contact, Medium
 
 
@@ -437,7 +437,7 @@ def main():
     LOG.setLevel(log_level)
     LOG_SEARCH.setLevel(log_level)
 
-    connection_url = connection_url_app()
+    connection_url = mysql.connection_url_app(CONF_PATH)
     engine = create_engine(connection_url,)
     session_ = sessionmaker(bind=engine, autocommit=False, autoflush=False)
     orm = session_()

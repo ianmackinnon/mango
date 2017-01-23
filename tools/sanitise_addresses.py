@@ -8,7 +8,7 @@ import argparse
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from model import connection_url_app
+from model import mysql, CONF_PATH
 from model import User, Address
 
 
@@ -139,7 +139,7 @@ def main():
         max(0, min(3, 1 + args.verbose - args.quiet))]
     LOG.setLevel(log_level)
 
-    connection_url = connection_url_app()
+    connection_url = mysql.connection_url_app(CONF_PATH)
     engine = create_engine(connection_url,)
     session_factory = sessionmaker(
         bind=engine, autocommit=False, autoflush=False)

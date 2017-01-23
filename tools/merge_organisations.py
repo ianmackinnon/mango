@@ -19,7 +19,7 @@ from sqlalchemy.orm import sessionmaker
 
 sys.path.append(".")
 
-from model import connection_url_app, attach_search
+from model import mysql, CONF_PATH, attach_search
 from model import User, Org
 from model import LOG as LOG_MODEL
 
@@ -225,7 +225,7 @@ def main():
     LOG.setLevel(log_level)
     LOG_MODEL.setLevel(log_level)
 
-    connection_url = connection_url_app()
+    connection_url = mysql.connection_url_app(CONF_PATH)
     engine = create_engine(connection_url)
     session_factory = sessionmaker(
         bind=engine, autoflush=False, autocommit=False)
