@@ -14,7 +14,6 @@ from mako.lookup import TemplateLookup
 
 import tornado.httpserver
 import tornado.ioloop
-import tornado.options
 import tornado.web
 from tornado.options import define, options
 
@@ -264,6 +263,9 @@ class MangoApplication(firma.Application):
         self.cache = None
         self.cache_log = None
         self.database_namespace = None
+        self.skin = None
+        self.offsite = None
+        self.lookup = None
 
         self.events = options.events
 
@@ -472,24 +474,6 @@ class MangoApplication(firma.Application):
         else:
             self.log_uri.addHandler(logging.NullHandler())
 
-        # Skin & Templates
-
-        try:
-            self.skin = __import__("skin.%s" % (options.skin),
-                                   globals(), locals(), ["load"])
-        except ImportError as e:
-            sys.stdout.write("Fatal: Skin '%s' not found.\n" % options.skin)
-            sys.exit(1)
-
-        self.offsite = options.offsite
-
-        self.lookup = TemplateLookup(
-            directories=['template'],
-            input_encoding='utf-8',
-            output_encoding='utf-8',
-            default_filters=["unicode", "h"],
-            )
-
         # HTTP Server
 
         self.forwarding_server_list = FORWARDING_SERVER_LIST
@@ -497,10 +481,27 @@ class MangoApplication(firma.Application):
         super(MangoApplication, self).__init__(
             handlers, options, **settings)
 
-        # stats = {
-        #     "Skin": options.skin,
-        #     "Events": self.events and "Enabled" or "Disabled",
-        # }
+
+    def init_skin(self):
+        try:
+            self.skin = __import__("skin.%s" % (options.skin),
+                                   globals(), locals(), ["load"])
+        except ImportError:
+            sys.stdout.write("Fatal: Skin '%s' not found.\n" % options.skin)
+            sys.exit(1)
+
+        self.offsite = options.offsite
+
+        self.add_stat("Skin", options.skin)
+
+
+    def init_templates(self):
+        self.lookup = TemplateLookup(
+            directories=['template'],
+            input_encoding='utf-8',
+            output_encoding='utf-8',
+            default_filters=["unicode", "h"],
+            )
 
 
     def init_database(self):
@@ -518,8 +519,7 @@ class MangoApplication(firma.Application):
 
         engine = create_engine(
             connection_url,
-            echo_pool=True,    # What's this?
-            pool_recycle=3600  # Expire connections after 2 hours
+            pool_recycle=3600  # Expire connections after 1 hours
         )                      # (MySQL disconnects unilaterally after 8)
 
         engine_disable_mode(engine, "ONLY_FULL_GROUP_BY")
@@ -567,9 +567,10 @@ class MangoApplication(firma.Application):
         super(MangoApplication, self).init_settings(options)
 
         self.init_database()
+        self.init_skin()
+        self.init_templates()
 
-
-
+        self.add_stat("Events", self.events and "Enabled" or "Disabled")
 
 
 
