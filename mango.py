@@ -81,6 +81,7 @@ from handle.history import HistoryHandler
 from handle.moderation import ModerationQueueHandler
 
 from model import mysql, engine_disable_mode, Org, attach_search
+from model import CONF_PATH, DATABASE_NAMES
 
 
 
@@ -104,8 +105,6 @@ FORWARDING_SERVER_LIST = [
     ]
 
 DEFAULT_CACHE_PERIOD = 60 * 60 * 8  # 8 hours
-
-CONF_PATH = ".mango.conf"
 
 
 
@@ -472,8 +471,7 @@ class MangoApplication(firma.Application):
 
         conf = mysql.get_conf(CONF_PATH)
 
-        mysql_database = firma.conf_get(CONF_PATH, "mysql", "database")
-        self.database_namespace = 'mysql://%s' % mysql_database
+        self.database_namespace = 'mysql://%s' % conf.database
         self.cache = RedisCache(
             self.cache_namespace(datetime.datetime.utcnow().isoformat()))
 
@@ -502,7 +500,7 @@ class MangoApplication(firma.Application):
         attach_search(engine, self.orm, verify=options.verify_search)
         self.orm.remove()
 
-        self.add_stat("MySQL", "online (%s)" % signature)
+        self.add_stat("MySQL", "Connected (%s)" % signature)
 
         self.add_stat("Cache", "%s (%s) %s" % (
             self.cache.name,
@@ -513,12 +511,14 @@ class MangoApplication(firma.Application):
         # Secondary Databases
 
         self.mysql_attach_secondary(
-            CONF_PATH,
-            "influence", "select count(org_id) from %s.org")
+            "influence",
+            mysql.replace_database_names(DATABASE_NAMES, "influence"),
+            "select count(org_id) from %s.org")
 
         self.mysql_attach_secondary(
-            CONF_PATH,
-            "company_exports", "select count(company_id) from %s.company")
+            "company-exports",
+            mysql.replace_database_names(DATABASE_NAMES, "company-exports"),
+            "select count(company_id) from %s.company")
 
 
 

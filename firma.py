@@ -166,51 +166,59 @@ class Application(tornado.web.Application):
 
     # Databases
 
-    def mysql_attach_secondary(self, conf_path, db_name, query_string):
+    def mysql_attach_secondary(self, db_key, db_name, query_string):
         if not self.settings.app.database:
             self.settings.app.database = {}
         db = self.settings.app.database
 
-        database = conf_get(conf_path, "mysql", db_name, None)
+        db[db_key] = {}
+        db[db_key]["database"] = db_name
+        db[db_key]["connected"] = False
+        db[db_key]["status"] = None
 
-        db[db_name] = {}
-        db[db_name]["database"] = database
-        db[db_name]["connected"] = False
-        db[db_name]["status"] = None
+        try:
+            self.orm.execute(query_string % db_name).scalar()
+            self.mysql_db_success(db_key)
+        except OperationalError as e:
+            self.mysql_db_failure(db_key, e)
 
-        if database:
-            try:
-                self.orm.execute(query_string % database).scalar()
-                self.mysql_db_success(db_name)
-            except OperationalError as e:
-                self.mysql_db_failure(db_name, e)
+        self.add_stat(
+            "MySQL %s" % db_key,
+            "%s (%s)" % (db[db_key]["status"], db_name)
+        )
 
-        self.add_stat("MySQL %s" % db_name, db[db_name]["status"])
-
-    def mysql_db_success(self, db_name):
+    def mysql_db_success(self, db_key):
         db = self.settings.app.database
-        if not db[db_name]["connected"]:
-            app_log.info("Successfully connected to MySQL DB '%s'.", db_name)
-        db[db_name]["connected"] = True
-        db[db_name]["status"] = "Connected"
+        db_name = db[db_key]["database"]
+        if not db[db_key]["connected"]:
+            app_log.info(
+                "Successfully connected to MySQL %s DB '%s'.",
+                db_key, db_name)
+        db[db_key]["connected"] = True
+        db[db_key]["status"] = "Connected"
 
-    def mysql_db_failure(self, db_name, error):
+    def mysql_db_failure(self, db_key, error):
         db = self.settings.app.database
-        if db[db_name].connected:
-            app_log.warning("Lost connection to MySQL DB '%s'. %s", db_name, str(error))
-        elif db[db_name].status is None:
-            app_log.warning("Failed to connect to MySQL DB '%s'. %s", db_name, str(error))
+        db_name = db[db_key]["database"]
+        if db[db_key].connected:
+            app_log.warning(
+                "Lost connection to MySQL %s DB '%s'. %s",
+                db_key, db_name, str(error))
+        elif db[db_key].status is None:
+            app_log.warning(
+                "Failed to connect to MySQL %s DB '%s'. %s",
+                db_key, db_name, str(error))
 
-        db[db_name]["connected"] = False
+        db[db_key]["connected"] = False
         if "denied" in str(error):
-            db[db_name]["status"] = "Access denied"
+            db[db_key]["status"] = "Access denied"
         else:
-            db[db_name]["status"] = "Cannot connect"
+            db[db_key]["status"] = "Cannot connect"
 
-    def mysql_db_name(self, db_name):
+    def mysql_db_name(self, db_key):
         return self.settings.app.database and \
-            self.settings.app.database[db_name] and \
-            self.settings.app.database[db_name].database
+            self.settings.app.database[db_key] and \
+            self.settings.app.database[db_key].database
 
 
     # Initialisation

@@ -50,6 +50,7 @@ UnicodeKey = lambda: UnicodeOrig
 MYSQL_MAX_KEY = 255
 
 CONF_PATH = ".mango.conf"
+DATABASE_NAMES = mysql.load_database_names(CONF_PATH)
 
 SYSTEM_USER_ID = -1
 IGNORE_ORG_NAME_WORDS = None

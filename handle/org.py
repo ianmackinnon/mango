@@ -44,25 +44,25 @@ from handle.user import \
 
 class ApiSummaryOrgHandler(BaseOrgHandler):
     def get_influence_summary(self, org_id):
-        db_name = self.application.mysql_db_name("influence")
-        if not db_name:
+        db_inf = self.application.mysql_db_name("influence")
+        if not db_inf:
             app_log.warning(
                 "Cannot add '%s' data. Database `%s` not online.",
-                "influence", db_name)
+                "influence", db_inf)
             return
 
         data = {}
 
         sql = """
 select
-    {db}.org.org_id,
-    {db}.org.n_rev
-  from {db}.org
-  where {db}.org.map_id = {map_id}
+    {db_inf}.org.org_id,
+    {db_inf}.org.n_rev
+  from {db_inf}.org
+  where {db_inf}.org.map_id = {caat_id}
 ;
 """.format(**{
-    "db": db_name,
-    "map_id": org_id
+    "db_inf": db_inf,
+    "caat_id": org_id
 })
 
         try:
@@ -79,23 +79,23 @@ select
         sql = """
 select
     count(distinct(m.meeting_id))
-  from {db}.meeting as m
-  join {db}.role_meeting as rm1 on (rm1.meeting_id = m.meeting_id)
-  join {db}.role as r1 on (r1.role_id = rm1.role_id)
-  join {db}.org as o1 on (o1.org_id = r1.org_id)
-  join {db}.role_meeting as rm2 on (rm2.meeting_id = m.meeting_id)
-  join {db}.role as r2 on (r2.role_id = rm2.role_id)
-  join {db}.org as o2 on (o2.org_id = r2.org_id)
+  from {db_inf}.meeting as m
+  join {db_inf}.role_meeting as rm1 on (rm1.meeting_id = m.meeting_id)
+  join {db_inf}.role as r1 on (r1.role_id = rm1.role_id)
+  join {db_inf}.org as o1 on (o1.org_id = r1.org_id)
+  join {db_inf}.role_meeting as rm2 on (rm2.meeting_id = m.meeting_id)
+  join {db_inf}.role as r2 on (r2.role_id = rm2.role_id)
+  join {db_inf}.org as o2 on (o2.org_id = r2.org_id)
   where m.visible = 1
     and o1.visible = 1
     and o2.visible = 1
-    and o1.map_id = {map_id}
+    and o1.map_id = {caat_id}
     and o2.org_id > 0
     and o2.country_iso2 = "gb"
 ;
 """.format(**{
-    "db": db_name,
-    "map_id": org_id
+    "db_inf": db_inf,
+    "caat_id": org_id
 })
 
         try:
@@ -112,26 +112,26 @@ select
 
 
     def get_company_exports_summary(self, org_id):
-        db_name = self.application.mysql_db_name("company_exports")
-        if not db_name:
+        db_ce = self.application.mysql_db_name("company-exports")
+        if not db_ce:
             app_log.warning(
                 "Cannot add '%s' data. Database `%s` not online.",
-                "influence", db_name)
+                "influence", db_ce)
             return
 
         data = {}
 
         sql = """
 select
-    {db}.company.company_id,
-    count(distinct({db}.action.destination_id))
-  from {db}.action
-    join {db}.company using (company_id)
-  where {db}.company.map_id = {map_id}
+    {db_ce}.company.company_id,
+    count(distinct({db_ce}.action.destination_id))
+  from {db_ce}.action
+    join {db_ce}.company using (company_id)
+  where {db_ce}.company.caat_id = {caat_id}
 ;
 """.format(**{
-    "db": db_name,
-    "map_id": org_id
+    "db_ce": db_ce,
+    "caat_id": org_id
 })
 
         try:
