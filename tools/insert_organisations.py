@@ -3,6 +3,7 @@
 # Adding working directory to system path
 
 import sys
+import time
 import json
 import logging
 import argparse
@@ -146,14 +147,16 @@ def get_candidates(es, text):
         "query": {
             "multi_match": {
                 "fields": [
-                    "alias.straight^3",
-                    "alias.fuzzy",
+                    "alias_all.straight^3",
+                    "alias_all.fuzzy",
                     ],
                 "query": text
                 }
             }
         }
+    LOG.debug("Search query: %s", repr(data))
     results = es.search(data, index="mango", doc_type="org")
+    LOG.debug("Results: %s", repr(results))
     org_list = []
     for hit in results["hits"]["hits"]:
         source = hit["_source"]
@@ -162,7 +165,7 @@ def get_candidates(es, text):
     return org_list
 
 
-def search_org(es, text_orig, just_search=False):
+def search_org(es, text_orig, context=None, just_search=False):
     """Returns False to skip"""
     # pylint: disable=redefined-variable-type
     # `org_id` may be `None`, `False` or string.
@@ -171,6 +174,12 @@ def search_org(es, text_orig, just_search=False):
     text_search = text_orig
 
     while True:
+        if context and context.get("refresh", None):
+            # Necessarily imprecise way of allowing recently
+            # inserted alias to appear in results
+            time.sleep(1)
+            context["refresh"] = False
+
         candidates = get_candidates(es, text_search)
         if not candidates:
             break
@@ -183,7 +192,7 @@ def search_org(es, text_orig, just_search=False):
                 "  %4d: \033[37m%-5d %s\033[0m\n" % (
                     i, org["org_id"], org["score"])
             )
-            for name in org["alias"]:
+            for name in org["alias_all"]:
                 sys.stderr.write(
                     ("        \033[94m%s\033[0m\n" % name)
                 )
@@ -221,7 +230,7 @@ def search_org(es, text_orig, just_search=False):
 
 
 
-def select_org(orm, name, user, search=True):
+def select_org(orm, name, context, search=True):
     """Returns False to skip"""
 
     name = sanitise_name(name)
@@ -237,7 +246,7 @@ def select_org(orm, name, user, search=True):
     if es is None:
         LOG.error("Cannot connect to Elasticsearch.")
         sys.exit(1)
-    org_id = search_org(es, name)
+    org_id = search_org(es, name, context=context)
 
     if not org_id:
         return org_id
@@ -249,7 +258,13 @@ def select_org(orm, name, user, search=True):
         raise e
 
     # Adds new `Orgalias` to `Org`.
-    Orgalias(name, org, user, False)
+    Orgalias(name, org, moderation_user=context["user"], public=None)
+
+    context["refresh"] = True
+    es.refresh()
+    # Calling `refresh` here appears not to make any difference, but in
+    # theory should be a good idea.
+    # Waiting for inserted org to be searchable here doesn't seem to work.
 
     return org
 
@@ -273,11 +288,15 @@ def insert_fast(
         )
         tags.append(tag)
 
+    context = {
+        "refresh": False,
+        "user": user
+    }
     for chunk in data:
         # pylint: disable=maybe-no-member
         has_address = None
         LOG.info("\n%s\n", chunk["name"])
-        org = select_org(orm, chunk["name"], user, search)
+        org = select_org(orm, chunk["name"], context, search)
 
         if (
                 org is False or

@@ -213,8 +213,6 @@ class BaseHandler(firma.BaseHandler):
         key = self.cookie_name(key)
         value = json.dumps(value)
 
-        print("SET", repr(key), repr(value))
-
         self.set_secure_cookie(key, value, **kwargs)
 
 

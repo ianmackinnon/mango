@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
 
-import os
 import re
 import sys
-import errno
-import logging
-import logging.handlers
 import datetime
 
 import redis
@@ -100,9 +96,6 @@ define("offsite", type=bool, default=None,
 define("events", type=bool, default=True, help="Enable events. Default is 1.")
 define("verify_search", type=bool, default=True,
        help="Verify Elasticsearch data on startup. Default is 1.")
-define("log", default=None,
-       help="Log directory. Write permission required. Logging is disabled "
-       "if this option is not set.")
 
 
 
@@ -444,36 +437,6 @@ class MangoApplication(firma.Application):
         self.local_auth = options.local
         self.cookie_prefix = firma.conf_get(CONF_PATH, "app", "cookie-prefix")
 
-        # Logging
-
-        self.log_path_uri = None
-        self.log_uri = logging.getLogger('%s.uri' % self.name)
-        self.log_uri.propagate = False
-        self.log_uri.setLevel(logging.INFO)
-        if options.log:
-            try:
-                os.makedirs(options.log)
-            except OSError as e:
-                if e.errno != errno.EEXIST:
-                    raise e
-
-            self.log_uri_path = os.path.join(
-                options.log,
-                '%s.uri.log' % self.name
-                )
-
-            self.log_uri.addHandler(
-                logging.handlers.TimedRotatingFileHandler(
-                    self.log_uri_path,
-                    when="midnight",
-                    encoding="utf-8",
-                    backupCount=7,
-                    utc=True
-                    )
-                )
-        else:
-            self.log_uri.addHandler(logging.NullHandler())
-
         # HTTP Server
 
         self.forwarding_server_list = FORWARDING_SERVER_LIST
@@ -501,7 +464,7 @@ class MangoApplication(firma.Application):
             input_encoding='utf-8',
             output_encoding='utf-8',
             default_filters=["unicode", "h"],
-            )
+        )
 
 
     def init_database(self):

@@ -45,40 +45,45 @@ def verify_org(es, orm, Org, Orgalias):
 
 
 def verify(es, orm, Org, Orgalias):
-    print("VERIFY")
+    print("Verifying Elasticsearch")
     try:
         if verify_org(es, orm, Org, Orgalias):
             return
     except pyelasticsearch.exceptions.ElasticHttpError:
         pass
 
+    print("Rebuilding Elasticsearch")
     rebuild(es, orm, Org, Orgalias)
 
 
 
-def org_doc(org, alias_list=None):
-    if alias_list is None:
-        alias_list = [orgalias.name for orgalias in org.orgalias_list_public]
+def org_doc(org):
+    alias_public_list = [
+        orgalias.name for orgalias in org.orgalias_list_public]
+    alias_all_list = [
+        orgalias.name for orgalias in org.orgalias_list]
     return {
         "org_id": org.org_id,
         "name": org.name,
         "public": org.public,
-        "alias": [org.name] + alias_list,
+        "alias_public": [org.name] + alias_public_list,
+        "alias_all": [org.name] + alias_all_list,
         }
 
 
 
-def index_org(es, org, alias_list=None):
-    es.index(es_index, es_doc_type, org_doc(org, alias_list), id=org.org_id)
+def index_org(es, org):
+    es.index(
+        es_index,
+        es_doc_type,
+        org_doc(org),
+        id=org.org_id
+    )
 
 
 
 def index_orgalias(es, orgalias, orm, Orgalias):
-    query = orm.query(Orgalias) \
-        .filter(Orgalias.org_id == orgalias.org_id) \
-        .filter(Orgalias.public == 1)
-    alias_list = [orgalias.name for orgalias in query.all()]
-    index_org(es, orgalias.org, alias_list=alias_list)
+    index_org(es, orgalias.org)
 
 
 

@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 import time
 import json
+import errno
 import bisect
+import logging
 import datetime
 import configparser
 
@@ -66,6 +69,8 @@ class Application(tornado.web.Application):
 
     RESPONSE_LOG_DURATION = 5 * 60  # Seconds
 
+    # Stats
+
     def init_stats(self):
         self.stats = []
 
@@ -84,6 +89,8 @@ class Application(tornado.web.Application):
         sys.stdout.flush()
 
 
+    # Response Log
+
     @tornado.gen.coroutine
     def trim_response_log(self):
         start = time.time() - self.RESPONSE_LOG_DURATION
@@ -97,6 +104,65 @@ class Application(tornado.web.Application):
             self.trim_response_log,
             self.RESPONSE_LOG_DURATION * 1000
         ).start()
+
+
+    # Sibling Applications
+
+    def init_sibling(self, name, conf_path, parameter):
+        if not self.settings.app.siblings:
+            self.settings.app.siblings = {}
+
+        self.settings.app.siblings[name] = {}
+        sibling = self.settings.app.siblings[name]
+
+        conf_url = conf_get(conf_path, 'app', parameter)
+        sibling.url = conf_url or None
+
+        self.add_stat(
+            "URL %s" % name,
+            sibling.url or "offline"
+        )
+
+
+    # URI Log
+
+    def init_log(self, options, name, propagate=None, level=None):
+        log = self.settings.app.log
+
+        log[name] = {
+            "log": logging.getLogger(
+                name if name.startswith("tornado")
+                else '%s.%s' % (self.name, name)
+            )
+        }
+
+        if propagate is not None:
+            log[name].log.propagate = propagate
+        if level is not None:
+            log[name].log.setLevel(level)
+        if options.log:
+            try:
+                os.makedirs(options.log)
+            except OSError as e:
+                if e.errno != errno.EEXIST:
+                    raise e
+
+            log[name].path = os.path.join(
+                options.log,
+                '%s.%s.log' % (self.name, name)
+            )
+
+            log[name].log.addHandler(
+                logging.handlers.TimedRotatingFileHandler(
+                    log[name].path,
+                    when="midnight",
+                    encoding="utf-8",
+                    backupCount=7,
+                    utc=True
+                )
+            )
+        else:
+            log[name].log.addHandler(logging.NullHandler())
 
     # Databases
 
@@ -153,6 +219,7 @@ class Application(tornado.web.Application):
     def init_settings(self, options):
         self.settings.options = options
         self.settings.app = {}
+        self.settings.app.log = {}
 
         self.add_stat("Address",
                       "http://localhost:%d" % self.settings.options.port)
@@ -168,6 +235,9 @@ class Application(tornado.web.Application):
         self.init_stats()
         self.settings = Settings(settings or {})
         self.init_settings(options)
+
+        self.init_log(options, "uri", propagate=False, level=logging.INFO)
+        self.init_log(options, "tornado")
 
         if self.settings.options.status:
             handlers.insert(1, (r"/server-status", ServerStatusHandler))
@@ -199,7 +269,7 @@ class BaseHandler(tornado.web.RequestHandler):
             return
         now = time.time()
         duration = now - self.start
-        self.application.log_uri.info(
+        self.settings.app.log.uri.log.info(
             "%s, %s, %s, %s, %0.3f",
             str(now),
             self.request.uri,
@@ -350,6 +420,10 @@ def init(application, defaults=None):
     define("status", type=bool, default=True,
            help="Enable stats on /server-stats")
     define("label", default=None, help="Label to include in stats")
+
+    define("log", default=None,
+           help="Log directory. Write permission required."
+           "Logging is disabled if this option is not set.")
 
     tornado.options.parse_command_line()
     ssl_options = None

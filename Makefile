@@ -4,7 +4,8 @@
 	test \
 
 
-REDIS_NAMESPACE := mango
+NAME := mango
+REDIS_NAMESPACE := $(NAME)
 
 all : vendor .xsrf
 
@@ -19,6 +20,10 @@ endif
 .xsrf :
 	head -c 32 /dev/urandom | base64 > .xsrf
 	chmod o-rwx .xsrf
+
+
+deps-local :
+	make -f deps.Makefile dev
 
 
 # Cache
@@ -52,7 +57,7 @@ serve-test :
 	  -W ignore::ImportWarning:httplib2 \
 	  -W ignore::ResourceWarning: \
 	  ./mango.py --local=1 --events=0 \
-	    --log=/tmp/mango-log
+	    --log=/tmp/$(NAME)-log
 
 test-web :
 	./test/test_web.py -v

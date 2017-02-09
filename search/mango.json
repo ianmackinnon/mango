@@ -70,7 +70,22 @@
   "mappings": {
     "org": {
       "properties": {
-        "alias": {
+        "alias_public": {
+          "type": "multi_field",
+          "fields": {
+            "fuzzy": {
+              "type": "string",
+              "analyzer": "fuzzy_analyzer",
+              "search_analyzer": "fuzzy_analyzer"
+            },
+            "straight": {
+              "type": "string",
+              "analyzer": "straight_analyzer",
+              "search_analyzer": "straight_analyzer"
+            }
+          }
+        },
+        "alias_all": {
           "type": "multi_field",
           "fields": {
             "fuzzy": {

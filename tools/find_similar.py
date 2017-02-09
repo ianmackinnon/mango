@@ -66,8 +66,8 @@ def nearest(es, name, org_id, blacklist):
                 "query": {
                     "multi_match": {
                         "fields": [
-                            "alias.straight^3",
-                            "alias.fuzzy",
+                            "alias_all.straight^3",
+                            "alias_all.fuzzy",
                             ],
                         "query": name
                         }
@@ -155,7 +155,7 @@ def find_similar(orm, similar):
             print(" %40s  %40s " % (
                 hit["_orig"].name, hit["_source"]["name"]
             ))
-            for alias in hit["_source"]["alias"][1:]:
+            for alias in hit["_source"]["alias_all"][1:]:
                 print(" %40s  %40s " % ("", alias))
             print()
             print("Merge? (%.2f)" % hit["_score"])

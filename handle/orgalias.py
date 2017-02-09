@@ -94,6 +94,8 @@ class OrgaliasHandler(BaseOrgaliasHandler):
         orgalias = self._get_orgalias(orgalias_id)
         name, public = BaseOrgaliasHandler._get_entity_arguments(self)
 
+        print(name, public)
+
         if orgalias.name == name and \
                 orgalias.public == public:
             return self.redirect_next(orgalias.url)

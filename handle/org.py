@@ -43,11 +43,12 @@ from handle.user import \
 
 
 class ApiSummaryOrgHandler(BaseOrgHandler):
-    def get_influence_summary(self, org):
+    def get_influence_summary(self, org_id):
         db_name = self.application.mysql_db_name("influence")
         if not db_name:
             app_log.warning(
-                "Cannot add influence data. Database `%s` not online.", db_name)
+                "Cannot add '%s' data. Database `%s` not online.",
+                "influence", db_name)
             return
 
         data = {}
@@ -61,7 +62,7 @@ select
 ;
 """.format(**{
     "db": db_name,
-    "map_id": org.org_id
+    "map_id": org_id
 })
 
         try:
@@ -94,7 +95,7 @@ select
 ;
 """.format(**{
     "db": db_name,
-    "map_id": org.org_id
+    "map_id": org_id
 })
 
         try:
@@ -109,6 +110,44 @@ select
 
         return data
 
+
+    def get_company_exports_summary(self, org_id):
+        db_name = self.application.mysql_db_name("company_exports")
+        if not db_name:
+            app_log.warning(
+                "Cannot add '%s' data. Database `%s` not online.",
+                "influence", db_name)
+            return
+
+        data = {}
+
+        sql = """
+select
+    {db}.company.company_id,
+    count(distinct({db}.action.destination_id))
+  from {db}.action
+    join {db}.company using (company_id)
+  where {db}.company.map_id = {map_id}
+;
+""".format(**{
+    "db": db_name,
+    "map_id": org_id
+})
+
+        try:
+            result = self.orm.execute(sql).fetchone()
+        except InternalError as e:
+            print(e)
+            return
+
+        if result:
+            (company_id, n_dest, ) = result
+            data["companyExportsId"] = company_id
+            data["destinationCount"] = n_dest
+
+        return data
+
+
     def get(self, org_id):
         org = self._get_org(org_id, required=True)
 
@@ -121,7 +160,8 @@ select
             data["descriptionHtmlSafe"] = \
                 convert_links(markdown_safe(org.description))
 
-        data.update(self.get_influence_summary(org) or {})
+        data.update(self.get_influence_summary(org.org_id) or {})
+        data.update(self.get_company_exports_summary(org.org_id) or {})
 
         self.write_json(data)
 
@@ -372,8 +412,8 @@ class OrgSearchHandler(BaseOrgHandler):
                 "query": {
                     "multi_match": {
                         "fields": [
-                            "alias.straight^3",
-                            "alias.fuzzy",
+                            "alias_public.straight^3",
+                            "alias_public.fuzzy",
                             ],
                         "query": name
                         }
@@ -391,8 +431,8 @@ class OrgSearchHandler(BaseOrgHandler):
                             "query": {
                                 "multi_match": {
                                     "fields": [
-                                        "alias.straight^3",
-                                        "alias.fuzzy",
+                                        "alias_public.straight^3",
+                                        "alias_public.fuzzy",
                                         ],
                                     "query": name
                                     }
@@ -407,7 +447,7 @@ class OrgSearchHandler(BaseOrgHandler):
                 source = hit["_source"]
                 max_ratio = None
                 max_alias = None
-                for alias in source["alias"]:
+                for alias in source["alias_public"]:
                     ratio = Levenshtein.ratio(name.lower(), alias.lower())
                     if max_alias is None or ratio > max_ratio:
                         max_alias = alias
