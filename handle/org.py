@@ -145,6 +145,30 @@ select
             data["companyExportsId"] = company_id
             data["destinationCount"] = n_dest
 
+        sql = """
+select
+    count(distinct({db_ce}.rating.description))
+  from {db_ce}.action
+    join {db_ce}.company using (company_id)
+    join {db_ce}.rating using (rating_id)
+  where {db_ce}.company.caat_id = {caat_id}
+    and {db_ce}.rating.description is not null
+;
+""".format(**{
+    "db_ce": db_ce,
+    "caat_id": org_id
+})
+
+        try:
+            result = self.orm.execute(sql).fetchone()
+        except InternalError as e:
+            print(e)
+            return
+
+        if result:
+            (n_rating, ) = result
+            data["ratingCount"] = n_rating
+
         return data
 
 
