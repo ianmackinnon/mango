@@ -60,6 +60,9 @@ def split(text):
 
 
 def load_conf(path):
+    # pylint: disable=protected-access
+    # Storing config path in protected variable
+
     if not os.path.isfile(path):
         LOG.error("%s: File not found", path)
         sys.exit(1)
@@ -145,7 +148,7 @@ def load_database_names(conf):
     if default:
         names["default"] = replace_database_names(names, default)
 
-    return(names)
+    return names
 
 
 

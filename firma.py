@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import re
 import sys
 import time
 import json
@@ -9,6 +10,7 @@ import bisect
 import logging
 import datetime
 import configparser
+from dateutil.relativedelta import relativedelta
 
 import tornado.web
 import tornado.httpserver
@@ -167,7 +169,7 @@ class Application(tornado.web.Application):
     # Databases
 
     def mysql_attach_secondary(self, db_key, db_name, query_string):
-        if not self.settings.app.database:
+        if self.settings.app.database is None:
             self.settings.app.database = {}
         db = self.settings.app.database
 
@@ -289,6 +291,84 @@ class BaseHandler(tornado.web.RequestHandler):
         if self.settings.app.response_log is not None:
             response = [now, self._status_code, duration]
             self.settings.app.response_log.append(response)
+
+    def get_argument_int(self, name, default):
+        """
+        Returns a signed integer, or
+        `default` if value cannot be converted.
+        """
+        value = self.get_argument(name, default)
+        try:
+            value = int(value)
+        except (ValueError, TypeError):
+            value = default
+        return value
+
+    def get_argument_date(self, name, default, end=None):
+        """
+        Returns a date (year, month, day) based on a variable-length
+        string. If `end` is falsy, returns the earliest possible date,
+        ie. "2011" returns "1st of January 2011", otherwise, returns
+        the day after the latest possible date, eg. "2012-08" returns
+        "2012-09-01".
+        """
+        value = self.get_argument(name, default)
+        if not value:
+            return default
+
+        match = re.compile("""^
+        ([0-9]{4})
+        (?:
+        -([0-9]{2})
+        (?:
+        -([0-9]{2})
+        )?
+        )?""", re.U | re.X).match(value)
+
+        if not match:
+            return default
+
+        match = [v and int(v) for v in match.groups()]
+
+        delta = None
+
+        if end:
+            if match[1] is None:
+                delta = relativedelta(years=1)
+            elif match[2] is None:
+                delta = relativedelta(months=1)
+            else:
+                delta = relativedelta(days=1)
+        if match[1] is None:
+            match[1] = 1
+            match[2] = 1
+        elif match[2] is None:
+            match[2] = 1
+
+        vdate = datetime.date(*match)
+
+        if delta:
+            vdate += delta
+
+        return vdate
+
+    def get_argument_int_set(self, name):
+        """
+        Returns a list of unique signed integers. They may
+        be supplied as multiple and/or comma-separated parameters
+        """
+
+        values = set([])
+        raw = self.get_arguments(name)
+        for text in raw:
+            for part in text.split(","):
+                try:
+                    id_ = int(part)
+                except ValueError:
+                    continue
+                values.add(id_)
+        return sorted(list(values))
+
 
 
 
