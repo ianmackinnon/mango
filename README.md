@@ -8,33 +8,33 @@ Mapping Application for NGOs
 
 ### Debian/Ubuntu
 
-    sudo apt-get install $(cat deps.ubuntu.text)
-      
-    sudo update-alternatives --install /usr/bin/node nodejs /usr/bin/nodejs 100
+    make -f deps.Makefile dev
 
-    sudo apt-get install openjdk-7-jre-headless
     # download elasticsearch deb from http://www.elasticsearch.org/download
     sudo dpkg -i elasticsearch-0...
 
+## 3rd party web resources
+
+Read `web/vendor/Makefile` for how to get jQuery-UI.
+
+Then:
+
+    make -C vendor
     
-### Python
+Update Geolocation to make it Python 3 compatible:
 
-On the CAAT server
+    2to3 -w vendor/geolocation.py
+    
+## Configuration
 
--   Select virtual Python with `source ~ian.mackinnon/bin/python3-webapps`
--   Don't run pip with `sudo`
--   Install build tools first with `~ian.mackinnon/bin/install-compilers`
--   Uninstall build tools later with `~ian.mackinnon/bin/uninstall-compilers`
+    make -f mysql.Makefile .mango.conf
+    make .xsrf
+    
+## Database
 
-    sudo -H \
-      pip install --upgrade \
-      --src=/tmp \
-      -r deps.python.text
+    make -f mysql.Makefile mysql-import
 
 
-### Node
-
-    sudo npm install -g jslint jscs
 
 
 ### Services

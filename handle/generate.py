@@ -181,6 +181,8 @@ class GenerateMarkerHandler(GenerateHandler):
                 fill="#ee6666",
             )
 
+        os.makedirs(os.path.dirname(abspath), exist_ok=True)
+
         # Using stdout, because convert does odd things with a question
         #   mark in the output filename.
         f = open(abspath, "wb")

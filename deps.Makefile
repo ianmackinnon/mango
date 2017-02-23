@@ -11,6 +11,8 @@ else
 PIP_CMD := sudo -H pip3
 endif
 
+PIP_ARGS := install --upgrade --src=/tmp
+
 
 DEBIAN := \
 	libxml2-dev libxslt1-dev \
@@ -45,7 +47,9 @@ PYTHON := \
 
 PYTHON_DEV := 
 
-PIP_ARGS := install --upgrade --src=/tmp
+JS_DEV := \
+	jshint \
+	jscs
 
 
 all : deps-linux deps-python
@@ -64,3 +68,6 @@ deps-python :
 
 deps-python-dev :
 	$(PIP_CMD) $(PIP_ARGS) $(PYTHON_DEV)
+
+deps-js-dev :
+	sudo npm install -g $(JS_DEV)
