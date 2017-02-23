@@ -42,19 +42,6 @@ class LoginHandler(BaseHandler):
             self.redirect(self.url_rewrite("/auth/register", next_=self.next_))
             return True
 
-    def _create_session(self, user):
-        session = Session(
-            user,
-            self.request.remote_ip,
-            self.get_accept_language(),
-            self.get_user_agent(),
-        )
-        self.orm.add(session)
-        self.orm.flush()
-        self.start_session(str(session.session_id))
-        self.orm.commit()
-        return session
-
 
 
 class AuthLoginLocalHandler(LoginHandler):
@@ -99,7 +86,7 @@ class AuthLoginLocalHandler(LoginHandler):
                 return
             user = self._create_user()
 
-        self._create_session(user)
+        self._create_session(user, Session)
         return self.redirect_next()
 
 
@@ -176,7 +163,7 @@ class AuthLoginGoogleHandler(LoginHandler, AuthGoogleOAuth2UserMixin):
 
             self._check_locked(user)
 
-            self._create_session(user)
+            self.create_session(user, Session)
 
             self.redirect_next()
 
@@ -200,7 +187,7 @@ class AuthVisitHandler(LoginHandler):
 
         user = self._create_user()
 
-        self._create_session(user)
+        self.create_session(user, Session)
         return self.redirect_next()
 
 
@@ -221,7 +208,7 @@ class AuthLogoutHandler(BaseHandler):
 
     @authenticated
     def get(self):
-        session = self.get_session()
+        session = self.get_session(Session)
         if session:
             session.close_commit()
         self.end_session()

@@ -201,16 +201,6 @@ class MangoApplication(firma.Application):
     sqlite_path = "mango.db"
     max_age = 86400 * 365 * 10  # 10 years
 
-    def load_cookie_secret(self):
-        try:
-            with open(".xsrf", "r", encoding="utf-8") as fp:
-                self.cookie_secret = fp.read().strip()
-        except IOError:
-            sys.stderr.write(
-                "Could not open XSRF key. Run 'make .xsrf' to generate one.\n"
-                )
-            sys.exit(1)
-
     def cache_namespace(self, offset=""):
         hash_ = sha1_concat(
             sys.version,
@@ -413,7 +403,7 @@ class MangoApplication(firma.Application):
 
         settings = dict()
 
-        # Authentication & Cookies
+        # Authentication
 
         settings["google_oauth"] = {
             "key": firma.conf_get(
@@ -427,14 +417,7 @@ class MangoApplication(firma.Application):
             "api_key": firma.conf_get(CONF_PATH, 'google-maps', 'api-key'),
         }
 
-        self.load_cookie_secret()
-        settings.update(dict(
-            xsrf_cookies=True,
-            cookie_secret=self.cookie_secret,
-        ))
-
         self.local_auth = options.local
-        self.cookie_prefix = firma.conf_get(CONF_PATH, "app", "cookie-prefix")
 
         # HTTP Server
 
@@ -532,6 +515,7 @@ class MangoApplication(firma.Application):
         self.init_database()
         self.init_skin()
         self.init_templates()
+        self.init_cookies(firma.conf_get(CONF_PATH, 'app', 'cookie-prefix'))
 
         self.add_stat("Events", self.events and "Enabled" or "Disabled")
 

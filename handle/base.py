@@ -194,57 +194,6 @@ class BaseHandler(firma.BaseHandler):
     _unsupported_methods = None
 
 
-    def cookie_name(self, name):
-        return "-".join([_f for _f in [
-            self.application.cookie_prefix, name] if _f])
-
-
-    def app_set_cookie(self, key, value, **kwargs):
-        """
-        Uses app prefix and URL root for path.
-        Stringify as JSON. Always set secure.
-        """
-
-        kwargs = dict(list({
-            "path": self.url_root_dir()
-        }.items()) + list((kwargs or {}).items()))
-
-        key = self.cookie_name(key)
-        value = json.dumps(value)
-
-        self.set_secure_cookie(key, value, **kwargs)
-
-
-    def app_get_cookie(self, key, secure=True):
-        "Uses app prefix. Secure by default. Parse JSON."
-
-        key = self.cookie_name(key)
-
-        if secure:
-            # Returns `bytes`
-            value = self.get_secure_cookie(key)
-            if value:
-                value = value.decode()
-        else:
-            # Returns `str`
-            value = self.get_cookie(key)
-
-        return value and json.loads(value)
-
-
-    def app_clear_cookie(self, key, **kwargs):
-        """
-        Uses app prefix and URL root for path.
-        """
-
-        kwargs = kwargs or {}
-        kwargs.update({
-            "path": self.url_root
-        })
-
-        self.clear_cookie(self.cookie_name(key), **kwargs)
-
-
     def __init__(self, *args, **kwargs):
         # pylint: disable=invalid-name
         # Accessing `self.SUPPORTED_METHODS` from Tornado base classes.
@@ -255,7 +204,6 @@ class BaseHandler(firma.BaseHandler):
         self.messages = []
         self.scripts = []
         self.orm = self.application.orm()
-        self.url_root = self.request.headers.get("X-Forwarded-Root", "/")
         self.has_javascript = self.app_get_cookie("javascript", secure=False)
         self.set_parameters()
         self.next_ = self.get_argument("next", None)
@@ -415,23 +363,6 @@ class BaseHandler(firma.BaseHandler):
     def is_local(self):
         return self.request.remote_ip == "127.0.0.1"
 
-    def get_accept_language(self):
-        if "Accept-Language" in self.request.headers:
-            return self.request.headers["Accept-Language"]
-        return ""
-
-    def get_user_agent(self):
-        return self.request.headers["User-Agent"]
-
-    def start_session(self, value):
-        self.app_set_cookie("session", value)
-        # Sets a cookie value to the base64 plaintext session_id,
-        #   but is protected by tornado's _xsrf cookie.
-        # Retrieved by BaseHandler.get_current_user()
-
-    def end_session(self):
-        self.app_clear_cookie("session")
-
     def query_rewrite(self, options):
         arguments = self.request.arguments.copy()
         arguments.update(options)
@@ -440,14 +371,6 @@ class BaseHandler(firma.BaseHandler):
             uri = self.url_root + uri[1:]
         uri += "?" + urllib.parse.urlencode(arguments, True)
         return uri
-
-    def url_root_dir(self):
-        """
-        Return the root path without a trailing slash.
-        """
-        if self.url_root == "/":
-            return self.url_root
-        return self.url_root.rstrip("/")
 
     def url_rewrite(self, uri, options=None, parameters=None, next_=None):
         if parameters is None:
@@ -548,7 +471,7 @@ class BaseHandler(firma.BaseHandler):
             "contributor": self.contributor,
             "uri": self.request.uri,
             "xsrf": self.xsrf_token.decode("utf-8"),
-            "cookie_prefix": self.application.cookie_prefix,
+            "cookie_prefix": self.settings.app.cookie_prefix,
             "events_enabled": self.application.events,
             "json_dumps": json.dumps,
             "query_rewrite": self.query_rewrite,
@@ -580,41 +503,9 @@ class BaseHandler(firma.BaseHandler):
             print((self.orm.new or self.orm.dirty or self.orm.deleted))
             self.orm.rollback()
 
-    def compare_session(self, session):
-        "Returns falsy if equal, truthy if different."
-        return \
-            session.ip_address not in (
-                self.request.remote_ip,
-                self.request.headers.get("X-Remote-Addr", None)
-            ) or \
-            session.accept_language != self.get_accept_language() or \
-            session.user_agent != self.get_user_agent()
-
-    def get_session(self):
-        session_id = self.app_get_cookie("session")
-
-        try:
-            session = self.orm.query(Session).\
-                filter_by(session_id=session_id).one()
-        except NoResultFound:
-            self.end_session()
-            return None
-
-        if session.d_time is not None:
-            self.end_session()
-            return None
-
-        if self.compare_session(session):
-            self.end_session()
-            return None
-
-        session.touch_commit()
-
-        return session
-
     # required by tornado auth
     def get_current_user(self):
-        session = self.get_session()
+        session = self.get_session(Session)
         if session:
             return session.user
         return None

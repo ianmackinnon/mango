@@ -672,6 +672,10 @@ class Session(Base):
 
     user = relationship(User, backref='session_list')
 
+    @property
+    def delete_time(self):
+        return self.d_time
+
     def __init__(self, user,
                  ip_address=None, accept_language=None, user_agent=None):
         self.user = user

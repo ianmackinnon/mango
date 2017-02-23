@@ -23,6 +23,7 @@ from tornado import escape
 from tornado.log import app_log
 
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm.exc import NoResultFound
 
 
 
@@ -90,6 +91,7 @@ class Application(tornado.web.Application):
     stats = None
 
     RESPONSE_LOG_DURATION = 5 * 60  # Seconds
+    SESSION_COOKIE_PATH = None
 
     # Stats
 
@@ -110,16 +112,26 @@ class Application(tornado.web.Application):
             sys.stdout.write("  %-20s %s\n" % (key + ":", value))
         sys.stdout.flush()
 
+
+    # Cookies
+
     @staticmethod
     def load_cookie_secret():
         try:
             return open(".xsrf", "r").read().strip()
         except IOError:
             sys.stderr.write(
-                "Could not open XSRF key. Run 'make .xsrf' to generate one.\n"
-                )
+                "Could not open XSRF key. Run 'make .xsrf' to generate one.\n")
             sys.exit(1)
 
+    def init_cookies(self, prefix):
+        cookie_secret = self.load_cookie_secret()
+        self.settings.update({
+            "xsrf_cookies": True,
+            "cookie_secret": cookie_secret,
+        })
+        self.settings.app.cookie_prefix = prefix
+        self.add_stat("Cookie prefix", prefix)
 
 
     # Response Log
@@ -293,14 +305,29 @@ class Application(tornado.web.Application):
 
 
 class BaseHandler(tornado.web.RequestHandler):
+    def __init__(self, *args, **kwargs):
+        super(BaseHandler, self).__init__(*args, **kwargs)
+        self.start = None
+        self.url_root = self.request.headers.get("X-Forwarded-Root", "/")
+        sys.stdout.flush()
+
+    # Utilities
+
     @property
     def settings(self):
         return self.application.settings
 
-    def __init__(self, *args, **kwargs):
-        super(BaseHandler, self).__init__(*args, **kwargs)
-        self.start = None
-        sys.stdout.flush()
+    @property
+    def url_root_dir(self):
+        """
+        Return the root path without a trailing slash.
+        """
+        if self.url_root == "/":
+            return self.url_root
+        return self.url_root.rstrip("/")
+
+
+    # Lifecycle
 
     def prepare(self):
         self.start = time.time()
@@ -322,6 +349,171 @@ class BaseHandler(tornado.web.RequestHandler):
         if self.settings.app.response_log is not None:
             response = [now, self._status_code, duration]
             self.settings.app.response_log.append(response)
+
+
+    # Cookies
+
+    def cookie_name(self, name):
+        return "-".join([_f for _f in [
+            self.settings.app.cookie_prefix, name] if _f])
+
+
+    def app_set_cookie(self, key, value, **kwargs):
+        """
+        Uses app prefix and URL root for path.
+        Stringify as JSON. Always set secure.
+        """
+
+        # Path cannot be `None`
+        if "path" in kwargs and not kwargs["path"]:
+            del kwargs["path"]
+
+        print(self.url_root_dir, kwargs)
+
+        kwargs = dict(list({
+            "path": self.url_root_dir
+        }.items()) + list((kwargs or {}).items()))
+
+        key = self.cookie_name(key)
+        value = json.dumps(value)
+
+        print("set", key, value, kwargs)
+
+        self.set_secure_cookie(key, value, **kwargs)
+
+
+    def app_get_cookie(self, key, secure=True):
+        "Uses app prefix. Secure by default. Parse JSON."
+
+        key = self.cookie_name(key)
+
+        if secure:
+            # Returns `bytes`
+            value = self.get_secure_cookie(key)
+            if value:
+                value = value.decode()
+        else:
+            # Returns `str`
+            value = self.get_cookie(key)
+
+        return value and json.loads(value)
+
+
+    def app_clear_cookie(self, key, **kwargs):
+        """
+        Uses app prefix and URL root for path.
+        """
+
+        kwargs = kwargs or {}
+        kwargs.update({
+            "path": self.url_root
+        })
+
+        self.clear_cookie(self.cookie_name(key), **kwargs)
+
+
+    # Sessions
+
+    """
+    `Session` type should be a SQLAlchemy model like so:
+
+    class Session(Base):
+        ...
+
+        session_id = Column(Integer, primary_key=True)
+        delete_time = Column(Float)
+        ip_address = Column(String, nullable=False)
+        accept_language = Column(String, nullable=False)
+        user_agent = Column(String, nullable=False)
+        user = relationship(User, backref='session_list')
+
+        def __init__(
+            self, user,
+            ip_address=None, accept_language=None, user_agent=None
+        ):
+        ...
+
+    """
+
+    def get_accept_language(self):
+        return self.request.headers.get("Accept-Language", "")
+
+    def get_user_agent(self):
+        return self.request.headers.get("User-Agent", "")
+
+    def start_session(self, value):
+        self.app_set_cookie(
+            "session", value, path=self.application.SESSION_COOKIE_PATH)
+
+    def end_session(self):
+        self.app_clear_cookie(
+            "session", path=self.application.SESSION_COOKIE_PATH)
+
+    def create_session(self, user, Session):
+        # pylint: disable=invalid-name
+        # `Session` is a class.
+
+        session = Session(
+            user,
+            self.request.remote_ip,
+            self.get_accept_language(),
+            self.get_user_agent(),
+        )
+        self.orm.add(session)
+        self.orm.flush()
+
+        self.orm.commit()
+
+        self.start_session(str(session.session_id))
+
+        return session
+
+    def compare_session(self, session):
+        """
+        Returns falsy if equal, truthy if different.
+        """
+        return \
+            session.ip_address not in (
+                self.request.remote_ip,
+                self.request.headers.get("X-Remote-Addr", None)
+            ) or \
+            session.accept_language != self.get_accept_language() or \
+            session.user_agent != self.get_user_agent()
+
+    def get_session(self, Session):
+        # pylint: disable=invalid-name
+        # `Session` is a class.
+
+        session_id = self.app_get_cookie("session")
+
+        try:
+            session_id = int(session_id)
+        except (ValueError, TypeError):
+            return None
+
+        try:
+            session = self.orm.query(Session).\
+                filter_by(session_id=session_id).one()
+        except NoResultFound:
+            self.end_session()
+            return None
+
+        if session.delete_time is not None:
+            self.end_session()
+            return None
+
+        if self.compare_session(session):
+            self.end_session()
+            return None
+
+        session.touch_commit()
+
+        return session
+
+
+
+
+    # Arguments
 
     def get_argument_int(self, name, default):
         """
@@ -403,8 +595,6 @@ class BaseHandler(tornado.web.RequestHandler):
 
 
 class AuthGoogleOAuth2UserMixin(tornado.auth.GoogleOAuth2Mixin):
-    _OAUTH_USER_DATA_URL = "https://www.googleapis.com/oauth2/v1/userinfo"
-
     @staticmethod
     def _on_user_data(future, response):
         """Callback function for the exchange to the user data."""
@@ -425,6 +615,7 @@ class AuthGoogleOAuth2UserMixin(tornado.auth.GoogleOAuth2Mixin):
             }),
             functools.partial(self._on_user_data, callback),
         )
+
 
 
 
