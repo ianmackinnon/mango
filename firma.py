@@ -9,19 +9,26 @@ import errno
 import bisect
 import logging
 import datetime
+import functools
+import urllib.parse
 import configparser
 from dateutil.relativedelta import relativedelta
 
 import tornado.web
+import tornado.auth
 import tornado.httpserver
 import tornado.options
 import tornado.ioloop
+from tornado import escape
 from tornado.log import app_log
 
 from sqlalchemy.exc import OperationalError
 
+
+
 DEFAULTS = {
-    "port": 8000
+    "port": 8000,
+    "host": "localhost",
 }
 
 ARG_DEFAULT = []
@@ -65,6 +72,19 @@ class Settings(dict):
             value = Settings(value)
         super(Settings, self).__setitem__(key, value)
 
+    def update(self, *args):
+        for iter_ in args:
+            for key in iter_:
+                if (
+                        key in self and
+                        isinstance(self[key], dict) and
+                        isinstance(iter_[key], dict)
+                ):
+                    self[key].update(iter_[key])
+                else:
+                    self[key] = iter_[key]
+
+
 
 class Application(tornado.web.Application):
     stats = None
@@ -89,6 +109,17 @@ class Application(tornado.web.Application):
         for key, value in self.stats:
             sys.stdout.write("  %-20s %s\n" % (key + ":", value))
         sys.stdout.flush()
+
+    @staticmethod
+    def load_cookie_secret():
+        try:
+            return open(".xsrf", "r").read().strip()
+        except IOError:
+            sys.stderr.write(
+                "Could not open XSRF key. Run 'make .xsrf' to generate one.\n"
+                )
+            sys.exit(1)
+
 
 
     # Response Log
@@ -371,6 +402,31 @@ class BaseHandler(tornado.web.RequestHandler):
 
 
 
+class AuthGoogleOAuth2UserMixin(tornado.auth.GoogleOAuth2Mixin):
+    _OAUTH_USER_DATA_URL = "https://www.googleapis.com/oauth2/v1/userinfo"
+
+    @staticmethod
+    def _on_user_data(future, response):
+        """Callback function for the exchange to the user data."""
+        if response.error:
+            future.set_exception(tornado.auth.AuthError(
+                "Google user data error: %s" % str(response)))
+            return
+
+        args = escape.json_decode(response.body)
+        future.set_result(args)
+
+    @tornado.auth._auth_return_future  # pylint: disable=protected-access
+    def get_user_data(self, access_data, callback):
+        http = self.get_auth_http_client()
+        http.fetch(
+            self._OAUTH_USERINFO_URL + "?" + urllib.parse.urlencode({
+                "access_token": access_data["access_token"]
+            }),
+            functools.partial(self._on_user_data, callback),
+        )
+
+
 
 class ServerStatusHandler(tornado.web.RequestHandler):
     @staticmethod
@@ -500,8 +556,13 @@ def init(application, defaults=None):
 
     defaults = dict(DEFAULTS, **(defaults or {}))
 
+    define("host", type=str, default=defaults["host"],
+           help="Run as the given host")
     define("port", type=int, default=defaults["port"],
            help="run on the given port")
+    define("public_origin", default=None,
+           help="Public origin (protocol, hostname and port)")
+
     define("ssl_cert", default=None, help="SSL certificate path")
     define("ssl_key", default=None, help="SSL private key path")
 

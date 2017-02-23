@@ -2,7 +2,6 @@
 import re
 import sys
 import json
-import time
 import hashlib
 import http.client
 import datetime
@@ -270,9 +269,6 @@ class BaseHandler(firma.BaseHandler):
 
         if self.application.orm:
             self.application.orm.remove()
-
-    def prepare(self):
-        self.start = time.time()
 
     def initialize(self, **kwargs):
         self.arg_type_handlers = kwargs.get("types", [])

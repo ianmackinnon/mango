@@ -1,12 +1,10 @@
-
 import re
-import json
 
-import requests
-
-import tornado.auth
+import tornado
 from tornado.web import HTTPError
 from sqlalchemy.orm.exc import NoResultFound
+
+from firma import AuthGoogleOAuth2UserMixin
 
 from model import User, Auth, Session
 
@@ -106,25 +104,27 @@ class AuthLoginLocalHandler(LoginHandler):
 
 
 
-class AuthLoginGoogleHandler(LoginHandler, tornado.auth.GoogleOAuth2Mixin):
+class AuthLoginGoogleHandler(LoginHandler, AuthGoogleOAuth2UserMixin):
     # pylint: disable=no-value-for-parameter
+    # Using `yield` without callback
 
     # Only used for our local database, not for actual auth
     openid_url = "https://www.google.com/accounts/o8/id"
 
-    def _create_user(self, auth_user, auth_name):
+    login_url = "/auth/login/google"
+
+    def _create_user(self, user_name, auth_name):
         auth = Auth(self.openid_url, auth_name)
-        user_name = str(auth_user["name"])
+        user_name = str(user_name)
         user = User(auth, user_name, moderator=False)
         self.orm.add(user)
         self.orm.commit()
         self.next_ = "/user/%d" % user.user_id
         return user
 
-    @tornado.web.asynchronous
-    @tornado.gen.engine
+    @tornado.gen.coroutine
     def get(self):
-        redirect_path = self.url_rewrite("/auth/login/google")
+        redirect_path = self.url_rewrite(self.login_url)
         login_url = "%s://%s%s" % (
             self.request.protocol, self.request.host, redirect_path)
 
@@ -150,38 +150,29 @@ class AuthLoginGoogleHandler(LoginHandler, tornado.auth.GoogleOAuth2Mixin):
         else:
             # Step 2. Recieving response from Google
 
+            self.next_ = self.app_get_cookie("next")
+            self.clear_cookie("next")
+
             access_data = yield self.get_authenticated_user(
                 redirect_uri=login_url,
-                code=self.get_argument('code'))
-
-            access_token = str(access_data['access_token'])
-            uri = (
-                "https://www.googleapis.com/oauth2/v1/userinfo?access_token=" +
-                access_token
+                code=self.get_argument('code')
             )
-            response = requests.get(uri)
-            if response.status_code != 200:
-                print(("Google auth status code: %s" % response.status_code))
-                raise tornado.web.HTTPError(500, 'Server error')
 
-            auth_user = json.loads(response.text)
+            user_data = yield self.get_user_data(access_data)
 
             register = self.app_get_cookie("register")
-            self.next_ = self.app_get_cookie("next")
-
             self.app_clear_cookie("register")
-            self.app_clear_cookie("next")
 
-            if not auth_user:
+            if not user_data:
                 raise HTTPError(500, "Google authentication failed")
 
-            auth_name = auth_user["email"]
+            auth_name = user_data["email"]
             user = User.get_from_auth(self.orm, self.openid_url, auth_name)
 
             if not user:
                 if self._check_registering(user):
                     return
-                user = self._create_user(auth_user, auth_name)
+                user = self._create_user(user_data["name"], auth_name)
 
             self._check_locked(user)
 
