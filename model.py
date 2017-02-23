@@ -6,6 +6,7 @@
 
 import os
 import re
+import csv
 import math
 import time
 import argparse
@@ -16,7 +17,7 @@ from hashlib import sha1, md5
 from sqlalchemy import create_engine
 from sqlalchemy import Column, Table, text
 from sqlalchemy import ForeignKey, UniqueConstraint, CheckConstraint
-from sqlalchemy.orm import relationship, object_session
+from sqlalchemy.orm import relationship, object_session, reconstructor
 from sqlalchemy.orm.util import has_identity
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
@@ -29,9 +30,10 @@ from sqlalchemy import event as sqla_event
 
 from tornado.web import HTTPError
 
+from mysql import mysql
+
 import geo
 
-import conf
 from search import search
 
 
@@ -48,6 +50,27 @@ UnicodeKey = lambda: UnicodeOrig
 MYSQL_MAX_KEY = 255
 
 CONF_PATH = ".mango.conf"
+DATABASE_NAMES = mysql.load_database_names(CONF_PATH)
+
+SYSTEM_USER_ID = -1
+IGNORE_ORG_NAME_WORDS = None
+IGNORE_ORG_NAME_CSV_PATH = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)),
+    "search/ignore_words.csv"
+)
+
+
+
+def load_csv():
+    global IGNORE_ORG_NAME_WORDS
+
+    with open(IGNORE_ORG_NAME_CSV_PATH, "r", encoding="utf-8") as fp:
+        reader = csv.reader(fp)
+        IGNORE_ORG_NAME_WORDS = set([v[0] for v in reader if v])
+
+
+
+load_csv()
 
 
 
@@ -63,28 +86,6 @@ def use_mysql():
     UnicodeKey = lambda: VARCHAR(
         length=MYSQL_MAX_KEY,
         charset="utf8", collation="utf8_bin")
-
-
-
-def mysql_connection_url(username, password, database):
-    return 'mysql+pymysql://%s:%s@localhost/%s?charset=utf8' % (
-        username, password, database)
-
-
-
-def connection_url_admin():
-    username = conf.get(CONF_PATH, "mysql-admin", "username")
-    password = conf.get(CONF_PATH, "mysql-admin", "password")
-    database = conf.get(CONF_PATH, "mysql", "database")
-    return mysql_connection_url(username, password, database)
-
-
-
-def connection_url_app():
-    username = conf.get(CONF_PATH, "mysql-app", "username")
-    password = conf.get(CONF_PATH, "mysql-app", "password")
-    database = conf.get(CONF_PATH, "mysql", "database")
-    return mysql_connection_url(username, password, database)
 
 
 
@@ -126,6 +127,22 @@ def camel_case(text_):
         out += part[:1].upper()
         out += part[1:].lower()
     return out
+
+
+
+def split_words(text_):
+    if not text_:
+        return set()
+
+    text_ = text_.lower()
+    text_ = re.compile(r"\.(\w)", re.U).sub(r"\1", text_)
+    text_ = re.compile(r"['`\"]", re.U).sub(r"", text_)
+    text_ = re.compile(r"[\W\s]+", re.U).sub(r"-", text_)
+    text_ = text_.strip("-")
+
+    words = text_.split("-")
+
+    return set(words)
 
 
 
@@ -243,6 +260,7 @@ URL_DIRECTORY = {
     "contact": "contact",
     "contact_v": "contact",
     }
+
 
 
 class MangoEntity(object):
@@ -654,6 +672,10 @@ class Session(Base):
 
     user = relationship(User, backref='session_list')
 
+    @property
+    def delete_time(self):
+        return self.d_time
+
     def __init__(self, user,
                  ip_address=None, accept_language=None, user_agent=None):
         self.user = user
@@ -833,6 +855,13 @@ class Org(Base, MangoEntity, NotableEntity):
     @classmethod
     def _dummy(cls, _orm):
         return cls("dummy")
+
+    @reconstructor
+    def _reconstruct(self):
+        # pylint: disable=attribute-defined-outside-init
+        # Called by SQLAlchemy at instantiation
+
+        self._calc_av = None     # Last time of alias visibility calculation.
 
     def __init__(self,
                  name, description=None, end_date=None,
@@ -1986,6 +2015,62 @@ def virtual_org_orgtag_edit(org, orgtag, add=None):
 
 
 
+def calculate_orgalias_visibility(org, connection=False):
+    """
+    `connection` can be supplied if we're being called from within
+    a flush (eg. in an event handler).
+    Otherwise, changes will be made to models without committing.
+    """
+    # pylint: disable=protected-access
+
+    if org._calc_av == org.a_time:
+        return
+
+    org_words = split_words(org.name)
+    orgalias_list = org.orgalias_list
+
+    # Order by public first, then shortest name
+    orgalias_list.sort(key=lambda x: (not x.public, len(x.name)))
+
+    for orgalias in orgalias_list:
+        if orgalias.public is False:
+            continue
+        values = {}
+        words = split_words(orgalias.name) - IGNORE_ORG_NAME_WORDS
+        new_words = words - org_words
+        if new_words:
+            org_words |= new_words
+            if orgalias.public is None:
+                LOG.debug(
+                    "    Set public `%s` with new words `%s`.",
+                    orgalias.name, new_words)
+                values["public"] = True
+                values["moderation_user_id"] = SYSTEM_USER_ID
+        elif (
+                orgalias.moderation_user_id == SYSTEM_USER_ID and
+                orgalias.public
+        ):
+            values["public"] = None
+            LOG.debug(
+                "    Set pending `%s`",
+                orgalias.name)
+
+        if values:
+            if connection:
+                connection.execute(
+                    Orgalias.__table__.update().
+                    where(Orgalias.orgalias_id == orgalias.orgalias_id).
+                    values(values)
+                )
+            else:
+                for key, value in values.items():
+                    setattr(orgalias, key, value)
+
+    org._calc_av = org.a_time
+
+
+
+
 
 def org_after_insert_listener(_mapper, connection, target):
     if connection.engine.search:
@@ -1995,24 +2080,18 @@ def org_after_update_listener(_mapper, connection, target):
     if connection.engine.search:
         search.index_org(connection.engine.search, target)
 
+
 def org_after_delete_listener(_mapper, connection, target):
     if connection.engine.search:
         search.delete_org(connection.engine.search, target)
 
-def orgalias_after_insert_listener(_mapper, connection, target):
+
+def orgalias_listener(_mapper, connection, target):
+    calculate_orgalias_visibility(target.org, connection=connection)
     if connection.engine.search:
         orm = object_session(target)
         search.index_orgalias(connection.engine.search, target, orm, Orgalias)
 
-def orgalias_after_update_listener(_mapper, connection, target):
-    if connection.engine.search:
-        orm = object_session(target)
-        search.index_orgalias(connection.engine.search, target, orm, Orgalias)
-
-def orgalias_after_delete_listener(_mapper, connection, target):
-    if connection.engine.search:
-        orm = object_session(target)
-        search.index_orgalias(connection.engine.search, target, orm, Orgalias)
 
 def address_sanitise_listener(_mapper, _connection, address):
     address.postal = sanitise_address(address.postal)
@@ -2041,9 +2120,8 @@ sqla_event.listen(Org, "after_insert", org_after_insert_listener)
 sqla_event.listen(Org, "after_update", org_after_update_listener)
 sqla_event.listen(Org, "after_delete", org_after_delete_listener)
 
-sqla_event.listen(Orgalias, "after_insert", orgalias_after_insert_listener)
-sqla_event.listen(Orgalias, "after_update", orgalias_after_update_listener)
-sqla_event.listen(Orgalias, "after_delete", orgalias_after_delete_listener)
+for event_name in ("after_insert", "after_update", "after_delete"):
+    sqla_event.listen(Orgalias, event_name, orgalias_listener)
 
 sqla_event.listen(Address, 'before_insert', address_sanitise_listener)
 sqla_event.listen(Address, 'before_update', address_sanitise_listener)
@@ -2079,7 +2157,7 @@ def engine_disable_mode(engine, mode):
 
 
 def main_2():
-    connection_url = connection_url_admin()
+    connection_url = mysql.connection_url_admin(CONF_PATH)
     engine = create_engine(connection_url)
     engine_disable_mode(engine, "ONLY_FULL_GROUP_BY")
     Base.metadata.create_all(engine)

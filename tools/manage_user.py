@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# pylint: disable=wrong-import-position
+# Adding working directory to system path
 
 import sys
 import logging
@@ -7,7 +9,9 @@ import argparse
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
-from model import connection_url_admin
+sys.path.append(".")
+
+from model import mysql, CONF_PATH
 from model import Auth, User
 
 
@@ -54,10 +58,6 @@ def main():
         max(0, min(3, 1 + args.verbose - args.quiet))]
     LOG.setLevel(log_level)
 
-    if len(args) != 2:
-        parser.print_usage()
-        sys.exit(1)
-
     if args.moderator is not None:
         if args.moderator not in ["0", "1"]:
             raise Exception("moderator must be 0 or 1")
@@ -68,18 +68,16 @@ def main():
             raise Exception("lock must be 0 or 1")
         args.lock = bool(int(args.lock))
 
-    connection_url = connection_url_admin()
+    connection_url = mysql.connection_url_app(CONF_PATH)
     engine = create_engine(connection_url,)
     session_factory = sessionmaker(bind=engine, autocommit=False)
     orm = session_factory()
 
-    user_name, auth_name = args
-
     openid_url = "https://www.google.com/accounts/o8/id"
 
-    auth = Auth.get(orm, openid_url, auth_name)
-    user = User.get(orm, auth, user_name)
-    print((args.lock))
+    auth = Auth.get(orm, openid_url, args.gmail)
+    user = User.get(orm, auth, args.name)
+    print(args.lock)
     if args.moderator is not None:
         user.moderator = args.moderator
     if args.lock is not None:

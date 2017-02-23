@@ -8,7 +8,7 @@ import argparse
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from model import connection_url_app
+from model import mysql, CONF_PATH
 from model import User, Address
 
 
@@ -102,15 +102,15 @@ def sanitise_addresses(orm):
         if a != b:
             if "," not in b:
                 address.postal = b
-                print((b.encode("utf-8")))
+                print(b)
                 print()
                 orm.commit()
                 continue
             b = address.sanitise_address(address.postal, False)
             print()
-            print((a.encode("utf-8")))
+            print(a)
             print()
-            print((b.encode("utf-8")))
+            print(b)
             print()
             if query_yes_no("replace?", default=None):
                 address.postal = b
@@ -139,7 +139,7 @@ def main():
         max(0, min(3, 1 + args.verbose - args.quiet))]
     LOG.setLevel(log_level)
 
-    connection_url = connection_url_app()
+    connection_url = mysql.connection_url_app(CONF_PATH)
     engine = create_engine(connection_url,)
     session_factory = sessionmaker(
         bind=engine, autocommit=False, autoflush=False)

@@ -1,14 +1,11 @@
-SHELL := /bin/bash
+>SHELL := /bin/bash
 .PHONY : all purge \
 	vendor \
 	test \
-	serve-test \
-	lint-py \
-	lint-py-error \
-	lint-js
 
 
-REDIS_NAMESPACE := mango
+NAME := mango
+REDIS_NAMESPACE := $(NAME)
 
 all : vendor .xsrf
 
@@ -23,6 +20,10 @@ endif
 .xsrf :
 	head -c 32 /dev/urandom | base64 > .xsrf
 	chmod o-rwx .xsrf
+
+
+deps-local :
+	make -f deps.Makefile dev
 
 
 # Cache
@@ -56,7 +57,7 @@ serve-test :
 	  -W ignore::ImportWarning:httplib2 \
 	  -W ignore::ResourceWarning: \
 	  ./mango.py --local=1 --events=0 \
-	    --log=/tmp/mango-log
+	    --log=/tmp/$(NAME)-log
 
 test-web :
 	./test/test_web.py -v
@@ -69,22 +70,22 @@ lint : lint-py lint-js
 lint-py : lint-py-web lint-py-test lint-py-tools
 
 lint-py-web :
-	pylint --rcfile=test/pylintrc \
+	python3 -m pylint --rcfile=test/pylintrc \
 	  --disable=duplicate-code \
-	  conf.py geo.py model.py model_v.py \
+	  geo.py model.py model_v.py \
 	  mysql/*.py \
 	  mango.py handle/*.py \
 	  skin/*/*.py
 
 lint-py-test :
-	PYTHONPATH="." pylint --rcfile=test/pylintrc \
+	PYTHONPATH="." python3 -m pylint --rcfile=test/pylintrc \
 	  --disable=duplicate-code \
 	  test/*.py \
 
 lint-py-tools :
-	pylint --rcfile=test/pylintrc \
+	python3 -m pylint --rcfile=test/pylintrc \
 	  --disable=duplicate-code \
-	  conf.py geo.py model.py model_v.py \
+	  geo.py model.py model_v.py \
 	  tools/*.py \
 
 lint-js :

@@ -247,8 +247,6 @@ class BaseOrgHandler(BaseHandler, MangoBaseEntityHandlerMixin):
             visibility=visibility,
             )
 
-        print(name, name_search)
-
         if location:
             org_alias_address_query = org_alias_query \
                 .join(Org.address_list)

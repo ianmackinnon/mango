@@ -9,7 +9,7 @@ import argparse
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from model import connection_url_app, attach_search
+from model import mysql, CONF_PATH, attach_search
 from model import User, Org
 
 
@@ -66,8 +66,8 @@ def nearest(es, name, org_id, blacklist):
                 "query": {
                     "multi_match": {
                         "fields": [
-                            "alias.straight^3",
-                            "alias.fuzzy",
+                            "alias_all.straight^3",
+                            "alias_all.fuzzy",
                             ],
                         "query": name
                         }
@@ -146,16 +146,16 @@ def find_similar(orm, similar):
             if key in similar:
                 print("SIM", key, similar[key])
                 continue
-            print((" %40s  %40s " % (
+            print(" %40s  %40s " % (
                 hit["_orig"].org_id, hit["_source"]["org_id"]
-            )).encode("utf-8"))
-            print((" %40s  %40s " % (
+            ))
+            print(" %40s  %40s " % (
                 hit["_orig"].public, hit["_source"]["public"]
-            )).encode("utf-8"))
-            print((" %40s  %40s " % (
+            ))
+            print(" %40s  %40s " % (
                 hit["_orig"].name, hit["_source"]["name"]
-            )).encode("utf-8"))
-            for alias in hit["_source"]["alias"][1:]:
+            ))
+            for alias in hit["_source"]["alias_all"][1:]:
                 print(" %40s  %40s " % ("", alias))
             print()
             print("Merge? (%.2f)" % hit["_score"])
@@ -214,7 +214,7 @@ def main():
         max(0, min(3, 1 + args.verbose - args.quiet))]
     LOG.setLevel(level)
 
-    connection_url = connection_url_app()
+    connection_url = mysql.connection_url_app(CONF_PATH)
     engine = create_engine(connection_url,)
     session_ = sessionmaker(bind=engine, autocommit=False)
     orm = session_()

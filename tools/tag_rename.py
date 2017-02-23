@@ -9,7 +9,7 @@ import argparse
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
-from model import connection_url_app
+from model import mysql, CONF_PATH
 from model import Orgtag, Eventtag
 
 
@@ -80,7 +80,7 @@ def main():
         LOG.error("Tag type must be one of %s", ", ".join(TYPE_LIST))
         sys.exit(1)
 
-    connection_url = connection_url_app()
+    connection_url = mysql.connection_url_app(CONF_PATH)
     engine = create_engine(connection_url,)
     Session = sessionmaker(bind=engine, autocommit=False, autoflush=False)
     orm = Session()

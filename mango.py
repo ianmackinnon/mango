@@ -1,13 +1,7 @@
 #!/usr/bin/env python3
 
-import os
 import re
 import sys
-import time
-import errno
-import bisect
-import logging
-import logging.handlers
 import datetime
 
 import redis
@@ -16,7 +10,6 @@ from mako.lookup import TemplateLookup
 
 import tornado.httpserver
 import tornado.ioloop
-import tornado.options
 import tornado.web
 from tornado.options import define, options
 
@@ -25,8 +18,10 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm.query import Query
 from sqlalchemy.exc import SQLAlchemyError, OperationalError
 
+import firma
+
 from handle.base import \
-    DefaultHandler, ServerStatusHandler, \
+    DefaultHandler, \
     sha1_concat
 from handle.generate import GenerateMarkerHandler
 from handle.markdown_safe import MarkdownSafeHandler
@@ -60,6 +55,7 @@ from handle.org import OrgHandler, OrgNewHandler, OrgSearchHandler, \
     OrgAddressListHandler, OrgAddressHandler, \
     OrgContactListHandler, OrgContactHandler, \
     OrgEventHandler, OrgEventListHandler, \
+    ApiSummaryOrgHandler, \
     ModerationOrgDescHandler, \
     ModerationOrgIncludeHandler
 from handle.orgalias import OrgaliasHandler
@@ -84,14 +80,15 @@ from handle.contact import ContactHandler, \
 from handle.history import HistoryHandler
 from handle.moderation import ModerationQueueHandler
 
-import conf
-
-from model import connection_url_app, attach_search, engine_disable_mode
-from model import Org
+from model import mysql, engine_disable_mode, Org, attach_search
+from model import CONF_PATH, DATABASE_NAMES
 
 
 
-define("port", type=int, default=8802, help="Run on the given port")
+DEFAULT_PORT = 8802
+
+
+
 define("root", default='', help="URL root")
 define("skin", default="default", help="skin with the given style")
 define("local", type=bool, default=False, help="Allow local authentication")
@@ -100,11 +97,6 @@ define("offsite", type=bool, default=None,
 define("events", type=bool, default=True, help="Enable events. Default is 1.")
 define("verify_search", type=bool, default=True,
        help="Verify Elasticsearch data on startup. Default is 1.")
-define("log", default=None,
-       help="Log directory. Write permission required. Logging is disabled "
-       "if this option is not set.")
-define("status", default=True, help="Enable stats on /server-stats")
-define("label", default=None, help="Label to include in stats")
 
 
 
@@ -113,8 +105,6 @@ FORWARDING_SERVER_LIST = [
     ]
 
 DEFAULT_CACHE_PERIOD = 60 * 60 * 8  # 8 hours
-
-CONF_PATH = ".mango.conf"
 
 
 
@@ -205,23 +195,11 @@ def url_type_id(text):
 
 
 
-class Application(tornado.web.Application):
+class MangoApplication(firma.Application):
     name = "mango"
     title = "Mapping Application for NGOs (Mango)"
     sqlite_path = "mango.db"
     max_age = 86400 * 365 * 10  # 10 years
-
-    RESPONSE_LOG_DURATION = 5 * 60  # Seconds
-
-    def load_cookie_secret(self):
-        try:
-            with open(".xsrf", "r", encoding="utf-8") as fp:
-                self.cookie_secret = fp.read().strip()
-        except IOError:
-            sys.stderr.write(
-                "Could not open XSRF key. Run 'make .xsrf' to generate one.\n"
-                )
-            sys.exit(1)
 
     def cache_namespace(self, offset=""):
         hash_ = sha1_concat(
@@ -246,7 +224,7 @@ class Application(tornado.web.Application):
             regex = re.split(r"(<\w+>)", regex)
             for i in range(1, len(regex), 2):
                 type_ = regex[i][1:-1]
-                url_regex, url_type = Application.url_parsers[type_]
+                url_regex, url_type = MangoApplication.url_parsers[type_]
                 regex[i] = r"(%s)" % url_regex
                 if not kwargs:
                     kwargs = {}
@@ -262,27 +240,18 @@ class Application(tornado.web.Application):
         namespace = self.cache_namespace(offset)
         self.cache.set_namespace(namespace)
 
-    def init_response_log(self):
-        self.response_log = []
-        tornado.ioloop.PeriodicCallback(
-            self.trim_response_log,
-            self.RESPONSE_LOG_DURATION * 1000
-        ).start()
-
-    @tornado.gen.coroutine
-    def trim_response_log(self):
-        start = time.time() - self.RESPONSE_LOG_DURATION
-        row = [start, None, None]
-        index = bisect.bisect(self.response_log, row)
-        self.response_log = self.response_log[index:]
-
     def __init__(self):
-        self.response_log = None
+        self.orm = None
+        self.cache = None
         self.cache_log = None
+        self.database_namespace = None
+        self.skin = None
+        self.offsite = None
+        self.lookup = None
 
         self.events = options.events
 
-        self.handlers = [
+        handlers = [
             (r"/", HomeHandler),
 
             (r"/home", HomeHandler),
@@ -420,60 +389,85 @@ class Application(tornado.web.Application):
 
             (r"/api/markdown-safe", MarkdownSafeHandler),
 
+            (r"/api/summary/org/<id>", ApiSummaryOrgHandler),
+
             (r"/.*", NotFoundHandler),
         ]
 
-        self.label = options.label
-
-        if options.status:
-            self.handlers.insert(1, (r"/server-status", ServerStatusHandler))
-            self.init_response_log()
-
         if not self.events:
-            self.handlers = [v for v in self.handlers if (
+            handlers = [v for v in handlers if (
                 "/event" not in v[0] and
                 "/diary" not in v[0])]
 
-        self.handlers = self.process_handlers(self.handlers)
+        handlers = self.process_handlers(handlers)
 
         settings = dict()
 
-        # Authentication & Cookies
+        # Authentication
 
         settings["google_oauth"] = {
-            "key": conf.get(CONF_PATH, 'google-oauth', 'client-id'),
-            "secret": conf.get(CONF_PATH, 'google-oauth', 'client-secret'),
+            "key": firma.conf_get(
+                CONF_PATH, 'google-oauth', 'client-id'),
+            "secret": firma.conf_get(
+                CONF_PATH, 'google-oauth', 'client-secret'),
             "default_handler_class": DefaultHandler,
         }
 
         settings["google_maps"] = {
-            "api_key": conf.get(CONF_PATH, 'google-maps', 'api-key'),
+            "api_key": firma.conf_get(CONF_PATH, 'google-maps', 'api-key'),
         }
 
-        self.load_cookie_secret()
-        settings.update(dict(
-            xsrf_cookies=True,
-            cookie_secret=self.cookie_secret,
-        ))
-
         self.local_auth = options.local
-        self.cookie_prefix = conf.get(CONF_PATH, "app", "cookie-prefix")
 
-        # Database & Cache
+        # HTTP Server
 
-        mysql_database = conf.get(CONF_PATH, "mysql", "database")
-        self.database_namespace = 'mysql://%s' % mysql_database
+        self.forwarding_server_list = FORWARDING_SERVER_LIST
 
+        super(MangoApplication, self).__init__(
+            handlers, options, **settings)
+
+
+    def init_skin(self):
+        try:
+            self.skin = __import__("skin.%s" % (options.skin),
+                                   globals(), locals(), ["load"])
+        except ImportError:
+            sys.stdout.write("Fatal: Skin '%s' not found.\n" % options.skin)
+            sys.exit(1)
+
+        self.offsite = options.offsite
+
+        self.add_stat("Skin", options.skin)
+
+
+    def init_templates(self):
+        self.lookup = TemplateLookup(
+            directories=['template'],
+            input_encoding='utf-8',
+            output_encoding='utf-8',
+            default_filters=["unicode", "h"],
+        )
+
+
+    def init_database(self):
+        # Main Database and Cache
+
+        conf = mysql.get_conf(CONF_PATH)
+
+        self.database_namespace = 'mysql://%s' % conf.database
         self.cache = RedisCache(
             self.cache_namespace(datetime.datetime.utcnow().isoformat()))
 
-        connection_url = connection_url_app()
+        signature = "%s@%s" % (conf.app_username, conf.database)
+        connection_url = mysql.connection_url_app(CONF_PATH)
+
         engine = create_engine(
             connection_url,
-            pool_recycle=7200  # Expire connections after 2 hours
+            pool_recycle=3600  # Expire connections after 1 hours
         )                      # (MySQL disconnects unilaterally after 8)
 
         engine_disable_mode(engine, "ONLY_FULL_GROUP_BY")
+
         self.orm = scoped_session(sessionmaker(
             bind=engine,
             autocommit=False,
@@ -482,100 +476,52 @@ class Application(tornado.web.Application):
 
         try:
             self.orm.query(Org).first()
-        except OperationalError as e:
+        except OperationalError:
             sys.stderr.write(
-                "Cannot connect to MySQL database %s.\n" % mysql_database)
+                "Cannot connect to database %s.\n" % signature)
             sys.exit(1)
-
         attach_search(engine, self.orm, verify=options.verify_search)
         self.orm.remove()
 
-        self.cache.state = self.cache.connected and "active" or "inactive"
+        self.add_stat("MySQL", "Connected (%s)" % signature)
 
-        # Logging
+        self.add_stat("Cache", "%s (%s) %s" % (
+            self.cache.name,
+            self.cache.connected and "active" or "inactive",
+            self.cache.get_namespace()
+        ))
 
-        self.log_path_uri = None
-        self.log_uri = logging.getLogger('%s.uri' % self.name)
-        self.log_uri.propagate = False
-        self.log_uri.setLevel(logging.INFO)
-        if options.log:
-            try:
-                os.makedirs(options.log)
-            except OSError as e:
-                if e.errno != errno.EEXIST:
-                    raise e
+        # Secondary Databases
 
-            self.log_uri_path = os.path.join(
-                options.log,
-                '%s.uri.log' % self.name
-                )
+        self.mysql_attach_secondary(
+            "influence",
+            mysql.replace_database_names(DATABASE_NAMES, "influence"),
+            "select count(org_id) from %s.org")
 
-            self.log_uri.addHandler(
-                logging.handlers.TimedRotatingFileHandler(
-                    self.log_uri_path,
-                    when="midnight",
-                    encoding="utf-8",
-                    backupCount=7,
-                    utc=True
-                    )
-                )
-        else:
-            self.log_uri.addHandler(logging.NullHandler())
-
-        # Skin & Templates
-
-        try:
-            self.skin = __import__("skin.%s" % (options.skin),
-                                   globals(), locals(), ["load"])
-        except ImportError as e:
-            sys.stdout.write("Fatal: Skin '%s' not found.\n" % options.skin)
-            sys.exit(1)
-
-        self.offsite = options.offsite
-
-        self.lookup = TemplateLookup(
-            directories=['template'],
-            input_encoding='utf-8',
-            output_encoding='utf-8',
-            default_filters=["unicode", "h"],
-            )
-
-        # HTTP Server
-
-        self.forwarding_server_list = FORWARDING_SERVER_LIST
-
-        self.settings = settings
-
-        tornado.web.Application.__init__(self, self.handlers, **settings)
-
-        stats = {
-            "Label": self.label,
-            "Address": "http://localhost:%d" % options.port,
-            "Database": "MySQL: %s" % mysql_database,
-            "Cache": "%s (%s) %s" % (self.cache.name, self.cache.state,
-                                     self.cache.get_namespace()),
-            "Skin": options.skin,
-            "Events": self.events and "Enabled" or "Disabled",
-            "Started": datetime.datetime.utcnow() \
-            .strftime("%Y-%m-%dT%H:%M:%SZ"),
-        }
-
-        sys.stdout.write("%s is running.\n" % self.title)
-        for key, value in list(stats.items()):
-            sys.stdout.write("  %-20s %s\n" % (key + ":", value))
-        sys.stdout.flush()
+        self.mysql_attach_secondary(
+            "company-exports",
+            mysql.replace_database_names(DATABASE_NAMES, "company-exports"),
+            "select count(company_id) from %s.company")
 
 
-def main():
-    tornado.options.parse_command_line()
-    http_server = tornado.httpserver.HTTPServer(
-        Application(),
-        xheaders=True,
-    )
-    http_server.listen(options.port)
-    tornado.ioloop.IOLoop.instance().start()
+
+    def init_settings(self, options):
+        # pylint: disable=redefined-outer-name
+        # Receiving `options` from parent.
+        "Update `settings` in place and add rows to `self.stats`."
+
+        super(MangoApplication, self).init_settings(options)
+
+        self.init_database()
+        self.init_skin()
+        self.init_templates()
+        self.init_cookies(firma.conf_get(CONF_PATH, 'app', 'cookie-prefix'))
+
+        self.add_stat("Events", self.events and "Enabled" or "Disabled")
 
 
 
 if __name__ == "__main__":
-    main()
+    firma.init(MangoApplication, {
+        "port": DEFAULT_PORT
+    })

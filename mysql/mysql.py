@@ -59,24 +59,42 @@ def split(text):
 
 
 
-def get_conf(path):
+def load_conf(path):
+    # pylint: disable=protected-access
+    # Storing config path in protected variable
+
     if not os.path.isfile(path):
         LOG.error("%s: File not found", path)
         sys.exit(1)
-    config = configparser.ConfigParser({
-        "privileges": ""
-    })
+    config = configparser.ConfigParser()
     config.read(path)
+    config._load_path = path
+    return config
 
-    database = config.get("mysql", "database")
+
+
+def get_conf(path):
+    config = load_conf(path)
+
+    names = load_database_names(config)
+
+    database = names["default"]
+
     app_username = config.get("mysql-app", "username")
     app_password = config.get("mysql-app", "password")
-    app_privileges = split(config.get("mysql-app", "privileges"))
+    app_privileges = config["mysql-app"].get("privileges", None)
+    if app_privileges:
+        app_privileges = replace_database_names(names, app_privileges)
+        app_privileges = split(app_privileges)
+
     admin_username = config.get("mysql-admin", "username")
     admin_password = config.get("mysql-admin", "password")
-    admin_privileges = split(config.get("mysql-admin", "privileges"))
+    admin_privileges = config["mysql-admin"].get("privileges", None)
+    if admin_privileges:
+        admin_privileges = replace_database_names(names, admin_privileges)
+        admin_privileges = split(admin_privileges)
 
-    verify(database, "mysql", "database")
+    verify(database, "mysql", "default")
     verify(app_username, "mysql-app", "username")
     verify(app_password, "mysql-app", "password")
     verify(admin_username, "mysql-admin", "username")
@@ -93,6 +111,44 @@ def get_conf(path):
     )
 
     return options
+
+
+
+def replace_database_names(names, text):
+    """
+    Accepts either a "format" style string with database names
+    in curly braces, or a solitary database name.
+    """
+    if re.compile(r"^[a-z-]+$").match(text):
+        text = "{%s}" % text
+    return text.format(**names)
+
+
+
+def load_database_names(conf):
+    """
+    Accepts string or config instance.
+    """
+    # pylint: disable=protected-access
+    # Storing file path in config object.
+
+    if isinstance(conf, str):
+        config = load_conf(conf)
+    else:
+        assert isinstance(conf, configparser.ConfigParser)
+        config = conf
+
+    names = {}
+    for key in config["mysql"]:
+        if key == "default":
+            continue
+        names[key] = config.get("mysql", key)
+
+    default = config["mysql"].get("default")
+    if default:
+        names["default"] = replace_database_names(names, default)
+
+    return names
 
 
 

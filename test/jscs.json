@@ -22,6 +22,7 @@
     "mark": "\"",
     "escape": true
   },
+  "validateLineBreaks": null,
 
   "requirePaddingNewLinesBeforeLineComments": null,
   "requireCamelCaseOrUpperCaseIdentifiers": "ignoreProperties",

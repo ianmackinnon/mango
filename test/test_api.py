@@ -22,7 +22,7 @@ from sqlalchemy.orm import sessionmaker
 
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
-from model import connection_url_app
+from model import mysql, CONF_PATH
 
 
 
@@ -56,7 +56,7 @@ class MangoApiMixin(object):
     def set_up_class(cls):
         cls.longMessage = True
 
-        connection_url = connection_url_app()
+        connection_url = mysql.connection_url_app(CONF_PATH)
         engine = create_engine(connection_url,)
         cls.Session = sessionmaker(bind=engine, autocommit=False)
 

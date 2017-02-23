@@ -2,7 +2,6 @@
 import re
 import sys
 import json
-import time
 import hashlib
 import http.client
 import datetime
@@ -21,10 +20,11 @@ from tornado.web import RequestHandler, HTTPError
 
 # For _execute replacement
 from tornado import iostream
-import tornado.web
 from tornado.concurrent import is_future
 from tornado import gen
 from tornado.web import _has_stream_request_body
+
+import firma
 
 import geo
 
@@ -186,7 +186,7 @@ def url_rewrite_static(
 
 
 
-class BaseHandler(RequestHandler):
+class BaseHandler(firma.BaseHandler):
     # pylint: disable=dangerous-default-value
     # Using list type for argument default value
 
@@ -194,98 +194,29 @@ class BaseHandler(RequestHandler):
     _unsupported_methods = None
 
 
-    def cookie_name(self, name):
-        return "-".join([_f for _f in [
-            self.application.cookie_prefix, name] if _f])
-
-
-    def app_set_cookie(self, key, value, **kwargs):
-        """
-        Uses app prefix and URL root for path.
-        Stringify as JSON. Always set secure.
-        """
-
-        kwargs = dict(list({
-            "path": self.url_root_dir()
-        }.items()) + list((kwargs or {}).items()))
-
-        key = self.cookie_name(key)
-        value = json.dumps(value)
-
-        print("SET", repr(key), repr(value))
-
-        self.set_secure_cookie(key, value, **kwargs)
-
-
-    def app_get_cookie(self, key, secure=True):
-        "Uses app prefix. Secure by default. Parse JSON."
-
-        key = self.cookie_name(key)
-
-        if secure:
-            # Returns `bytes`
-            value = self.get_secure_cookie(key)
-            if value:
-                value = value.decode()
-        else:
-            # Returns `str`
-            value = self.get_cookie(key)
-
-        return value and json.loads(value)
-
-
-    def app_clear_cookie(self, key, **kwargs):
-        """
-        Uses app prefix and URL root for path.
-        """
-
-        kwargs = kwargs or {}
-        kwargs.update({
-            "path": self.url_root
-        })
-
-        self.clear_cookie(self.cookie_name(key), **kwargs)
-
-
     def __init__(self, *args, **kwargs):
         # pylint: disable=invalid-name
         # Accessing `self.SUPPORTED_METHODS` from Tornado base classes.
+
+        super(BaseHandler, self).__init__(*args, **kwargs)
+
         self.SUPPORTED_METHODS += ("TOUCH", )
         self.messages = []
         self.scripts = []
-        RequestHandler.__init__(self, *args, **kwargs)
         self.orm = self.application.orm()
-        self.url_root = self.request.headers.get("X-Forwarded-Root", "/")
         self.has_javascript = self.app_get_cookie("javascript", secure=False)
         self.set_parameters()
         self.next_ = self.get_argument("next", None)
         self.load_map = False
         self.json_data = None
-        self.start = None
 
-    def prepare(self):
-        self.start = time.time()
+        sys.stdout.flush()
 
     def on_finish(self):
-        if self.start is None:
-            return
-        now = time.time()
-        duration = now - self.start
-        self.application.log_uri.info(
-            "%s, %s, %s, %s, %0.3f",
-            str(now),
-            self.request.uri,
-            self.request.remote_ip,
-            repr(self.request.headers.get("User-Agent", "User-Agent")),
-            duration
-        )
+        super(BaseHandler, self).on_finish()
 
         if self.application.orm:
             self.application.orm.remove()
-
-        if self.application.response_log is not None:
-            response = [now, self._status_code, duration]
-            self.application.response_log.append(response)
 
     def initialize(self, **kwargs):
         self.arg_type_handlers = kwargs.get("types", [])
@@ -432,23 +363,6 @@ class BaseHandler(RequestHandler):
     def is_local(self):
         return self.request.remote_ip == "127.0.0.1"
 
-    def get_accept_language(self):
-        if "Accept-Language" in self.request.headers:
-            return self.request.headers["Accept-Language"]
-        return ""
-
-    def get_user_agent(self):
-        return self.request.headers["User-Agent"]
-
-    def start_session(self, value):
-        self.app_set_cookie("session", value)
-        # Sets a cookie value to the base64 plaintext session_id,
-        #   but is protected by tornado's _xsrf cookie.
-        # Retrieved by BaseHandler.get_current_user()
-
-    def end_session(self):
-        self.app_clear_cookie("session")
-
     def query_rewrite(self, options):
         arguments = self.request.arguments.copy()
         arguments.update(options)
@@ -457,14 +371,6 @@ class BaseHandler(RequestHandler):
             uri = self.url_root + uri[1:]
         uri += "?" + urllib.parse.urlencode(arguments, True)
         return uri
-
-    def url_root_dir(self):
-        """
-        Return the root path without a trailing slash.
-        """
-        if self.url_root == "/":
-            return self.url_root
-        return self.url_root.rstrip("/")
 
     def url_rewrite(self, uri, options=None, parameters=None, next_=None):
         if parameters is None:
@@ -565,7 +471,7 @@ class BaseHandler(RequestHandler):
             "contributor": self.contributor,
             "uri": self.request.uri,
             "xsrf": self.xsrf_token.decode("utf-8"),
-            "cookie_prefix": self.application.cookie_prefix,
+            "cookie_prefix": self.settings.app.cookie_prefix,
             "events_enabled": self.application.events,
             "json_dumps": json.dumps,
             "query_rewrite": self.query_rewrite,
@@ -597,41 +503,9 @@ class BaseHandler(RequestHandler):
             print((self.orm.new or self.orm.dirty or self.orm.deleted))
             self.orm.rollback()
 
-    def compare_session(self, session):
-        "Returns falsy if equal, truthy if different."
-        return \
-            session.ip_address not in (
-                self.request.remote_ip,
-                self.request.headers.get("X-Remote-Addr", None)
-            ) or \
-            session.accept_language != self.get_accept_language() or \
-            session.user_agent != self.get_user_agent()
-
-    def get_session(self):
-        session_id = self.app_get_cookie("session")
-
-        try:
-            session = self.orm.query(Session).\
-                filter_by(session_id=session_id).one()
-        except NoResultFound:
-            self.end_session()
-            return None
-
-        if session.d_time is not None:
-            self.end_session()
-            return None
-
-        if self.compare_session(session):
-            self.end_session()
-            return None
-
-        session.touch_commit()
-
-        return session
-
     # required by tornado auth
     def get_current_user(self):
-        session = self.get_session()
+        session = self.get_session(Session)
         if session:
             return session.user
         return None
@@ -846,6 +720,8 @@ select auto_increment
             self.json_data = {}
 
     def get_argument(self, name, default=_ARG_DEFAULT_MANGO, is_json=False):
+        # pylint: disable=protected-access
+        # Allow access to `RequestHandler` default argument.
         if not is_json:
             if default is self._ARG_DEFAULT_MANGO:
                 default = RequestHandler._ARG_DEFAULT
@@ -957,123 +833,6 @@ select auto_increment
 class DefaultHandler(BaseHandler):
     pass
 
-class ServerStatusHandler(tornado.web.RequestHandler):
-    @staticmethod
-    def median_sorted(data):
-        if not data:
-            return
-        if len(data) == 1:
-            return data[0]
-        half = int(len(data) / 2)
-        if len(data) % 2:
-            return (data[half - 1] +
-                    data[half]) / 2
-        else:
-            return data[half]
-
-    @staticmethod
-    def quartiles(data):
-        """
-        Accepts an unsorted list of floats.
-        """
-        if not data:
-            return
-        sample = sorted(data)
-
-        if len(data) == 1:
-            median = data[0]
-            q1 = data[0]
-            q3 = data[0]
-        else:
-            median = ServerStatusHandler.median_sorted(sample)
-            half = int(len(data) / 2)
-            if len(data) % 2:
-                q1 = (
-                    ServerStatusHandler.median_sorted(
-                        sample[:half]) +
-                    ServerStatusHandler.median_sorted(
-                        sample[:half + 1])
-                ) / 2
-                q3 = (
-                    ServerStatusHandler.median_sorted(
-                        sample[half:]) +
-                    ServerStatusHandler.median_sorted(
-                        sample[half + 1:])
-                ) / 2
-            else:
-                q1 = ServerStatusHandler.median_sorted(
-                    sample[:half])
-                q3 = ServerStatusHandler.median_sorted(
-                    sample[half:])
-
-        return {
-            "q1": median if q1 is None else q1,
-            "median": median,
-            "q3": median if q3 is None else q3
-        }
-
-    def get(self):
-        if self.application.response_log is None:
-            raise HTTPError(404)
-
-        response = {
-            "1": 0,
-            "2": 0,
-            "3": 0,
-            "4": 0,
-            "5": 0,
-        }
-        duration = {
-            "min": 0,
-            "q1": 0,
-            "median": 0,
-            "q3": 0,
-            "max": 0,
-        }
-
-        self.application.trim_response_log()
-
-        min_ = None
-        max_ = None
-
-        for (_timestamp,
-             status_code, duration_) in self.application.response_log:
-            if min_ is None:
-                min_ = duration_
-                max_ = duration_
-            else:
-                min_ = min(min_, duration_)
-                max_ = max(max_, duration_)
-
-            k = str(status_code)[0]
-            response[k] += 1
-
-        if min_ is not None:
-            duration["min"] = min_
-            duration["max"] = max_
-            try:
-                duration.update(self.quartiles([
-                    v[2] for v in self.application.response_log]))
-            except TypeError:
-                sys.stderr.write("Failed quartiles: %s" % repr(
-                    [v[2] for v in self.application.response_log]))
-                sys.stderr.flush()
-                raise
-
-        label = self.application.title
-
-        if self.application.label:
-            label = self.application.label
-
-        data = {
-            "label": label,
-            "response": response,
-            "duration": duration,
-        }
-
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Content-Type", "application/json; charset=UTF-8")
-        self.write(json.dumps(data))
 
 
 

@@ -8,7 +8,10 @@ import Levenshtein
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import literal_column, or_, and_, not_
+from sqlalchemy.exc import InternalError
+
 from tornado.web import HTTPError
+from tornado.log import app_log
 
 import geo
 
@@ -28,6 +31,7 @@ from handle.base_event import BaseEventHandler
 from handle.orgtag import BaseOrgtagHandler
 from handle.address import BaseAddressHandler
 from handle.contact import BaseContactHandler
+from handle.markdown_safe import markdown_safe, convert_links
 
 from handle.base_moderation import \
     get_pending_org_address_id, \
@@ -36,6 +40,154 @@ from handle.base_moderation import \
 from handle.user import \
     get_user_pending_org_address, \
     get_user_pending_org_contact
+
+
+class ApiSummaryOrgHandler(BaseOrgHandler):
+    def get_influence_summary(self, org_id):
+        db_inf = self.application.mysql_db_name("influence")
+        if not db_inf:
+            app_log.warning(
+                "Cannot add '%s' data. Database `%s` not online.",
+                "influence", db_inf)
+            return
+
+        data = {}
+
+        sql = """
+select
+    {db_inf}.org.org_id,
+    {db_inf}.org.n_rev
+  from {db_inf}.org
+  where {db_inf}.org.map_id = {caat_id}
+;
+""".format(**{
+    "db_inf": db_inf,
+    "caat_id": org_id
+})
+
+        try:
+            result = self.orm.execute(sql).fetchone()
+        except InternalError as e:
+            print(e)
+            return
+
+        if result:
+            (org_id, n_rev, ) = result
+            data["influenceId"] = org_id
+            data["revolverCount"] = n_rev
+
+        sql = """
+select
+    count(distinct(m.meeting_id))
+  from {db_inf}.meeting as m
+  join {db_inf}.role_meeting as rm1 on (rm1.meeting_id = m.meeting_id)
+  join {db_inf}.role as r1 on (r1.role_id = rm1.role_id)
+  join {db_inf}.org as o1 on (o1.org_id = r1.org_id)
+  join {db_inf}.role_meeting as rm2 on (rm2.meeting_id = m.meeting_id)
+  join {db_inf}.role as r2 on (r2.role_id = rm2.role_id)
+  join {db_inf}.org as o2 on (o2.org_id = r2.org_id)
+  where m.visible = 1
+    and o1.visible = 1
+    and o2.visible = 1
+    and o1.map_id = {caat_id}
+    and o2.org_id > 0
+    and o2.country_iso2 = "gb"
+;
+""".format(**{
+    "db_inf": db_inf,
+    "caat_id": org_id
+})
+
+        try:
+            result = self.orm.execute(sql).fetchone()
+        except InternalError as e:
+            print(e)
+            return
+
+        if result:
+            (n_meet, ) = result
+            data["meetingGovCount"] = n_meet
+
+        return data
+
+
+    def get_company_exports_summary(self, org_id):
+        db_ce = self.application.mysql_db_name("company-exports")
+        if not db_ce:
+            app_log.warning(
+                "Cannot add '%s' data. Database `%s` not online.",
+                "influence", db_ce)
+            return
+
+        data = {}
+
+        sql = """
+select
+    {db_ce}.company.company_id,
+    count(distinct({db_ce}.action.destination_id))
+  from {db_ce}.action
+    join {db_ce}.company using (company_id)
+  where {db_ce}.company.caat_id = {caat_id}
+;
+""".format(**{
+    "db_ce": db_ce,
+    "caat_id": org_id
+})
+
+        try:
+            result = self.orm.execute(sql).fetchone()
+        except InternalError as e:
+            print(e)
+            return
+
+        if result:
+            (company_id, n_dest, ) = result
+            data["companyExportsId"] = company_id
+            data["destinationCount"] = n_dest
+
+        sql = """
+select
+    count(distinct({db_ce}.rating.description))
+  from {db_ce}.action
+    join {db_ce}.company using (company_id)
+    join {db_ce}.rating using (rating_id)
+  where {db_ce}.company.caat_id = {caat_id}
+    and {db_ce}.rating.description is not null
+;
+""".format(**{
+    "db_ce": db_ce,
+    "caat_id": org_id
+})
+
+        try:
+            result = self.orm.execute(sql).fetchone()
+        except InternalError as e:
+            print(e)
+            return
+
+        if result:
+            (n_rating, ) = result
+            data["ratingCount"] = n_rating
+
+        return data
+
+
+    def get(self, org_id):
+        org = self._get_org(org_id, required=True)
+
+        data = {
+            "name": org.name,
+            "addressCount": len(org.address_list_public),
+        }
+
+        if org.description:
+            data["descriptionHtmlSafe"] = \
+                convert_links(markdown_safe(org.description))
+
+        data.update(self.get_influence_summary(org.org_id) or {})
+        data.update(self.get_company_exports_summary(org.org_id) or {})
+
+        self.write_json(data)
 
 
 
@@ -284,8 +436,8 @@ class OrgSearchHandler(BaseOrgHandler):
                 "query": {
                     "multi_match": {
                         "fields": [
-                            "alias.straight^3",
-                            "alias.fuzzy",
+                            "alias_public.straight^3",
+                            "alias_public.fuzzy",
                             ],
                         "query": name
                         }
@@ -303,8 +455,8 @@ class OrgSearchHandler(BaseOrgHandler):
                             "query": {
                                 "multi_match": {
                                     "fields": [
-                                        "alias.straight^3",
-                                        "alias.fuzzy",
+                                        "alias_public.straight^3",
+                                        "alias_public.fuzzy",
                                         ],
                                     "query": name
                                     }
@@ -319,7 +471,7 @@ class OrgSearchHandler(BaseOrgHandler):
                 source = hit["_source"]
                 max_ratio = None
                 max_alias = None
-                for alias in source["alias"]:
+                for alias in source["alias_public"]:
                     ratio = Levenshtein.ratio(name.lower(), alias.lower())
                     if max_alias is None or ratio > max_ratio:
                         max_alias = alias
