@@ -18,7 +18,7 @@ class AuthRegisterHandler(BaseHandler):
         self.render(
             'register.html',
             next_=self.next_,
-            )
+        )
 
 
 class LoginHandler(BaseHandler):
@@ -42,52 +42,45 @@ class LoginHandler(BaseHandler):
             self.redirect(self.url_rewrite("/auth/register", next_=self.next_))
             return True
 
-
-
-class AuthLoginLocalHandler(LoginHandler):
-    def _get_user(self):
-        user_id = self.get_argument_int("user", -1)
-        if user_id == 0:
-            # Create new user
-            return None
+    def get_user(self, user_id):
         try:
-            return self.orm.query(User).filter_by(user_id=user_id).one()
+            return self.orm.query(User) \
+                .filter_by(user_id=user_id) \
+                .one()
         except NoResultFound:
-            raise HTTPError(401, "Authorization Refused")
+            raise HTTPError(401, "Unauthorized")
 
-    def _create_user(self):
-        user_id = self.get_argument_int("user", -1)
-        assert user_id == 0
-        user_name = "NEW USER"
-        user = User(None, user_name, moderator=False)
-        self.orm.add(user)
-        self.orm.commit()
-        user.name = "Local %d" % user.user_id
-        self.orm.commit()
-        self.next_ = "/user/%d" % user.user_id
-        return user
+
+
+class AuthLoginPasswordHandler(LoginHandler):
+    login_url = "/auth/login/password"
 
     def get(self):
-        if not self.application.local_auth:
-            print("Local authentication is not enabled.")
-            raise HTTPError(404, "Not found")
-        if not self.is_local():
-            raise HTTPError(404, "Not found")
+        user_id = self.get_argument("user_id", None)
+        password = self.get_argument("password", None)
+        token = self.get_argument("token", None)
+        next_ = self.get_argument("next", "/")
 
-        self._accept_authenticated()
+        if not (user_id and password and token):
+            raise HTTPError(
+                400, "email, password and token fields are required.")
+
+        user = self.get_user(user_id)
+
+        if not user.verify_password_hash(password):
+            raise HTTPError(401, "Unauthorized")
+
+        if not user.verify_onetimepass(token):
+            raise HTTPError(401, "Unauthorized")
+
+        self._check_locked(user)
+
+        self.create_session(user, Session)
 
         self._batch_tasks()
 
-        user = self._get_user()
-        self._check_locked(user)
+        self.redirect_next()
 
-        if not user:
-            if self._check_registering(user):
-                return
-            user = self._create_user()
-
-        self._create_session(user, Session)
-        return self.redirect_next()
 
 
 

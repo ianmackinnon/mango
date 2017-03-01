@@ -9,10 +9,10 @@ import re
 import csv
 import math
 import time
-import argparse
+import hashlib
 import logging
+import argparse
 import datetime
-from hashlib import sha1, md5
 
 from sqlalchemy import create_engine
 from sqlalchemy import Column, Table, text
@@ -31,6 +31,8 @@ from sqlalchemy import event as sqla_event
 from tornado.web import HTTPError
 
 from mysql import mysql
+
+import firma
 
 import geo
 
@@ -163,7 +165,7 @@ def short_name(name, allow_end_pipe=False):
     short = re.compile(r"\|+", re.U).sub("|", short)
     if not allow_end_pipe:
         short = re.compile(r"(^\||\|$)", re.U).sub("", short)
-    short = re.compile(r"[\s]", re.U).sub("-", short)
+        short = re.compile(r"[\s]", re.U).sub("-", short)
     return short
 
 
@@ -183,7 +185,7 @@ def sanitise_address(address, allow_commas=True):
         address = re.sub(r"(,|\n)+", "\n", address)
         address = re.sub(r"(^|\n)[\s,]+", "\n", address)
         address = re.sub(r"[\s,]+($|\n)", "\n", address)
-    address = re.sub(r"[ \t]+", " ", address).strip()
+        address = re.sub(r"[ \t]+", " ", address).strip()
     return address
 
 
@@ -206,13 +208,13 @@ def detach(entity):
 
 
 def gravatar_hash(plaintext):
-    return md5(plaintext.encode("utf-8")).hexdigest()
+    return hashlib.md5(plaintext.encode("utf-8")).hexdigest()
 
 
 
 def generate_hash(plaintext):
     "Generate a pseudorandom 40 digit hexadecimal hash using SHA1"
-    return sha1(plaintext.encode("utf-8")).hexdigest()
+    return hashlib.sha1(plaintext.encode("utf-8")).hexdigest()
 
 
 
@@ -224,9 +226,9 @@ def verify_hash(plaintext, hash_):
 def generate_salted_hash(plaintext, salted_hash=None):
     "Generate a pseudorandom 40 digit hexadecimal salted hash using SHA1"
     if not salted_hash:
-        salted_hash = sha1(os.urandom(40)).hexdigest()
+        salted_hash = hashlib.sha1(os.urandom(40)).hexdigest()
     salt = salted_hash[:5]
-    return (salt + sha1(salt + plaintext).hexdigest())[:40]
+    return (salt + hashlib.sha1(salt + plaintext).hexdigest())[:40]
 
 
 
@@ -259,7 +261,7 @@ URL_DIRECTORY = {
     "note_v": "note",
     "contact": "contact",
     "contact_v": "contact",
-    }
+}
 
 
 
@@ -314,7 +316,7 @@ class MangoEntity(object):
             "id": self.entity_id_value,
             "url": self.url,
             "date": self.a_time,
-            }
+        }
 
         if getattr(self, "entity_v_id", None):
             obj.update({
@@ -379,7 +381,7 @@ class NotableEntity(object):
             # pylint: disable=singleton-comparison
             # Cannot use `is` in SQLAlchemy filters
             query = query \
-                .filter(Note.public == True)
+                    .filter(Note.public == True)
         if note_search:
             query = query \
                 .join((note_fts, note_fts.c.docid == Note.note_id)) \
@@ -442,7 +444,7 @@ orgtag_note = Table(
     Column('note_id', Integer, ForeignKey('note.note_id'), primary_key=True),
     Column('a_time', Float(), nullable=False, server_default=text("0")),
     mysql_engine='InnoDB',
-    )
+)
 
 
 
@@ -539,7 +541,7 @@ note_fts = Table(
     Column('content', Unicode()),
     mysql_engine='MyISAM',
     mysql_charset='utf8'
-    )
+)
 
 
 
@@ -553,8 +555,8 @@ class Auth(Base):
         UniqueConstraint('url', 'name_hash'),
         {
             "mysql_engine": 'InnoDB',
-            }
-        )
+        }
+    )
 
     auth_id = Column(Integer, primary_key=True)
 
@@ -590,14 +592,19 @@ class Auth(Base):
 
 
 
-class User(Base):
+USER_HASH_ALG = hashlib.sha256
+
+class User(Base, firma.UserMixin):
     __tablename__ = 'user'
     __table_args__ = (
         UniqueConstraint('auth_id'),
         {
             "mysql_engine": 'InnoDB',
-            }
-        )
+        }
+    )
+
+    HASH_ALG = USER_HASH_ALG
+    SALT_LENGTH = 7
 
     user_id = Column(Integer, primary_key=True)
     auth_id = Column(Integer, ForeignKey(Auth.auth_id), nullable=True)
@@ -607,6 +614,17 @@ class User(Base):
     moderator = Column(Boolean, nullable=False, server_default=text("0"))
 
     locked = Column(Boolean, nullable=False, server_default=text("0"))
+
+    password_hash = Column(LONGTEXT(
+        length=USER_HASH_ALG().digest_size * 2,
+        charset="latin1",
+        collation="latin1_swedish_ci"
+    ))
+    onetime_secret = Column(LONGTEXT(
+        length=16,
+        charset="latin1",
+        collation="latin1_swedish_ci"
+    ))
 
     auth = relationship(Auth, backref='user_list')
 
@@ -657,7 +675,7 @@ class Session(Base):
     __tablename__ = 'session'
     __table_args__ = {
         "mysql_engine": 'InnoDB',
-        }
+    }
 
     session_id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey(User.user_id), nullable=False)
@@ -705,7 +723,7 @@ class Medium(Base):
     __tablename__ = 'medium'
     __table_args__ = {
         "mysql_engine": 'InnoDB',
-        }
+    }
 
     medium_id = Column(Integer, primary_key=True)
     name = Column(Unicode(), nullable=False)
@@ -714,7 +732,7 @@ class Medium(Base):
         "Contact",
         backref='medium',
         cascade="all, delete, delete-orphan",
-        )
+    )
 
     def __init__(self, name):
         self.name = str(name)
@@ -725,7 +743,7 @@ class Org(Base, MangoEntity, NotableEntity):
     __tablename__ = 'org'
     __table_args__ = {
         "mysql_engine": 'InnoDB',
-        }
+    }
 
     org_id = Column(Integer, primary_key=True)
 
@@ -743,14 +761,14 @@ class Org(Base, MangoEntity, NotableEntity):
         "Orgalias",
         backref='org',
         cascade="all, delete, delete-orphan",
-        )
+    )
     note_list = relationship(
         "Note",
         secondary=org_note,
         backref='org_list',
         single_parent=True,  # shouldn't be single parent
         cascade="all, delete, delete-orphan",
-        )
+    )
     address_list = relationship(
         "Address",
         secondary=org_address,
@@ -758,36 +776,36 @@ class Org(Base, MangoEntity, NotableEntity):
         single_parent=True,
         cascade="all, delete, delete-orphan",
         order_by="Address.latitude.desc()",
-        )
+    )
     orgtag_list = relationship(
         "Orgtag",
         secondary=org_orgtag,
         backref='org_list',
         cascade="save-update",
         order_by="Orgtag.name",
-        )
+    )
     event_list = relationship(
         "Event",
         secondary=org_event,
         backref='org_list',
         cascade="save-update",
-        )
+    )
     contact_list = relationship(
         "Contact",
         secondary=org_contact,
         backref='org_list',
         single_parent=True,
         cascade="all, delete, delete-orphan",
-        )
+    )
 
     orgalias_list_public = relationship(
         "Orgalias",
         primaryjoin=(
             "and_(Orgalias.org_id == Org.org_id, "
             "Orgalias.public==True)"
-            ),
+        ),
         passive_deletes=True,
-        )
+    )
     note_list_public = relationship(
         "Note",
         secondary=org_note,
@@ -795,9 +813,9 @@ class Org(Base, MangoEntity, NotableEntity):
         secondaryjoin=(
             "and_(Note.note_id == org_note.c.note_id, "
             "Note.public==True)"
-            ),
+        ),
         passive_deletes=True,
-        )
+    )
     address_list_public = relationship(
         "Address",
         secondary=org_address,
@@ -805,10 +823,10 @@ class Org(Base, MangoEntity, NotableEntity):
         secondaryjoin=(
             "and_(Address.address_id == org_address.c.address_id, "
             "Address.public==True)"
-            ),
+        ),
         passive_deletes=True,
         order_by="Address.latitude.desc()",
-        )
+    )
     orgtag_list_public = relationship(
         "Orgtag",
         secondary=org_orgtag,
@@ -816,10 +834,10 @@ class Org(Base, MangoEntity, NotableEntity):
         secondaryjoin=(
             "and_(Orgtag.orgtag_id == org_orgtag.c.orgtag_id, "
             "Orgtag.public==True)"
-            ),
+        ),
         passive_deletes=True,
         order_by="Orgtag.name",
-        )
+    )
     event_list_public = relationship(
         "Event",
         secondary=org_event,
@@ -827,9 +845,9 @@ class Org(Base, MangoEntity, NotableEntity):
         secondaryjoin=(
             "and_(Event.event_id == org_event.c.event_id, "
             "Event.public==True)"
-            ),
+        ),
         passive_deletes=True,
-        )
+    )
     contact_list_public = relationship(
         "Contact",
         secondary=org_contact,
@@ -837,15 +855,15 @@ class Org(Base, MangoEntity, NotableEntity):
         secondaryjoin=(
             "and_(Contact.contact_id == org_contact.c.contact_id, "
             "Contact.public==True)"
-            ),
+        ),
         passive_deletes=True,
-        )
+    )
 
     content = [
         "name",
         "description",
         "end_date",  # '..._date' causes formatting in 'obj()'
-        ]
+    ]
 
     @classproperty
     @classmethod
@@ -882,7 +900,7 @@ class Org(Base, MangoEntity, NotableEntity):
             self.org_id or "?",
             {True:"public", False:"private", None: "pending"}[self.public],
             self.name,
-            )
+        )
 
     def pprint(self, indent=""):
         o = ""
@@ -955,7 +973,7 @@ class Org(Base, MangoEntity, NotableEntity):
             org = Org(
                 name,
                 moderation_user=moderation_user, public=public,
-                )
+            )
             orm.add(org)
 
         return org
@@ -966,7 +984,7 @@ class Orgalias(Base, MangoEntity):
     __tablename__ = 'orgalias'
     __table_args__ = {
         "mysql_engine": 'InnoDB',
-        }
+    }
 
     orgalias_id = Column(Integer, primary_key=True)
 
@@ -982,7 +1000,7 @@ class Orgalias(Base, MangoEntity):
 
     content = [
         "name",
-        ]
+    ]
 
     @classproperty
     @classmethod
@@ -1004,7 +1022,7 @@ class Orgalias(Base, MangoEntity):
             self.orgalias_id or "?",
             {True:"public", False:"private", None: "pending"}[self.public],
             self.name, self.org_id,
-            )
+        )
 
     def pprint(self, indent=""):
         o = ""
@@ -1016,12 +1034,12 @@ class Orgalias(Base, MangoEntity):
         name = sanitise_name(name)
         try:
             orgalias = orm.query(Orgalias)\
-                .filter_by(name=name, org_id=org.org_id).one()
+                          .filter_by(name=name, org_id=org.org_id).one()
         except NoResultFound:
             orgalias = Orgalias(
                 name, org,
                 moderation_user=moderation_user, public=public,
-                )
+            )
             orm.add(orgalias)
         return orgalias
 
@@ -1033,8 +1051,8 @@ class Event(Base, MangoEntity, NotableEntity):
         CheckConstraint("end_time > start_time or end_date > start_date"),
         {
             "mysql_engine": 'InnoDB',
-            },
-        )
+        },
+    )
     event_id = Column(Integer, primary_key=True)
 
     name = Column(Unicode(), nullable=False)
@@ -1062,7 +1080,7 @@ class Event(Base, MangoEntity, NotableEntity):
         backref='event_list',
         single_parent=True,
         cascade="all, delete, delete-orphan",
-        )
+    )
     address_list = relationship(
         "Address",
         secondary=event_address,
@@ -1070,21 +1088,21 @@ class Event(Base, MangoEntity, NotableEntity):
         single_parent=True,
         cascade="all, delete, delete-orphan",
         order_by="Address.latitude.desc()",
-        )
+    )
     eventtag_list = relationship(
         "Eventtag",
         secondary=event_eventtag,
         backref='event_list',
         cascade="save-update",
         order_by="Eventtag.name",
-        )
+    )
     contact_list = relationship(
         "Contact",
         secondary=event_contact,
         backref='event_list',
         single_parent=True,
         cascade="all, delete, delete-orphan",
-        )
+    )
 
     note_list_public = relationship(
         "Note",
@@ -1093,9 +1111,9 @@ class Event(Base, MangoEntity, NotableEntity):
         secondaryjoin=(
             "and_(Note.note_id == event_note.c.note_id, "
             "Note.public==True)"
-            ),
+        ),
         passive_deletes=True,
-        )
+    )
     address_list_public = relationship(
         "Address",
         secondary=event_address,
@@ -1103,10 +1121,10 @@ class Event(Base, MangoEntity, NotableEntity):
         secondaryjoin=(
             "and_(Address.address_id == event_address.c.address_id, "
             "Address.public==True)"
-            ),
+        ),
         passive_deletes=True,
         order_by="Address.latitude.desc()",
-        )
+    )
     eventtag_list_public = relationship(
         "Eventtag",
         secondary=event_eventtag,
@@ -1114,10 +1132,10 @@ class Event(Base, MangoEntity, NotableEntity):
         secondaryjoin=(
             "and_(Eventtag.eventtag_id == event_eventtag.c.eventtag_id, "
             "Eventtag.public==True)"
-            ),
+        ),
         passive_deletes=True,
         order_by="Eventtag.name",
-        )
+    )
     org_list_public = relationship(
         "Org",
         secondary=org_event,
@@ -1125,9 +1143,9 @@ class Event(Base, MangoEntity, NotableEntity):
         secondaryjoin=(
             "and_(Org.org_id == org_event.c.org_id, "
             "Org.public==True)"
-            ),
+        ),
         passive_deletes=True,
-        )
+    )
     contact_list_public = relationship(
         "Contact",
         secondary=event_contact,
@@ -1135,9 +1153,9 @@ class Event(Base, MangoEntity, NotableEntity):
         secondaryjoin=(
             "and_(Contact.contact_id == event_contact.c.contact_id, "
             "Contact.public==True)"
-            ),
+        ),
         passive_deletes=True,
-        )
+    )
 
     content = [
         "name",
@@ -1146,7 +1164,7 @@ class Event(Base, MangoEntity, NotableEntity):
         "description",
         "start_time",  # '..._time' causes formatting in 'obj()'
         "end_time",  # '..._time' causes formatting in 'obj()'
-        ]
+    ]
 
     @classproperty
     @classmethod
@@ -1181,7 +1199,7 @@ class Event(Base, MangoEntity, NotableEntity):
             self.event_id or "?",
             {True:"public", False:"private", None: "pending"}[self.public],
             self.name,
-            )
+        )
 
     def pprint(self, indent=""):
         o = ""
@@ -1207,7 +1225,7 @@ class Event(Base, MangoEntity, NotableEntity):
             event = Event(
                 name, start_date, end_date,
                 moderation_user=moderation_user, public=public,
-                )
+            )
             orm.add(event)
         return event
 
@@ -1217,7 +1235,7 @@ class Address(Base, MangoEntity, NotableEntity):
     __tablename__ = 'address'
     __table_args__ = {
         "mysql_engine": 'InnoDB',
-        }
+    }
 
     address_id = Column(Integer, primary_key=True)
 
@@ -1240,7 +1258,7 @@ class Address(Base, MangoEntity, NotableEntity):
         secondary=address_note,
         backref='address_list',
         cascade="all, delete",
-        )
+    )
 
     note_list_public = relationship(
         "Note",
@@ -1249,9 +1267,9 @@ class Address(Base, MangoEntity, NotableEntity):
         secondaryjoin=(
             "and_(Note.note_id == address_note.c.note_id, "
             "Note.public==True)"
-            ),
+        ),
         passive_deletes=True,
-        )
+    )
     org_list_public = relationship(
         "Org",
         secondary=org_address,
@@ -1259,9 +1277,9 @@ class Address(Base, MangoEntity, NotableEntity):
         secondaryjoin=(
             "and_(Org.org_id == org_address.c.org_id, "
             "Org.public==True)"
-            ),
+        ),
         passive_deletes=True,
-        )
+    )
     event_list_public = relationship(
         "Event",
         secondary=event_address,
@@ -1269,9 +1287,9 @@ class Address(Base, MangoEntity, NotableEntity):
         secondaryjoin=(
             "and_(Event.event_id == event_address.c.event_id, "
             "Event.public==True)"
-            ),
+        ),
         passive_deletes=True,
-        )
+    )
 
     content = [
         "postal",
@@ -1281,13 +1299,13 @@ class Address(Base, MangoEntity, NotableEntity):
         "manual_latitude",
         "longitude",
         "latitude",
-        ]
+    ]
 
     @staticmethod
     def obj_extra(obj):
         return {
             "name": obj["postal"].replace("\n", ", "),
-            }
+        }
 
     @classproperty
     @classmethod
@@ -1326,7 +1344,7 @@ class Address(Base, MangoEntity, NotableEntity):
             (self.lookup or "")[:10],
             self.repr_coordinates(self.manual_longitude, self.manual_latitude),
             self.repr_coordinates(self.longitude, self.latitude),
-            )
+        )
 
     def geocode(self):
         if (
@@ -1383,7 +1401,7 @@ class Address(Base, MangoEntity, NotableEntity):
             return "%0.2f°%s %0.2f°%s" % (
                 abs(latitude), ("S", "", "N")[cmp(latitude, 0.0) + 1],
                 abs(longitude), ("W", "", "E")[cmp(longitude, 0.0) + 1],
-                )
+            )
         return ""
 
     @staticmethod
@@ -1433,8 +1451,8 @@ class Orgtag(Base, MangoEntity, NotableEntity):
         UniqueConstraint('base_short'),
         {
             "mysql_engine": 'InnoDB',
-            }
-        )
+        }
+    )
 
     orgtag_id = Column(Integer, primary_key=True)
 
@@ -1458,7 +1476,7 @@ class Orgtag(Base, MangoEntity, NotableEntity):
         secondary=orgtag_note,
         backref='orgtag_list',
         cascade="all, delete",
-        )
+    )
 
     note_list_public = relationship(
         "Note",
@@ -1467,9 +1485,9 @@ class Orgtag(Base, MangoEntity, NotableEntity):
         secondaryjoin=(
             "and_(Note.note_id == orgtag_note.c.note_id, "
             "Note.public==True)"
-            ),
+        ),
         passive_deletes=True,
-        )
+    )
     org_list_public = relationship(
         "Org",
         secondary=org_orgtag,
@@ -1477,14 +1495,14 @@ class Orgtag(Base, MangoEntity, NotableEntity):
         secondaryjoin=(
             "and_(Org.org_id == org_orgtag.c.org_id, "
             "Org.public==True)"
-            ),
+        ),
         passive_deletes=True,
-        )
+    )
 
     content = [
         "name",
         "description",
-        ]
+    ]
 
     content_hints = [
         "name_short",
@@ -1493,7 +1511,7 @@ class Orgtag(Base, MangoEntity, NotableEntity):
         "path",
         "path_short",
         "is_virtual",
-        ]
+    ]
 
     @classproperty
     @classmethod
@@ -1519,7 +1537,7 @@ class Orgtag(Base, MangoEntity, NotableEntity):
             self.orgtag_id or "?",
             {True:"public", False:"private", None: "pending"}[self.public],
             self.name,
-            )
+        )
 
     def pprint(self, indent=""):
         o = ""
@@ -1539,7 +1557,7 @@ class Orgtag(Base, MangoEntity, NotableEntity):
                 name,
                 moderation_user=moderation_user,
                 public=public,
-                )
+            )
             orm.add(orgtag)
         return orgtag
 
@@ -1557,8 +1575,8 @@ class Eventtag(Base, MangoEntity, NotableEntity):
         UniqueConstraint('base_short'),
         {
             "mysql_engine": 'InnoDB',
-            }
-        )
+        }
+    )
 
     eventtag_id = Column(Integer, primary_key=True)
 
@@ -1582,7 +1600,7 @@ class Eventtag(Base, MangoEntity, NotableEntity):
         secondary=eventtag_note,
         backref='eventtag_list',
         cascade="all, delete",
-        )
+    )
 
     note_list_public = relationship(
         "Note",
@@ -1591,9 +1609,9 @@ class Eventtag(Base, MangoEntity, NotableEntity):
         secondaryjoin=(
             "and_(Note.note_id == eventtag_note.c.note_id, "
             "Note.public==True)"
-            ),
+        ),
         passive_deletes=True,
-        )
+    )
     event_list_public = relationship(
         "Event",
         secondary=event_eventtag,
@@ -1601,14 +1619,14 @@ class Eventtag(Base, MangoEntity, NotableEntity):
         secondaryjoin=(
             "and_(Event.event_id == event_eventtag.c.event_id, "
             "Event.public==True)"
-            ),
+        ),
         passive_deletes=True,
-        )
+    )
 
     content = [
         "name",
         "description",
-        ]
+    ]
 
     content_hints = [
         "name_short",
@@ -1617,7 +1635,7 @@ class Eventtag(Base, MangoEntity, NotableEntity):
         "path",
         "path_short",
         "is_virtual",
-        ]
+    ]
 
     @classproperty
     @classmethod
@@ -1643,7 +1661,7 @@ class Eventtag(Base, MangoEntity, NotableEntity):
             self.eventtag_id or "?",
             {True:"public", False:"private", None: "pending"}[self.public],
             self.name,
-            )
+        )
 
     def pprint(self, indent=""):
         o = ""
@@ -1663,7 +1681,7 @@ class Eventtag(Base, MangoEntity, NotableEntity):
                 name,
                 moderation_user=moderation_user,
                 public=public,
-                )
+            )
             orm.add(eventtag)
         return eventtag
 
@@ -1673,7 +1691,7 @@ class Note(Base, MangoEntity):
     __tablename__ = 'note'
     __table_args__ = {
         "mysql_engine": 'InnoDB',
-        }
+    }
 
     note_id = Column(Integer, primary_key=True)
 
@@ -1693,9 +1711,9 @@ class Note(Base, MangoEntity):
         secondaryjoin=(
             "and_(Org.org_id == org_note.c.org_id, "
             "Org.public==True)"
-            ),
+        ),
         passive_deletes=True,
-        )
+    )
     event_list_public = relationship(
         "Event",
         secondary=event_note,
@@ -1703,9 +1721,9 @@ class Note(Base, MangoEntity):
         secondaryjoin=(
             "and_(Event.event_id == event_note.c.event_id, "
             "Event.public==True)"
-            ),
+        ),
         passive_deletes=True,
-        )
+    )
     address_list_public = relationship(
         "Address",
         secondary=address_note,
@@ -1713,9 +1731,9 @@ class Note(Base, MangoEntity):
         secondaryjoin=(
             "and_(Address.address_id == address_note.c.address_id, "
             "Address.public==True)"
-            ),
+        ),
         passive_deletes=True,
-        )
+    )
     orgtag_list_public = relationship(
         "Orgtag",
         secondary=orgtag_note,
@@ -1723,14 +1741,14 @@ class Note(Base, MangoEntity):
         secondaryjoin=(
             "and_(Orgtag.orgtag_id == orgtag_note.c.orgtag_id, "
             "Orgtag.public==True)"
-            ),
+        ),
         passive_deletes=True,
-        )
+    )
 
     content = [
         "text",
         "source",
-        ]
+    ]
 
     @classproperty
     @classmethod
@@ -1760,7 +1778,7 @@ class Note(Base, MangoEntity):
             {True:"public", False:"private", None: "pending"}[self.public],
             self.text[:10].replace("\n", " "),
             self.source[:10],
-            )
+        )
 
     def pprint(self, indent=""):
         o = ""
@@ -1774,7 +1792,7 @@ class Contact(Base, MangoEntity):
     __tablename__ = 'contact'
     __table_args__ = {
         "mysql_engine": 'InnoDB',
-        }
+    }
 
     contact_id = Column(Integer, primary_key=True)
 
@@ -1797,9 +1815,9 @@ class Contact(Base, MangoEntity):
         secondaryjoin=(
             "and_(Org.org_id == org_contact.c.org_id, "
             "Org.public==True)"
-            ),
+        ),
         passive_deletes=True,
-        )
+    )
     event_list_public = relationship(
         "Event",
         secondary=event_contact,
@@ -1807,16 +1825,16 @@ class Contact(Base, MangoEntity):
         secondaryjoin=(
             "and_(Event.event_id == event_contact.c.event_id, "
             "Event.public==True)"
-            ),
+        ),
         passive_deletes=True,
-        )
+    )
 
     content = [
         "medium_id",
         "text",
         "description",
         "source",
-        ]
+    ]
 
     @classproperty
     @classmethod
@@ -1851,7 +1869,7 @@ class Contact(Base, MangoEntity):
             {True:"public", False:"private", None: "pending"}[self.public],
             self.medium.name,
             self.text[:10].replace("\n", " "),
-            )
+        )
 
     def pprint(self, indent=""):
         o = ""
@@ -2143,6 +2161,7 @@ def engine_sql_mode(engine, sql_mode=""):
     def set_sql_mode(dbapi_connection, _connection_record):
         cursor = dbapi_connection.cursor()
         cursor.execute("SET sql_mode = '%s'" % sql_mode)
+
     sqla_event.listen(engine, "first_connect", set_sql_mode, insert=True)
     sqla_event.listen(engine, "connect", set_sql_mode)
 
@@ -2151,8 +2170,10 @@ def engine_disable_mode(engine, mode):
         cursor = dbapi_connection.cursor()
         cursor.execute(
             "SET sql_mode=(SELECT REPLACE(@@sql_mode,'%s',''))" % mode)
+
     sqla_event.listen(engine, "first_connect", set_sql_mode, insert=True)
     sqla_event.listen(engine, "connect", set_sql_mode)
+
 
 
 

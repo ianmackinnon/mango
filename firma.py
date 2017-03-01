@@ -7,12 +7,16 @@ import time
 import json
 import errno
 import bisect
+import base64
 import logging
 import datetime
 import functools
 import urllib.parse
 import configparser
+
 from dateutil.relativedelta import relativedelta
+
+from onetimepass import valid_totp
 
 import tornado.web
 import tornado.auth
@@ -368,16 +372,12 @@ class BaseHandler(tornado.web.RequestHandler):
         if "path" in kwargs and not kwargs["path"]:
             del kwargs["path"]
 
-        print(self.url_root_dir, kwargs)
-
         kwargs = dict(list({
             "path": self.url_root_dir
         }.items()) + list((kwargs or {}).items()))
 
         key = self.cookie_name(key)
         value = json.dumps(value)
-
-        print("set", key, value, kwargs)
 
         self.set_secure_cookie(key, value, **kwargs)
 
@@ -433,7 +433,7 @@ class BaseHandler(tornado.web.RequestHandler):
         ):
         ...
 
-    """
+    """  # pylint: disable=pointless-string-statement
 
     def get_accept_language(self):
         return self.request.headers.get("Accept-Language", "")
@@ -615,6 +615,66 @@ class AuthGoogleOAuth2UserMixin(tornado.auth.GoogleOAuth2Mixin):
             }),
             functools.partial(self._on_user_data, callback),
         )
+
+
+
+class UserMixin(object):
+    """
+    Client class should be a SQLAlchemy model with attributes
+    `password_hash`.
+    `onetime_secret`.
+    """
+
+    # pylint: disable=not-callable
+    # `HASH_ALG` must be defined as a hashing function
+
+    HASH_ALG = None
+    SALT_LENGTH = None
+    SECRET_LENGTH = 16
+
+    def set_password_hash(self, plaintext):
+        """
+        `plaintext` is UTF-8 encoded
+        """
+        hasher = self.HASH_ALG()
+        hex_length = hasher.digest_size * 2
+        hasher.update(os.urandom(hex_length))
+        salt = hasher.hexdigest()[:self.SALT_LENGTH]
+        payload = (salt + plaintext).encode("utf-8")
+
+        hasher = self.HASH_ALG()
+        hash_ = self.HASH_ALG(payload).hexdigest()
+        salted_hash = (salt + hash_)[:hex_length]
+        self.password_hash = salted_hash
+
+    def verify_password_hash(self, plaintext):
+        """
+        `plaintext` is UTF-8 encoded
+        Returns `True` if plaintext matches hash.
+        """
+        if not self.password_hash:
+            return None
+
+        salt = self.password_hash[:self.SALT_LENGTH]
+        payload = (salt + plaintext).encode("utf-8")
+
+        hasher = self.HASH_ALG()
+        hex_length = hasher.digest_size * 2
+        hash_ = self.HASH_ALG(payload).hexdigest()
+        salted_hash = (salt + hash_)[:hex_length]
+        return self.password_hash == salted_hash
+
+    def set_onetime_secret(self):
+        secret = base64.b32encode(os.urandom(10))
+        self.onetime_secret = secret
+        return secret
+
+    def verify_onetimepass(self, token):
+        if not self.password_hash:
+            return None
+
+        return valid_totp(token, self.onetime_secret)
+
 
 
 

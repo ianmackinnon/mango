@@ -26,7 +26,7 @@ from handle.base import \
 from handle.generate import GenerateMarkerHandler
 from handle.markdown_safe import MarkdownSafeHandler
 from handle.auth import AuthRegisterHandler, \
-    AuthLoginLocalHandler, AuthLoginGoogleHandler, \
+    AuthLoginPasswordHandler, AuthLoginGoogleHandler, \
     AuthVisitHandler, \
     AuthLogoutHandler
 from handle.user import UserHandler, UserListHandler
@@ -282,7 +282,7 @@ class MangoApplication(firma.Application):
             (r"/auth/register", AuthRegisterHandler),
             (r"/auth/login", AuthLoginGoogleHandler),
             (r"/auth/login/google", AuthLoginGoogleHandler),
-            (r"/auth/login/local", AuthLoginLocalHandler),
+            (r"/auth/login/password", AuthLoginPasswordHandler),
             (r"/auth/visit", AuthVisitHandler),
             (r"/auth/logout", AuthLogoutHandler),
             (r"/history", HistoryHandler),
@@ -473,6 +473,8 @@ class MangoApplication(firma.Application):
             autocommit=False,
             query_cls=SafeQueryClass(),
         ))
+
+        engine_disable_mode(engine, "ONLY_FULL_GROUP_BY")
 
         try:
             self.orm.query(Org).first()

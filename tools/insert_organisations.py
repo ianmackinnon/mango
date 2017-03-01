@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 # pylint: disable=wrong-import-position
 # Adding working directory to system path
 
@@ -16,7 +17,8 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 sys.path.append(".")
 
-from model import mysql, CONF_PATH, attach_search, sanitise_name
+from mysql import mysql
+from model import CONF_PATH, engine_disable_mode, attach_search, sanitise_name
 from model import User, Org, Orgalias, Note, Address, Orgtag, Contact, Medium
 
 
@@ -458,6 +460,7 @@ def main():
 
     connection_url = mysql.connection_url_app(CONF_PATH)
     engine = create_engine(connection_url,)
+    engine_disable_mode(engine, "ONLY_FULL_GROUP_BY")
     session_ = sessionmaker(bind=engine, autocommit=False, autoflush=False)
     orm = session_()
     attach_search(engine, orm)
