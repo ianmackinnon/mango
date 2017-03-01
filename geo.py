@@ -248,6 +248,9 @@ def coords(address, cache=GEOCODE_CACHE_DEFAULT):
                 address,
                 region=GEOCODE_DEFAULT_REGION,
                 )
+        except geopy.exc.GeocoderTimedOut as e:
+            print(e)
+            return None
         except geopy.exc.GeocoderUnavailable as e:
             print(e)
             return None
