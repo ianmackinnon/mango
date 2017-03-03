@@ -1461,6 +1461,14 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 
+        sap2017_query = self.orm.query(func.count(Orgtag.orgtag_id) \
+                                       .label("count")) \
+            .join(org_orgtag) \
+            .add_columns(org_orgtag.c.org_id) \
+            .filter(Orgtag.name_short == "exhibitor|security-and-policing-2017") \
+            .group_by(org_orgtag.c.org_id) \
+            .subquery()
+
         dsei2015_query = self.orm.query(func.count(Orgtag.orgtag_id) \
                                        .label("count")) \
             .join(org_orgtag) \
@@ -1524,6 +1532,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             .outerjoin(dseitag_query, dseitag_query.c.org_id == Org.org_id) \
             .outerjoin(saptag_query, saptag_query.c.org_id == Org.org_id) \
             .outerjoin(tag_query, tag_query.c.org_id == Org.org_id) \
+            .outerjoin(sap2017_query, sap2017_query.c.org_id == Org.org_id) \
             .outerjoin(dsei2015_query, dsei2015_query.c.org_id == Org.org_id) \
             .outerjoin(israel_query, israel_query.c.org_id == Org.org_id) \
             .outerjoin(canterbury_query,
@@ -1537,6 +1546,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 func.coalesce(dseitag_query.c.count, 0).label("dseitag"),
                 func.coalesce(saptag_query.c.count, 0).label("saptag"),
                 func.coalesce(tag_query.c.count, 0).label("tag"),
+                func.coalesce(sap2017_query.c.count, 0).label("sap2017"),
                 func.coalesce(dsei2015_query.c.count, 0).label("dsei2015"),
                 func.coalesce(israel_query.c.count, 0).label("israel"),
                 func.coalesce(canterbury_query.c.count, 0).label("canterbury"),
@@ -1566,6 +1576,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             "remove_private": [],
 
             "desc_pending": [],
+            "sap2017_pending": [],
             "dsei2015_pending": [],
             "israel_pending": [],
             "canterbury_pending": [],
@@ -1578,7 +1589,7 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
 
         for (
                 org, include,
-                act, addr, dseitag, saptag, tag, dsei2015,
+                act, addr, dseitag, saptag, tag, sap2017, dsei2015,
                 israel, canterbury, sipri, note
         ) in org_query:
             if act:
@@ -1618,6 +1629,9 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                 elif note > 3:
                     packet["note_pending"] \
                         .append((org, dseitag, saptag, tag))
+                elif sap2017:
+                    packet["sap2017_pending"] \
+                        .append((org, dseitag, saptag, tag))
                 elif dsei2015:
                     packet["dsei2015_pending"] \
                         .append((org, dseitag, saptag, tag))
@@ -1640,4 +1654,4 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
             'moderation-org-include.html',
             packet=packet,
             max_block_length=200
-            )
+        )
