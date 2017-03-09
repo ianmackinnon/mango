@@ -18,7 +18,7 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 sys.path.append(".")
 
 from mysql import mysql
-from model import CONF_PATH, engine_disable_mode, attach_search, sanitise_name
+from model import CONF_PATH, attach_search, sanitise_name
 from model import User, Org, Orgalias, Note, Address, Orgtag, Contact, Medium
 
 
@@ -460,7 +460,7 @@ def main():
 
     connection_url = mysql.connection_url_app(CONF_PATH)
     engine = create_engine(connection_url,)
-    engine_disable_mode(engine, "ONLY_FULL_GROUP_BY")
+    mysql.engine_disable_mode(engine, "ONLY_FULL_GROUP_BY")
     session_ = sessionmaker(bind=engine, autocommit=False, autoflush=False)
     orm = session_()
     attach_search(engine, orm)

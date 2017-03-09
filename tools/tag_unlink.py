@@ -13,7 +13,7 @@ from sqlalchemy.orm import sessionmaker
 sys.path.append(".")
 
 from mysql import mysql
-from model import CONF_PATH, engine_disable_mode, attach_search
+from model import CONF_PATH, attach_search
 from model import Orgtag, org_orgtag
 
 
@@ -134,7 +134,7 @@ def main():
 
     connection_url = mysql.connection_url_app(CONF_PATH)
     engine = create_engine(connection_url,)
-    engine_disable_mode(engine, "ONLY_FULL_GROUP_BY")
+    mysql.engine_disable_mode(engine, "ONLY_FULL_GROUP_BY")
     session_ = sessionmaker(bind=engine, autocommit=False, autoflush=False)
     orm = session_()
     attach_search(engine, orm)
