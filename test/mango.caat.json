@@ -1,0 +1,151 @@
+{
+  "tests": [
+
+    {
+      "group": "HtmlPublic",
+      "host": "$HOST",
+      "tests": [
+        {
+          "url": "",
+          "name": "root"
+        },
+        "/organisation",
+        "/organisation-tag",
+        "/event",
+        "/event-tag",
+        "/note",
+        "/diary",
+        "/organisation/{org_id}",
+        "/organisation-tag/{orgtag_id}",
+        "/event/{event_id}",
+        "/event-tag/{eventtag_id}",
+        "/note/{note_org_id}",
+        "/address/{address_id}",
+        "/contact/{contact_id}"
+      ]
+    },
+
+    {
+      "group": "HtmlPublic404",
+      "host": "$HOST",
+      "status": 404,
+      "tests": [
+        "/organisation/4040404",
+        "/organisation-tag/4040404",
+        "/event/4040404",
+        "/event-tag/4040404",
+        "/note/4040404",
+        "/address/4040404",
+        "/contact/4040404"
+      ]
+    },
+
+    {
+      "group": "HtmlRegisteredAuth",
+      "host": "$HOST",
+      "auth": {
+        "type": "firma-password",
+        "credentials": ".credentials.json",
+        "account": "registered",
+        "url": "/auth/login/password"
+      },
+      "tests": [
+        "/organisation/new?view=edit",
+        "/event/new?view=edit",
+        "/organisation/{org_id}/address",
+        "/event/{event_id}/address",
+        "/organisation/{org_id}/contact",
+        "/event/{event_id}/contact",
+        "/organisation/{org_id}/contact",
+        "/event/{event_id}/contact"
+      ]
+    },
+
+    {
+      "group": "HtmlRegisteredNoAuth",
+      "host": "$HOST",
+      "auth": {
+        "type": "firma-password",
+        "credentials": ".credentials.json",
+        "account": "registered",
+        "url": "/auth/login/password"
+      },
+      "tests": [
+        "/organisation-tag/new?view=edit",
+        "/event-tag/new?view=edit",
+        "/note/new?view=edit",
+        "/organisation/{org_id}/tag",
+        "/organisation/{org_id}/note",
+        "/organisation/{org_id}/alias?view=edit",
+        "/organisation-tag/{orgtag_id}/note",
+        "/event/{event_id}/tag",
+        "/event/{event_id}/note",
+        "/event-tag/{eventtag_id}/note",
+        "/moderation/organisation-tag-activity",
+        "/moderation/address-not-found",
+        "/moderation/organisation-description",
+        "/moderation/organisation-inclusion",
+        "/moderation/queue",
+        "/moderation/organisation-tag-activity",
+        "/history",
+        "/user"
+      ]
+    },
+
+    {
+      "group": "HtmlModerator",
+      "host": "$HOST",
+      "auth": {
+        "type": "firma-password",
+        "credentials": ".credentials.json",
+        "account": "moderator",
+        "url": "/auth/login/password"
+      },
+      "tests": [
+        "/organisation-tag/new?view=edit",
+        "/event-tag/new?view=edit",
+        "/note/new?view=edit",
+        "/organisation/{org_id}/tag",
+        "/organisation/{org_id}/note",
+        "/organisation/{org_id}/alias?view=edit",
+        "/organisation-tag/{orgtag_id}/note",
+        "/event/{event_id}/tag",
+        "/event/{event_id}/note",
+        "/event-tag/{eventtag_id}/note",
+        "/moderation/organisation-tag-activity",
+        "/moderation/address-not-found",
+        "/moderation/organisation-description",
+        "/moderation/organisation-inclusion",
+        "/moderation/queue",
+        "/moderation/organisation-tag-activity",
+        "/history",
+        "/user"
+      ]
+    },
+
+    {
+      "group": "JsonPublic",
+      "host": "$HOST",
+      "headers": {
+        "Accept": "application/json"
+      },
+      "checks": [
+        "json"
+      ],
+      "tests": [
+        "/organisation",
+        "/organisation-tag",
+        "/event",
+        "/event-tag",
+        "/organisation/search?name={org_search_name}",
+        "/organisation?json=true",
+        "/event?json=true",
+        "/event?json=true&past=true",
+        "/event?json=true&pageView=map",
+        "/event?json=true&pageView=map&past=true",
+        "/dsei-target"
+      ]
+    }
+
+  ]
+}
