@@ -2157,30 +2157,12 @@ sqla_event.listen(Org.orgtag_list, 'remove', org_orgtag_remove_listener)
 
 # Main again
 
-def engine_sql_mode(engine, sql_mode=""):
-    def set_sql_mode(dbapi_connection, _connection_record):
-        cursor = dbapi_connection.cursor()
-        cursor.execute("SET sql_mode = '%s'" % sql_mode)
-
-    sqla_event.listen(engine, "first_connect", set_sql_mode, insert=True)
-    sqla_event.listen(engine, "connect", set_sql_mode)
-
-def engine_disable_mode(engine, mode):
-    def set_sql_mode(dbapi_connection, _connection_record):
-        cursor = dbapi_connection.cursor()
-        cursor.execute(
-            "SET sql_mode=(SELECT REPLACE(@@sql_mode,'%s',''))" % mode)
-
-    sqla_event.listen(engine, "first_connect", set_sql_mode, insert=True)
-    sqla_event.listen(engine, "connect", set_sql_mode)
-
-
 
 
 def main_2():
     connection_url = mysql.connection_url_admin(CONF_PATH)
     engine = create_engine(connection_url)
-    engine_disable_mode(engine, "ONLY_FULL_GROUP_BY")
+    mysql.engine_disable_mode(engine, "ONLY_FULL_GROUP_BY")
     Base.metadata.create_all(engine)
 
 

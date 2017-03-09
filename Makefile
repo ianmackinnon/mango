@@ -56,20 +56,20 @@ serve-test :
 	  -W ignore::UserWarning:bs4 \
 	  -W ignore::ImportWarning:httplib2 \
 	  -W ignore::ResourceWarning: \
-	  ./mango.py --local=1 --events=0 \
+	  ./mango.py --local=1 --events=1 \
 	    --log=/tmp/$(NAME)-log
 
 test-web :
 	./test/test_web.py -v
 
-test-local :
+test-local-caat :
 	HTTP_TEST_HOST=localhost.org:8802 \
-	HTTP_TEST_CONF=test/mango.json \
-	time ~/jobs/test_http/test_http.py -v   # Change
+	HTTP_TEST_CONF=test/mango.caat.json \
+	time ~/jobs/test_http/test_http.py -v  # Change
 
 test-live :
 	HTTP_TEST_HOST=https://www.caat.org.uk/resources/mapping \
-	HTTP_TEST_CONF=test/mango.json \
+	HTTP_TEST_CONF=test/mango.caat.json \
 	time ~/jobs/test_http/test_http.py -v   # Change
 
 

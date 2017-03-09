@@ -80,7 +80,7 @@ from handle.contact import ContactHandler, \
 from handle.history import HistoryHandler
 from handle.moderation import ModerationQueueHandler
 
-from model import mysql, engine_disable_mode, Org, attach_search
+from model import mysql, Org, attach_search
 from model import CONF_PATH, DATABASE_NAMES
 
 
@@ -466,15 +466,13 @@ class MangoApplication(firma.Application):
             pool_recycle=3600  # Expire connections after 1 hours
         )                      # (MySQL disconnects unilaterally after 8)
 
-        engine_disable_mode(engine, "ONLY_FULL_GROUP_BY")
+        mysql.engine_disable_mode(engine, "ONLY_FULL_GROUP_BY")
 
         self.orm = scoped_session(sessionmaker(
             bind=engine,
             autocommit=False,
             query_cls=SafeQueryClass(),
         ))
-
-        engine_disable_mode(engine, "ONLY_FULL_GROUP_BY")
 
         try:
             self.orm.query(Org).first()

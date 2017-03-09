@@ -11,6 +11,7 @@ from hashlib import sha1
 from collections import namedtuple
 
 import pymysql
+from sqlalchemy import event
 
 
 
@@ -182,6 +183,23 @@ def connection_url_app(conf_path, host=None, port=None):
     return mysql_connection_url(
         options.app_username, options.app_password, options.database,
         host=host, port=port)
+
+
+
+def engine_sql_mode(engine, sql_mode=""):
+    def set_sql_mode(dbapi_connection, _connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("SET sql_mode = '%s'" % sql_mode)
+    event.listen(engine, "first_connect", set_sql_mode, insert=True)
+    event.listen(engine, "connect", set_sql_mode)
+
+def engine_disable_mode(engine, mode):
+    def set_sql_mode(dbapi_connection, _connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute(
+            "SET sql_mode=(SELECT REPLACE(@@sql_mode,'%s',''))" % mode)
+    event.listen(engine, "first_connect", set_sql_mode, insert=True)
+    event.listen(engine, "connect", set_sql_mode)
 
 
 

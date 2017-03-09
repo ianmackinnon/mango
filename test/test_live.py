@@ -53,10 +53,6 @@ class HttpTest(unittest.TestCase, Http):
             "/resources/countries/%s" % self.country_name,
         ]
 
-        self.php_path_list_none = [
-            # "/resources/countries/%s" % self.country_name_n,
-        ]
-
         self.json_path_list = [
             "/organisation",
             "/organisation-tag",
@@ -72,63 +68,17 @@ class HttpTest(unittest.TestCase, Http):
         ]
 
         self.html_path_list_none = [
-            "/organisation/%s" % self.org_n_id,
-            "/organisation-tag/%s" % self.orgtag_n_id,
-            "/event/%s" % self.event_n_id,
-            "/event-tag/%s" % self.eventtag_n_id,
-            "/note/%s" % self.note_n_id,
-            "/address/%s" % self.address_n_id,
-            "/contact/%s" % self.contact_n_id,
         ]
 
         self.html_path_list_public = [
-            "/organisation",
-            "/organisation/%s" % self.org_id,
-            "/organisation-tag",
-            "/organisation-tag/%s" % self.orgtag_id,
-            "/event",
-            "/event/%s" % self.event_id,
-            "/event-tag",
-            "/event-tag/%s" % self.eventtag_id,
-            "/note",
-            "/note/%s" % self.note_org_id,
             # "/note/%s" % self.note_event_id,
             # "/note/%s" % self.note_address_id,
-            "/address/%s" % self.address_id,
-            "/contact/%s" % self.contact_id,
-            "/diary",
         ]
 
         self.html_path_list_registered = [
-            "/organisation/new?view=edit",
-            "/event/new?view=edit",
-            "/organisation/%s/address" % self.org_id,
-            "/event/%s/address" % self.event_id,
-            "/organisation/%s/contact" % self.org_id,
-            "/event/%s/contact" % self.event_id,
-            "/organisation/%s/contact" % self.org_id,
-            "/event/%s/contact" % self.org_id,
         ]
 
         self.html_path_list_moderator = [
-            "/organisation-tag/new?view=edit",
-            "/event-tag/new?view=edit",
-            "/note/new?view=edit",
-            "/organisation/%s/tag" % self.org_id,
-            "/organisation/%s/note" % self.org_id,
-            "/organisation/%s/alias?view=edit" % self.org_id,
-            "/organisation-tag/%s/note" % self.orgtag_id,
-            "/event/%s/tag" % self.event_id,
-            "/event/%s/note" % self.event_id,
-            "/event-tag/%s/note" % self.eventtag_id,
-            "/moderation/organisation-tag-activity",
-            "/moderation/address-not-found",
-            "/moderation/organisation-description",
-            "/moderation/organisation-inclusion",
-            "/moderation/queue",
-            "/moderation/organisation-tag-activity",
-            "/history",
-            "/user",
         ]
 
         def removed(list_, matches):
@@ -163,12 +113,6 @@ class TestPublic(HttpTest):
         LOG.info("Public User / PHP")
         for path in self.php_path_list:
             html = self.get_html(path, host="https://www.caat.org.uk")
-            self.php_error_test(html)
-
-    def test_php_none(self):
-        LOG.info("Public User / Non-existant PHP")
-        for path in self.php_path_list_none:
-            html = self.get_html_not_found(path, host="https://www.caat.org.uk")
             self.php_error_test(html)
 
     def test_json_public(self):
