@@ -48,6 +48,9 @@ mysql-test :
 
 test : mysql-test serve-test
 
+ENABLE_EVENTS_LOCAL := 0
+ENABLE_EVENTS_LIVE := 0
+
 serve-test :
 #	Ignore BS4 File/URL warnings
 #	Ignore httplib2 Google app engine install warning
@@ -56,20 +59,25 @@ serve-test :
 	  -W ignore::UserWarning:bs4 \
 	  -W ignore::ImportWarning:httplib2 \
 	  -W ignore::ResourceWarning: \
-	  ./mango.py --local=1 --events=1 \
+	  ./mango.py --local=1 --events=$(ENABLE_EVENTS_LOCAL) \
 	    --log=/tmp/$(NAME)-log
 
-test-web :
-	./test/test_web.py -v
+test-local-mock :
+	HTTP_TEST_HOST=localhost.org:8802 \
+	HTTP_TEST_CONF=test/mango.test.event$(ENABLE_EVENTS_LOCAL).json \
+	HTTP_TEST_PARAM=test/mango.param.mock.json \
+	time ~/jobs/test_http/test_http.py -v  # Change
 
 test-local-caat :
 	HTTP_TEST_HOST=localhost.org:8802 \
-	HTTP_TEST_CONF=test/mango.caat.json \
+	HTTP_TEST_CONF=test/mango.test.event$(ENABLE_EVENTS_LOCAL).json \
+	HTTP_TEST_PARAM=test/mango.param.caat.json \
 	time ~/jobs/test_http/test_http.py -v  # Change
 
 test-live :
 	HTTP_TEST_HOST=https://www.caat.org.uk/resources/mapping \
-	HTTP_TEST_CONF=test/mango.caat.json \
+	HTTP_TEST_CONF=test/mango.test.event$(ENABLE_EVENTS_LIVE).json \
+	HTTP_TEST_PARAM=test/mango.param.caat.json \
 	time ~/jobs/test_http/test_http.py -v   # Change
 
 

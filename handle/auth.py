@@ -59,7 +59,6 @@ class AuthLoginPasswordHandler(LoginHandler):
         user_id = self.get_argument("user_id", None)
         password = self.get_argument("password", None)
         token = self.get_argument("token", None)
-        next_ = self.get_argument("next", "/")
 
         if not (user_id and password and token):
             raise HTTPError(

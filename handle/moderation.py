@@ -1,4 +1,3 @@
-
 from tornado.web import HTTPError
 
 from handle.base import BaseHandler, authenticated
@@ -69,7 +68,7 @@ class ModerationQueueHandler(BaseHandler):
                 "user": user_name,
                 "address": {},
                 "contact": {},
-                }
+            }
 
         self.parent_entity_rows(
             queue, get_pending_org_address_id,
@@ -90,7 +89,7 @@ class ModerationQueueHandler(BaseHandler):
                 "user": user_name,
                 "address": {},
                 "contact": {},
-                }
+            }
 
         self.parent_entity_rows(
             queue, get_pending_event_address_id,
@@ -105,4 +104,4 @@ class ModerationQueueHandler(BaseHandler):
         self.render(
             'moderation-queue.html',
             queue=queue,
-            )
+        )

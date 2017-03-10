@@ -1,0 +1,210 @@
+{
+  "tests": [
+
+    {
+      "group": "HtmlPublic",
+      "host": "$HOST",
+      "tests": [
+        {
+          "url": "",
+          "name": "root"
+        },
+        "/organisation",
+        "/organisation-tag",
+        "/note",
+        "/organisation/{org_id}",
+        "/organisation-tag/{orgtag_id}",
+        "/note/{note_org_id}",
+        "/note/{note_address_id}",
+        "/address/{address_id}",
+        "/contact/{contact_id}"
+      ]
+    },
+
+    {
+      "group": "HtmlPublic404",
+      "host": "$HOST",
+      "status": 404,
+      "tests": [
+        "/diary",
+        "/event",
+        "/event-tag",
+        "/event/{event_id}",
+        "/event-tag/{eventtag_id}",
+
+        "/organisation/{not_found_id}",
+        "/organisation-tag/{not_found_id}",
+        "/event/{not_found_id}",
+        "/event-tag/{not_found_id}",
+        "/note/{not_found_id}",
+        "/address/{not_found_id}",
+        "/contact/{not_found_id}",
+
+        "/note/{note_event_id}",
+
+        "/organisation/new?view=edit",
+        "/event/new?view=edit",
+        "/organisation/{org_id}/address",
+        "/event/{event_id}/address",
+        "/organisation/{org_id}/contact",
+        "/event/{event_id}/contact",
+        "/organisation/{org_id}/contact",
+        "/event/{event_id}/contact",
+
+        "/organisation-tag/new?view=edit",
+        "/event-tag/new?view=edit",
+        "/note/new?view=edit",
+        "/organisation/{org_id}/tag",
+        "/organisation/{org_id}/note",
+        "/organisation/{org_id}/alias?view=edit",
+        "/organisation-tag/{orgtag_id}/note",
+        "/event/{event_id}/tag",
+        "/event/{event_id}/note",
+        "/event-tag/{eventtag_id}/note",
+        "/moderation/organisation-tag-activity",
+        "/moderation/address-not-found",
+        "/moderation/organisation-description",
+        "/moderation/organisation-inclusion",
+        "/moderation/queue",
+        "/moderation/organisation-tag-activity",
+        "/history",
+        "/user"
+      ]
+    },
+
+    {
+      "group": "HtmlRegistered",
+      "host": "$HOST",
+      "auth": {
+        "type": "firma-password",
+        "credentials": ".credentials.json",
+        "account": "registered",
+        "url": "/auth/login/password"
+      },
+      "tests": [
+        "/organisation/new?view=edit",
+        "/organisation/{org_id}/address",
+        "/organisation/{org_id}/contact",
+        "/organisation/{org_id}/contact"
+      ]
+    },
+
+    {
+      "group": "HtmlRegisteredHidden",
+      "host": "$HOST",
+      "status": 404,
+      "auth": {
+        "type": "firma-password",
+        "credentials": ".credentials.json",
+        "account": "registered",
+        "url": "/auth/login/password"
+      },
+      "tests": [
+        "/event/new?view=edit",
+        "/event/{event_id}/address",
+        "/event/{event_id}/contact",
+        "/event/{event_id}/contact",
+
+        "/organisation-tag/new?view=edit",
+        "/event-tag/new?view=edit",
+        "/note/new?view=edit",
+        "/organisation/{org_id}/tag",
+        "/organisation/{org_id}/note",
+        "/organisation/{org_id}/alias?view=edit",
+        "/organisation-tag/{orgtag_id}/note",
+        "/event/{event_id}/tag",
+        "/event/{event_id}/note",
+        "/event-tag/{eventtag_id}/note",
+        "/moderation/organisation-tag-activity",
+        "/moderation/address-not-found",
+        "/moderation/organisation-description",
+        "/moderation/organisation-inclusion",
+        "/moderation/queue",
+        "/moderation/organisation-tag-activity",
+        "/history",
+        "/user"
+      ]
+    },
+
+    {
+      "group": "HtmlModerator",
+      "host": "$HOST",
+      "auth": {
+        "type": "firma-password",
+        "credentials": ".credentials.json",
+        "account": "moderator",
+        "url": "/auth/login/password"
+      },
+      "tests": [
+        "/organisation-tag/new?view=edit",
+        "/note/new?view=edit",
+        "/organisation/{org_id}/tag",
+        "/organisation/{org_id}/note",
+        "/organisation/{org_id}/alias?view=edit",
+        "/organisation-tag/{orgtag_id}/note",
+        "/moderation/organisation-tag-activity",
+        "/moderation/address-not-found",
+        "/moderation/organisation-description",
+        "/moderation/organisation-inclusion",
+        "/moderation/queue",
+        "/moderation/organisation-tag-activity",
+        "/history",
+        "/user"
+      ]
+    },
+
+    {
+      "group": "HtmlModerator404",
+      "host": "$HOST",
+      "status": 404,
+      "auth": {
+        "type": "firma-password",
+        "credentials": ".credentials.json",
+        "account": "moderator",
+        "url": "/auth/login/password"
+      },
+      "tests": [
+        "/event-tag/new?view=edit",
+        "/event/{event_id}/tag",
+        "/event/{event_id}/note",
+        "/event-tag/{eventtag_id}/note"
+      ]
+    },
+
+    {
+      "group": "JsonPublic",
+      "host": "$HOST",
+      "headers": {
+        "Accept": "application/json"
+      },
+      "checks": [
+        "json"
+      ],
+      "tests": [
+        "/organisation",
+        "/organisation-tag",
+        "/organisation/search?name={org_search_name}",
+        "/organisation?json=true",
+        "/dsei-target"
+      ]
+    },
+
+    {
+      "group": "Json404",
+      "host": "$HOST",
+      "headers": {
+        "Accept": "application/json"
+      },
+      "status": 404,
+      "tests": [
+        "/event",
+        "/event-tag",
+        "/event?json=true",
+        "/event?json=true&past=true",
+        "/event?json=true&pageView=map",
+        "/event?json=true&pageView=map&past=true"
+      ]
+    }
+
+  ]
+}

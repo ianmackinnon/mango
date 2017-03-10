@@ -1,5 +1,7 @@
 
-from sqlalchemy.sql.expression import and_
+from sqlalchemy import alias
+from sqlalchemy.inspection import inspect
+from sqlalchemy.sql.expression import and_, exists
 
 from model import User, Org, Event, Address, Contact, \
     org_address
@@ -15,12 +17,22 @@ def get_pending_entity_id(orm, Entity_v, Entity, desc_attr):
     # Allow `Entity_v` and `Entity` as abstract class names.
     # Cannot use `is` in SQLAlchemy filters
 
+    Entity_v2 = alias(Entity_v)
+    entity_id_name = inspect(Entity).primary_key[0].name
+    entity_v_id_name = inspect(Entity_v).primary_key[0].name
+
+    # "order by" and "group by" together give undefined results
+    # in MySQL, so we have to use a "not exists" query.
+
     latest = orm.query(
         Entity_v.entity_id.label("entity_id"),
         getattr(Entity_v, desc_attr).label("desc"),
         Entity_v.moderation_user_id
     ) \
-        .order_by(Entity_v.entity_v_id.desc()) \
+        .filter(~exists().where(and_(
+            Entity_v2.c[entity_id_name] == Entity_v.entity_id,
+            Entity_v2.c[entity_v_id_name] > Entity_v.entity_v_id
+        ))) \
         .subquery()
 
     latest = orm.query(
@@ -137,15 +149,20 @@ def get_pending_parent_entity_id(
         .distinct()
 
     results = []
+    removed = set()
     for _j, (parent_id, entity_id,
              parent_exists, parent_desc) in enumerate(query.all()):
         (entity_id, entity_desc_new, entity_exists,
-         entity_desc_old, user_name) = entity_id_list.pop(entity_id)
+         entity_desc_old, user_name) = entity_id_list[entity_id]
+        removed.add(entity_id)
         results.append((
             parent_id, parent_desc, bool(parent_exists),
             entity_id, entity_desc_new, entity_exists,
             entity_desc_old, user_name
         ))
+
+    for entity_id in removed:
+        del entity_id_list[entity_id]
 
     for _key, _value in list(entity_id_list.items()):
         # Parent doesn't exist, or isn't of type 'parent'

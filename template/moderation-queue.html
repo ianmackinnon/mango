@@ -10,6 +10,13 @@ return u"Moderation Queue"
 
 <h1>Moderation Queue</h1>
 
+%if not (queue.get("org", None) or (events_enabled and queue.get("event", None))):
+<p>Moderation queue empty</p>
+
+%endif
+
+%if queue.get("org", None):
+
 <h2>Companies</h2>
 
 <table class="queue">
@@ -28,8 +35,9 @@ return u"Moderation Queue"
     %endfor
   </tbody>
 </table>
+%endif
 
-%if events_enabled:
+%if events_enabled and queue.get("event", None):
 <h2>Events</h2>
 
 <table class="queue">

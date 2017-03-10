@@ -62,7 +62,7 @@ def tag_unlink(orm, name, force=None, dry_run=None):
         count = orm.query(org_orgtag) \
             .filter(org_orgtag.c.orgtag_id == orgtag.orgtag_id) \
             .count()
-        LOG.info("  %4d : %s" % (count, orgtag.name))
+        LOG.info("  %4d : %s", count, orgtag.name)
     LOG.info("")
 
     if not org_orgtag_count:
@@ -89,8 +89,8 @@ def tag_unlink(orm, name, force=None, dry_run=None):
         orm.rollback()
         return
 
-    LOG.info("Deleted %d links to orgtags matching %s:" % (
-        org_orgtag_count, name))
+    LOG.info("Deleted %d links to orgtags matching %s:",
+             org_orgtag_count, name)
     orm.commit()
 
 

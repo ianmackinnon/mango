@@ -1465,7 +1465,8 @@ class ModerationOrgIncludeHandler(BaseOrgHandler):
                                        .label("count")) \
             .join(org_orgtag) \
             .add_columns(org_orgtag.c.org_id) \
-            .filter(Orgtag.name_short == "exhibitor|security-and-policing-2017") \
+            .filter(Orgtag.name_short == \
+                    "exhibitor|security-and-policing-2017") \
             .group_by(org_orgtag.c.org_id) \
             .subquery()
 

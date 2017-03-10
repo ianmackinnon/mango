@@ -230,6 +230,9 @@ def main():
     session_factory = sessionmaker(
         bind=engine, autoflush=False, autocommit=False)
     orm = session_factory()
+
+    # `model.py` requires search to be attached
+    # for re-indexing orgs after merging.
     attach_search(engine, orm)
 
     if not args.org_id:

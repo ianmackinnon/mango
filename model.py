@@ -926,8 +926,6 @@ class Org(Base, MangoEntity, NotableEntity):
         session = object_session(self)
         assert session
 
-        print(("[", self.org_id, other.org_id, len(other.orgalias_list), "]"))
-
         self.orgalias_list = list(set(self.orgalias_list + other.orgalias_list))
         self.note_list = list(set(self.note_list + other.note_list))
         self.address_list = list(set(self.address_list + other.address_list))
@@ -948,8 +946,8 @@ class Org(Base, MangoEntity, NotableEntity):
             session, other.name, self, moderation_user, other.public)
 
         session.add(orgalias)
-
         session.delete(other)
+        session.flush()
 
     @staticmethod
     def get(orm, name, accept_alias=None, moderation_user=None, public=None):
@@ -1984,8 +1982,8 @@ def virtual_org_orgtag_edit(org, orgtag, add=None):
         return
 
     if orgtag.is_virtual:
-        LOG.warning("Cannot edit the membership of a virtual tag (%s).",
-                    orgtag.name)
+        LOG.debug("Cannot edit the membership of a virtual tag (%s).",
+                  orgtag.name)
         return
 
     if orgtag.is_virtual is False:
