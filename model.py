@@ -932,6 +932,7 @@ class Org(Base, MangoEntity, NotableEntity):
         self.orgtag_list = list(set(self.orgtag_list + other.orgtag_list))
         self.event_list = list(set(self.event_list + other.event_list))
         self.contact_list = list(set(self.contact_list + other.contact_list))
+
         other.orgalias_list = []
         other.note_list = []
         other.address_list = []
@@ -939,15 +940,15 @@ class Org(Base, MangoEntity, NotableEntity):
         other.event_list = []
         other.contact_list = []
 
-        for alias in self.orgalias_list:
-            print((alias.orgalias_id, alias.org_id, alias.name))
+        # Had problems here with duplicate IDs introduced
+        # into `self.orgtag_list`. Bugs seemed to be inconsistent
+        # and flushing session did not always help.
 
         orgalias = Orgalias.get(
             session, other.name, self, moderation_user, other.public)
 
         session.add(orgalias)
         session.delete(other)
-        session.flush()
 
     @staticmethod
     def get(orm, name, accept_alias=None, moderation_user=None, public=None):

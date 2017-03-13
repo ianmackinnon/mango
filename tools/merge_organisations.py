@@ -59,6 +59,7 @@ def multi_merge(orm, org_id_list):
 
     if len(org_list) != len(org_id_list):
         LOG.error("Could not find all IDs.")
+        LOG.error("Found: %s", [v.org_id for v in org_list])
         sys.exit(1)
 
     for o, org in enumerate(org_list):
