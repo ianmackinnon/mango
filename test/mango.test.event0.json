@@ -17,7 +17,11 @@
         "/note/{note_org_id}",
         "/note/{note_address_id}",
         "/address/{address_id}",
-        "/contact/{contact_id}"
+        "/contact/{contact_id}",
+        "/dsei",
+        "/dprte",
+        "/farnborough",
+        "/security-and-policing"
       ]
     },
 
@@ -185,7 +189,10 @@
         "/organisation-tag",
         "/organisation/search?name={org_search_name}",
         "/organisation?json=true",
-        "/dsei-target"
+        "/dsei-target",
+        "/dprte-target",
+        "/farnborough-target",
+        "/security-and-policing-target"
       ]
     },
 

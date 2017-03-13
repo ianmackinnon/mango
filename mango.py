@@ -37,8 +37,8 @@ from handle.home import \
     DseiHandler, DseiOrgListHandler, DseiTargetListHandler, \
     FarnboroughHandler, FarnboroughOrgListHandler, \
     FarnboroughTargetListHandler, \
-    SecurityPolicingHandler, SecurityPolicingOrgListHandler, \
-    SecurityPolicingTargetListHandler
+    SecPolHandler, SecPolOrgListHandler, \
+    SecPolTargetListHandler
 from handle.note import NoteHandler, NoteNewHandler, NoteListHandler, \
     NoteRevisionListHandler, NoteRevisionHandler
 from handle.address import AddressHandler, \
@@ -266,10 +266,10 @@ class MangoApplication(firma.Application):
             (r"/farnborough", FarnboroughHandler),
             (r"/farnborough-org", FarnboroughOrgListHandler),
             (r"/farnborough-target", FarnboroughTargetListHandler),
-            (r"/security-and-policing", SecurityPolicingHandler),
-            (r"/security-and-policing-org", SecurityPolicingOrgListHandler),
+            (r"/security-and-policing", SecPolHandler),
+            (r"/security-and-policing-org", SecPolOrgListHandler),
             (r"/security-and-policing-target",
-             SecurityPolicingTargetListHandler),
+             SecPolTargetListHandler),
             (r"/activity-tags", OrgtagActivityHandler),
 
             (r'/static/image/map/marker/(.*)',

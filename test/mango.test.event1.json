@@ -22,7 +22,11 @@
         "/note/{note_org_id}",
         "/note/{note_address_id}",
         "/address/{address_id}",
-        "/contact/{contact_id}"
+        "/contact/{contact_id}",
+        "/dsei",
+        "/dprte",
+        "/farnborough",
+        "/security-and-policing"
       ]
     },
 
@@ -175,7 +179,10 @@
         "/event?json=true&past=true",
         "/event?json=true&pageView=map",
         "/event?json=true&pageView=map&past=true",
-        "/dsei-target"
+        "/dsei-target",
+        "/dprte-target",
+        "/farnborough-target",
+        "/security-and-policing-target"
       ]
     }
 

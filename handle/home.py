@@ -29,20 +29,32 @@ class HomeHandler(BaseHandler):
 
 
 
-class HomeTargetListHandler(BaseHandler):
-    tag_base = None
+class FairMixin(object):
+    # Optionally override
+    name = None
+    year = None
 
+    @property
+    def tag_name(self):
+        if not (self.name and self.year):
+            return None
+        return "%s-%d" % (self.name, self.year)
+
+
+
+
+class HomeTargetListHandler(FairMixin, BaseHandler):
     def get(self):
         visibility = self.parameters.get("visibility", None)
 
-        cache_key = "country-tag-%s-%s" % (self.tag_base or "home", visibility)
+        cache_key = "country-tag-%s-%s" % (self.tag_name or "home", visibility)
 
         value = self.cache.get(cache_key)
         if value:
             self.set_header(
                 "Content-Type",
                 "application/json; charset=UTF-8"
-                )
+            )
             self.write(value)
             self.finish()
             return
@@ -50,11 +62,11 @@ class HomeTargetListHandler(BaseHandler):
         q1 = self.orm.query(Org.org_id.label("org_id"))
         q1 = self.filter_visibility(
             q1, Org, visibility)
-        if self.tag_base:
+        if self.tag_name:
             q1 = q1 \
                 .join(org_orgtag) \
                 .join(Orgtag) \
-                .filter(Orgtag.base_short == self.tag_base)
+                .filter(Orgtag.base_short == self.tag_name)
         q1 = q1 \
             .subquery()
 
@@ -74,7 +86,8 @@ class HomeTargetListHandler(BaseHandler):
         results = q2.all()
 
         data = {
-            "tagName": self.tag_base,
+            "year": self.year,
+            "tagName": self.tag_name,
             "countries": results
         }
 
@@ -91,7 +104,7 @@ class HomeOrgListHandler(BaseHandler):
             self.set_header(
                 "Content-Type",
                 "application/json; charset=UTF-8"
-                )
+            )
             self.write(value)
             self.finish()
             return
@@ -115,30 +128,30 @@ class HomeOrgListHandler(BaseHandler):
 
 
 
-class FairHandler(BaseHandler):
-    # Override:
-    name = None
-    tag_name = None
-
+class FairHandler(FairMixin, BaseHandler):
     def get(self):
         self.load_map = True
         self.render(
             '%s.html' % self.name,
+            name=self.name,
+            year=self.year,
             tag_name=self.tag_name,
-            )
+        )
 
-class FairOrgListHandler(BaseHandler):
-    # Override:
-    cache_key = None
-    tag_name = None
+
+
+class FairOrgListHandler(FairMixin, BaseHandler):
+    @property
+    def org_cache_key(self):
+        return self.tag_name and ("%s-org" % self.tag_name)
 
     def get(self):
-        value = self.cache.get(self.cache_key)
+        value = self.cache.get(self.org_cache_key)
         if value:
             self.set_header(
                 "Content-Type",
                 "application/json; charset=UTF-8"
-                )
+            )
             self.write(value)
             self.finish()
             return
@@ -154,7 +167,7 @@ class FairOrgListHandler(BaseHandler):
                 obj = {
                     "label": org.name,
                     "value": org.url,
-                    }
+                }
                 if org.orgalias_list_public:
                     obj["alias"] = []
                     for orgalias in org.orgalias_list_public:
@@ -162,57 +175,53 @@ class FairOrgListHandler(BaseHandler):
                 org_list.append(obj)
 
         org_list.sort(key=lambda x: x["label"])
-        self.cache.set(self.cache_key, json.dumps(org_list))
+        self.cache.set(self.org_cache_key, json.dumps(org_list))
         self.write_json(org_list)
 
 
 
-class DseiHandler(FairHandler):
+class DseiMixin(object):
     name = "dsei"
-    tag_name = "dsei-2015"
-
-class DseiTargetListHandler(HomeTargetListHandler):
-    tag_base = "dsei-2015"
-
-class DseiOrgListHandler(FairOrgListHandler):
-    cache_key = "dsei-org"
-    tag_name = "dsei-2015"
-
+    year = 2015
+class DseiHandler(DseiMixin, FairHandler):
+    pass
+class DseiTargetListHandler(DseiMixin, HomeTargetListHandler):
+    pass
+class DseiOrgListHandler(DseiMixin, FairOrgListHandler):
+    pass
 
 
-class DprteHandler(FairHandler):
+
+class DprteMixin(object):
     name = "dprte"
-    tag_name = "dprte-2016"
-
-class DprteTargetListHandler(HomeTargetListHandler):
-    tag_base = "dprte-2016"
-
-class DprteOrgListHandler(FairOrgListHandler):
-    cache_key = "dprte-org"
-    tag_name = "dprte-2016"
-
+    year = 2017
+class DprteHandler(DprteMixin, FairHandler):
+    pass
+class DprteTargetListHandler(DprteMixin, HomeTargetListHandler):
+    pass
+class DprteOrgListHandler(DprteMixin, FairOrgListHandler):
+    pass
 
 
-class FarnboroughHandler(FairHandler):
+
+class FarnboroughMixin(object):
     name = "farnborough"
-    tag_name = "farnborough-2016"
-
-class FarnboroughTargetListHandler(HomeTargetListHandler):
-    tag_base = "farnborough-2016"
-
-class FarnboroughOrgListHandler(FairOrgListHandler):
-    cache_key = "farnborough-org"
-    tag_name = "farnborough-2016"
-
+    year = 2016
+class FarnboroughHandler(FarnboroughMixin, FairHandler):
+    pass
+class FarnboroughTargetListHandler(FarnboroughMixin, HomeTargetListHandler):
+    pass
+class FarnboroughOrgListHandler(FarnboroughMixin, FairOrgListHandler):
+    pass
 
 
-class SecurityPolicingHandler(FairHandler):
+
+class SecPolMixin(object):
     name = "security-and-policing"
-    tag_name = "security-and-policing-2016"
-
-class SecurityPolicingTargetListHandler(HomeTargetListHandler):
-    tag_base = "security-and-policing-2016"
-
-class SecurityPolicingOrgListHandler(FairOrgListHandler):
-    cache_key = "security-and-policing-org"
-    tag_name = "security-and-policing-2016"
+    year = 2016
+class SecPolHandler(SecPolMixin, FairHandler):
+    pass
+class SecPolTargetListHandler(SecPolMixin, HomeTargetListHandler):
+    pass
+class SecPolOrgListHandler(SecPolMixin, FairOrgListHandler):
+    pass

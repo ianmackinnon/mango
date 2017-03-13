@@ -1,0 +1,312 @@
+<%inherit file="base.html"/>
+
+
+<%def name="column_2()"></%def>
+<%def name="column_3()"></%def>
+
+
+<%def name="page()">
+
+<style>
+
+@import url(${protocol}://fonts.googleapis.com/css?family=Raleway:500,800);
+
+#mango h1
+{
+margin: 25px 2px;
+text-align: center;
+font-family: 'Raleway', sans-serif;
+}
+
+#mango-map-box
+{
+float: none;
+width: 380px;
+height: 360px;
+margin: 0;
+border: 0;
+border-radius: 0;
+}
+#mango-map-canvas
+{
+width: 380px;
+height: 360px;
+}
+
+.mango-fair
+{
+width: 900px;
+margin: auto;
+text-align: center;
+font-family: 'Raleway', sans-serif;
+}
+.mango-fair:before,
+.mango-fair:after
+{
+    content:"";
+    display:table;
+}
+.mango-fair:after
+{
+    clear:both;
+}
+
+.ui-widget
+{
+    font-size: 12px;
+    font-family: helvetica;
+    font-weight: normal;
+}
+
+.mango-fair img
+{
+display: inline-block;
+margin-top: 34px;
+}
+.mango-fair img:first-child
+{
+margin-top: 0;
+}
+
+#mango .mango-fair p
+{
+margin: 4px 0;
+}
+
+
+.mango-fair-caption
+{
+margin: auto;
+font-size: 80%;
+}
+
+.mango-fair-column-1,
+.mango-fair-column-2,
+.mango-fair-column-3
+{
+float: left;
+}
+
+.mango-fair-column-1 { width: 380px; }
+.mango-fair-column-2 { width: 280px; }
+.mango-fair-column-3 { width: 240px; }
+
+#mango .mango-fair-action-box
+{
+margin: 0;
+margin-bottom: 10px;
+text-align: center;
+}
+
+#mango .mango-fair-action-box h3
+{
+height: 40px;
+font-size: 15px;
+line-height:40px;
+margin:0;
+padding:0;
+text-align: center;
+}
+
+#mango .mango-fair-action-box form
+{
+display: block;
+margin: 0 auto;
+}
+
+#mango .mango-fair-action-box input
+{
+display: inline-block;
+height: 32px;
+width: 179px;
+margin: 0;
+border: 1px solid #ddd;
+border-right: 0;
+padding: 0 4px;
+border-radius: 6px;
+border-bottom-right-radius: 0;
+border-top-right-radius: 0;
+font-size: 13px;
+background: #fff;
+}
+#mango .mango-fair-action-box input[type="submit"]
+{
+box-sizing: content-box;
+-moz-box-sizing: content-box;
+display: inline-block;
+height: 30px;
+width: 70px;
+margin: 0;
+border: 1px solid #ddd;
+padding: 0 4px;
+border-radius: 6px;
+border-bottom-left-radius: 0;
+border-top-left-radius: 0;
+font-size: 13px;
+color: #C6181B;
+background: #eee;
+
+}
+#mango input::-moz-focus-inner /*Remove button padding in FF*/
+{ 
+    border: 0;
+    padding: 0;
+}
+#mango .mango-fair-action-box input[type="submit"][disabled]
+{
+color: #666;
+}
+
+#mango .mango-fair-action-box a
+{
+display: block;
+width: 248px;
+line-height: 22px;
+margin: 0 auto;
+margin-bottom: 12px;
+border: 1px solid #ddd;
+padding: 4px 4px;
+border-radius: 6px;
+font-size: 13px;
+color: #C6181B;
+background: #eee;
+text-decoration: none;
+}
+
+#mango .mango-fair-action-box a:hover
+{
+text-decoration: underline;
+}
+
+#mango .mango-fair-column-1 .mango-fair-action-box
+{
+text-align: left;
+}
+
+#mango .mango-fair-column-1 .mango-fair-action-box a
+{
+width: auto;
+display: inline-block;
+margin-top: 14px;
+padding: 0px 30px;
+}
+#mango .mango-fair-column-1 .mango-fair-action-box a:first-child
+{
+float: right;
+}
+
+
+.ui-autocomplete
+{
+height: 200px;
+overflow-y: scroll;
+overflow-x: hidden;
+}
+
+</style>
+
+<h1>${self.title()}</h1>
+
+<div class="mango-fair">
+ 
+  <div class="mango-fair-column-1">
+    <div id="mango-map-box">
+      <div id="mango-map-canvas">Map loading...</div>
+    </div>
+  </div>
+
+  <div class="mango-fair-column-2">
+    <div class="mango-fair-action-box">
+      <h3>${"Exhibitors from" if tag_name else "Companies in"} your area</h3>
+      <form
+         id="mango-fair-form-location"
+         action="${url_root}organisation"
+         >
+        %if tag_name:
+        <input
+           type="hidden"
+           name="tagAll"
+           value="1"
+           >
+        <input
+           type="hidden"
+           name="tag"
+           value="${tag_name}"
+           >
+        %endif
+        <input
+           type="text"
+           name="location"
+           value=""
+           placeholder="Town or postcode"
+           ><input type="submit" value="Go">
+      </form>
+    </div>
+
+    <div class="mango-fair-action-box">
+      <h3>${"Exhibitors" if tag_name else "Companies"} by target market</h3>
+      <form
+         id="mango-fair-form-country"
+         action="${url_root}organisation"
+         >
+        %if tag_name:
+        <input
+           type="hidden"
+           name="tagAll"
+           value="1"
+           >
+        <input
+           type="hidden"
+           name="tag"
+           value="${tag_name}"
+           >
+        <input
+           id="mango-fair-input-country-value"
+           type="hidden"
+           name="tag"
+           value=""
+           >
+        %endif
+        <input
+           id="mango-fair-input-country-display"
+           type="text"
+           placeholder="Country name"
+           ><input type="submit" value="Choose" disabled>
+      </form>
+    </div>
+
+    <div class="mango-fair-action-box">
+      <h3>${"Exhibitors" if tag_name else "Companies"} by name</h3>
+      <form
+         id="mango-fair-form-org"
+         >
+        <input
+           id="mango-fair-input-org-display"
+           type="text"
+           placeholder="Company name"
+           ><input type="submit" value="Choose" disabled>
+      </form>
+    </div>
+
+    ${self.column_2()}
+    
+  </div>
+
+  <div class="mango-fair-column-3">
+    ${self.column_3()}
+  </div>
+
+</div>
+
+</%def>
+
+
+<%def name="pageScripts()">
+
+<script type="text/javascript">
+  m.fairName = ${repr(name or "null") | n};
+  m.fairYear = ${repr(year or "null") | n};
+  m.fairTagName = ${repr(fairTagName or "null") | n};
+</script>
+
+</%def>

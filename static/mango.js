@@ -15,6 +15,10 @@ var m = (function () {
     cookiePrefix: null,
     next: null,
 
+    fairName: null,
+    fairYear: null,
+    fairTagName: null,
+
     debug: false,
 
     log: {
@@ -257,10 +261,10 @@ var m = (function () {
     initHome: function (tagUrl, orgUrl) {
 
       (function () {
-        var $form = $("#mango-dsei-form-country");
+        var $form = $("#mango-fair-form-country");
         $form.submit(false);
-        var $inputDisplay = $("#mango-dsei-input-country-display");
-        var $inputValue = $("#mango-dsei-input-country-value");
+        var $inputDisplay = $("#mango-fair-input-country-display");
+        var $inputValue = $("#mango-fair-input-country-value");
         var url = m.urlRoot + tagUrl;
         $.getJSON(url, function (data) {
           var autoData = [];
@@ -296,9 +300,9 @@ var m = (function () {
       }());
 
       (function () {
-        var $form = $("#mango-dsei-form-org");
+        var $form = $("#mango-fair-form-org");
         $form.submit(false);
-        var $inputDisplay = $("#mango-dsei-input-org-display");
+        var $inputDisplay = $("#mango-fair-input-org-display");
         var url = m.urlRoot + orgUrl;
         $.getJSON(url, function (data) {
           var autocomplete = $inputDisplay.autocomplete({
@@ -1026,29 +1030,10 @@ var m = (function () {
           m.initHomeMap(mapView, null);
         });
       }],
-      [/^\/dsei$/, function () {
-        m.initHome("dsei-target", "dsei-org");
+      [/^\/(dsei|dprte|farnborough|security-and-policing)$/, function (fairName) {
+        m.initHome(fairName + "-target", fairName + "-org");
         m.initMap(function (mapView) {
-          m.initHomeMap(mapView, "dsei-2015");
-        });
-      }],
-      [/^\/dprte$/, function () {
-        m.initHome("dprte-target", "dprte-org");
-        m.initMap(function (mapView) {
-          m.initHomeMap(mapView, "dprte-2016");
-        });
-      }],
-      [/^\/farnborough$/, function () {
-        m.initHome("farnborough-target", "farnborough-org");
-        m.initMap(function (mapView) {
-          m.initHomeMap(mapView, "farnborough-2014");
-        });
-      }],
-      [/^\/security-and-policing$/, function () {
-        m.initHome("security-and-policing-target",
-                   "security-and-policing-org");
-        m.initMap(function (mapView) {
-          m.initHomeMap(mapView, "security-and-policing-2016");
+          m.initHomeMap(mapView, m.fairTagName);
         });
       }],
 
